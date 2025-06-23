@@ -32,10 +32,6 @@ Este é o frontend da aplicação **Kavita**, um e-commerce completo voltado par
 ├── public/ # Imagens e arquivos estáticos
 └── styles/ # Estilos globais e configs do Tailwind
 
-markdown
-Copiar
-Editar
-
 ---
 
 🔐 Autenticação
