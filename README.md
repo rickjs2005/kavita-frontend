@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+🐮 Kavita Frontend - Interface Web para E-commerce Agropecuário
 
-## Getting Started
+Este é o frontend da aplicação **Kavita**, um e-commerce completo voltado para produtos e serviços agropecuários. Construído com Next.js, TypeScript e Tailwind CSS, o projeto oferece uma experiência intuitiva para o cliente final e uma área administrativa eficiente.
 
-First, run the development server:
+---
+
+🚀 Tecnologias Utilizadas
+
+- **Next.js**: estrutura React com suporte a SSR e rotas dinâmicas
+- **TypeScript**: tipagem estática para maior segurança
+- **Tailwind CSS**: framework utilitário para estilização moderna
+- **Context API**: controle de autenticação e carrinho de compras
+- **React Hook Form + Zod**: validação de formulários
+- **Axios**: requisições para a API RESTful
+
+---
+
+📂 Estrutura de Pastas
+
+.
+├── components/ # Componentes reutilizáveis
+│ ├── admin/ # Formulários, cards e layout do painel admin
+│ └── ui/ # Botões, inputs, carrosséis, etc.
+├── context/ # Contextos globais (auth, carrinho)
+├── hooks/ # Hooks personalizados
+├── pages/
+│ ├── index.tsx # Página inicial
+│ ├── produtos/ # Listagem e detalhes de produtos
+│ ├── servicos/ # Página pública de serviços agro
+│ ├── admin/ # Área administrativa protegida
+│ └── login.tsx # Login e cadastro de usuários
+├── public/ # Imagens e arquivos estáticos
+└── styles/ # Estilos globais e configs do Tailwind
+
+markdown
+Copiar
+Editar
+
+---
+
+🔐 Autenticação
+
+- **Usuário comum**:
+  - Cadastro e login com verificação simples
+  - Sessão salva em `localStorage`
+- **Administrador**:
+  - Login protegido por JWT
+  - Token armazenado localmente e verificado nas rotas privadas
+
+---
+
+🛠️ Funcionalidades da Interface
+
+### 👨‍🌾 Área Pública
+
+- **Página Inicial** com:
+  - Hero Section (destaque de produto, ex: drones)
+  - Produtos por categoria (carrossel)
+  - Lista de serviços agropecuários
+  - Produtos em destaque
+- **Produtos**:
+  - Filtro por categoria e subcategoria
+  - Página de detalhes com botão "Adicionar ao carrinho"
+- **Serviços**:
+  - Lista com imagem, descrição, nome do colaborador e WhatsApp
+- **Carrinho de compras**:
+  - Visualização lateral flutuante
+  - Persistência via localStorage
+- **Checkout**:
+  - Formulário com dados do usuário, endereço e pagamento
+- **Cadastro/Login**:
+  - Validação com React Hook Form + Zod
+
+### 🛠️ Painel Admin
+
+- **CRUD de produtos**
+- **Cadastro de serviços e colaboradores**
+- **Controle de destaques**
+- **Gerenciamento de pedidos**:
+  - Editar status, endereço e itens
+- **Filtros e buscas por nome, categoria e subcategoria**
+
+---
+
+🌐 Integração com Backend
+
+- Requisições feitas para: `http://localhost:5000`
+- Todas as rotas protegidas exigem token JWT no `Authorization`
+
+---
+
+▶️ Executar localmente
 
 ```bash
+# Clone o projeto
+git clone https://github.com/seu-usuario/kavita-frontend.git
+cd kavita-frontend
+
+# Instale as dependências
+npm install
+
+# Crie o arquivo .env.local
+echo "NEXT_PUBLIC_API_URL=http://localhost:5000" > .env.local
+
+# Rode o projeto
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+O site estará disponível em http://localhost:3000.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+📌 Requisitos
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Node.js instalado
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Backend rodando em http://localhost:5000
 
-## Learn More
+Variáveis de ambiente configuradas no .env.local
 
-To learn more about Next.js, take a look at the following resources:
+✉️ Contato
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Dúvidas ou sugestões? Entre em contato:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Email: suporte@kavita.com
+Desenvolvido com ❤️ para o agro brasileiro.
