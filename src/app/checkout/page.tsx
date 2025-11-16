@@ -1,0 +1,291 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+
+import { AddressForm } from "@/components/checkout/AddressForm";
+import { PaymentMethodForm } from "@/components/checkout/PaymentMethodForm";
+import { PersonalInfoForm } from "@/components/checkout/PersonalInfoForm";
+import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
+import { useCheckoutForm } from "@/hooks/useCheckoutForm";
+import CloseButton from "@/components/buttons/CloseButton";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+interface CheckoutResponse { pedido_id: number }
+interface PaymentResponse { init_point?: string; sandbox_init_point?: string }
+interface CartItem { id: number; name?: string; nome?: string; price: number; quantity: number; }
+
+const money = (v: number) => `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
+
+const Icon = {
+  user: () => (<svg viewBox="0 0 24 24" className="h-5 w-5"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5 0-9 2.5-9 5.5A1.5 1.5 0 0 0 4.5 21h15A1.5 1.5 0 0 0 21 19.5C21 16.5 17 14 12 14Z"/></svg>),
+  pin: () => (<svg viewBox="0 0 24 24" className="h-5 w-5"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"/></svg>),
+  card: () => (<svg viewBox="0 0 24 24" className="h-5 w-5"><path fill="currentColor" d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2ZM4 6h16v3H4Zm0 12v-7h16v7Z"/></svg>),
+  shield: () => (<svg viewBox="0 0 24 24" className="h-5 w-5"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5Z"/></svg>),
+  truck: () => (<svg viewBox="0 0 24 24" className="h-5 w-5"><path fill="currentColor" d="M3 6h11v7h-1.5A3.5 3.5 0 0 0 9 16.5 3.5 3.5 0 0 0 12.5 20H13a3 3 0 0 0 3-3h2a2 2 0 0 0 2-2V9h-3l-2-3H3Zm6 10.5A1.5 1.5 0 1 1 10.5 18 1.5 1.5 0 0 1 9 16.5Z"/></svg>),
+  ticket: () => (<svg viewBox="0 0 24 24" className="h-5 w-5"><path fill="currentColor" d="M3 6h18v4a2 2 0 0 1 0 4v4H3v-4a2 2 0 0 1 0-4Z"/></svg>),
+};
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+
+  const auth = useAuth() as any;
+  const userId = auth?.userId ?? auth?.user?.id ?? auth?.id ?? null;
+
+  const { cartItems, cartTotal, clearCart } = useCart();
+  const { formData, updateForm } = useCheckoutForm();
+
+  const normalizeFormaPagamento = (value?: string) => {
+    const v = String(value || "").toLowerCase();
+    if (v.includes("mercado") || v.includes("cart")) return "mercadopago";
+    if (v.includes("pix")) return "pix";
+    if (v.includes("boleto")) return "boleto";
+    if (v.includes("prazo")) return "prazo";
+    return "pix";
+  };
+
+  const payload = useMemo(() => {
+    const endereco = formData?.endereco || {};
+    const formaPagamento = normalizeFormaPagamento(formData?.formaPagamento);
+    return {
+      usuario_id: userId ? Number(userId) : undefined,
+      endereco: {
+        cep: endereco?.cep || "",
+        rua: endereco?.logradouro || "",
+        numero: endereco?.numero || "",
+        bairro: endereco?.bairro || "",
+        cidade: endereco?.cidade || "",
+        estado: endereco?.estado || "",
+        complemento: endereco?.referencia || null,
+      },
+      formaPagamento,
+      produtos: (cartItems || []).map((i: CartItem) => ({
+        id: Number(i.id),
+        quantidade: Number(i.quantity ?? 1),
+      })),
+      total: Number(cartTotal || 0),
+      nome: formData?.nome || "",
+      cpf: formData?.cpf || "",
+      email: formData?.email || "",
+    };
+  }, [userId, formData, cartItems, cartTotal]);
+
+  const handleSubmit = async () => {
+    if (submitting) return;
+    if (!payload.produtos?.length) { alert("Seu carrinho está vazio."); return; }
+    try {
+      setSubmitting(true);
+      const { data } = await axios.post<CheckoutResponse>(`${API_BASE}/api/checkout`, payload);
+      const pedidoId = data.pedido_id;
+
+      sessionStorage.setItem("lastOrder", JSON.stringify({
+        id: pedidoId, usuario_id: payload.usuario_id, email: payload.email,
+        cpf: payload.cpf, nome: payload.nome, endereco: payload.endereco,
+        produtos: payload.produtos, total: payload.total,
+        formaPagamento: payload.formaPagamento, criadoEm: new Date().toISOString(),
+      }));
+
+      if (payload.formaPagamento === "mercadopago") {
+        const res = await axios.post<PaymentResponse>(`${API_BASE}/api/payment/start`, { pedidoId });
+        const initPoint = res.data?.init_point || res.data?.sandbox_init_point || null;
+        clearCart?.();
+        if (initPoint) { window.location.href = initPoint; return; }
+      }
+
+      clearCart?.();
+      router.push(`/pedido/${pedidoId}`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Erro ao finalizar a compra. Verifique os dados e tente novamente.";
+      alert(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const itemsCount = (cartItems || []).reduce((acc, it) => acc + Number(it?.quantity ?? 0), 0);
+  const subtotal = Number(cartTotal || 0);
+  const frete = 0;
+  const total = subtotal + frete;
+
+  return (
+    <div className="min-h-[100dvh] bg-gradient-to-b from-[#F7FBFA] via-white to-white">
+      {/* Header compacto */}
+      <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-black/5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between">
+            <CloseButton className="text-2xl sm:text-3xl text-gray-600 hover:text-[#EC5B20]" />
+            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">
+              Finalize sua Compra
+            </h1>
+            <div className="hidden sm:flex gap-2 text-xs text-gray-600">
+              <span className="px-2 py-1 rounded-full bg-black/5">Carrinho</span>
+              <span>→</span>
+              <span className="px-2 py-1 rounded-full bg-[#EC5B20]/10 text-[#EC5B20] font-semibold">Checkout</span>
+              <span>→</span>
+              <span className="px-2 py-1 rounded-full bg-black/5">Confirmação</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Conteúdo */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-28 lg:pb-8">
+        {/* Coluna esquerda */}
+        <div className="lg:col-span-8 space-y-6 sm:space-y-8">
+          {/* Dados pessoais */}
+          <section className="rounded-2xl border border-black/10 bg-white/90 shadow-sm overflow-hidden">
+            <header className="px-5 sm:px-6 py-3 sm:py-4 border-b border-black/10 flex items-center gap-3">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#EC5B20]/15 text-[#EC5B20]">
+                <Icon.user />
+              </span>
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800">Dados Pessoais</h2>
+                <p className="text-xs text-gray-500">Informe seu nome, CPF e e-mail para contato.</p>
+              </div>
+            </header>
+            <div className="p-5 sm:p-6">
+              <PersonalInfoForm formData={formData} onChange={updateForm} />
+            </div>
+          </section>
+
+          {/* Endereço */}
+          <section className="rounded-2xl border border-black/10 bg-white/90 shadow-sm overflow-hidden">
+            <header className="px-5 sm:px-6 py-3 sm:py-4 border-b border-black/10 flex items-center gap-3">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#EC5B20]/15 text-[#EC5B20]">
+                <Icon.pin />
+              </span>
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800">Endereço de Entrega</h2>
+                <p className="text-xs text-gray-500">Receba seu pedido no endereço desejado.</p>
+              </div>
+            </header>
+            <div className="p-5 sm:p-6">
+              <AddressForm endereco={formData.endereco} onChange={updateForm} />
+            </div>
+          </section>
+
+          {/* Pagamento */}
+          <section className="rounded-2xl border border-black/10 bg-white/90 shadow-sm overflow-hidden">
+            <header className="px-5 sm:px-6 py-3 sm:py-4 border-b border-black/10 flex items-center gap-3">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#EC5B20]/15 text-[#EC5B20]">
+                <Icon.card />
+              </span>
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800">Forma de Pagamento</h2>
+                <p className="text-xs text-gray-500">Pix, Boleto, Cartão (Mercado Pago) ou Prazo.</p>
+              </div>
+            </header>
+
+            <div className="p-5 sm:p-6">
+              <PaymentMethodForm formaPagamento={formData.formaPagamento} onChange={updateForm} />
+
+              {/* Cupom (visual) */}
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+                <div className="flex items-center gap-2 border border-dashed border-black/20 rounded-xl px-3">
+                  <Icon.ticket />
+                  <input
+                    placeholder="Possui um cupom? (em breve)"
+                    className="h-11 w-full bg-transparent outline-none text-sm"
+                    disabled
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled
+                  className="h-11 px-4 rounded-xl border border-black/10 text-sm font-semibold text-gray-500 bg-white/60"
+                >
+                  Aplicar
+                </button>
+              </div>
+
+              {/* Selos */}
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex items-center gap-2 text-gray-700 text-sm">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/5"><Icon.shield /></span>
+                  Pagamento seguro
+                </div>
+                <div className="flex items-center gap-2 text-gray-700 text-sm">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/5"><Icon.truck /></span>
+                  Entrega para todo Brasil
+                </div>
+                <div className="flex items-center gap-2 text-gray-700 text-sm">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/5">🏷️</span>
+                  Nota fiscal e garantia
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Coluna direita */}
+        <aside className="lg:col-span-4">
+          <div className="lg:sticky lg:top-24 space-y-4">
+            {/* Resumo */}
+            <div className="rounded-2xl border border-black/10 bg-white/95 p-5 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800">Resumo do Pedido</h3>
+                <span className="text-xs sm:text-sm text-gray-600">{itemsCount} item(s)</span>
+              </div>
+
+              <div className="divide-y divide-black/5">
+                {(cartItems || []).map((it: CartItem) => (
+                  <div key={it.id} className="py-3 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {it.name || it.nome || `Produto #${it.id}`}
+                      </p>
+                      <p className="text-xs text-gray-500">Qtd: {it.quantity}</p>
+                    </div>
+                    <div className="text-sm font-semibold text-gray-800">{money(it.price * it.quantity)}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between text-gray-600"><span>Subtotal</span><span>{money(subtotal)}</span></div>
+                <div className="flex items-center justify-between text-gray-600"><span>Frete</span><span>{frete ? money(frete) : "Grátis"}</span></div>
+                <div className="pt-2 flex items-center justify-between">
+                  <span className="text-gray-800 font-semibold">Total</span>
+                  <span className="text-xl font-extrabold text-[#EC5B20]">{money(total)}</span>
+                </div>
+              </div>
+
+              <button
+                disabled={submitting}
+                onClick={handleSubmit}
+                className="mt-5 w-full rounded-xl bg-[#EC5B20] py-3 font-bold text-white transition hover:bg-[#d84e1a] disabled:opacity-60"
+              >
+                {submitting ? "Finalizando..." : "Concluir Compra"}
+              </button>
+
+              <p className="mt-3 text-[12px] leading-relaxed text-gray-500">
+                Ao concluir, seu pedido será criado. Para cartão usamos o Mercado Pago; Pix/Boleto exibem instruções na confirmação.
+              </p>
+            </div>
+
+            {/* CTA fixo no mobile */}
+            <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 border-t border-black/10 backdrop-blur">
+              <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 pb-[env(safe-area-inset-bottom)]">
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600">Total</p>
+                  <p className="text-lg font-extrabold text-[#EC5B20]">{money(total)}</p>
+                </div>
+                <button
+                  disabled={submitting}
+                  onClick={handleSubmit}
+                  className="flex-[2] rounded-xl bg-[#EC5B20] py-3 font-bold text-white hover:bg-[#d84e1a] disabled:opacity-60"
+                >
+                  {submitting ? "Finalizando…" : "Concluir"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
