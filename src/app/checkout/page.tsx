@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -96,6 +96,30 @@ export default function CheckoutPage() {
   const { cartItems, cartTotal, clearCart } = useCart();
   const { formData, updateForm } = useCheckoutForm();
 
+  // -----------------------------
+  // Endereço salvo em sessão
+  // -----------------------------
+  const [usarEnderecoSalvo, setUsarEnderecoSalvo] = useState<boolean>(false);
+  const [enderecoSalvo, setEnderecoSalvo] = useState<any>(null);
+
+  // ao montar, verifica sessionStorage por um último pedido para sugerir endereço
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const last = sessionStorage.getItem("lastOrder");
+        if (last) {
+          const parsed = JSON.parse(last);
+          if (parsed && parsed.endereco) {
+            setEnderecoSalvo(parsed.endereco);
+            setUsarEnderecoSalvo(true);
+          }
+        }
+      } catch {
+        // ignora erros de parse
+      }
+    }
+  }, []);
+
   const normalizeFormaPagamento = (value?: string) => {
     const v = String(value || "").toLowerCase();
     if (v.includes("mercado") || v.includes("cart")) return "mercadopago";
@@ -106,18 +130,26 @@ export default function CheckoutPage() {
   };
 
   const payload = useMemo(() => {
-    const endereco = formData?.endereco || {};
+    // Se o usuário optar por usar o endereço salvo, substitui o endereço do formulário
+    const enderecoSelecionado =
+      usarEnderecoSalvo && enderecoSalvo
+        ? enderecoSalvo
+        : formData?.endereco || {};
+    const endereco = enderecoSelecionado || {};
     const formaPagamento = normalizeFormaPagamento(formData?.formaPagamento);
     return {
       usuario_id: userId ? Number(userId) : undefined,
       endereco: {
+        // aceita tanto as chaves do formulário (logradouro/referencia) quanto as
+        // chaves retornadas do backend (rua/complemento)
         cep: endereco?.cep || "",
-        rua: endereco?.logradouro || "",
+        rua: endereco?.logradouro || endereco?.rua || "",
         numero: endereco?.numero || "",
         bairro: endereco?.bairro || "",
         cidade: endereco?.cidade || "",
         estado: endereco?.estado || "",
-        complemento: endereco?.referencia || null,
+        complemento:
+          endereco?.referencia || endereco?.complemento || null,
       },
       formaPagamento,
       produtos: (cartItems || []).map((i: CartItem) => ({
@@ -129,7 +161,7 @@ export default function CheckoutPage() {
       cpf: formData?.cpf || "",
       email: formData?.email || "",
     };
-  }, [userId, formData, cartItems, cartTotal]);
+  }, [userId, formData, cartItems, cartTotal, usarEnderecoSalvo, enderecoSalvo]);
 
   const handleSubmit = async () => {
     if (submitting) return;
@@ -147,9 +179,16 @@ export default function CheckoutPage() {
 
     try {
       setSubmitting(true);
+      // Inclui o token JWT no cabeçalho da requisição, se existir no contexto
+      const token = auth?.user?.token ?? auth?.token ?? null;
+      const headers: any = { "Content-Type": "application/json" };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
       const { data } = await axios.post<CheckoutResponse>(
         `${API_BASE}/api/checkout`,
-        payload
+        payload,
+        { headers }
       );
       const pedidoId = data.pedido_id;
 
@@ -317,7 +356,42 @@ export default function CheckoutPage() {
               </div>
             </header>
             <div className="p-5 sm:p-6">
-              <AddressForm endereco={formData.endereco} onChange={updateForm} />
+              {/* Quando existir um endereço salvo de um pedido anterior, ofereça ao usuário a opção de reutilizá-lo. */}
+              {enderecoSalvo && (
+                <div className="mb-4 space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="enderecoOption"
+                      checked={usarEnderecoSalvo}
+                      onChange={() => setUsarEnderecoSalvo(true)}
+                    />
+                    <span className="text-sm text-gray-700">
+                      Entregar no endereço salvo:{" "}
+                      {`${enderecoSalvo?.rua || enderecoSalvo?.logradouro || ""}, ${
+                        enderecoSalvo?.numero || ""
+                      } - ${enderecoSalvo?.bairro || ""} - ${
+                        enderecoSalvo?.cidade || ""
+                      }/${enderecoSalvo?.estado || ""}`}
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="enderecoOption"
+                      checked={!usarEnderecoSalvo}
+                      onChange={() => setUsarEnderecoSalvo(false)}
+                    />
+                    <span className="text-sm text-gray-700">
+                      Entregar em outro endereço
+                    </span>
+                  </label>
+                </div>
+              )}
+              {/* Exibe o formulário de endereço apenas quando o usuário deseja alterar o endereço salvo ou quando não há endereço salvo */}
+              {(!usarEnderecoSalvo || !enderecoSalvo) && (
+                <AddressForm endereco={formData.endereco} onChange={updateForm} />
+              )}
             </div>
           </section>
 
