@@ -14,14 +14,15 @@ import UserMenu from "@/components/ui/UserMenu";
 const SearchBar = dynamic(() => import("@/components/ui/SearchBar"), { ssr: false });
 
 const NAV_LINKS = [
-  { route: "/medicamentos", label: "Medicamentos" },
-  { route: "/pets", label: "Pets" },
-  { route: "/fazenda", label: "Fazenda" },
+  { route: "/categorias/medicamentos", label: "Medicamentos" },
+  { route: "/categorias/pets", label: "Pets" },
+  { route: "/categorias/fazenda", label: "Fazenda" },
   { route: "/drones", label: "Kavita-Drone" },
-  { route: "/servicos", label: "Serviços" },
-  { route: "/pragas-e-insetos", label: "Pragas e Insetos" },
-  { route: "/outros", label: "Outros" },
+  { route: "/servicos", label: "Serviços" }, // continua igual
+  { route: "/categorias/pragas-e-insetos", label: "Pragas e Insetos" },
+  { route: "/categorias/outros", label: "Outros" },
 ] as const;
+
 
 const EXCLUDED_ROUTES = [
   "/checkout", "/login", "/register", "/forgot-password", "/reset-password",
@@ -46,7 +47,8 @@ export default function Header() {
   useEffect(() => setMounted(true), []);
 
   const menuRef = useRef<HTMLDivElement>(null);
-  const isDronePage = pathname === "/drones";
+  const isDronePage = pathname.startsWith("/drones");
+
 
   const cartCount = cartItems.length;
   const cartTotal = useMemo(
