@@ -3,7 +3,7 @@
 import { Product } from "@/types/product";
 import { useCart } from "@/context/CartContext";
 import { useState } from "react";
-import { resolveStockValue } from "@/utils/stock";
+import { resolveStockValue } from "../../utils/stock";
 
 interface AddToCartButtonProps {
   product: Product;

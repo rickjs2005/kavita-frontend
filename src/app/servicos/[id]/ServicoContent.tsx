@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import absUrl from "@/data/absUrl";
+import { absUrl } from "@/utils/absUrl";
 import type { Service } from "@/types/service";
 
 const PLACEHOLDER = "/placeholder.png";

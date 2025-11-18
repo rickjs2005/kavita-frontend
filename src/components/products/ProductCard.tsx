@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AddToCartButton from "@/components/buttons/AddToCartButton";
 import type { Product } from "@/types/product";
-import { resolveStockValue } from "@/utils/stock";
+import { resolveStockValue } from "../../utils/stock";
 
 type Props = {
   product: Product;
