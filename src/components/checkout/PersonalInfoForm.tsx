@@ -28,7 +28,7 @@ const PERSONAL_FIELDS: Array<{
     label: "E-mail",
     type: "email",
     autoComplete: "email",
-    placeholder: "voce@empresa.com",
+    placeholder: "voce@gmail.com",
   },
   {
     name: "telefone",

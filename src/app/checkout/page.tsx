@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 
 import { AddressForm } from "@/components/checkout/AddressForm";
 import { PaymentMethodForm } from "@/components/checkout/PaymentMethodForm";
@@ -97,26 +98,25 @@ export default function CheckoutPage() {
   const { formData, updateForm } = useCheckoutForm();
 
   // -----------------------------
-  // Endereço salvo em sessão
+  // ENDEREÇO SALVO (último pedido)
   // -----------------------------
   const [usarEnderecoSalvo, setUsarEnderecoSalvo] = useState<boolean>(false);
   const [enderecoSalvo, setEnderecoSalvo] = useState<any>(null);
 
-  // ao montar, verifica sessionStorage por um último pedido para sugerir endereço
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const last = sessionStorage.getItem("lastOrder");
-        if (last) {
-          const parsed = JSON.parse(last);
-          if (parsed && parsed.endereco) {
-            setEnderecoSalvo(parsed.endereco);
-            setUsarEnderecoSalvo(true);
-          }
+    if (typeof window === "undefined") return;
+
+    try {
+      const last = sessionStorage.getItem("lastOrder");
+      if (last) {
+        const parsed = JSON.parse(last);
+        if (parsed && parsed.endereco) {
+          setEnderecoSalvo(parsed.endereco);
+          setUsarEnderecoSalvo(true);
         }
-      } catch {
-        // ignora erros de parse
       }
+    } catch {
+      // ignora erros
     }
   }, []);
 
@@ -129,19 +129,26 @@ export default function CheckoutPage() {
     return "pix";
   };
 
+  // -----------------------------
+  // PAYLOAD com CPF/telefone limpos
+  // -----------------------------
   const payload = useMemo(() => {
-    // Se o usuário optar por usar o endereço salvo, substitui o endereço do formulário
     const enderecoSelecionado =
       usarEnderecoSalvo && enderecoSalvo
         ? enderecoSalvo
         : formData?.endereco || {};
+
     const endereco = enderecoSelecionado || {};
     const formaPagamento = normalizeFormaPagamento(formData?.formaPagamento);
+
+    const nome = String(formData?.nome || "").trim();
+    const cpfDigits = String(formData?.cpf || "").replace(/\D/g, "");
+    const telefoneDigits = String(formData?.telefone || "").replace(/\D/g, "");
+    const email = String(formData?.email || "").trim();
+
     return {
       usuario_id: userId ? Number(userId) : undefined,
       endereco: {
-        // aceita tanto as chaves do formulário (logradouro/referencia) quanto as
-        // chaves retornadas do backend (rua/complemento)
         cep: endereco?.cep || "",
         rua: endereco?.logradouro || endereco?.rua || "",
         numero: endereco?.numero || "",
@@ -157,34 +164,72 @@ export default function CheckoutPage() {
         quantidade: Number(i.quantity ?? 1),
       })),
       total: Number(cartTotal || 0),
-      nome: formData?.nome || "",
-      cpf: formData?.cpf || "",
-      email: formData?.email || "",
+      nome,
+      cpf: cpfDigits,
+      telefone: telefoneDigits,
+      email,
     };
-  }, [userId, formData, cartItems, cartTotal, usarEnderecoSalvo, enderecoSalvo]);
+  }, [
+    userId,
+    formData,
+    cartItems,
+    cartTotal,
+    usarEnderecoSalvo,
+    enderecoSalvo,
+  ]);
 
   const handleSubmit = async () => {
     if (submitting) return;
 
+    // precisa estar logado
     if (!isLoggedIn) {
-      alert("Você precisa estar logado para finalizar a compra.");
+      toast.error("Você precisa estar logado para finalizar a compra.");
       router.push("/login");
       return;
     }
 
+    // precisa ter produtos
     if (!payload.produtos?.length) {
-      alert("Seu carrinho está vazio.");
+      toast.error("Seu carrinho está vazio.");
+      return;
+    }
+
+    // -----------------------------
+    // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
+    // -----------------------------
+    const errors: string[] = [];
+
+    if (!payload.nome) {
+      errors.push("Informe o nome do cliente.");
+    }
+
+    if (!payload.cpf) {
+      errors.push("Informe o CPF.");
+    } else if (payload.cpf.length !== 11) {
+      errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
+    }
+
+    if (!payload.telefone) {
+      errors.push("Informe o telefone.");
+    } else if (payload.telefone.length < 10) {
+      errors.push("Telefone deve ter pelo menos 10 dígitos.");
+    }
+
+    if (errors.length) {
+      // mostra só o primeiro erro por vez
+      toast.error(errors[0]);
       return;
     }
 
     try {
       setSubmitting(true);
-      // Inclui o token JWT no cabeçalho da requisição, se existir no contexto
+
       const token = auth?.user?.token ?? auth?.token ?? null;
       const headers: any = { "Content-Type": "application/json" };
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
+
       const { data } = await axios.post<CheckoutResponse>(
         `${API_BASE}/api/checkout`,
         payload,
@@ -192,6 +237,7 @@ export default function CheckoutPage() {
       );
       const pedidoId = data.pedido_id;
 
+      // salva último pedido (para endereço salvo)
       sessionStorage.setItem(
         "lastOrder",
         JSON.stringify({
@@ -208,6 +254,7 @@ export default function CheckoutPage() {
         })
       );
 
+      // MERCADO PAGO: redireciona para o link do MP
       if (payload.formaPagamento === "mercadopago") {
         const res = await axios.post<PaymentResponse>(
           `${API_BASE}/api/payment/start`,
@@ -215,22 +262,48 @@ export default function CheckoutPage() {
         );
         const initPoint =
           res.data?.init_point || res.data?.sandbox_init_point || null;
-        clearCart?.();
+
+        clearCart?.(); // esvazia o carrinho
         if (initPoint) {
           window.location.href = initPoint;
           return;
         }
+      } else {
+        // PIX / BOLETO / PRAZO
+        clearCart?.(); // só esvazia o carrinho, não abre drawer
+        toast.success("Compra concluída com sucesso!");
+        router.push(`/pedidos/${pedidoId}`);
+      }
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const msgBackend = err?.response?.data?.message as string | undefined;
+
+      if (
+        status === 401 ||
+        status === 403 ||
+        (msgBackend && msgBackend.toLowerCase().includes("token"))
+      ) {
+        toast.error(
+          msgBackend ||
+            "Sua sessão expirou. Faça login novamente para finalizar a compra."
+        );
+
+        if (auth && typeof auth.logout === "function") {
+          try {
+            auth.logout();
+          } catch {
+            /* ignore */
+          }
+        }
+
+        router.push("/login");
+        return;
       }
 
-      clearCart?.();
-
-      // ✅ rota corrigida para evitar 404
-      router.push(`/pedidos/${pedidoId}`);
-    } catch (err: any) {
       const msg =
-        err?.response?.data?.message ||
+        msgBackend ||
         "Erro ao finalizar a compra. Verifique os dados e tente novamente.";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -245,7 +318,7 @@ export default function CheckoutPage() {
   const total = subtotal + frete;
 
   // ==============================
-  //   BLOQUEIO PARA NÃO LOGADO
+  // Tela para usuário não logado
   // ==============================
   if (!isLoggedIn) {
     return (
@@ -288,7 +361,7 @@ export default function CheckoutPage() {
   }
 
   // ==============================
-  //   CHECKOUT NORMAL (LOGADO)
+  // Checkout normal (logado)
   // ==============================
 
   return (
@@ -331,7 +404,7 @@ export default function CheckoutPage() {
                   Dados Pessoais
                 </h2>
                 <p className="text-xs text-gray-500">
-                  Informe seu nome, CPF e e-mail para contato.
+                  Informe nome, CPF, telefone e e-mail.
                 </p>
               </div>
             </header>
@@ -355,8 +428,8 @@ export default function CheckoutPage() {
                 </p>
               </div>
             </header>
+
             <div className="p-5 sm:p-6">
-              {/* Quando existir um endereço salvo de um pedido anterior, ofereça ao usuário a opção de reutilizá-lo. */}
               {enderecoSalvo && (
                 <div className="mb-4 space-y-2">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -388,9 +461,12 @@ export default function CheckoutPage() {
                   </label>
                 </div>
               )}
-              {/* Exibe o formulário de endereço apenas quando o usuário deseja alterar o endereço salvo ou quando não há endereço salvo */}
+
               {(!usarEnderecoSalvo || !enderecoSalvo) && (
-                <AddressForm endereco={formData.endereco} onChange={updateForm} />
+                <AddressForm
+                  endereco={formData.endereco}
+                  onChange={updateForm}
+                />
               )}
             </div>
           </section>
@@ -417,7 +493,6 @@ export default function CheckoutPage() {
                 onChange={updateForm}
               />
 
-              {/* Cupom (visual) */}
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
                 <div className="flex items-center gap-2 border border-dashed border-black/20 rounded-xl px-3">
                   <Icon.ticket />
@@ -436,7 +511,6 @@ export default function CheckoutPage() {
                 </button>
               </div>
 
-              {/* Selos */}
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="flex items-center gap-2 text-gray-700 text-sm">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/5">
@@ -513,7 +587,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* ✅ Botão com LoadingButton (desktop) */}
               <LoadingButton
                 isLoading={submitting}
                 onClick={handleSubmit}
@@ -538,7 +611,6 @@ export default function CheckoutPage() {
                   </p>
                 </div>
 
-                {/* ✅ Botão mobile também usando LoadingButton */}
                 <LoadingButton
                   isLoading={submitting}
                   onClick={handleSubmit}
