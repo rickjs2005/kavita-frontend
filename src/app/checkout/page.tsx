@@ -90,13 +90,12 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
-  const auth = useAuth() as any;
-  const userId = auth?.userId ?? auth?.user?.id ?? auth?.id ?? null;
+  const { user, logout } = useAuth();
+  const userId = user?.id ?? null;
   const isLoggedIn = !!userId;
 
   const { cartItems, cartTotal, clearCart } = useCart();
   const { formData, updateForm } = useCheckoutForm();
-
   // -----------------------------
   // ENDEREÇO SALVO (último pedido)
   // -----------------------------
@@ -106,19 +105,35 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // se não tiver usuário logado, não usa endereço salvo
+    if (!userId) {
+      setEnderecoSalvo(null);
+      setUsarEnderecoSalvo(false);
+      return;
+    }
+
+    const key = `lastOrder_${userId}`;
+
     try {
-      const last = sessionStorage.getItem("lastOrder");
+      const last = sessionStorage.getItem(key);
       if (last) {
         const parsed = JSON.parse(last);
         if (parsed && parsed.endereco) {
           setEnderecoSalvo(parsed.endereco);
           setUsarEnderecoSalvo(true);
+          return;
         }
       }
+
+      // se não encontrar nada ou não tiver endereço válido
+      setEnderecoSalvo(null);
+      setUsarEnderecoSalvo(false);
     } catch {
-      // ignora erros
+      setEnderecoSalvo(null);
+      setUsarEnderecoSalvo(false);
     }
-  }, []);
+  }, [userId]);
+
 
   const normalizeFormaPagamento = (value?: string) => {
     const v = String(value || "").toLowerCase();
@@ -224,7 +239,7 @@ export default function CheckoutPage() {
     try {
       setSubmitting(true);
 
-      const token = auth?.user?.token ?? auth?.token ?? null;
+      const token = user?.token ?? null;
       const headers: any = { "Content-Type": "application/json" };
       if (token) {
         headers.Authorization = `Bearer ${token}`;
@@ -237,22 +252,26 @@ export default function CheckoutPage() {
       );
       const pedidoId = data.pedido_id;
 
-      // salva último pedido (para endereço salvo)
-      sessionStorage.setItem(
-        "lastOrder",
-        JSON.stringify({
-          id: pedidoId,
-          usuario_id: payload.usuario_id,
-          email: payload.email,
-          cpf: payload.cpf,
-          nome: payload.nome,
-          endereco: payload.endereco,
-          produtos: payload.produtos,
-          total: payload.total,
-          formaPagamento: payload.formaPagamento,
-          criadoEm: new Date().toISOString(),
-        })
-      );
+      // salva último pedido (para endereço salvo) por usuário
+      if (typeof window !== "undefined" && payload.usuario_id) {
+        const key = `lastOrder_${payload.usuario_id}`;
+        sessionStorage.setItem(
+          key,
+          JSON.stringify({
+            id: pedidoId,
+            usuario_id: payload.usuario_id,
+            email: payload.email,
+            cpf: payload.cpf,
+            nome: payload.nome,
+            endereco: payload.endereco,
+            produtos: payload.produtos,
+            total: payload.total,
+            formaPagamento: payload.formaPagamento,
+            criadoEm: new Date().toISOString(),
+          })
+        );
+      }
+
 
       // MERCADO PAGO: redireciona para o link do MP
       if (payload.formaPagamento === "mercadopago") {
@@ -285,15 +304,13 @@ export default function CheckoutPage() {
       ) {
         toast.error(
           msgBackend ||
-            "Sua sessão expirou. Faça login novamente para finalizar a compra."
+          "Sua sessão expirou. Faça login novamente para finalizar a compra."
         );
 
-        if (auth && typeof auth.logout === "function") {
-          try {
-            auth.logout();
-          } catch {
-            /* ignore */
-          }
+        try {
+          logout();
+        } catch {
+          /* ignore */
         }
 
         router.push("/login");
@@ -441,11 +458,9 @@ export default function CheckoutPage() {
                     />
                     <span className="text-sm text-gray-700">
                       Entregar no endereço salvo:{" "}
-                      {`${enderecoSalvo?.rua || enderecoSalvo?.logradouro || ""}, ${
-                        enderecoSalvo?.numero || ""
-                      } - ${enderecoSalvo?.bairro || ""} - ${
-                        enderecoSalvo?.cidade || ""
-                      }/${enderecoSalvo?.estado || ""}`}
+                      {`${enderecoSalvo?.rua || enderecoSalvo?.logradouro || ""}, ${enderecoSalvo?.numero || ""
+                        } - ${enderecoSalvo?.bairro || ""} - ${enderecoSalvo?.cidade || ""
+                        }/${enderecoSalvo?.estado || ""}`}
                     </span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">

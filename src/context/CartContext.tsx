@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Product, CartItem } from "@/types/CartCarProps";
+import { useAuth } from "@/context/AuthContext";
 
 /* Helpers */
 const toNum = (v: any, fallback = 0) => {
@@ -40,32 +41,30 @@ interface CartContextProps {
 
 const CartContext = createContext<CartContextProps | undefined>(undefined);
 
+// chave de storage por usuário
+const makeCartKey = (userId: number | null | undefined) =>
+  userId ? `cartItems_${userId}` : "cartItems_guest";
+
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  const userId: number | null = user?.id ? Number(user.id) : null;
+
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartKey, setCartKey] = useState<string | null>(null);
-  const mounted = useRef(false);
 
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
 
-  /* Carrega chave (por usuário ou guest) */
+  /* Define a chave sempre que o usuário mudar */
   useEffect(() => {
-    mounted.current = true;
-    try {
-      const uid = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
-      setCartKey(uid ? `cartItems_${uid}` : "cartItems_guest");
-    } catch {
-      setCartKey("cartItems_guest");
-    }
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
+    const key = makeCartKey(userId);
+    setCartKey(key);
+  }, [userId]);
 
-  /* Carrega itens */
+  /* Carrega itens do storage quando a chave mudar (troca de usuário) */
   useEffect(() => {
-    if (!cartKey) return;
+    if (!cartKey || typeof window === "undefined") return;
     try {
       const raw = localStorage.getItem(cartKey);
       setCartItems(raw ? JSON.parse(raw) : []);
@@ -74,12 +73,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [cartKey]);
 
-  /* Persiste itens */
+  /* Persiste itens no storage da chave atual */
   useEffect(() => {
-    if (!cartKey) return;
+    if (!cartKey || typeof window === "undefined") return;
     try {
       localStorage.setItem(cartKey, JSON.stringify(cartItems));
-    } catch {}
+    } catch {
+      // ignora erros de storage
+    }
   }, [cartItems, cartKey]);
 
   /* ========== Ações ========== */
@@ -153,7 +154,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       ];
     });
 
-    // Dispara efeitos fora do setState
     after.forEach((fn) => fn());
     return result;
   };
@@ -220,10 +220,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const clearCart = () => {
     setCartItems([]);
-    if (cartKey) {
+    if (cartKey && typeof window !== "undefined") {
       try {
         localStorage.removeItem(cartKey);
-      } catch {}
+      } catch {
+        // ignore
+      }
     }
     toast("Carrinho limpo.");
   };
