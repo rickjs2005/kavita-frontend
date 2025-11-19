@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 
@@ -33,8 +34,8 @@ export default function MeusDadosPage() {
     container: "mx-auto w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl",
     card: "rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden",
     header: "border-b border-gray-100 p-5 sm:p-6 lg:p-7",
-    title: "text-lg sm:text-xl font-semibold tracking-tight",
-    subtitle: "mt-1 text-xs sm:text-sm text-gray-500",
+    title: "text-base sm:text-lg md:text-xl font-semibold tracking-tight",
+    subtitle: "mt-1 text-xs sm:text-sm text-gray-500 leading-relaxed",
     form: "p-5 sm:p-6 lg:p-8",
     grid: "grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2",
     field: "flex flex-col gap-1.5",
@@ -96,13 +97,22 @@ export default function MeusDadosPage() {
   const diff = useMemo(() => {
     if (!perfil || !original) return {};
     const out: Partial<Perfil> = {};
-    (["nome", "telefone", "endereco", "cidade", "estado", "cep", "pais", "ponto_referencia"] as (keyof Perfil)[]).forEach(
-      (k) => {
-        const cur = (perfil as any)[k] ?? null;
-        const old = (original as any)[k] ?? null;
-        if (cur !== old) (out as any)[k] = cur ?? "";
-      }
-    );
+    (
+      [
+        "nome",
+        "telefone",
+        "endereco",
+        "cidade",
+        "estado",
+        "cep",
+        "pais",
+        "ponto_referencia",
+      ] as (keyof Perfil)[]
+    ).forEach((k) => {
+      const cur = (perfil as any)[k] ?? null;
+      const old = (original as any)[k] ?? null;
+      if (cur !== old) (out as any)[k] = cur ?? "";
+    });
     return out;
   }, [perfil, original]);
 
@@ -167,65 +177,76 @@ export default function MeusDadosPage() {
           {/* header */}
           <div className={ui.header}>
             <h1 className={ui.title}>Meus dados</h1>
-            <p className={ui.subtitle}>Gerencie suas informações pessoais de contato e endereço.</p>
+            <p className={ui.subtitle}>
+              Gerencie suas informações pessoais de contato. Seus endereços de
+              entrega ficam em “Meus endereços”.
+            </p>
           </div>
 
           {/* form */}
           <form onSubmit={handleSubmit} className={ui.form}>
             <div className={ui.grid}>
               <Field label="Nome">
-                <input className={ui.input} value={perfil.nome || ""} onChange={set("nome")} autoComplete="name" />
+                <input
+                  className={ui.input}
+                  value={perfil.nome || ""}
+                  onChange={set("nome")}
+                  autoComplete="name"
+                />
               </Field>
 
-              <Field label="Email">
-                <input className={ui.inputDisabled} value={perfil.email || ""} disabled />
-              </Field>
-
-              <Field label="Telefone">
+              <Field label="WhatsApp (opcional)">
                 <input
                   className={ui.input}
                   value={perfil.telefone || ""}
                   onChange={set("telefone")}
                   inputMode="tel"
                   autoComplete="tel"
+                  placeholder="(DD) 99999-9999"
                 />
               </Field>
 
-              <Field label="Endereço" full>
+              <Field label="Email" full>
                 <input
-                  className={ui.input}
-                  value={perfil.endereco || ""}
-                  onChange={set("endereco")}
-                  autoComplete="street-address"
+                  className={ui.inputDisabled}
+                  value={perfil.email || ""}
+                  disabled
                 />
-              </Field>
-
-              <Field label="Cidade">
-                <input className={ui.input} value={perfil.cidade || ""} onChange={set("cidade")} />
-              </Field>
-
-              <Field label="Estado">
-                <input className={ui.input} value={perfil.estado || ""} onChange={set("estado")} />
-              </Field>
-
-              <Field label="CEP">
-                <input className={ui.input} value={perfil.cep || ""} onChange={set("cep")} inputMode="numeric" />
-              </Field>
-
-              <Field label="País">
-                <input className={ui.input} value={perfil.pais || ""} onChange={set("pais")} />
-              </Field>
-
-              <Field label="Ponto de referência" full>
-                <input className={ui.input} value={perfil.ponto_referencia || ""} onChange={set("ponto_referencia")} />
               </Field>
             </div>
 
             {/* CTA ÚNICO */}
             <div className={ui.footer}>
-              <button type="submit" disabled={saving || !hasChanges} className={ui.btn}>
-                {saving ? "Salvando..." : hasChanges ? "Salvar alterações" : "Nada para salvar"}
+              <button
+                type="submit"
+                disabled={saving || !hasChanges}
+                className={ui.btn}
+              >
+                {saving
+                  ? "Salvando..."
+                  : hasChanges
+                    ? "Salvar alterações"
+                    : "Nada para salvar"}
               </button>
+            </div>
+
+            {/* Bloco de endereço separado */}
+            <div className="mt-8 border-t border-gray-100 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-gray-800">
+                  Endereços de entrega
+                </p>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  Cadastre e gerencie múltiplos endereços para usar no
+                  checkout.
+                </p>
+              </div>
+              <Link
+                href="/meus-dados/enderecos"
+                className="inline-flex items-center justify-center rounded-lg border border-[#359293] px-4 py-2.5 text-sm font-semibold text-[#359293] hover:bg-[#359293]/5"
+              >
+                Gerenciar endereços
+              </Link>
             </div>
           </form>
         </div>
@@ -248,7 +269,13 @@ function Field({
   full?: boolean;
 }) {
   return (
-    <div className={full ? "md:col-span-2 flex flex-col gap-1.5" : "flex flex-col gap-1.5"}>
+    <div
+      className={
+        full
+          ? "md:col-span-2 flex flex-col gap-1.5"
+          : "flex flex-col gap-1.5"
+      }
+    >
       <span className="text-sm text-gray-700">{label}</span>
       {children}
     </div>

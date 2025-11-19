@@ -1,0 +1,238 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  useUserAddresses,
+  UserAddress,
+  UserAddressPayload,
+} from "@/hooks/useUserAddresses";
+
+export default function EditarEnderecoPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { addresses, loading, updateAddress } = useUserAddresses();
+
+  const id = useMemo(() => {
+    const raw = params?.id;
+    if (!raw) return null;
+    if (Array.isArray(raw)) return Number(raw[0]);
+    return Number(raw);
+  }, [params]);
+
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<UserAddressPayload | null>(null);
+
+  useEffect(() => {
+    if (loading || id == null) return;
+    const found = addresses.find((a) => a.id === id);
+    if (!found) {
+      // se não achar, volta pra lista depois
+      const timer = setTimeout(() => {
+        router.push("/meus-dados/enderecos");
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+
+    setForm(addressToPayload(found));
+  }, [loading, addresses, id, router]);
+
+  const set = (field: keyof UserAddressPayload) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    form && setForm({ ...form, [field]: e.target.value });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form || id == null) return;
+
+    try {
+      setSaving(true);
+      await updateAddress(id, form);
+      router.push("/meus-dados/enderecos");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading || !form) {
+    return (
+      <div className="pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 lg:px-10">
+        <div className="mx-auto w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl">
+          <div className="animate-pulse space-y-3">
+            <div className="h-7 w-44 rounded bg-gray-200" />
+            <div className="h-64 rounded-2xl bg-gray-200" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">
+            Editar endereço
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-gray-500">
+            Altere as informações de entrega deste endereço.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <form onSubmit={handleSubmit} className="p-5 sm:p-6 lg:p-8 space-y-4 sm:space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+              <Field label="Apelido (Casa, Trabalho...)" full>
+                <input
+                  className="input-kavita"
+                  value={form.apelido || ""}
+                  onChange={set("apelido")}
+                />
+              </Field>
+
+              <Field label="CEP">
+                <input
+                  className="input-kavita"
+                  value={form.cep || ""}
+                  onChange={set("cep")}
+                  inputMode="numeric"
+                />
+              </Field>
+
+              <Field label="Endereço" full>
+                <input
+                  className="input-kavita"
+                  value={form.endereco || ""}
+                  onChange={set("endereco")}
+                  autoComplete="street-address"
+                />
+              </Field>
+
+              <Field label="Número">
+                <input
+                  className="input-kavita"
+                  value={form.numero || ""}
+                  onChange={set("numero")}
+                />
+              </Field>
+
+              <Field label="Bairro">
+                <input
+                  className="input-kavita"
+                  value={form.bairro || ""}
+                  onChange={set("bairro")}
+                />
+              </Field>
+
+              <Field label="Cidade">
+                <input
+                  className="input-kavita"
+                  value={form.cidade || ""}
+                  onChange={set("cidade")}
+                />
+              </Field>
+
+              <Field label="Estado">
+                <input
+                  className="input-kavita"
+                  value={form.estado || ""}
+                  onChange={set("estado")}
+                />
+              </Field>
+
+              <Field label="Complemento" full>
+                <input
+                  className="input-kavita"
+                  value={form.complemento || ""}
+                  onChange={set("complemento")}
+                />
+              </Field>
+
+              <Field label="Ponto de referência" full>
+                <input
+                  className="input-kavita"
+                  value={form.ponto_referencia || ""}
+                  onChange={set("ponto_referencia")}
+                />
+              </Field>
+
+              <Field label="Telefone para entrega">
+                <input
+                  className="input-kavita"
+                  value={form.telefone || ""}
+                  onChange={set("telefone")}
+                  inputMode="tel"
+                />
+              </Field>
+            </div>
+
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                id="addr-default-edit"
+                type="checkbox"
+                checked={!!form.is_default}
+                onChange={(e) =>
+                  setForm({ ...form, is_default: e.target.checked })
+                }
+              />
+              <label htmlFor="addr-default-edit" className="text-sm text-gray-700">
+                Definir como endereço padrão
+              </label>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex items-center justify-center rounded-lg bg-[#359293] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#2b7778] disabled:opacity-60"
+              >
+                {saving ? "Salvando..." : "Salvar alterações"}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="h-8 sm:h-10" />
+      </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+  full,
+}: {
+  label: string;
+  children: React.ReactNode;
+  full?: boolean;
+}) {
+  return (
+    <div className={full ? "md:col-span-2 flex flex-col gap-1.5" : "flex flex-col gap-1.5"}>
+      <span className="text-sm text-gray-700">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function addressToPayload(a: UserAddress): UserAddressPayload {
+  return {
+    apelido: a.apelido ?? "",
+    cep: a.cep,
+    endereco: a.endereco,
+    numero: a.numero,
+    bairro: a.bairro,
+    cidade: a.cidade,
+    estado: a.estado,
+    complemento: a.complemento ?? "",
+    ponto_referencia: a.ponto_referencia ?? "",
+    telefone: a.telefone ?? "",
+    is_default: a.is_default === 1,
+  };
+}

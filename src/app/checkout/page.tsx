@@ -97,7 +97,7 @@ export default function CheckoutPage() {
   const { cartItems, cartTotal, clearCart } = useCart();
   const { formData, updateForm } = useCheckoutForm();
   // -----------------------------
-  // ENDEREÇO SALVO (último pedido)
+  // ENDEREÇO SALVO (padrão da conta ou último pedido)
   // -----------------------------
   const [usarEnderecoSalvo, setUsarEnderecoSalvo] = useState<boolean>(false);
   const [enderecoSalvo, setEnderecoSalvo] = useState<any>(null);
@@ -105,34 +105,76 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // se não tiver usuário logado, não usa endereço salvo
-    if (!userId) {
-      setEnderecoSalvo(null);
-      setUsarEnderecoSalvo(false);
+    // tenta pegar endereço do último pedido salvo no navegador (fallback)
+    let lastOrderAddress: any = null;
+    if (userId) {
+      const key = `lastOrder_${userId}`;
+      try {
+        const last = sessionStorage.getItem(key);
+        if (last) {
+          const parsed = JSON.parse(last);
+          if (parsed && parsed.endereco) {
+            lastOrderAddress = parsed.endereco;
+          }
+        }
+      } catch {
+        // ignora erro de parse
+      }
+    }
+
+    // se não tiver usuário logado, só pode usar o fallback (se existir)
+    if (!userId || !user?.token) {
+      if (lastOrderAddress) {
+        setEnderecoSalvo(lastOrderAddress);
+        setUsarEnderecoSalvo(true);
+      } else {
+        setEnderecoSalvo(null);
+        setUsarEnderecoSalvo(false);
+      }
       return;
     }
 
-    const key = `lastOrder_${userId}`;
+    // usuário logado → tenta buscar endereço padrão no backend
+    (async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/users/addresses`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+          withCredentials: true,
+        });
 
-    try {
-      const last = sessionStorage.getItem(key);
-      if (last) {
-        const parsed = JSON.parse(last);
-        if (parsed && parsed.endereco) {
-          setEnderecoSalvo(parsed.endereco);
+        const list: any[] = Array.isArray(res.data) ? res.data : [];
+        const preferred =
+          list.find((a: any) => a.is_default === 1) || list[0] || null;
+
+        if (preferred) {
+          // mapeia campos do banco → formato esperado pelo payload
+          setEnderecoSalvo({
+            cep: preferred.cep,
+            logradouro: preferred.endereco, // rua
+            numero: preferred.numero,
+            bairro: preferred.bairro,
+            cidade: preferred.cidade,
+            estado: preferred.estado,
+            complemento: preferred.complemento,
+            referencia: preferred.ponto_referencia,
+          });
           setUsarEnderecoSalvo(true);
           return;
         }
+      } catch (e) {
+        console.error("Erro ao carregar endereços do usuário:", e);
       }
 
-      // se não encontrar nada ou não tiver endereço válido
-      setEnderecoSalvo(null);
-      setUsarEnderecoSalvo(false);
-    } catch {
-      setEnderecoSalvo(null);
-      setUsarEnderecoSalvo(false);
-    }
-  }, [userId]);
+      // se não tiver endereço padrão, cai pro endereço do último pedido (se existir)
+      if (lastOrderAddress) {
+        setEnderecoSalvo(lastOrderAddress);
+        setUsarEnderecoSalvo(true);
+      } else {
+        setEnderecoSalvo(null);
+        setUsarEnderecoSalvo(false);
+      }
+    })();
+  }, [userId, user?.token]);
 
 
   const normalizeFormaPagamento = (value?: string) => {

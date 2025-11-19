@@ -31,18 +31,22 @@ const ADDRESS_FIELDS: Array<{
   },
   {
     name: "logradouro",
-    label: "Logradouro",
+    // aqui deixamos claro que é o nome da rua
+    label: "Rua / Avenida",
     autoComplete: "street-address",
+    placeholder: "Ex.: Rua São José",
     colSpan: "full",
   },
   {
     name: "numero",
     label: "Número",
     inputMode: "text",
+    placeholder: "Ex.: 123",
   },
   {
     name: "referencia",
     label: "Complemento / Referência",
+    placeholder: "Apartamento, bloco, perto de...",
     colSpan: "full",
   },
 ];
@@ -55,20 +59,25 @@ type AddressFormProps = {
 export function AddressForm({ endereco, onChange }: AddressFormProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-      {ADDRESS_FIELDS.map(field => {
+      {ADDRESS_FIELDS.map((field) => {
         const inputId = `checkout-address-${field.name}`;
         const spanClass = field.colSpan === "full" ? "sm:col-span-2" : "";
 
         return (
           <div key={field.name} className={spanClass}>
-            <label className="block text-sm font-medium text-gray-700" htmlFor={inputId}>
+            <label
+              className="block text-sm font-medium text-gray-700"
+              htmlFor={inputId}
+            >
               {field.label}
             </label>
             <input
               id={inputId}
               name={field.name}
               value={endereco[field.name] ?? ""}
-              onChange={event => onChange(`endereco.${event.target.name}`, event.target.value)}
+              onChange={(event) =>
+                onChange(`endereco.${event.target.name}`, event.target.value)
+              }
               autoComplete={field.autoComplete}
               inputMode={field.inputMode}
               placeholder={field.placeholder}
