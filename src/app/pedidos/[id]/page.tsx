@@ -1,171 +1,193 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
+import { useAuth } from "@/context/AuthContext";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-type Item = { id: number; nome: string; preco: number; quantidade: number; imagem?: string | null };
-type Pedido = {
+type PedidoItem = {
   id: number;
+  nome: string;
+  preco: number;
+  quantidade: number;
+  imagem?: string | null;
+};
+
+type PedidoDetalhe = {
+  id: number;
+  usuario_id: number;
   forma_pagamento: string;
   status: string;
   data_pedido: string;
-  itens: Item[];
+  endereco: any;
   total: number;
-  endereco?: string | null;
-  vendedor?: string | null;
+  itens: PedidoItem[];
 };
 
-export default function PedidoDetalhePage() {
-  const { id } = useParams<{ id: string }>();
-  const [pedido, setPedido] = useState<Pedido | null>(null);
+const money = (v: number) =>
+  `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
+
+export default function PedidoPage() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const pedidoId = params?.id;
+
+  const { user } = useAuth();
+  const token = user?.token;
+  const isLoggedIn = !!user?.id;
+
+  const [pedido, setPedido] = useState<PedidoDetalhe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Se não estiver logado, manda para login
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const { data } = await axios.get<Pedido>(`${API_BASE}/api/pedidos/${id}`);
-        if (mounted) setPedido(data);
-      } catch (e) {
-        setError("Não foi possível carregar esta compra.");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
-  }, [id]);
+    if (!isLoggedIn) {
+      setError("Você precisa estar logado para ver o detalhe da compra.");
+      router.push("/login");
+    }
+  }, [isLoggedIn, router]);
 
-  const first = useMemo(() => pedido?.itens?.[0], [pedido]);
+  useEffect(() => {
+    if (!pedidoId || !isLoggedIn) return;
+
+    const fetchPedido = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const headers: any = {};
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const { data } = await axios.get<PedidoDetalhe>(
+          `${API_BASE}/api/pedidos/${pedidoId}`,
+          { headers }
+        );
+
+        setPedido(data);
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status === 404) {
+          setError("Pedido não encontrado.");
+        } else if (status === 401 || status === 403) {
+          setError("Você não tem permissão para ver este pedido. Faça login novamente.");
+          router.push("/login");
+        } else {
+          setError(
+            err?.response?.data?.message ||
+              "Não foi possível carregar esta compra."
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPedido();
+  }, [pedidoId, token, isLoggedIn, router]);
+
+  if (loading) {
+    return (
+      <main className="max-w-4xl mx-auto px-4 py-10">
+        <h1 className="text-2xl font-bold mb-4">Detalhe da compra</h1>
+        <p className="text-gray-600">Carregando informações do pedido...</p>
+      </main>
+    );
+  }
+
+  if (error || !pedido) {
+    return (
+      <main className="max-w-4xl mx-auto px-4 py-10">
+        <h1 className="text-2xl font-bold mb-4">Detalhe da compra</h1>
+        <p className="text-red-600">{error || "Não foi possível carregar esta compra."}</p>
+      </main>
+    );
+  }
+
+  const endereco = (() => {
+    // backend manda endereco como string JSON, então normalizamos
+    if (!pedido.endereco) return null;
+    if (typeof pedido.endereco === "string") {
+      try {
+        return JSON.parse(pedido.endereco);
+      } catch {
+        return pedido.endereco;
+      }
+    }
+    return pedido.endereco;
+  })();
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <div className="lg:col-span-8">
-        <h1 className="text-2xl font-bold mb-4">Detalhe da compra</h1>
+    <main className="max-w-4xl mx-auto px-4 py-10">
+      <h1 className="text-2xl font-bold mb-6">Detalhe da compra</h1>
 
-        {loading ? (
-          <div className="rounded-xl border p-6 animate-pulse space-y-3">
-            <div className="h-4 w-64 bg-gray-200 rounded" />
-            <div className="h-4 w-40 bg-gray-200 rounded" />
-            <div className="h-24 w-full bg-gray-200 rounded" />
-          </div>
-        ) : error ? (
-          <p className="text-red-600">{error}</p>
-        ) : !pedido ? (
-          <p>Compra não encontrada.</p>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-lg bg-gray-100 overflow-hidden">
-                <img
-                  src={first?.imagem || "/placeholder.png"}
-                  alt={first?.nome || `Pedido #${pedido.id}`}
-                  className="h-full w-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.png"; }}
-                />
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold truncate">{first?.nome || `Pedido #${pedido.id}`}</p>
-                <p className="text-xs text-gray-600">{first ? `${first.quantidade} un.` : "1 un."} | Ver detalhe</p>
-              </div>
-            </div>
+      {/* Dados gerais */}
+      <section className="mb-6 space-y-2 text-sm text-gray-800">
+        <p>
+          <span className="font-semibold">Pedido:</span> #{pedido.id}
+        </p>
+        <p>
+          <span className="font-semibold">Status:</span> {pedido.status}
+        </p>
+        <p>
+          <span className="font-semibold">Forma de pagamento:</span>{" "}
+          {pedido.forma_pagamento}
+        </p>
+        <p>
+          <span className="font-semibold">Data:</span>{" "}
+          {new Date(pedido.data_pedido).toLocaleString("pt-BR")}
+        </p>
+      </section>
 
-            <div className="rounded-xl border p-4">
-              <p className="text-green-700 font-semibold">
-                {pedido.status?.toLowerCase().includes("entreg") ? "Entregue" : "Status da compra"}
-              </p>
-              <p className="text-sm mt-1">
-                {pedido.status?.toLowerCase().includes("entreg")
-                  ? `Chegou no dia ${new Date(pedido.data_pedido).toLocaleDateString("pt-BR")}`
-                  : `Status: ${pedido.status}`}
-              </p>
-              <p className="text-sm text-gray-700 mt-1">
-                {pedido.endereco
-                  ? `Correios entregou seu pacote em ${pedido.endereco}.`
-                  : "Correios entregou seu pacote."}
-              </p>
-
-              <div className="mt-3">
-                <button
-                  className="px-4 py-2 rounded-lg bg-[#359293] text-white font-medium hover:bg-[#c94a16] transition-colors"
-                  onClick={() => (window.location.href = "/")}
-                >
-                  Comprar novamente
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-xl border">
-              <button className="w-full text-left px-4 py-3 font-semibold">
-                O que você achou do produto?
-              </button>
-            </div>
-
-            <div className="rounded-xl border divide-y">
-              <p className="px-4 py-3 font-semibold">Ajuda com a compra</p>
-              <button className="w-full text-left px-4 py-3 hover:bg-black/5">
-                Preciso de ajuda com a NF-e
-              </button>
-              <button className="w-full text-left px-4 py-3 hover:bg-black/5">
-                O pagamento foi duplicado no meu cartão
-              </button>
-            </div>
-
-            <div className="rounded-xl border p-4">
-              <p className="font-semibold mb-2">
-                Mensagens com o vendedor {pedido.vendedor ? `(${pedido.vendedor})` : ""}
-              </p>
-              <button
-                className="px-4 py-2 rounded-lg border border-black/10 font-semibold hover:bg-black/5"
-                onClick={() => alert("Abrir chat do vendedor (implementar rota/whatsapp)")}
-              >
-                Enviar mensagem
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <aside className="lg:col-span-4">
-        {pedido && (
-          <div className="rounded-xl border p-4">
-            <p className="font-semibold mb-2">Detalhe da compra</p>
-            <p className="text-sm text-gray-600">
-              {new Date(pedido.data_pedido).toLocaleDateString("pt-BR")} • #{pedido.id}
+      {/* Endereço */}
+      {endereco && (
+        <section className="mb-6">
+          <h2 className="font-semibold mb-2">Endereço de entrega</h2>
+          <div className="text-sm text-gray-800">
+            <p>
+              {endereco.rua}, {endereco.numero}
             </p>
-
-            <dl className="mt-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <dt className="text-sm text-gray-700">Produto</dt>
-                <dd className="text-sm font-semibold">
-                  {(pedido.total ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-sm text-gray-700">Frete</dt>
-                <dd className="text-sm font-semibold">R$ 0,00</dd>
-              </div>
-              <div className="pt-2 flex items-center justify-between border-t">
-                <dt className="text-gray-800 font-semibold">Total</dt>
-                <dd className="text-lg font-extrabold text-[#EC5B20]">
-                  {(pedido.total ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </dd>
-              </div>
-            </dl>
-
-            <details className="mt-3">
-              <summary className="text-sm text-[#359293] cursor-pointer">Detalhes do pagamento e envio</summary>
-              <p className="text-sm text-gray-600 mt-2">
-                {pedido.forma_pagamento?.toUpperCase()} • {pedido.status?.toUpperCase()}
-              </p>
-            </details>
+            <p>
+              {endereco.bairro} - {endereco.cidade}/{endereco.estado}
+            </p>
+            {endereco.complemento && <p>{endereco.complemento}</p>}
+            {endereco.cep && <p>CEP: {endereco.cep}</p>}
           </div>
-        )}
-      </aside>
-    </div>
+        </section>
+      )}
+
+      {/* Itens */}
+      <section className="mb-6">
+        <h2 className="font-semibold mb-2">Itens do pedido</h2>
+        <div className="border rounded-lg divide-y">
+          {pedido.itens.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between px-4 py-3 text-sm"
+            >
+              <div>
+                <p className="font-medium">{item.nome}</p>
+                <p className="text-gray-500">
+                  {item.quantidade} x {money(item.preco)}
+                </p>
+              </div>
+              <span className="font-semibold">
+                {money(item.preco * item.quantidade)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Total */}
+      <section className="flex items-center justify-between mt-4 text-lg font-bold">
+        <span>Total</span>
+        <span className="text-[#EC5B20]">{money(pedido.total)}</span>
+      </section>
+    </main>
   );
 }
