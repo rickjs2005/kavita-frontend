@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { usePathname } from "next/navigation";
 import { Product, CartItem } from "@/types/CartCarProps";
 import { useAuth } from "@/context/AuthContext";
 
@@ -25,6 +26,18 @@ const clampByStock = (item: Partial<CartItem>, desired: number) => {
     return Math.max(1, Math.min(s, desired));
   }
   return Math.max(1, desired);
+};
+
+/** Type guard simples para erros que se parecem com AxiosError */
+type AxiosLikeError = {
+  isAxiosError?: boolean;
+  response?: {
+    status?: number;
+  };
+};
+
+const isAxiosError = (error: unknown): error is AxiosLikeError => {
+  return typeof error === "object" && error !== null && "isAxiosError" in error;
 };
 
 type AddResult = { ok: true } | { ok: false; reason: "OUT_OF_STOCK" | "LIMIT_REACHED" };
@@ -51,6 +64,8 @@ const makeCartKey = (userId: number | null | undefined) =>
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
+  const pathname = usePathname();
+
   const userId: number | null = user?.id ? Number(user.id) : null;
   const token: string | null = user?.token ?? null;
 
@@ -69,7 +84,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   /* Carrega itens quando a chave mudar:
      - se não tiver usuário logado: usa apenas localStorage
-     - se tiver usuário logado + token: tenta buscar do backend (/api/cart) */
+     - se tiver usuário logado + token: tenta buscar do backend (/api/cart)
+     - em rotas /admin: nunca chama a API de carrinho (evita 403 na tela de login do admin) */
   useEffect(() => {
     if (!cartKey || typeof window === "undefined") return;
 
@@ -81,6 +97,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         setCartItems([]);
       }
     };
+
+    // 👉 Em qualquer rota de admin, não bate na API do carrinho
+    if (pathname.startsWith("/admin")) {
+      loadFromLocal();
+      return;
+    }
 
     // convidado → só localStorage
     if (!userId || !token) {
@@ -96,7 +118,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           withCredentials: true,
         });
 
-        // 👇 aqui está a correção
         const data: any = res.data || {};
         const itemsFromApi = Array.isArray(data.items) ? data.items : [];
 
@@ -116,12 +137,24 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           // backend vazio → mantém o local atual (se existir)
           loadFromLocal();
         }
-      } catch (e) {
-        console.error("Erro ao sincronizar carrinho com backend:", e);
+      } catch (e: unknown) {
+        // Trata 401/403 sem quebrar nada (ex: token expirado)
+        if (isAxiosError(e)) {
+          const status = e.response?.status;
+          if (status === 401 || status === 403) {
+            console.warn("Token inválido/sem permissão para /api/cart, usando localStorage.");
+          } else {
+            console.error("Erro ao sincronizar carrinho com backend:", e);
+          }
+        } else {
+          console.error("Erro inesperado ao sincronizar carrinho:", e);
+        }
+
+        // sempre cai para o localStorage se der erro
         loadFromLocal();
       }
     })();
-  }, [cartKey, userId, token]);
+  }, [cartKey, userId, token, pathname]);
 
   /* Persiste itens no storage da chave atual */
   useEffect(() => {
@@ -141,8 +174,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       typeof product.quantity === "number"
         ? product.quantity
         : typeof (product as any).estoque === "number"
-          ? (product as any).estoque
-          : undefined;
+        ? (product as any).estoque
+        : undefined;
 
     let result: AddResult = { ok: true };
     const after: AfterFn[] = [];
@@ -258,7 +291,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
     // OBS: por enquanto o backend só possui rota de ADD (POST /cart/items),
     // então não há como sincronizar decremento/remoção 100%.
-    // Quando você criar rotas de update/delete no backend, dá para completar aqui.
     after.forEach((fn) => fn());
   };
 
@@ -296,14 +328,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const clearCart = () => {
     setCartItems([]);
-    if (cartKey && typeof window === "undefined") return;
-    if (cartKey && typeof window !== "undefined") {
+
+    // limpa também o localStorage da chave atual
+    if (typeof window !== "undefined" && cartKey) {
       try {
         localStorage.removeItem(cartKey);
       } catch {
         // ignore
       }
     }
+
     toast("Carrinho limpo.");
   };
 
