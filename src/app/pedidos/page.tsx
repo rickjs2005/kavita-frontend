@@ -51,6 +51,17 @@ function getNumericId(raw: unknown): number | null {
   return null;
 }
 
+// mesma ideia do absUrl da página de produto
+function absUrl(raw?: string | null): string {
+  if (!raw) return "/placeholder.png";
+  const s = String(raw).trim().replace(/\\/g, "/");
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith("/uploads")) return `${API_BASE}${s}`;
+  if (s.startsWith("uploads")) return `${API_BASE}/${s}`;
+  if (!s.startsWith("/")) return `${API_BASE}/uploads/${s}`;
+  return `${API_BASE}${s}`;
+}
+
 function StatusPill({ status }: { status?: string }) {
   const s = (status || "").toLowerCase();
   const base = "px-2 py-0.5 rounded-full text-xs font-semibold";
@@ -271,7 +282,7 @@ export default function PedidosPage() {
                       <div className="w-full h-36 sm:w-16 sm:h-16 rounded-lg bg-gray-100 overflow-hidden">
                         <img
                           alt={first?.nome || `Pedido #${p.id}`}
-                          src={first?.imagem || "/placeholder.png"}
+                          src={first?.imagem ? absUrl(first.imagem) : "/placeholder.png"}
                           className="h-full w-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
@@ -306,29 +317,14 @@ export default function PedidosPage() {
 
                       {/* ações */}
                       <div className="flex flex-col sm:flex-row items-stretch gap-2 w-full sm:w-auto">
-                        {/* 🔹 Ver compra → /pedidos/[id] (plural) */}
+                        {/* Ver compra → /pedidos/[id] */}
                         <Link
                           href={`/pedidos/${p.id}`}
                           className="px-5 py-3 rounded-lg bg-[#359293] text-white font-medium hover:bg-[#2b7778] transition-colors text-center w-full sm:w-auto"
                         >
                           Ver compra
                         </Link>
-
-                        {/* 🔹 Comprar novamente → produto do primeiro item */}
-                        <button
-                          className="px-5 py-3 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
-                          onClick={() => {
-                            const productId =
-                              first?.produto_id ?? first?.id ?? null;
-                            if (productId) {
-                              window.location.href = `/produto/${productId}`;
-                            } else {
-                              window.location.href = "/";
-                            }
-                          }}
-                        >
-                          Comprar novamente
-                        </button>
+                        {/* 🔸 Botão "Comprar novamente" removido daqui */}
                       </div>
                     </article>
                   );
