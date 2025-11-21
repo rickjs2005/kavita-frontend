@@ -1,339 +1,255 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import CustomButton from "@/components/buttons/CustomButton";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+// ----- Tipos -----
 type PedidoResumo = {
   id: number;
-  status: string;
+  usuario_id: number;
   forma_pagamento: string;
+  status: string;
   data_pedido: string;
-  total?: number;
+  total: number;
 };
 
-type Item = {
-  id: number; // id do registro em pedidos_produtos (continua igual)
-  produto_id?: number; // opcional, caso você passe depois pelo backend
-  nome: string;
-  preco: number;
-  quantidade: number;
-  imagem?: string | null;
-};
-
-type PedidoDetalhe = PedidoResumo & {
-  itens?: Item[];
-  endereco?: string | null;
-};
-
-// utils
-function formatDiaMes(dateStr: string) {
-  try {
-    return new Date(dateStr).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "long",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function getNumericId(raw: unknown): number | null {
-  const val = (raw as any)?.id ?? (raw as any)?.userId ?? raw;
-  if (typeof val === "number" && Number.isFinite(val)) return val;
-  if (val != null) {
-    const only = String(val).replace(/[^\d]/g, "");
-    const num = Number(only);
-    return Number.isFinite(num) && num > 0 ? num : null;
-  }
-  return null;
-}
-
-// mesma ideia do absUrl da página de produto
-function absUrl(raw?: string | null): string {
-  if (!raw) return "/placeholder.png";
-  const s = String(raw).trim().replace(/\\/g, "/");
-  if (/^https?:\/\//i.test(s)) return s;
-  if (s.startsWith("/uploads")) return `${API_BASE}${s}`;
-  if (s.startsWith("uploads")) return `${API_BASE}/${s}`;
-  if (!s.startsWith("/")) return `${API_BASE}/uploads/${s}`;
-  return `${API_BASE}${s}`;
-}
-
-function StatusPill({ status }: { status?: string }) {
-  const s = (status || "").toLowerCase();
-  const base = "px-2 py-0.5 rounded-full text-xs font-semibold";
-
-  if (s.includes("entreg") || s.includes("aprov") || s.includes("pago")) {
-    return (
-      <span className={`${base} bg-green-100 text-green-700`}>Entregue</span>
-    );
-  }
-  if (s.includes("cancel")) {
-    return (
-      <span className={`${base} bg-red-100 text-red-700`}>Cancelado</span>
-    );
-  }
-  if (s.includes("enviado")) {
-    return (
-      <span className={`${base} bg-blue-100 text-blue-700`}>Enviado</span>
-    );
-  }
-  return (
-    <span className={`${base} bg-amber-100 text-amber-700`}>
-      {status || "Processando"}
-    </span>
-  );
-}
-
-export default function PedidosPage() {
+export default function PedidosClientePage() {
+  const router = useRouter();
   const { user } = useAuth();
-  const userId = getNumericId(user);
-  const token = user?.token ?? null;
 
-  const [loading, setLoading] = useState(true);
+  const token = user?.token;
+  const isLoggedIn = !!user?.id;
+
   const [pedidos, setPedidos] = useState<PedidoResumo[]>([]);
-  const [detalhes, setDetalhes] = useState<Record<number, PedidoDetalhe>>({});
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
 
-  // LISTA DE PEDIDOS
+  // Se não estiver logado, manda para login
   useEffect(() => {
-    // cancela requisição anterior, se existir
-    abortRef.current?.abort();
-    const ac = new AbortController();
-    abortRef.current = ac;
-
-    // se o usuário não estiver logado ou não tiver token válido
-    if (!userId || !token) {
-      setLoading(false);
-      setPedidos([]);
-      setError(null);
-      return;
+    if (!isLoggedIn) {
+      setError("Você precisa estar logado para ver suas compras.");
+      router.push("/login");
     }
+  }, [isLoggedIn, router]);
 
-    setLoading(true);
-    setError(null);
+  // Buscar pedidos do cliente
+  useEffect(() => {
+    if (!isLoggedIn) return;
 
-    (async () => {
+    const fetchPedidos = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/pedidos`, {
-          signal: ac.signal,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        setLoading(true);
+        setError(null);
 
-        if (res.status === 204 || res.status === 404) {
-          setPedidos([]);
-          return;
-        }
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
 
-        if (!res.ok) {
-          throw new Error(String(res.status));
-        }
+        const { data } = await axios.get<PedidoResumo[]>(
+          `${API_BASE}/api/pedidos`,
+          { headers }
+        );
 
-        const data = await res.json();
         setPedidos(Array.isArray(data) ? data : []);
-      } catch (e: any) {
-        if (e?.name !== "AbortError") {
-          setError("Não foi possível carregar suas compras.");
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status === 401) {
+          setError("Sessão expirada. Faça login novamente.");
+          router.push("/login");
+        } else {
+          setError(
+            err?.response?.data?.message ||
+              "Não foi possível carregar seus pedidos."
+          );
         }
       } finally {
         setLoading(false);
       }
-    })();
-
-    return () => ac.abort();
-  }, [userId, token]);
-
-  // PREFETCH DOS DETALHES (silencioso)
-  useEffect(() => {
-    if (!pedidos.length || !token) return;
-
-    let cancelled = false;
-
-    (async () => {
-      for (const p of pedidos) {
-        if (cancelled || detalhes[p.id]) continue;
-
-        try {
-          const res = await fetch(`${API_BASE}/api/pedidos/${p.id}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (!res.ok) continue;
-
-          const data: PedidoDetalhe = await res.json();
-          if (!cancelled) {
-            setDetalhes((prev) => ({ ...prev, [p.id]: data }));
-          }
-        } catch {
-          // erro silencioso no prefetch
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
     };
-  }, [pedidos, detalhes, token]);
 
-  const grupos = useMemo(() => {
-    const map = new Map<string, PedidoResumo[]>();
-    pedidos.forEach((p) => {
-      const key = formatDiaMes(p.data_pedido);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(p);
-    });
-    return Array.from(map.entries());
-  }, [pedidos]);
+    fetchPedidos();
+  }, [isLoggedIn, token, router]);
 
-  // =========================
-  // ESTADOS DE INTERFACE
-  // =========================
+  // --------- RENDER ---------
 
-  // não logado
-  if (!userId || !token) {
+  if (loading) {
     return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4 sm:mb-6">
-          Minhas Compras
-        </h1>
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 text-center shadow-sm">
-          <p className="text-sm sm:text-base text-gray-600">
-            Faça login para visualizar suas compras.
-          </p>
-          <Link
-            href="/login"
-            className="mt-3 inline-flex justify-center px-5 py-3 rounded-lg bg-[#359293] text-white font-medium hover:bg-[#2b7778] transition-colors w-full sm:w-auto"
-          >
-            Ir para login
-          </Link>
-        </div>
-      </div>
+      <main className="max-w-5xl mx-auto px-4 py-10">
+        <h1 className="text-2xl font-bold mb-4">Painel de pedidos</h1>
+        <p className="text-gray-600">Carregando seus pedidos...</p>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="max-w-5xl mx-auto px-4 py-10">
+        <h1 className="text-2xl font-bold mb-4">Painel de pedidos</h1>
+        <p className="text-red-600 mb-4">{error}</p>
+        <Link href="/">
+          <CustomButton
+            label="Voltar para a página inicial"
+            variant="primary"
+            size="medium"
+            isLoading={false}
+          />
+        </Link>
+      </main>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
-      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4 sm:mb-6">
-        Minhas Compras
-      </h1>
+    <main className="max-w-5xl mx-auto px-4 py-10">
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <h1 className="text-2xl font-bold">Painel de pedidos</h1>
 
-      {/* Skeleton enquanto carrega */}
-      {loading && (
-        <ul className="space-y-3 sm:space-y-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <li
-              key={i}
-              className="animate-pulse rounded-2xl border border-gray-200 bg-white px-4 py-4 sm:px-5 sm:py-5 shadow-sm"
-            >
-              <div className="h-4 w-40 bg-gray-200 rounded mb-2" />
-              <div className="h-3 w-72 bg-gray-200 rounded" />
-            </li>
-          ))}
-        </ul>
-      )}
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          className="hidden sm:inline-flex px-4 py-2 rounded-lg bg-[#EC5B20] text-white text-sm font-semibold hover:bg-[#d44f1c] transition-colors"
+        >
+          Voltar
+        </button>
+      </div>
 
-      {/* Erro */}
-      {!loading && error && <p className="text-red-600">{error}</p>}
-
-      {/* Sem pedidos */}
-      {!loading && !error && pedidos.length === 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 text-center shadow-sm">
-          <p className="mb-3 font-semibold text-gray-700">
-            Você ainda não possui compras.
+      {/* Nenhum pedido */}
+      {pedidos.length === 0 && (
+        <div className="bg-white rounded-2xl border shadow p-6 sm:p-8 text-center">
+          <p className="text-gray-700 mb-3">
+            Você ainda não tem nenhum pedido.
           </p>
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center px-5 py-3 rounded-lg
-                       bg-[#359293] text-white font-medium hover:bg-[#2b7778]
-                       transition-colors w-full sm:w-auto"
-          >
-            Começar a comprar
+          <Link href="/">
+            <CustomButton
+              label="Começar as compras"
+              variant="primary"
+              isLoading={false}
+              size="medium"
+            />
           </Link>
         </div>
       )}
 
       {/* Lista de pedidos */}
-      {!loading && !error && pedidos.length > 0 && (
-        <div className="space-y-8 sm:space-y-10">
-          {grupos.map(([diaMes, lista]) => (
-            <section key={diaMes}>
-              <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-                {diaMes}
-              </p>
-              <div className="space-y-3 sm:space-y-4">
-                {lista.map((p) => {
-                  const det = detalhes[p.id];
-                  const first = det?.itens?.[0];
+      {pedidos.length > 0 && (
+        <>
+          {/* Tabela (desktop) */}
+          <div className="hidden md:block bg-white rounded-2xl shadow overflow-hidden">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 text-gray-600">
+                <tr className="[&_th]:px-6 [&_th]:py-3 text-sm">
+                  <th>Pedido</th>
+                  <th>Data</th>
+                  <th>Status</th>
+                  <th>Forma de pagamento</th>
+                  <th>Total</th>
+                  <th className="w-32 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {pedidos.map((pedido) => (
+                  <tr
+                    key={pedido.id}
+                    className="[&_td]:px-6 [&_td]:py-4 align-middle text-sm"
+                  >
+                    <td className="font-semibold text-gray-900">
+                      #{pedido.id}
+                    </td>
 
-                  return (
-                    <article
-                      key={p.id}
-                      className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm
-                                 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
-                    >
-                      {/* thumb */}
-                      <div className="w-full h-36 sm:w-16 sm:h-16 rounded-lg bg-gray-100 overflow-hidden">
-                        <img
-                          alt={first?.nome || `Pedido #${p.id}`}
-                          src={first?.imagem ? absUrl(first.imagem) : "/placeholder.png"}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              "/placeholder.png";
-                          }}
-                        />
-                      </div>
+                    <td className="text-gray-700">
+                      {new Date(pedido.data_pedido).toLocaleString("pt-BR")}
+                    </td>
 
-                      {/* infos */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <StatusPill status={p.status} />
-                          <span className="text-xs text-gray-600">
-                            {new Date(p.data_pedido).toLocaleTimeString(
-                              "pt-BR",
-                              { hour: "2-digit", minute: "2-digit" }
-                            )}
-                          </span>
-                        </div>
+                    <td className="text-gray-800 capitalize">
+                      {pedido.status}
+                    </td>
 
-                        <p className="mt-1 font-semibold text-sm sm:text-base truncate">
-                          {first?.nome || `Pedido #${p.id}`}
-                        </p>
-                        <p className="text-xs sm:text-sm text-gray-600">
-                          {p.status?.toLowerCase().includes("entreg")
-                            ? "Chegou — Correios entregou seu pacote."
-                            : p.status?.toLowerCase().includes("enviado")
-                            ? "Enviado — Seu pedido está a caminho."
-                            : "Processando — Estamos preparando sua compra."}
-                        </p>
-                      </div>
+                    <td className="text-gray-800">
+                      {pedido.forma_pagamento}
+                    </td>
 
-                      {/* ações */}
-                      <div className="flex flex-col sm:flex-row items-stretch gap-2 w-full sm:w-auto">
-                        {/* Ver compra → /pedidos/[id] */}
-                        <Link
-                          href={`/pedidos/${p.id}`}
-                          className="px-5 py-3 rounded-lg bg-[#359293] text-white font-medium hover:bg-[#2b7778] transition-colors text-center w-full sm:w-auto"
-                        >
-                          Ver compra
-                        </Link>
-                        {/* 🔸 Botão "Comprar novamente" removido daqui */}
-                      </div>
-                    </article>
-                  );
-                })}
+                    <td className="text-gray-900 font-semibold">
+                      {Number(pedido.total || 0).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}
+                    </td>
+
+                    <td className="text-right">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/pedidos/${pedido.id}`)}
+                        className="inline-flex items-center justify-center px-3 py-2 rounded-lg bg-[#359293] text-white text-xs font-semibold hover:bg-[#2b7778] transition-colors"
+                      >
+                        Ver detalhes
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Cards (mobile) */}
+          <div className="md:hidden space-y-4">
+            {pedidos.map((pedido) => (
+              <div
+                key={pedido.id}
+                className="bg-white rounded-2xl border shadow p-4 text-sm"
+              >
+                <div className="flex justify-between items-start gap-3 mb-2">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      Pedido #{pedido.id}
+                    </p>
+                    <p className="text-gray-600">
+                      {new Date(pedido.data_pedido).toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+                  <span className="inline-flex px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                    {pedido.status}
+                  </span>
+                </div>
+
+                <p className="text-gray-700">
+                  <span className="font-semibold">Pagamento:</span>{" "}
+                  {pedido.forma_pagamento}
+                </p>
+
+                <p className="mt-1 text-gray-900 font-semibold">
+                  Total:{" "}
+                  {Number(pedido.total || 0).toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => router.push(`/pedidos/${pedido.id}`)}
+                  className="mt-3 w-full px-4 py-2 rounded-lg bg-[#359293] text-white font-semibold text-xs hover:bg-[#2b7778] transition-colors"
+                >
+                  Ver detalhes
+                </button>
               </div>
-            </section>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
-    </div>
+
+      {/* Botão voltar no mobile */}
+      <button
+        type="button"
+        onClick={() => router.push("/")}
+        className="mt-6 w-full md:hidden px-4 py-3 rounded-lg bg-[#EC5B20] text-white text-sm font-semibold hover:bg-[#d44f1c] transition-colors"
+      >
+        Voltar
+      </button>
+    </main>
   );
 }

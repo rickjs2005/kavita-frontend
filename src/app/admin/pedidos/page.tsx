@@ -22,29 +22,69 @@ interface ItemPedido {
   preco_unitario: number | string;
 }
 
+type StatusPagamento = "pendente" | "pago" | "falhou" | "estornado";
+type StatusEntrega =
+  | "em_separacao"
+  | "processando"
+  | "enviado"
+  | "entregue"
+  | "cancelado";
+
 interface Pedido {
   id: number;
   usuario: string;
   forma_pagamento: string;
-  status: string;
+  status_pagamento: StatusPagamento;
+  status_entrega: StatusEntrega;
   data_pedido: string;
-  endereco: Endereco;
+  endereco: Endereco | null;
   itens: ItemPedido[];
 }
 
 // --------- Constantes ---------
-const STATUS_OPCOES = [
-  "pendente",
+
+const STATUS_ENTREGA_OPCOES: StatusEntrega[] = [
+  "em_separacao",
   "processando",
   "enviado",
   "entregue",
   "cancelado",
-] as const;
+];
+
+const LABEL_STATUS_PAGAMENTO: Record<StatusPagamento, string> = {
+  pendente: "Pagamento pendente",
+  pago: "Pago",
+  falhou: "Pagamento falhou",
+  estornado: "Estornado",
+};
+
+const LABEL_STATUS_ENTREGA: Record<StatusEntrega, string> = {
+  em_separacao: "Em separação",
+  processando: "Processando",
+  enviado: "Enviado",
+  entregue: "Entregue",
+  cancelado: "Cancelado",
+};
+
+const CLASSE_BADGE_PAGAMENTO: Record<StatusPagamento, string> = {
+  pendente: "bg-yellow-100 text-yellow-800 border-yellow-300",
+  pago: "bg-green-100 text-green-800 border-green-300",
+  falhou: "bg-red-100 text-red-800 border-red-300",
+  estornado: "bg-orange-100 text-orange-800 border-orange-300",
+};
+
+const CLASSE_BADGE_ENTREGA: Record<StatusEntrega, string> = {
+  em_separacao: "bg-blue-100 text-blue-800 border-blue-300",
+  processando: "bg-indigo-100 text-indigo-800 border-indigo-300",
+  enviado: "bg-sky-100 text-sky-800 border-sky-300",
+  entregue: "bg-green-100 text-green-800 border-green-300",
+  cancelado: "bg-red-100 text-red-800 border-red-300",
+};
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 // helper para deixar o código mais legível
-const formatEndereco = (endereco?: Endereco) => {
+const formatEndereco = (endereco?: Endereco | null) => {
   if (!endereco) return "Endereço não informado";
 
   const { rua, numero, bairro, cidade, estado, cep } = endereco;
@@ -63,18 +103,35 @@ export default function PedidosAdminPage() {
   useEffect(() => {
     const carregarPedidos = async () => {
       try {
-        const token = typeof window !== "undefined"
-          ? localStorage.getItem("adminToken")
-          : null;
+        const token =
+          typeof window !== "undefined"
+            ? localStorage.getItem("adminToken")
+            : null;
 
         const res = await axios.get(`${API}/api/admin/pedidos`, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           withCredentials: true,
         });
 
-        setPedidos(res.data as Pedido[]);
-      } catch (err) {
-        console.error("Erro ao buscar pedidos:", err);
+        // Backend já manda endereco como objeto e itens já prontos
+        const dados: Pedido[] = (Array.isArray(res.data) ? res.data : []).map((p: any) => ({
+          id: p.id,
+          usuario: p.usuario,
+          forma_pagamento: p.forma_pagamento,
+          status_pagamento: p.status_pagamento as StatusPagamento,
+          status_entrega: p.status_entrega as StatusEntrega,
+          data_pedido: p.data_pedido,
+          endereco: p.endereco ?? null,
+          itens: (p.itens ?? []).map((item: any) => ({
+            produto: item.produto,
+            quantidade: item.quantidade,
+            preco_unitario: item.preco_unitario,
+          })),
+        }));
+
+        setPedidos(dados);
+      } catch (error) {
+        console.error("Erro ao carregar pedidos:", error);
       } finally {
         setLoading(false);
       }
@@ -83,24 +140,30 @@ export default function PedidosAdminPage() {
     carregarPedidos();
   }, []);
 
-  // ---- Atualizar status ----
-  const atualizarStatus = async (id: number, novoStatus: string) => {
+  // ---- Atualizar status de ENTREGA ----
+  const atualizarStatusEntrega = async (
+    id: number,
+    novoStatus: StatusEntrega
+  ) => {
     try {
-      const token = typeof window !== "undefined"
-        ? localStorage.getItem("adminToken")
-        : null;
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("adminToken")
+          : null;
 
       await axios.put(
-        `${API}/api/admin/pedidos/${id}/status`,
-        { status: novoStatus },
+        `${API}/api/admin/pedidos/${id}/entrega`,
+        { status_entrega: novoStatus },
         { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
       );
 
       setPedidos((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, status: novoStatus } : p))
+        prev.map((p) =>
+          p.id === id ? { ...p, status_entrega: novoStatus } : p
+        )
       );
     } catch (err) {
-      console.error("Erro ao atualizar status:", err);
+      console.error("Erro ao atualizar status de entrega:", err);
     }
   };
 
@@ -114,7 +177,7 @@ export default function PedidosAdminPage() {
       <div className="w-full">
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold">Painel de Pedidos</h1>
-          <Link href="/admin">
+          <Link href="/admin" className="shrink-0">
             <CustomButton
               label="Voltar"
               variant="secondary"
@@ -123,18 +186,23 @@ export default function PedidosAdminPage() {
             />
           </Link>
         </div>
-        <p className="text-gray-600">Carregando pedidos…</p>
+
+        <div className="bg-white rounded-2xl shadow p-6 sm:p-8">
+          <p className="text-gray-700">Carregando pedidos...</p>
+        </div>
       </div>
     );
   }
 
+  // =====================================================
+  //                    CONTEÚDO PRINCIPAL
+  // =====================================================
+
   return (
     <div className="w-full">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-          Painel de Pedidos
-        </h1>
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold">Painel de Pedidos</h1>
         <Link href="/admin" className="shrink-0">
           <CustomButton
             label="Voltar"
@@ -171,8 +239,8 @@ export default function PedidosAdminPage() {
                   <th>Pedido</th>
                   <th>Cliente</th>
                   <th>Data</th>
-                  <th className="w-48">Status</th>
-                  <th>Pagamento</th>
+                  <th className="w-60">Status</th>
+                  <th>Forma de pagamento</th>
                   <th>Endereço</th>
                   <th>Itens</th>
                 </tr>
@@ -193,33 +261,56 @@ export default function PedidosAdminPage() {
                       {new Date(pedido.data_pedido).toLocaleString("pt-BR")}
                     </td>
 
+                    {/* Status (pagamento + entrega) */}
                     <td>
-                      <select
-                        value={pedido.status}
-                        onChange={(e) =>
-                          atualizarStatus(pedido.id, e.target.value)
-                        }
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                      >
-                        {STATUS_OPCOES.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex flex-col gap-2">
+                        {/* Pagamento */}
+                        <span
+                          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${CLASSE_BADGE_PAGAMENTO[pedido.status_pagamento]}`}
+                        >
+                          Pagamento: {LABEL_STATUS_PAGAMENTO[pedido.status_pagamento]}
+                        </span>
+
+                        {/* Entrega + select */}
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${CLASSE_BADGE_ENTREGA[pedido.status_entrega]}`}
+                          >
+                            Entrega: {LABEL_STATUS_ENTREGA[pedido.status_entrega]}
+                          </span>
+
+                          <select
+                            value={pedido.status_entrega}
+                            onChange={(e) =>
+                              atualizarStatusEntrega(
+                                pedido.id,
+                                e.target.value as StatusEntrega
+                              )
+                            }
+                            className="mt-1 rounded-md border border-gray-300 px-2 py-1.5 text-xs text-gray-800"
+                          >
+                            {STATUS_ENTREGA_OPCOES.map((status) => (
+                              <option key={status} value={status}>
+                                {LABEL_STATUS_ENTREGA[status]}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
                     </td>
 
                     <td className="text-gray-800">{pedido.forma_pagamento}</td>
 
                     <td className="text-gray-800 text-sm">
-                      {formatEndereco(pedido.endereco)}
+                      {formatEndereco(pedido.endereco ?? undefined)}
                     </td>
 
                     <td className="text-gray-800">
                       <ul className="list-disc pl-5 space-y-1">
-                        {pedido.itens.map((item, index) => (
-                          <li key={index} className="text-sm">
-                            {item.quantidade}× {item.produto} —{" "}
+                        {pedido.itens.map((item, idx) => (
+                          <li key={idx}>
+                            <span className="font-medium">{item.produto}</span>{" "}
+                            — {item.quantidade}x{" "}
                             {Number(item.preco_unitario).toLocaleString(
                               "pt-BR",
                               {
@@ -254,41 +345,54 @@ export default function PedidosAdminPage() {
                     </p>
                   </div>
 
+                  {/* Select de entrega no mobile */}
                   <select
-                    value={pedido.status}
+                    value={pedido.status_entrega}
                     onChange={(e) =>
-                      atualizarStatus(pedido.id, e.target.value)
+                      atualizarStatusEntrega(
+                        pedido.id,
+                        e.target.value as StatusEntrega
+                      )
                     }
-                    className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                    className="rounded-md border border-gray-300 px-2 py-1 text-xs"
                   >
-                    {STATUS_OPCOES.map((status) => (
+                    {STATUS_ENTREGA_OPCOES.map((status) => (
                       <option key={status} value={status}>
-                        {status}
+                        {LABEL_STATUS_ENTREGA[status]}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                {/* Endereço */}
-                <div className="mt-3 text-sm text-gray-700">
-                  <p className="font-medium text-gray-800">
-                    Endereço de entrega
-                  </p>
-                  <p>{formatEndereco(pedido.endereco)}</p>
-                  {pedido.endereco?.referencia && (
-                    <p className="text-gray-500">
-                      Referência: {pedido.endereco.referencia}
-                    </p>
-                  )}
+                {/* Pagamento / entrega */}
+                <div className="mt-3 flex flex-col gap-2 text-xs">
+                  <span
+                    className={`inline-flex items-center rounded-full border px-3 py-1 font-medium ${CLASSE_BADGE_PAGAMENTO[pedido.status_pagamento]}`}
+                  >
+                    Pagamento: {LABEL_STATUS_PAGAMENTO[pedido.status_pagamento]}
+                  </span>
+                  <span
+                    className={`inline-flex items-center rounded-full border px-3 py-1 font-medium ${CLASSE_BADGE_ENTREGA[pedido.status_entrega]}`}
+                  >
+                    Entrega: {LABEL_STATUS_ENTREGA[pedido.status_entrega]}
+                  </span>
                 </div>
+
+                {/* Endereço */}
+                <p className="mt-3 text-sm text-gray-700">
+                  📍 {formatEndereco(pedido.endereco ?? undefined)}
+                </p>
 
                 {/* Itens */}
                 <div className="mt-3">
-                  <p className="font-medium text-gray-800">Itens</p>
-                  <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
-                    {pedido.itens.map((item, index) => (
-                      <li key={index}>
-                        {item.quantidade}× {item.produto} —{" "}
+                  <p className="text-sm font-semibold text-gray-900 mb-1">
+                    Itens
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1 text-sm text-gray-800">
+                    {pedido.itens.map((item, idx) => (
+                      <li key={idx}>
+                        <span className="font-medium">{item.produto}</span> —{" "}
+                        {item.quantidade}x{" "}
                         {Number(item.preco_unitario).toLocaleString("pt-BR", {
                           style: "currency",
                           currency: "BRL",
@@ -298,6 +402,7 @@ export default function PedidosAdminPage() {
                   </ul>
                 </div>
 
+                {/* Forma de pagamento */}
                 <p className="mt-3 text-sm text-gray-700">
                   💳{" "}
                   <span className="font-medium">
