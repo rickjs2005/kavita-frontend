@@ -352,6 +352,7 @@ export default function PedidosAdminPage() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            {/* Desktop */}
             <div className="hidden min-w-full divide-y divide-gray-200 text-sm text-gray-700 sm:table dark:divide-gray-800 dark:text-gray-200">
               <div className="table-header-group bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-gray-900/70 dark:text-gray-400">
                 <div className="table-row">
@@ -541,7 +542,7 @@ export default function PedidosAdminPage() {
               </div>
             </div>
 
-            {/* Versão mobile (cards) */}
+            {/* Mobile (cards) */}
             <div className="divide-y divide-gray-200 sm:hidden dark:divide-gray-800">
               {pedidos.map((pedido) => {
                 const telefoneContato =
