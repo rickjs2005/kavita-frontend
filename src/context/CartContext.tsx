@@ -84,7 +84,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setCartKey(key);
   }, [userId]);
 
-  /* Carrega itens quando a chave mudar */
+  /* Carrega itens quando a chave mudar ou rota mudar */
   useEffect(() => {
     if (!cartKey || typeof window === "undefined") return;
 
@@ -112,12 +112,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     // se o carrinho foi limpo nesta sessão, não recarrega itens antigos do backend
     const clearedKey = `${cartKey}_cleared`;
     let wasCleared = false;
-    if (typeof window !== "undefined" && clearedKey) {
-      try {
-        wasCleared = sessionStorage.getItem(clearedKey) === "1";
-      } catch {
-        wasCleared = false;
-      }
+    try {
+      wasCleared = sessionStorage.getItem(clearedKey) === "1";
+    } catch {
+      wasCleared = false;
     }
     if (wasCleared) {
       loadFromLocal();
@@ -287,12 +285,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateQuantity = (id: number, quantity: number) => {
     const after: AfterFn[] = [];
+    let finalQty: number | null = null;
 
     setCartItems((prev) => {
       const updated = prev
         .map((it) => {
           if (it.id !== id) return it;
           const clamped = clampByStock(it, toNum(quantity, 1));
+          finalQty = clamped;
 
           if (clamped === 0) {
             after.push(() =>
@@ -326,6 +326,33 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       return updated;
     });
 
+    // sincroniza com backend
+    if (userId && token && finalQty !== null) {
+      if (finalQty <= 0) {
+        axios
+          .delete(`${API_BASE}/api/cart/items/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          })
+          .catch((err) =>
+            console.error("Erro ao remover item do carrinho (backend):", err)
+          );
+      } else {
+        axios
+          .patch(
+            `${API_BASE}/api/cart/items`,
+            { produto_id: id, quantidade: finalQty },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              withCredentials: true,
+            }
+          )
+          .catch((err) =>
+            console.error("Erro ao atualizar quantidade no backend:", err)
+          );
+      }
+    }
+
     after.forEach((fn) => fn());
   };
 
@@ -344,6 +371,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
       return updated;
     });
+
+    if (userId && token) {
+      axios
+        .delete(`${API_BASE}/api/cart/items/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        })
+        .catch((err) =>
+          console.error("Erro ao remover item do carrinho (backend):", err)
+        );
+    }
 
     toast("Item removido do carrinho.");
   };
@@ -377,7 +415,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     after.forEach((fn) => fn());
   };
 
-  /** Limpa o carrinho completamente (estado + localStorage) */
+  /** Limpa o carrinho completamente (estado + localStorage + backend) */
   const clearCart = () => {
     setCartItems([]);
 
@@ -390,14 +428,24 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
+    if (userId && token) {
+      axios
+        .delete(`${API_BASE}/api/cart`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        })
+        .catch((err) =>
+          console.error("Erro ao limpar carrinho no backend:", err)
+        );
+    }
+
     toast("Carrinho limpo.");
   };
 
   const cartTotal = useMemo(
     () =>
       cartItems.reduce(
-        (sum, it) =>
-          sum + toNum(it.price, 0) * toNum(it.quantity, 1),
+        (sum, it) => sum + toNum(it.price, 0) * toNum(it.quantity, 1),
         0
       ),
     [cartItems]

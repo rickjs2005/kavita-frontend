@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { api } from "@/lib/api";
 import type { AuthUser, BackendLoginResponse } from "@/types/auth";
 
@@ -11,8 +17,13 @@ type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, senha: string) => Promise<{ ok: boolean; message?: string }>;
-  register: (payload: Record<string, unknown>) => Promise<{ ok: boolean; message?: string }>;
+  login: (
+    email: string,
+    senha: string
+  ) => Promise<{ ok: boolean; message?: string }>;
+  register: (
+    payload: Record<string, unknown>
+  ) => Promise<{ ok: boolean; message?: string }>;
   logout: () => void;
 };
 
@@ -35,10 +46,48 @@ function normalizeBackendUser(payload: BackendLoginResponse): AuthUser {
 
 function persistUser(u: AuthUser | null) {
   if (!u) {
-    localStorage.removeItem(STORAGE_KEY);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(STORAGE_KEY);
+    }
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+  }
+}
+
+/**
+ * 🔥 Limpa tudo que for relacionado a carrinho no storage
+ * - carrinhos por usuário (cartItems_123)
+ * - carrinho de convidado (cartItems_guest)
+ * - flags de sessão (_cleared)
+ */
+function clearCartStorage() {
+  if (typeof window === "undefined") return;
+
+  try {
+    // localStorage
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith("cartItems_")) {
+        localStorage.removeItem(key);
+      }
+      if (key.startsWith("lastOrder_")) {
+        localStorage.removeItem(key);
+      }
+    }
+
+    // sessionStorage
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith("cartItems_") || key.endsWith("_cleared")) {
+        sessionStorage.removeItem(key);
+      }
+      if (key.startsWith("lastOrder_")) {
+        sessionStorage.removeItem(key);
+      }
+    }
+  } catch (e) {
+    console.warn("Não foi possível limpar storage do carrinho:", e);
+  }
 }
 
 // -----------------------------
@@ -51,14 +100,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Hidratar usuário salvo
   useEffect(() => {
+    if (typeof window === "undefined") {
+      setLoading(false);
+      return;
+    }
+
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const u = JSON.parse(raw) as AuthUser;
-        if (u?.id || u?.token) setUser(u);
+        if (u?.id || u?.token) {
+          setUser(u);
+        }
       }
-    } catch {}
-    setLoading(false);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   // ---------------------------
@@ -70,7 +129,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login: AuthContextValue["login"] = async (email, senha) => {
     setError(null);
 
-    // tenta uma rota; se falhar por "não encontrada", tenta a outra
     const tryLogin = async (path: string) => {
       const data = await api<BackendLoginResponse>(path, {
         method: "POST",
@@ -88,12 +146,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const notFound =
         /404|rota n[aã]o encontrada|not found/i.test(msg) ||
         /Cannot POST/i.test(msg);
+
+      // Se não for "rota não encontrada", é erro real (credencial, etc.)
       if (!notFound) {
-        // erro "real" (credenciais, etc.) — retorna para a UI
         const message = msg || "Erro ao fazer login.";
         setError(message);
         return { ok: false, message };
       }
+
       // tenta rota alternativa
       try {
         data = await tryLogin("/api/login");
@@ -105,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // normaliza e valida
-    const normalized = normalizeBackendUser(data);
+    const normalized = normalizeBackendUser(data!);
     if (!normalized.id && !normalized.token) {
       const message = "Credenciais inválidas.";
       setError(message);
@@ -118,6 +178,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: normalized.email ?? email,
       token: normalized.token ?? null,
     };
+
+    // 🧹 Sempre que logar (mesmo usuário ou outro), garantimos que
+    // não existe carrinho "fantasma" preso no storage.
+    clearCartStorage();
 
     setUser(finalUser);
     persistUser(finalUser);
@@ -148,8 +212,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // LOGOUT
   // ---------------------------
   const logout = () => {
+    // 🧹 Limpa carrinho salvo (localStorage + sessionStorage)
+    clearCartStorage();
+
     setUser(null);
     persistUser(null);
+
     // se quiser, limpe cookies aqui (ex.: document.cookie = 'userToken=; max-age=0; path=/')
     if (typeof window !== "undefined") {
       window.location.href = "/login";
@@ -169,6 +237,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 // -----------------------------
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth deve ser usado dentro de <AuthProvider>");
+  if (!ctx) {
+    throw new Error("useAuth deve ser usado dentro de <AuthProvider>");
+  }
   return ctx;
 };
