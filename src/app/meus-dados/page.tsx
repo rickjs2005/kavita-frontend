@@ -12,6 +12,7 @@ type Perfil = {
   nome: string;
   email: string;
   telefone?: string | null;
+  cpf?: string | null;
   endereco?: string | null;
   cidade?: string | null;
   estado?: string | null;
@@ -28,7 +29,6 @@ export default function MeusDadosPage() {
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [original, setOriginal] = useState<Perfil | null>(null);
 
-  // util classes (APENAS CLASSES)
   const ui = {
     wrap: "pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 lg:px-10",
     container: "mx-auto w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl",
@@ -91,8 +91,10 @@ export default function MeusDadosPage() {
   }, [user?.id]);
 
   // helpers
-  const set = (k: keyof Perfil) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    perfil && setPerfil({ ...perfil, [k]: e.target.value });
+  const set =
+    (k: keyof Perfil) =>
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      perfil && setPerfil({ ...perfil, [k]: e.target.value });
 
   const diff = useMemo(() => {
     if (!perfil || !original) return {};
@@ -101,6 +103,7 @@ export default function MeusDadosPage() {
       [
         "nome",
         "telefone",
+        "cpf",
         "endereco",
         "cidade",
         "estado",
@@ -213,6 +216,18 @@ export default function MeusDadosPage() {
                   disabled
                 />
               </Field>
+
+              {/* CPF (opcional para contas antigas, mas salvo e validado no back) */}
+              <Field label="CPF" full>
+                <input
+                  className={ui.input}
+                  value={perfil.cpf || ""}
+                  onChange={set("cpf")}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="111.111.111-11"
+                />
+              </Field>
             </div>
 
             {/* CTA ÚNICO */}
@@ -225,8 +240,8 @@ export default function MeusDadosPage() {
                 {saving
                   ? "Salvando..."
                   : hasChanges
-                    ? "Salvar alterações"
-                    : "Nada para salvar"}
+                  ? "Salvar alterações"
+                  : "Nada para salvar"}
               </button>
             </div>
 
@@ -251,7 +266,6 @@ export default function MeusDadosPage() {
           </form>
         </div>
 
-        {/* espaçamento do fim em telas pequenas */}
         <div className="h-8 sm:h-10" />
       </div>
     </div>

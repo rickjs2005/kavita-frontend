@@ -96,6 +96,7 @@ export default function CheckoutPage() {
 
   const { cartItems, cartTotal, clearCart } = useCart();
   const { formData, updateForm } = useCheckoutForm();
+
   // -----------------------------
   // ENDEREÇO SALVO (padrão da conta ou último pedido)
   // -----------------------------
@@ -175,7 +176,6 @@ export default function CheckoutPage() {
       }
     })();
   }, [userId, user?.token]);
-
 
   const normalizeFormaPagamento = (value?: string) => {
     const v = String(value || "").toLowerCase();
@@ -266,10 +266,11 @@ export default function CheckoutPage() {
       errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
     }
 
+    // telefone = WhatsApp
     if (!payload.telefone) {
-      errors.push("Informe o telefone.");
+      errors.push("Informe o WhatsApp.");
     } else if (payload.telefone.length < 10) {
-      errors.push("Telefone deve ter pelo menos 10 dígitos.");
+      errors.push("WhatsApp deve ter pelo menos 10 dígitos.");
     }
 
     if (errors.length) {
@@ -314,6 +315,9 @@ export default function CheckoutPage() {
         );
       }
 
+      // =========================
+      // LIMPAR CARRINHO APÓS COMPRA
+      // =========================
 
       // MERCADO PAGO: redireciona para o link do MP
       if (payload.formaPagamento === "mercadopago") {
@@ -324,14 +328,17 @@ export default function CheckoutPage() {
         const initPoint =
           res.data?.init_point || res.data?.sandbox_init_point || null;
 
-        clearCart?.(); // esvazia o carrinho
+        // → zera estado + localStorage antes de redirecionar
+        clearCart?.();
+
         if (initPoint) {
           window.location.href = initPoint;
           return;
         }
       } else {
         // PIX / BOLETO / PRAZO
-        clearCart?.(); // só esvazia o carrinho, não abre drawer
+        // → zera estado + localStorage antes de ir para tela de pedido
+        clearCart?.();
         toast.success("Compra concluída com sucesso!");
         router.push(`/pedidos/${pedidoId}`);
       }
@@ -463,7 +470,7 @@ export default function CheckoutPage() {
                   Dados Pessoais
                 </h2>
                 <p className="text-xs text-gray-500">
-                  Informe nome, CPF, telefone e e-mail.
+                  Informe nome, CPF, WhatsApp e e-mail.
                 </p>
               </div>
             </header>
@@ -500,9 +507,13 @@ export default function CheckoutPage() {
                     />
                     <span className="text-sm text-gray-700">
                       Entregar no endereço salvo:{" "}
-                      {`${enderecoSalvo?.rua || enderecoSalvo?.logradouro || ""}, ${enderecoSalvo?.numero || ""
-                        } - ${enderecoSalvo?.bairro || ""} - ${enderecoSalvo?.cidade || ""
-                        }/${enderecoSalvo?.estado || ""}`}
+                      {`${
+                        enderecoSalvo?.rua || enderecoSalvo?.logradouro || ""
+                      }, ${enderecoSalvo?.numero || ""} - ${
+                        enderecoSalvo?.bairro || ""
+                      } - ${enderecoSalvo?.cidade || ""}/${
+                        enderecoSalvo?.estado || ""
+                      }`}
                     </span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">

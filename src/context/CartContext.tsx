@@ -40,7 +40,9 @@ const isAxiosError = (error: unknown): error is AxiosLikeError => {
   return typeof error === "object" && error !== null && "isAxiosError" in error;
 };
 
-type AddResult = { ok: true } | { ok: false; reason: "OUT_OF_STOCK" | "LIMIT_REACHED" };
+type AddResult =
+  | { ok: true }
+  | { ok: false; reason: "OUT_OF_STOCK" | "LIMIT_REACHED" };
 type AfterFn = () => void;
 
 interface CartContextProps {
@@ -82,10 +84,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setCartKey(key);
   }, [userId]);
 
-  /* Carrega itens quando a chave mudar:
-     - se não tiver usuário logado: usa apenas localStorage
-     - se tiver usuário logado + token: tenta buscar do backend (/api/cart)
-     - em rotas /admin: nunca chama a API de carrinho (evita 403 na tela de login do admin) */
+  /* Carrega itens quando a chave mudar */
   useEffect(() => {
     if (!cartKey || typeof window === "undefined") return;
 
@@ -110,6 +109,21 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
+    // se o carrinho foi limpo nesta sessão, não recarrega itens antigos do backend
+    const clearedKey = `${cartKey}_cleared`;
+    let wasCleared = false;
+    if (typeof window !== "undefined" && clearedKey) {
+      try {
+        wasCleared = sessionStorage.getItem(clearedKey) === "1";
+      } catch {
+        wasCleared = false;
+      }
+    }
+    if (wasCleared) {
+      loadFromLocal();
+      return;
+    }
+
     // usuário logado → tenta sincronizar com backend
     (async () => {
       try {
@@ -122,7 +136,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         const itemsFromApi = Array.isArray(data.items) ? data.items : [];
 
         if (itemsFromApi.length > 0) {
-          // normaliza formato do backend → CartItem
           const normalized: CartItem[] = itemsFromApi.map((it: any) => ({
             id: Number(it.produto_id),
             name: it.nome ?? `Produto #${it.produto_id}`,
@@ -134,15 +147,15 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
           setCartItems(normalized);
         } else {
-          // backend vazio → mantém o local atual (se existir)
           loadFromLocal();
         }
       } catch (e: unknown) {
-        // Trata 401/403 sem quebrar nada (ex: token expirado)
         if (isAxiosError(e)) {
           const status = e.response?.status;
           if (status === 401 || status === 403) {
-            console.warn("Token inválido/sem permissão para /api/cart, usando localStorage.");
+            console.warn(
+              "Token inválido/sem permissão para /api/cart, usando localStorage."
+            );
           } else {
             console.error("Erro ao sincronizar carrinho com backend:", e);
           }
@@ -150,7 +163,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           console.error("Erro inesperado ao sincronizar carrinho:", e);
         }
 
-        // sempre cai para o localStorage se der erro
         loadFromLocal();
       }
     })();
@@ -169,6 +181,15 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   /* ========== Ações ========== */
 
   const addToCart = (product: Product, qty = 1): AddResult => {
+    // ao adicionar qualquer item, removemos o flag de "carrinho limpo"
+    if (typeof window !== "undefined" && cartKey) {
+      try {
+        sessionStorage.removeItem(`${cartKey}_cleared`);
+      } catch {
+        // ignore
+      }
+    }
+
     const price = toNum(product.price, 0);
     const stockFromApi =
       typeof product.quantity === "number"
@@ -239,7 +260,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       ];
     });
 
-    // chama backend para registrar item no carrinho do usuário (se estiver logado)
     if (userId && token) {
       axios
         .post(
@@ -254,8 +274,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           }
         )
         .catch((err) => {
-          console.error("Erro ao sincronizar item com carrinho do backend:", err);
-          // Não quebra o front, só loga
+          console.error(
+            "Erro ao sincronizar item com carrinho do backend:",
+            err
+          );
         });
     }
 
@@ -266,41 +288,66 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const updateQuantity = (id: number, quantity: number) => {
     const after: AfterFn[] = [];
 
-    setCartItems((prev) =>
-      prev
+    setCartItems((prev) => {
+      const updated = prev
         .map((it) => {
           if (it.id !== id) return it;
           const clamped = clampByStock(it, toNum(quantity, 1));
 
           if (clamped === 0) {
-            after.push(() => toast.error("Este item esgotou e foi removido do carrinho."));
+            after.push(() =>
+              toast.error("Este item esgotou e foi removido do carrinho.")
+            );
             return null;
           }
           if (clamped !== quantity && clamped < quantity) {
             const s = knownStock(it);
             after.push(() =>
               toast.error(
-                `Ajustamos para ${clamped}${s !== undefined ? ` (máx. ${s})` : ""} por limite de estoque.`
+                `Ajustamos para ${clamped}${
+                  s !== undefined ? ` (máx. ${s})` : ""
+                } por limite de estoque.`
               )
             );
           }
           return { ...it, quantity: clamped };
         })
-        .filter(Boolean) as CartItem[]
-    );
+        .filter(Boolean) as CartItem[];
 
-    // OBS: por enquanto o backend só possui rota de ADD (POST /cart/items),
-    // então não há como sincronizar decremento/remoção 100%.
+      // se o carrinho ficou vazio com essa atualização, marca como "limpo"
+      if (updated.length === 0 && typeof window !== "undefined" && cartKey) {
+        try {
+          sessionStorage.setItem(`${cartKey}_cleared`, "1");
+        } catch {
+          // ignore
+        }
+      }
+
+      return updated;
+    });
+
     after.forEach((fn) => fn());
   };
 
   const removeFromCart = (id: number) => {
-    setCartItems((prev) => prev.filter((i) => i.id !== id));
+    setCartItems((prev) => {
+      const updated = prev.filter((i) => i.id !== id);
+
+      // se removendo esse item o carrinho ficou vazio, marca como "limpo"
+      if (updated.length === 0 && typeof window !== "undefined" && cartKey) {
+        try {
+          sessionStorage.setItem(`${cartKey}_cleared`, "1");
+        } catch {
+          // ignore
+        }
+      }
+
+      return updated;
+    });
+
     toast("Item removido do carrinho.");
-    // idem: quando tiver rota DELETE /cart/items/:id, dá pra chamar aqui.
   };
 
-  /** Sincroniza estoque após resposta “estoque insuficiente” do backend */
   const syncStock = (productId: number, newStock: number) => {
     const after: AfterFn[] = [];
 
@@ -312,11 +359,15 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           const clamped = clampByStock({ ...it, _stock: stock }, it.quantity);
 
           if (stock === 0) {
-            after.push(() => toast.error("Um item esgotou e foi removido do carrinho."));
+            after.push(() =>
+              toast.error("Um item esgotou e foi removido do carrinho.")
+            );
             return null;
           }
           if (clamped !== it.quantity) {
-            after.push(() => toast.error(`Estoque atualizado. Ajustamos para ${clamped}.`));
+            after.push(() =>
+              toast.error(`Estoque atualizado. Ajustamos para ${clamped}.`)
+            );
           }
           return { ...it, _stock: stock, quantity: clamped };
         })
@@ -326,13 +377,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     after.forEach((fn) => fn());
   };
 
+  /** Limpa o carrinho completamente (estado + localStorage) */
   const clearCart = () => {
     setCartItems([]);
 
-    // limpa também o localStorage da chave atual
     if (typeof window !== "undefined" && cartKey) {
       try {
         localStorage.removeItem(cartKey);
+        sessionStorage.setItem(`${cartKey}_cleared`, "1");
       } catch {
         // ignore
       }
@@ -342,7 +394,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const cartTotal = useMemo(
-    () => cartItems.reduce((sum, it) => sum + toNum(it.price, 0) * toNum(it.quantity, 1), 0),
+    () =>
+      cartItems.reduce(
+        (sum, it) =>
+          sum + toNum(it.price, 0) * toNum(it.quantity, 1),
+        0
+      ),
     [cartItems]
   );
 
