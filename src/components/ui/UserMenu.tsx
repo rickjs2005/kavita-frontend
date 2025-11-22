@@ -16,7 +16,8 @@ export default function UserMenu() {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     const onClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("keydown", onKey);
     document.addEventListener("mousedown", onClick);
@@ -60,6 +61,16 @@ export default function UserMenu() {
             >
               Meus Dados
             </Link>
+
+            <Link
+              href="/favoritos"
+              className="block px-4 py-2 hover:bg-gray-100 text-gray-800 text-sm"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
+              Favoritos
+            </Link>
+
             <Link
               href="/pedidos"
               className="block px-4 py-2 hover:bg-gray-100 text-gray-800 text-sm"
@@ -68,9 +79,13 @@ export default function UserMenu() {
             >
               Meus Pedidos
             </Link>
+
             <button
               role="menuitem"
-              onClick={() => { logout(); setOpen(false); }}
+              onClick={() => {
+                logout();
+                setOpen(false);
+              }}
               className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 text-sm"
             >
               Sair

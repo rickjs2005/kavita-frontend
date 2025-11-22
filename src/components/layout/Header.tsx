@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import dynamic from "next/dynamic"; // ⬅️ novo
+import dynamic from "next/dynamic"; 
 import CartCar from "@/components/cart/CartCar";
 import UserMenu from "@/components/ui/UserMenu";
 
@@ -216,6 +216,7 @@ export default function Header() {
                   <nav className="flex flex-col gap-1">
                     <Link href="/meus-dados" onClick={() => setIsMenuOpen(false)} className="text-sm text-[#083E46] hover:underline">Meus dados</Link>
                     <Link href="/pedidos" onClick={() => setIsMenuOpen(false)} className="text-sm text-[#083E46] hover:underline">Meus pedidos</Link>
+                    <Link href="/favoritos" onClick={() => setIsMenuOpen(false)} className="text-sm text-[#083E46] hover:underline">Favoritos</Link>
                     <button onClick={() => { logout(); setIsMenuOpen(false); }} className="text-left text-sm text-red-600 hover:underline">Sair</button>
                   </nav>
                 ) : (
