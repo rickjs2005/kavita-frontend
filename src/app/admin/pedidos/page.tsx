@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -35,6 +36,7 @@ type Endereco = {
 
 type PedidoAdmin = {
   id: number;
+  usuario_id?: number; // 👈 importante pro filtro por cliente
   usuario: string;
   email?: string | null;
   telefone?: string | null;
@@ -182,6 +184,12 @@ export default function PedidosAdminPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [atualizandoId, setAtualizandoId] = useState<number | null>(null);
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const clienteIdParam = searchParams.get("clienteId");
+  const clienteId = clienteIdParam ? Number(clienteIdParam) : null;
+
   useEffect(() => {
     const carregar = async () => {
       try {
@@ -213,6 +221,16 @@ export default function PedidosAdminPage() {
 
     carregar();
   }, []);
+
+  const pedidosFiltrados = useMemo(() => {
+    if (!clienteId) return pedidos;
+    return pedidos.filter((p) => p.usuario_id === clienteId);
+  }, [pedidos, clienteId]);
+
+  const clienteSelecionado = useMemo(() => {
+    if (!clienteId) return null;
+    return pedidos.find((p) => p.usuario_id === clienteId) || null;
+  }, [pedidos, clienteId]);
 
   const atualizarStatusEntrega = async (
     id: number,
@@ -335,18 +353,37 @@ export default function PedidosAdminPage() {
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Acompanhe pagamentos e status de entrega dos pedidos.
             </p>
+
+            {clienteSelecionado && (
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-100">
+                <span>
+                  Filtrando por cliente{" "}
+                  <strong>
+                    #{String(clienteSelecionado.usuario_id).padStart(4, "0")}{" "}
+                    - {clienteSelecionado.usuario}
+                  </strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => router.push("/admin/pedidos")}
+                  className="ml-2 rounded-full bg-emerald-600/80 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-emerald-700"
+                >
+                  Limpar filtro
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
             Total de pedidos:
             <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-800 dark:bg-gray-800 dark:text-gray-100">
-              {pedidos.length}
+              {pedidosFiltrados.length}
             </span>
           </div>
         </header>
 
         {/* Lista / tabela */}
-        {pedidos.length === 0 ? (
+        {pedidosFiltrados.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
             Nenhum pedido encontrado.
           </div>
@@ -368,7 +405,7 @@ export default function PedidosAdminPage() {
               </div>
 
               <div className="table-row-group divide-y divide-gray-200 dark:divide-gray-800">
-                {pedidos.map((pedido) => {
+                {pedidosFiltrados.map((pedido) => {
                   const telefoneContato =
                     pedido.telefone || pedido.endereco?.telefone;
                   const linkWpp = whatsappLink(
@@ -544,7 +581,7 @@ export default function PedidosAdminPage() {
 
             {/* Mobile (cards) */}
             <div className="divide-y divide-gray-200 sm:hidden dark:divide-gray-800">
-              {pedidos.map((pedido) => {
+              {pedidosFiltrados.map((pedido) => {
                 const telefoneContato =
                   pedido.telefone || pedido.endereco?.telefone;
                 const linkWpp = whatsappLink(

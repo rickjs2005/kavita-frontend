@@ -23,16 +23,19 @@ const NAV_LINKS = [
   { route: "/categorias/outros", label: "Outros" },
 ] as const;
 
-
 const EXCLUDED_ROUTES = [
   "/checkout", "/login", "/register", "/forgot-password", "/reset-password",
   "/admin", "/admin/login", "/admin/produtos", "/admin/destaques",
-  "/admin/pedidos", "/admin/servicos",
+  "/admin/pedidos", "/admin/servicos", "/admin/clientes",
 ] as const;
 
 export default function Header() {
   const pathname = usePathname();
-  const hideHeader = EXCLUDED_ROUTES.includes(pathname as any);
+
+  // ✅ única mudança: também esconde em /admin/clientes/QUALQUER-COISA
+  const hideHeader =
+    EXCLUDED_ROUTES.includes(pathname as any) ||
+    pathname.startsWith("/admin/clientes/");
 
   const { cartItems } = useCart();
   const { user, logout } = useAuth();
@@ -48,7 +51,6 @@ export default function Header() {
 
   const menuRef = useRef<HTMLDivElement>(null);
   const isDronePage = pathname.startsWith("/drones");
-
 
   const cartCount = cartItems.length;
   const cartTotal = useMemo(
@@ -157,8 +159,9 @@ export default function Header() {
               <li key={link.route}>
                 <Link
                   href={link.route}
-                  className={`px-3 py-1.5 hover:text-[#EC5B20] transition-colors ${pathname === link.route ? "text-[#EC5B20] font-medium" : brandColor
-                    }`}
+                  className={`px-3 py-1.5 hover:text-[#EC5B20] transition-colors ${
+                    pathname === link.route ? "text-[#EC5B20] font-medium" : brandColor
+                  }`}
                 >
                   {link.label}
                 </Link>
@@ -199,8 +202,9 @@ export default function Header() {
                   <li key={link.route}>
                     <Link
                       href={link.route}
-                      className={`block rounded-lg px-3 py-2 text-sm font-medium ${pathname === link.route ? "bg-[#EC5B20]/10 text-[#EC5B20]" : "text-[#083E46] hover:bg-gray-100"
-                        }`}
+                      className={`block rounded-lg px-3 py-2 text-sm font-medium ${
+                        pathname === link.route ? "bg-[#EC5B20]/10 text-[#EC5B20]" : "text-[#083E46] hover:bg-gray-100"
+                      }`}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {link.label}
