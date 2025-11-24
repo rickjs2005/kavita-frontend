@@ -40,9 +40,9 @@ export default function ServicosPage() {
       const data = await res.json();
       const lista = Array.isArray(data)
         ? data.map((s: any) => ({
-            ...s,
-            images: Array.isArray(s.images) ? s.images : [],
-          }))
+          ...s,
+          images: Array.isArray(s.images) ? s.images : [],
+        }))
         : [];
       setServicos(lista);
     } catch (err: any) {
@@ -87,8 +87,8 @@ export default function ServicosPage() {
   return (
     <div className="w-full px-3 py-5 sm:px-4 lg:px-6">
       <div className="mx-auto w-full max-w-6xl">
-        {/* Header + Voltar */}
-        <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+        {/* Header com botão Voltar só no mobile */}
+        <div className="relative mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
               Serviços Cadastrados
@@ -97,7 +97,12 @@ export default function ServicosPage() {
               Adicione, edite ou remova serviços e colaboradores.
             </p>
           </div>
-          <Link href="/admin" className="self-start sm:self-auto">
+
+          {/* Botão Voltar – só mobile, topo direito do header */}
+          <Link
+            href="/admin"
+            className="absolute -right-1 -top-3 z-10 block sm:hidden"
+          >
             <CustomButton
               label="Voltar"
               variant="secondary"

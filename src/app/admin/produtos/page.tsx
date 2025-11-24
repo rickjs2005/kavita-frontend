@@ -106,8 +106,8 @@ export default function ProdutosPage() {
   return (
     <div className="w-full px-3 py-5 sm:px-4 lg:px-6">
       <div className="mx-auto w-full max-w-6xl space-y-6 sm:space-y-8">
-        {/* Header com botão Voltar */}
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Header com botão Voltar só no mobile */}
+        <header className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
               Produtos
@@ -117,7 +117,11 @@ export default function ProdutosPage() {
             </p>
           </div>
 
-          <Link href="/admin" className="self-start sm:self-auto">
+          {/* Botão Voltar – só mobile, topo direito do header */}
+          <Link
+            href="/admin"
+            className="absolute -right-1 -top-3 z-10 block sm:hidden"
+          >
             <CustomButton
               label="Voltar"
               variant="secondary"
@@ -184,3 +188,4 @@ export default function ProdutosPage() {
     </div>
   );
 }
+
