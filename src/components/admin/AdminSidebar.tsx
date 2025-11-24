@@ -1,73 +1,108 @@
-// src/components/layout/AdminSidebar.tsx
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 
-export default function AdminSidebar() {
+type AdminSidebarProps = {
+  className?: string;
+  hideLogoutButton?: boolean;
+  onNavigate?: () => void;
+};
+
+type NavItem = {
+  label: string;
+  href: string;
+  icon: string;
+};
+
+const navItems: NavItem[] = [
+  { label: "Dashboard", href: "/admin", icon: "🏠" },
+  { label: "Produtos", href: "/admin/produtos", icon: "📦" },
+  { label: "Destaques", href: "/admin/destaques", icon: "⭐" },
+  { label: "Pedidos", href: "/admin/pedidos", icon: "🧾" },
+  { label: "Serviços", href: "/admin/servicos", icon: "🛠️" },
+  { label: "Clientes", href: "/admin/clientes", icon: "👥" },
+];
+
+export default function AdminSidebar({
+  className = "",
+  hideLogoutButton = false,
+  onNavigate,
+}: AdminSidebarProps) {
+  const pathname = usePathname();
   const { logout } = useAdminAuth();
 
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
-    <aside className="w-64 bg-white shadow h-screen flex flex-col justify-between p-6">
-      {/* Cabeçalho / Título */}
-      <div>
-        <h1 className="text-xl font-bold mb-6 text-[#359293]">
-          Painel Admin
-        </h1>
+    <div
+      className={`flex h-full min-h-0 flex-col justify-between bg-slate-950 text-slate-50 ${className}`}
+    >
+      {/* Topo */}
+      <div className="px-5 pb-4 pt-5">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/40">
+            <span className="text-lg">🌱</span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">
+              Kavita
+            </p>
+            <p className="truncate text-sm font-semibold text-slate-50">
+              Painel Admin
+            </p>
+          </div>
+        </div>
 
-        {/* Navegação principal */}
-        <nav className="flex flex-col gap-3 text-sm">
-          <Link href="/admin" className="hover:text-[#359293] transition">
-            🏠 Dashboard
-          </Link>
+        {/* Navegação */}
+        <nav className="space-y-1 text-sm">
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/admin" && pathname.startsWith(item.href));
 
-          <Link
-            href="/admin/produtos"
-            className="hover:text-[#359293] transition"
-          >
-            📦 Produtos
-          </Link>
+            const base =
+              "group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors";
+            const active =
+              "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/40";
+            const inactive =
+              "text-slate-300 hover:bg-slate-800/80 hover:text-slate-50";
 
-          <Link
-            href="/admin/destaques"
-            className="hover:text-[#359293] transition"
-          >
-            ⭐ Destaques
-          </Link>
-
-          <Link
-            href="/admin/pedidos"
-            className="hover:text-[#359293] transition"
-          >
-            🧾 Pedidos
-          </Link>
-
-          <Link
-            href="/admin/servicos"
-            className="hover:text-[#359293] transition"
-          >
-            🛠️ Serviços
-          </Link>
-
-          {/* 🔥 Novo item Clientes */}
-          <Link
-            href="/admin/clientes"
-            className="hover:text-[#359293] transition"
-          >
-            👥 Clientes
-          </Link>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                className={`${base} ${isActive ? active : inactive}`}
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/80 text-base">
+                  {item.icon}
+                </span>
+                <span className="truncate">{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
       </div>
 
-      {/* Botão de logout fixado na parte inferior */}
-      <button
-        onClick={logout}
-        className="mt-8 w-full flex items-center justify-center gap-2 
-        bg-[#359293] text-white py-2 rounded-lg font-semibold shadow 
-        hover:bg-[#2b7778] transition-colors"
-      >
-        🚪 Sair
-      </button>
-    </aside>
+      {/* Rodapé (logout) */}
+      {!hideLogoutButton && (
+        <div className="border-t border-slate-800/80 bg-slate-950/95 px-5 py-4">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-transform hover:translate-y-[1px] hover:shadow-rose-900/10"
+          >
+            <span>🚪</span>
+            <span>Sair</span>
+          </button>
+          <p className="mt-2 text-[10px] text-slate-500">
+            Acesso restrito a administradores Kavita.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }

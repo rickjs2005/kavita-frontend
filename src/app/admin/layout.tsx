@@ -1,83 +1,83 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { AdminAuthProvider, useAdminAuth } from '@/context/AdminAuthContext';
-import AdminSidebar from '../../components/admin/AdminSidebar';
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { AdminAuthProvider } from "@/context/AdminAuthContext";
+import AdminSidebar from "@/components/admin/AdminSidebar";
 
-/**
- * Layout interno do painel admin.
- * Controla autenticação e estrutura principal do painel.
- */
-function AdminLayoutInner({ children }: { children: React.ReactNode }) {
+type AdminLayoutInnerProps = {
+  children: React.ReactNode;
+};
+
+function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAdminAuth();
 
   const [checking, setChecking] = useState(true);
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    // Checa se o cookie adminToken existe
-    const hasCookie = document.cookie.split('; ').some(c => c.startsWith('adminToken='));
+    const hasCookie = document.cookie
+      .split("; ")
+      .some((c) => c.startsWith("adminToken="));
 
-    // Se não tiver token e não for a tela de login, redireciona
-    if (!hasCookie && pathname !== '/admin/login') {
+    if (!hasCookie && pathname !== "/admin/login") {
       setIsAuthed(false);
       setChecking(false);
-      router.replace('/admin/login');
+      router.replace("/admin/login");
       return;
     }
 
-    // Se for a tela de login, apenas marca estado
-    if (pathname === '/admin/login') {
+    if (pathname === "/admin/login") {
       setIsAuthed(hasCookie);
       setChecking(false);
       return;
     }
 
-    // Caso contrário, usuário autenticado
     setIsAuthed(hasCookie);
     setChecking(false);
   }, [pathname, router]);
 
-  if (checking) return null; // Evita piscar conteúdo antes da checagem
+  if (checking) return null;
 
-  // Página de login → sem layout de painel
-  if (pathname === '/admin/login') {
+  // Página de login: sem sidebar, layout centralizado
+  if (pathname === "/admin/login") {
     return (
-      <main className="flex-1 w-full p-4 sm:p-6">
-        <div className="max-w-screen-xl mx-auto w-full">
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-50">
+        <main className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950/90 p-5 shadow-xl shadow-black/60 sm:p-6">
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     );
   }
 
-  // Se não autenticado, bloqueia
   if (!isAuthed) return null;
 
-  // Layout principal do painel admin
+  // Layout autenticado
   return (
-    <div className="min-h-screen flex bg-gray-100">
-      {/* Sidebar com menu e botão sair */}
-      <aside className="w-64 bg-white shadow-lg hidden md:block">
+    <div className="flex min-h-screen bg-slate-950 text-slate-50">
+      {/* Sidebar fixa (md+) */}
+      <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-slate-900 md:bg-slate-950">
         <AdminSidebar />
       </aside>
 
-      {/* Conteúdo do painel */}
-      <div className="flex flex-col flex-1 overflow-y-auto">
-        <main className="flex-1 p-6">{children}</main>
+      {/* Conteúdo */}
+      <div className="flex min-h-screen flex-1 flex-col">
+        {/* fundo com leve gradiente no conteúdo */}
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_#0f172a,_#020617_55%)]" />
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
 }
 
-/**
- * Layout principal exportado.
- * Envolve todo o painel admin com o contexto de autenticação.
- */
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <AdminAuthProvider>
       <AdminLayoutInner>{children}</AdminLayoutInner>
