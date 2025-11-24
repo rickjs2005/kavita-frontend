@@ -1,4 +1,3 @@
-// src/components/admin/servicos/ServiceCard.tsx
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -38,7 +37,9 @@ export default function ServiceCard({
 
   // ✅ Cria lista de imagens (capa + extras) sem duplicadas
   const images = useMemo(() => {
-    const extras: string[] = Array.isArray(servico.images) ? (servico.images as unknown as string[]) : [];
+    const extras: string[] = Array.isArray(servico.images)
+      ? (servico.images as unknown as string[])
+      : [];
     const all = [servico.imagem, ...extras].filter(Boolean) as string[];
     const unique = Array.from(new Set(all));
     return unique.map(absUrl).filter(Boolean) as string[];
@@ -65,37 +66,39 @@ export default function ServiceCard({
 
   return (
     <article
-      className={`bg-white rounded-xl shadow-sm ring-1 ring-black/5 overflow-hidden flex flex-col ${className}`}
+      className={`flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 ${className}`}
       aria-labelledby={`serv-${servico.id}-title`}
     >
-      {/* ===== IMAGEM PRINCIPAL ===== */}
-      <div className="relative">
+      {/* ===== IMAGEM PRINCIPAL com ratio fixo ===== */}
+      <div className="relative w-full bg-gray-50 pb-[60%]">
         <img
           src={activeImg}
           alt={servico.nome || "Imagem do serviço"}
-          className="w-full h-44 object-cover bg-gray-50 transition-all duration-200"
-          onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
+          className="absolute inset-0 h-full w-full object-cover transition-all duration-200"
+          onError={(e) =>
+            ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+          }
           loading="lazy"
         />
         {images.length > 1 && (
-          <span className="absolute top-2 left-2 text-xs bg-black/60 text-white px-2 py-0.5 rounded">
+          <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">
             {images.length} foto(s)
           </span>
         )}
       </div>
 
       {/* ===== CONTEÚDO ===== */}
-      <div className="p-4 flex flex-col gap-2">
+      <div className="flex flex-1 flex-col gap-2 p-4">
         <h3
           id={`serv-${servico.id}-title`}
-          className="text-base font-semibold text-gray-900 line-clamp-1"
+          className="line-clamp-1 text-base font-semibold text-gray-900"
           title={servico.nome || undefined}
         >
           {servico.nome}
         </h3>
 
         {servico.cargo && (
-          <p className="text-sm text-gray-600 line-clamp-1">
+          <p className="line-clamp-1 text-sm text-gray-600">
             Cargo: {servico.cargo}
           </p>
         )}
@@ -108,7 +111,7 @@ export default function ServiceCard({
 
         {servico.descricao && (
           <p
-            className="text-sm text-gray-600 line-clamp-2"
+            className="line-clamp-3 text-sm text-gray-600"
             title={servico.descricao || undefined}
           >
             {servico.descricao}
@@ -119,21 +122,26 @@ export default function ServiceCard({
         {images.length > 1 && (
           <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
             {images.map((src, i) => (
-              <img
+              <button
                 key={`${src}-${i}`}
-                src={src}
-                alt={`Miniatura ${i + 1}`}
-                onClick={() => setActiveImg(src)} // 🖱️ ao clicar muda a imagem principal
-                className={`w-12 h-12 rounded object-cover ring-2 ${
+                type="button"
+                onClick={() => setActiveImg(src)}
+                className={`flex-shrink-0 overflow-hidden rounded-lg ring-2 transition-all ${
                   activeImg === src
-                    ? "ring-blue-500"
+                    ? "ring-[#2F7E7F]"
                     : "ring-transparent hover:ring-gray-300"
-                } cursor-pointer flex-shrink-0 transition-all`}
-                onError={(e) =>
-                  ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
-                }
-                loading="lazy"
-              />
+                }`}
+              >
+                <img
+                  src={src}
+                  alt={`Miniatura ${i + 1}`}
+                  className="h-12 w-12 object-cover"
+                  onError={(e) =>
+                    ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+                  }
+                  loading="lazy"
+                />
+              </button>
             ))}
           </div>
         )}
@@ -144,19 +152,20 @@ export default function ServiceCard({
             href={`https://wa.me/${wa}`}
             target="_blank"
             rel="noreferrer"
-            className="text-blue-600 text-sm hover:underline mt-1"
+            className="mt-1 inline-flex items-center gap-1 text-sm text-[#2F7E7F] hover:underline"
           >
-            WhatsApp: {wa}
+            <span>📱</span>
+            <span>WhatsApp: {wa}</span>
           </a>
         )}
 
         {/* ===== AÇÕES ===== */}
-        <div className="mt-3 flex gap-2 justify-end">
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => onEditar?.(servico)}
             disabled={readOnly}
-            className="px-3 py-1.5 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            className="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-800 transition hover:bg-gray-200 disabled:opacity-50"
           >
             Editar
           </button>
@@ -164,7 +173,7 @@ export default function ServiceCard({
             type="button"
             onClick={handleRemove}
             disabled={readOnly || removing}
-            className="px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
           >
             {removing ? "Removendo..." : "Remover"}
           </button>

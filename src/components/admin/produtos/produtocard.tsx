@@ -1,4 +1,3 @@
-// src/components/admin/produtos/ProdutoCard.tsx
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -10,8 +9,8 @@ export type Product = {
   price: number | string;
   quantity: number | string;
   category_id?: number | null;
-  image?: string | null;      // capa vinda do banco (ex.: "/uploads/abc.jpg")
-  images?: string[];          // urls adicionais (ex.: ["/uploads/1.jpg", ...])
+  image?: string | null; // capa vinda do banco (ex.: "/uploads/abc.jpg")
+  images?: string[]; // urls adicionais (ex.: ["/uploads/1.jpg", ...])
 };
 
 type Props = {
@@ -53,16 +52,14 @@ export default function ProdutoCard({
   const [removing, setRemoving] = useState(false);
 
   const price = useMemo(() => Number(produto.price) || 0, [produto.price]);
-  const qty   = useMemo(() => Number(produto.quantity) || 0, [produto.quantity]);
+  const qty = useMemo(() => Number(produto.quantity) || 0, [produto.quantity]);
 
   // Monta lista de imagens (capa + extras) normalizando para URL absoluta e removendo duplicatas
   const images = useMemo(() => {
     const extras = Array.isArray(produto.images) ? produto.images : [];
     const all = [produto.image, ...extras].filter(Boolean) as string[];
     const unique = Array.from(new Set(all));
-    return unique
-      .map(absUrl)
-      .filter(Boolean) as string[]; // só strings válidas
+    return unique.map(absUrl).filter(Boolean) as string[]; // só strings válidas
   }, [produto.image, produto.images]);
 
   const cover = images[0] || PLACEHOLDER;
@@ -80,30 +77,32 @@ export default function ProdutoCard({
 
   return (
     <article
-      className={`bg-white rounded-xl shadow-sm ring-1 ring-black/5 overflow-hidden flex flex-col ${className}`}
+      className={`flex h-full flex-col overflow-hidden rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-md ${className}`}
       aria-labelledby={`prod-${produto.id}-title`}
     >
-      {/* Capa */}
-      <div className="relative">
+      {/* Capa com ratio fixo */}
+      <div className="relative w-full bg-gray-50 pb-[60%]">
         <img
           src={cover}
           alt={produto.name || "Imagem do produto"}
-          className="w-full h-44 object-cover bg-gray-50"
-          onError={(e) => ((e.currentTarget.src = PLACEHOLDER))}
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={(e) =>
+            ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+          }
           loading="lazy"
         />
         {qty <= 0 && (
-          <span className="absolute top-2 left-2 text-xs font-semibold bg-red-600 text-white px-2 py-0.5 rounded">
+          <span className="absolute left-2 top-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
             Sem estoque
           </span>
         )}
       </div>
 
       {/* Conteúdo */}
-      <div className="p-4 flex flex-col gap-2">
+      <div className="flex flex-1 flex-col gap-2 p-4">
         <h3
           id={`prod-${produto.id}-title`}
-          className="text-base font-semibold text-gray-900 line-clamp-1"
+          className="line-clamp-1 text-base font-semibold text-gray-900"
           title={produto.name}
         >
           {produto.name}
@@ -111,7 +110,7 @@ export default function ProdutoCard({
 
         {produto.description && (
           <p
-            className="text-sm text-gray-600 line-clamp-2"
+            className="line-clamp-3 text-sm text-gray-600"
             title={produto.description || undefined}
           >
             {produto.description}
@@ -119,25 +118,29 @@ export default function ProdutoCard({
         )}
 
         <div className="mt-1 flex items-center justify-between">
-          <span className="text-[#2F7E7F] font-semibold">{toBRL(price)}</span>
+          <span className="text-sm font-semibold text-[#2F7E7F]">
+            {toBRL(price)}
+          </span>
           <span className="text-xs text-gray-500">Qtde: {qty}</span>
         </div>
 
         {/* Miniaturas (se houver) */}
         {images.length > 1 && (
-          <div className="mt-2 flex gap-2 overflow-x-auto">
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
             {images.slice(1, 6).map((src, i) => (
               <img
                 key={`${src}-${i}`}
                 src={src}
                 alt={`Miniatura ${i + 1}`}
-                className="w-12 h-12 rounded object-cover ring-1 ring-black/10 bg-gray-50 flex-shrink-0"
-                onError={(e) => ((e.currentTarget.src = PLACEHOLDER))}
+                className="h-12 w-12 flex-shrink-0 rounded-lg bg-gray-50 object-cover ring-1 ring-black/10"
+                onError={(e) =>
+                  ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+                }
                 loading="lazy"
               />
             ))}
             {images.length > 6 && (
-              <span className="text-xs text-gray-500 self-center">
+              <span className="self-center text-xs text-gray-500">
                 +{images.length - 6}
               </span>
             )}
@@ -145,12 +148,12 @@ export default function ProdutoCard({
         )}
 
         {/* Ações */}
-        <div className="mt-3 flex gap-2 justify-end">
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => onEditar?.(produto)}
             disabled={readOnly}
-            className="px-3 py-1.5 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            className="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-800 transition hover:bg-gray-200 disabled:opacity-50"
           >
             Editar
           </button>
@@ -158,7 +161,7 @@ export default function ProdutoCard({
             type="button"
             onClick={handleRemove}
             disabled={readOnly || removing}
-            className="px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
           >
             {removing ? "Removendo..." : "Remover"}
           </button>

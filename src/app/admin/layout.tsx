@@ -21,16 +21,11 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
       .split("; ")
       .some((c) => c.startsWith("adminToken="));
 
+    // se não tiver cookie e não estiver na tela de login → manda pro login
     if (!hasCookie && pathname !== "/admin/login") {
       setIsAuthed(false);
       setChecking(false);
       router.replace("/admin/login");
-      return;
-    }
-
-    if (pathname === "/admin/login") {
-      setIsAuthed(hasCookie);
-      setChecking(false);
       return;
     }
 
@@ -40,31 +35,26 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
 
   if (checking) return null;
 
-  // Página de login: sem sidebar, layout centralizado
+  // Tela de login: deixa o próprio page.tsx controlar o layout (fullscreen)
   if (pathname === "/admin/login") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-50">
-        <main className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950/90 p-5 shadow-xl shadow-black/60 sm:p-6">
-          {children}
-        </main>
-      </div>
-    );
+    return <>{children}</>;
   }
 
   if (!isAuthed) return null;
 
-  // Layout autenticado
+  // Layout autenticado: sidebar fixa + conteúdo rolando
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-50">
-      {/* Sidebar fixa (md+) */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-slate-900 md:bg-slate-950">
+    <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-50">
+      {/* Sidebar fixa no lado esquerdo (desktop/tablet) */}
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-64 md:flex-col md:shrink-0 md:border-r md:border-slate-900 md:bg-slate-950">
         <AdminSidebar />
       </aside>
 
-      {/* Conteúdo */}
-      <div className="flex min-h-screen flex-1 flex-col">
-        {/* fundo com leve gradiente no conteúdo */}
+      {/* Conteúdo à direita: só aqui rola scroll */}
+      <div className="relative flex h-screen flex-1 flex-col">
+        {/* fundo com leve gradiente */}
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_#0f172a,_#020617_55%)]" />
+
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
           {children}
         </main>

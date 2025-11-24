@@ -29,7 +29,10 @@ export default function ServicosPage() {
     setLoading(true);
     setErro(null);
     try {
-      const res = await fetch(API_BASE, { headers: authHeader, cache: "no-store" });
+      const res = await fetch(API_BASE, {
+        headers: authHeader,
+        cache: "no-store",
+      });
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
         throw new Error(`Falha ao buscar serviços (${res.status}). ${txt}`);
@@ -82,80 +85,93 @@ export default function ServicosPage() {
   const limparEdicao = () => setServicoEditado(null);
 
   return (
-    <div className="w-full">
-      {/* Header + Voltar */}
-      <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-            Serviços Cadastrados
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Adicione, edite ou remova serviços e colaboradores.
-          </p>
-        </div>
-        <Link href="/admin" className="shrink-0">
-          <CustomButton label="Voltar" variant="secondary" size="small" isLoading={false} />
-        </Link>
-      </div>
-
-      {/* Form em card responsivo */}
-      <section
-        ref={formRef}
-        className="bg-white rounded-2xl shadow p-4 sm:p-6 md:p-8 mb-6 sm:mb-8"
-      >
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
-          {servicoEditado ? "Editar Serviço" : "Adicionar Serviço e Colaborador"}
-        </h2>
-
-        <ServiceFormUnificado
-          servicoEditado={servicoEditado}
-          onSaved={() => {
-            limparEdicao();
-            carregarServicos();
-          }}
-          onCancel={limparEdicao}
-        />
-      </section>
-
-      {/* Estados */}
-      {loading && (
-        <div className="bg-white rounded-2xl shadow p-4 sm:p-6 text-gray-600">
-          Carregando serviços…
-        </div>
-      )}
-
-      {!loading && erro && (
-        <div className="rounded-2xl border border-red-300 bg-red-50 text-red-700 p-4 sm:p-5">
-          {erro}
-        </div>
-      )}
-
-      {!loading && !erro && servicos.length === 0 && (
-        <div className="bg-white rounded-2xl shadow p-4 sm:p-6 text-gray-600">
-          Nenhum serviço cadastrado.
-        </div>
-      )}
-
-      {/* Grid de cards responsiva */}
-      {!loading && !erro && servicos.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Lista de serviços</h3>
-            <span className="text-sm text-gray-500">{servicos.length} itens</span>
+    <div className="w-full px-3 py-5 sm:px-4 lg:px-6">
+      <div className="mx-auto w-full max-w-6xl">
+        {/* Header + Voltar */}
+        <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
+              Serviços Cadastrados
+            </h1>
+            <p className="mt-1 text-sm text-gray-300">
+              Adicione, edite ou remova serviços e colaboradores.
+            </p>
           </div>
+          <Link href="/admin" className="self-start sm:self-auto">
+            <CustomButton
+              label="Voltar"
+              variant="secondary"
+              size="small"
+              isLoading={false}
+            />
+          </Link>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-            {servicos.map((servico) => (
-              <ServiceCard
-                key={servico.id}
-                servico={servico}
-                onRemover={removerServico}
-                onEditar={editarServico}
-              />
-            ))}
-          </div>
+        {/* Form em card responsivo */}
+        <section
+          ref={formRef}
+          className="mb-6 rounded-2xl bg-white p-4 shadow sm:mb-8 sm:p-6 md:p-8"
+        >
+          <h2 className="mb-4 text-lg font-semibold text-gray-900 sm:text-xl">
+            {servicoEditado
+              ? "Editar Serviço"
+              : "Adicionar Serviço e Colaborador"}
+          </h2>
+
+          <ServiceFormUnificado
+            servicoEditado={servicoEditado}
+            onSaved={() => {
+              limparEdicao();
+              carregarServicos();
+            }}
+            onCancel={limparEdicao}
+          />
         </section>
-      )}
+
+        {/* Estados */}
+        {loading && (
+          <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
+            Carregando serviços…
+          </div>
+        )}
+
+        {!loading && erro && (
+          <div className="rounded-2xl border border-red-300 bg-red-50 p-4 text-red-700 sm:p-5">
+            {erro}
+          </div>
+        )}
+
+        {!loading && !erro && servicos.length === 0 && (
+          <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
+            Nenhum serviço cadastrado.
+          </div>
+        )}
+
+        {/* Grid de cards responsiva */}
+        {!loading && !erro && servicos.length > 0 && (
+          <section className="mt-4">
+            <div className="mb-3 flex items-center justify-between sm:mb-4">
+              <h3 className="text-lg font-semibold text-gray-50">
+                Lista de serviços
+              </h3>
+              <span className="text-sm text-gray-300">
+                {servicos.length} itens
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {servicos.map((servico) => (
+                <ServiceCard
+                  key={servico.id}
+                  servico={servico}
+                  onRemover={removerServico}
+                  onEditar={editarServico}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

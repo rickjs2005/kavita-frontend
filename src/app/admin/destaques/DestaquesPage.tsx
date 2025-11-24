@@ -1,10 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
-import DeleteButton from '@/components/buttons/DeleteButton';
-import SearchInputProdutos from '@/components/products/SearchInput';
-import { getAdminToken } from '@/utils/auth';
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import toast from "react-hot-toast";
+import DeleteButton from "@/components/buttons/DeleteButton";
+import SearchInputProdutos from "@/components/products/SearchInput";
+import CloseButton from "@/components/buttons/CloseButton";
+import { getAdminToken } from "@/utils/auth";
 
 type Destaque = {
   id: number;
@@ -14,22 +16,20 @@ type Destaque = {
   price: number | string;
 };
 
-const API_BASE   = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:5000';
-const API_ADMIN  = `${API_BASE}/api/admin`;
-const PLACEHOLDER = 'https://via.placeholder.com/400x240?text=Sem+imagem';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
+const API_ADMIN = `${API_BASE}/api/admin`;
+const PLACEHOLDER = "https://via.placeholder.com/400x240?text=Sem+imagem";
 
-// normaliza caminho de imagem
 function toImageUrl(raw?: string | null) {
   if (!raw) return PLACEHOLDER;
-  const p = String(raw).trim().replace(/\\/g, '/');
+  const p = String(raw).trim().replace(/\\/g, "/");
   if (/^https?:\/\//i.test(p)) return p;
-  const clean = p.replace(/^\/+/, '');
-  if (clean.startsWith('uploads/')) return `${API_BASE}/${clean}`;
-  if (clean.startsWith('public/'))  return `${API_BASE}/${clean}`;
+  const clean = p.replace(/^\/+/, "");
+  if (clean.startsWith("uploads/")) return `${API_BASE}/${clean}`;
+  if (clean.startsWith("public/")) return `${API_BASE}/${clean}`;
   return `${API_BASE}/uploads/${clean}`;
 }
 
-// transforma qualquer formato de JSON em array
 function toArray(json: any): any[] {
   if (Array.isArray(json)) return json;
   if (json && Array.isArray(json.data)) return json.data;
@@ -55,24 +55,31 @@ export default function DestaquesPage() {
       setErr(null);
 
       const token = getAdminToken();
-      if (!token) throw new Error('Token de admin ausente (faça login).');
+      if (!token) throw new Error("Token de admin ausente (faça login).");
 
       const res = await fetch(`${API_ADMIN}/destaques`, {
         headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store',
+        cache: "no-store",
       });
       if (!res.ok) {
-        const t = await res.text().catch(() => '');
+        const t = await res.text().catch(() => "");
         throw new Error(t || `Erro ao listar destaques (${res.status}).`);
       }
 
       const json = await res.json();
       const list = toArray(json) as Destaque[];
       setDestaques(
-        list.map((d) => ({ ...d, price: Number(d.price), image: toImageUrl(d.image) }))
+        list.map((d) => ({
+          ...d,
+          price: Number(d.price),
+          image: toImageUrl(d.image),
+        }))
       );
     } catch (e: any) {
-      setErr(e?.message || 'Falha ao carregar destaques.');
+      console.error(e);
+      const msg = e?.message || "Falha ao carregar destaques.";
+      setErr(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -80,118 +87,161 @@ export default function DestaquesPage() {
 
   async function adicionarDestaqueDireto(productId: number) {
     const token = getAdminToken();
-    if (!token) return alert('Faça login de admin para adicionar destaques.');
+    if (!token) {
+      toast.error("Faça login de admin para adicionar destaques.");
+      return;
+    }
 
     if (destaques.some((d) => d.product_id === productId)) {
-      return alert('Este produto já está em destaques.');
+      toast.error("Este produto já está em destaques.");
+      return;
     }
 
-    const res = await fetch(`${API_ADMIN}/destaques`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ product_id: productId }),
-    });
+    try {
+      const res = await fetch(`${API_ADMIN}/destaques`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ product_id: productId }),
+      });
 
-    if (res.status === 409) return alert('Este produto já está em destaques.');
-    if (!res.ok) {
-      const t = await res.text().catch(() => '');
-      return alert(t || 'Erro ao adicionar destaque.');
+      if (res.status === 409) {
+        toast.error("Este produto já está em destaques.");
+        return;
+      }
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || "Erro ao adicionar destaque.");
+      }
+
+      toast.success("Produto adicionado aos destaques.");
+      await buscarDestaques();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Erro ao adicionar destaque.");
     }
-
-    await buscarDestaques();
   }
 
   async function removerDestaque(id: number) {
     const token = getAdminToken();
-    if (!token) return alert('Faça login de admin para remover destaques.');
-
-    const res = await fetch(`${API_ADMIN}/destaques/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) {
-      const t = await res.text().catch(() => '');
-      return alert(t || 'Erro ao remover destaque.');
+    if (!token) {
+      toast.error("Faça login de admin para remover destaques.");
+      return;
     }
 
-    await buscarDestaques();
+    try {
+      const res = await fetch(`${API_ADMIN}/destaques/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || "Erro ao remover destaque.");
+      }
+
+      toast.success("Destaque removido com sucesso.");
+      await buscarDestaques();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Erro ao remover destaque.");
+    }
   }
 
   const temItens = useMemo(() => destaques.length > 0, [destaques]);
 
   return (
-    <div className="px-4 md:px-6 py-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-[#359293]">Gerenciar Destaques</h1>
-          <p className="text-xs md:text-sm text-gray-500 mt-1">
-            Busque o produto e clique na sugestão para adicioná-lo aos destaques.
-          </p>
+    <div className="w-full px-3 py-5 sm:px-4 lg:px-6">
+      {/* container principal vira relative para posicionar o X */}
+      <div className="relative mx-auto w-full max-w-6xl">
+        {/* Botão de voltar: só mobile, bem colado no topo direito */}
+        <CloseButton
+          className="absolute right-3 -top-2 z-10 block text-2xl sm:hidden"
+        />
+
+        {/* Header responsivo */}
+        <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-1 flex-col gap-1">
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
+              Gerenciar Destaques
+            </h1>
+            <p className="text-xs text-gray-300 sm:text-sm">
+              Busque o produto e clique na sugestão para adicioná-lo aos
+              destaques.
+            </p>
+
+            <div className="mt-3 w-full sm:w-80 md:w-96">
+              <SearchInputProdutos
+                className="w-full"
+                placeholder="Buscar e adicionar produto..."
+                onPick={(p) => adicionarDestaqueDireto(p.id)}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Apenas SearchInput (sem select) */}
-        <div className="w-full sm:w-96">
-          <SearchInputProdutos
-            className="w-full"
-            placeholder="Buscar e adicionar produto..."
-            onPick={(p) => adicionarDestaqueDireto(p.id)}
-          />
-        </div>
-      </div>
+        {/* Estados */}
+        {loading && (
+          <div className="mt-6 rounded-2xl bg-white p-4 text-sm text-gray-600 shadow-sm sm:p-5">
+            Carregando…
+          </div>
+        )}
+        {err && !loading && (
+          <div className="mt-6 rounded-2xl border border-red-300 bg-red-50 p-4 text-sm text-red-700 sm:p-5">
+            {err}
+          </div>
+        )}
+        {!loading && !err && !temItens && (
+          <div className="mt-6 rounded-2xl bg-white p-4 text-sm text-gray-600 shadow-sm sm:p-5">
+            Nenhum destaque cadastrado ainda.
+          </div>
+        )}
 
-      {/* Estados */}
-      {loading && (
-        <div className="mt-6 text-gray-500">Carregando…</div>
-      )}
-      {err && !loading && (
-        <div className="mt-6 text-sm text-red-600">{err}</div>
-      )}
-      {!loading && !err && !temItens && (
-        <div className="mt-6 text-gray-600">Nenhum destaque cadastrado ainda.</div>
-      )}
-
-      {/* Grid responsivo */}
-      {temItens && (
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {destaques.map((d) => (
-            <article
-              key={d.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              {/* Imagem com ratio responsivo */}
-              <div className="relative w-full aspect-[16/9] bg-gray-100">
-                <Image
-                  src={toImageUrl(d.image)}
-                  alt={String(d.name)}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  onError={(e) => ((e.currentTarget as any).src = PLACEHOLDER)}
-                />
-              </div>
-
-              {/* Conteúdo */}
-              <div className="p-4">
-                <h2 className="font-semibold text-gray-900 truncate">{d.name}</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  {Number.isFinite(Number(d.price))
-                    ? `R$ ${Number(d.price).toFixed(2)}`
-                    : 'Preço indisponível'}
-                </p>
-
-                <div className="mt-3">
-                  <DeleteButton
-                    onConfirm={() => removerDestaque(d.id)}
-                    label="Remover"
+        {/* Grid responsiva */}
+        {temItens && (
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {destaques.map((d) => (
+              <article
+                key={d.id}
+                className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md"
+              >
+                <div className="relative w-full bg-gray-100/80 pb-[56.25%]">
+                  <Image
+                    src={toImageUrl(d.image)}
+                    alt={String(d.name)}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    onError={(e) =>
+                      ((e.currentTarget as any).src = PLACEHOLDER)
+                    }
                   />
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+
+                <div className="flex flex-1 flex-col p-4">
+                  <h2 className="truncate text-sm font-semibold text-gray-900 sm:text-base">
+                    {d.name}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-600">
+                    {Number.isFinite(Number(d.price))
+                      ? `R$ ${Number(d.price).toFixed(2)}`
+                      : "Preço indisponível"}
+                  </p>
+
+                  <div className="mt-3">
+                    <DeleteButton
+                      onConfirm={() => removerDestaque(d.id)}
+                      label="Remover"
+                    />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

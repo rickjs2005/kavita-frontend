@@ -104,79 +104,83 @@ export default function ProdutosPage() {
   }
 
   return (
-    <div className="w-full">
-      {/* Header com botão Voltar */}
-      <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-            Produtos
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Adicione, edite ou remova produtos do catálogo.
-          </p>
-        </div>
-
-        <Link href="/admin" className="shrink-0">
-          <CustomButton label="Voltar" variant="secondary" size="small" isLoading={false} />
-        </Link>
-      </div>
-
-      {/* Form em card responsivo */}
-      <section
-        ref={formRef}
-        className="bg-white rounded-2xl shadow p-4 sm:p-6 md:p-8 mb-6 sm:mb-8"
-      >
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
-          {produtoEditado ? "Editar Produto" : "Adicionar Produto"}
-        </h2>
-
-        <ProdutoFormAny
-          produtoEditado={produtoEditado}
-          onLimparEdicao={() => setProdutoEditado(null)}
-          onProdutoAdicionado={carregarProdutos}
-        />
-      </section>
-
-      {/* Lista / Estados */}
-      {loading && (
-        <div className="bg-white rounded-2xl shadow p-4 sm:p-6 text-gray-600">
-          Carregando produtos…
-        </div>
-      )}
-
-      {!loading && erro && (
-        <div className="rounded-2xl border border-red-300 bg-red-50 text-red-700 p-4 sm:p-5">
-          {erro}
-        </div>
-      )}
-
-      {!loading && !erro && produtos.length === 0 && (
-        <div className="bg-white rounded-2xl shadow p-4 sm:p-6 text-gray-600">
-          Nenhum produto cadastrado.
-        </div>
-      )}
-
-      {!loading && !erro && produtos.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Lista de produtos</h3>
-            <span className="text-sm text-gray-500">{produtos.length} itens</span>
+    <div className="w-full px-3 py-5 sm:px-4 lg:px-6">
+      <div className="mx-auto w-full max-w-6xl space-y-6 sm:space-y-8">
+        {/* Header com botão Voltar */}
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
+              Produtos
+            </h1>
+            <p className="mt-1 text-sm text-gray-300">
+              Adicione, edite ou remova produtos do catálogo.
+            </p>
           </div>
 
-          {/* Grid responsiva: 1col (mobile) → 2col (md) → 3col (xl) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-            {produtos.map((p) => (
-              <ProdutoCard
-                key={p.id}
-                produto={p}
-                className="mt-0"
-                onEditar={handleEditarProduto}
-                onRemover={removerProduto}
-              />
-            ))}
-          </div>
+          <Link href="/admin" className="self-start sm:self-auto">
+            <CustomButton
+              label="Voltar"
+              variant="secondary"
+              size="small"
+              isLoading={false}
+            />
+          </Link>
+        </header>
+
+        {/* Formulário – já vem com o card pronto dentro do componente */}
+        <section ref={formRef} aria-label="Formulário de produto">
+          <ProdutoFormAny
+            produtoEditado={produtoEditado}
+            onLimparEdicao={() => setProdutoEditado(null)}
+            onProdutoAdicionado={carregarProdutos}
+          />
         </section>
-      )}
+
+        {/* Estados de lista */}
+        {loading && (
+          <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
+            Carregando produtos…
+          </div>
+        )}
+
+        {!loading && erro && (
+          <div className="rounded-2xl border border-red-300 bg-red-50 p-4 text-red-700 sm:p-5">
+            {erro}
+          </div>
+        )}
+
+        {!loading && !erro && produtos.length === 0 && (
+          <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
+            Nenhum produto cadastrado.
+          </div>
+        )}
+
+        {!loading && !erro && produtos.length > 0 && (
+          <section className="space-y-3 sm:space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-50">
+                Lista de produtos
+              </h3>
+              <span className="text-sm text-gray-300">
+                {produtos.length} itens
+              </span>
+            </div>
+
+            {/* Grid responsiva: 1 col (mobile) → 2 col (md) → 3 col (xl) */}
+            <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {produtos.map((p) => (
+                <ProdutoCard
+                  key={p.id}
+                  produto={p}
+                  className="mt-0"
+                  onEditar={handleEditarProduto}
+                  onRemover={removerProduto}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

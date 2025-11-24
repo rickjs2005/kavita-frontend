@@ -26,7 +26,11 @@ const toAbs = (p?: string | null) =>
 // Converte URL absoluta → para relativa (salvar no banco)
 const toRel = (u: string) => (u?.startsWith(API_BASE) ? u.slice(API_BASE.length) : u);
 
-export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel }: Props) {
+export default function ServiceFormUnificado({
+  servicoEditado,
+  onSaved,
+  onCancel,
+}: Props) {
   /* --------------------------- estados principais --------------------------- */
   const [form, setForm] = useState({
     nome: "",
@@ -45,7 +49,9 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(
+    null
+  );
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isEditing = !!servicoEditado?.id;
@@ -81,7 +87,9 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
       });
 
       // imagens existentes
-      const extras = Array.isArray(servicoEditado.images) ? (servicoEditado.images as unknown as string[]) : [];
+      const extras = Array.isArray(servicoEditado.images)
+        ? (servicoEditado.images as unknown as string[])
+        : [];
       const allRel = [servicoEditado.imagem, ...extras].filter(Boolean) as string[];
       const uniqueRel = Array.from(new Set(allRel));
       const abs = uniqueRel.map((p) => toAbs(p)!).filter(Boolean);
@@ -127,7 +135,10 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
 
   /* ------------------------------- eventos ------------------------------- */
   function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>
+      | React.ChangeEvent<HTMLSelectElement>
   ) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -205,7 +216,9 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
 
       setMsg({
         type: "success",
-        text: isEditing ? "Serviço atualizado com sucesso!" : "Serviço cadastrado com sucesso!",
+        text: isEditing
+          ? "Serviço atualizado com sucesso!"
+          : "Serviço cadastrado com sucesso!",
       });
 
       resetForm();
@@ -213,7 +226,10 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
       onCancel();
     } catch (err: any) {
       console.error("Erro ao salvar:", err);
-      setMsg({ type: "error", text: err.message || "Erro ao salvar serviço." });
+      setMsg({
+        type: "error",
+        text: err.message || "Erro ao salvar serviço.",
+      });
     } finally {
       setLoading(false);
     }
@@ -223,12 +239,18 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-4 p-6 bg-white rounded-xl shadow-md w-full max-w-4xl"
+      className="flex w-full max-w-4xl flex-col gap-5 rounded-2xl bg-white p-4 shadow-sm sm:p-6 md:p-8"
     >
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-[#2F7E7F]">
-          {isEditing ? "Editar Serviço" : "Adicionar Serviço e Colaborador"}
-        </h2>
+      {/* Cabeçalho */}
+      <div className="flex flex-col gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-[#2F7E7F] sm:text-lg">
+            {isEditing ? "Editar Serviço" : "Adicionar Serviço e Colaborador"}
+          </h2>
+          <p className="mt-1 text-xs text-gray-500 sm:text-sm">
+            Cadastre colaboradores e serviços oferecidos na fazenda.
+          </p>
+        </div>
 
         {isEditing && (
           <button
@@ -237,65 +259,102 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
               resetForm();
               onCancel();
             }}
-            className="text-sm px-3 py-1.5 rounded border hover:bg-gray-50"
+            className="self-start rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 sm:self-auto"
           >
             Cancelar edição
           </button>
         )}
       </div>
 
-      {/* Campos principais */}
-      <input
-        className="border rounded px-3 py-2"
-        name="nome"
-        value={form.nome}
-        onChange={handleChange}
-        placeholder="Nome do colaborador"
-        required
-      />
-      <input
-        className="border rounded px-3 py-2"
-        name="cargo"
-        value={form.cargo}
-        onChange={handleChange}
-        placeholder="Cargo ou função"
-      />
-      <input
-        className="border rounded px-3 py-2"
-        name="whatsapp"
-        value={form.whatsapp}
-        onChange={handleChange}
-        placeholder="WhatsApp"
-        required
-      />
+      {/* Campos em grid */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        {/* Coluna esquerda */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
+              Nome do colaborador
+            </label>
+            <input
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#2F7E7F] focus:ring-2 focus:ring-[#2F7E7F]/20"
+              name="nome"
+              value={form.nome}
+              onChange={handleChange}
+              placeholder="Nome completo"
+              required
+            />
+          </div>
 
-      <textarea
-        name="descricao"
-        className="border rounded px-3 py-2 min-h-[80px]"
-        placeholder="Descrição do serviço"
-        value={form.descricao}
-        onChange={handleChange}
-      />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
+              Cargo ou função
+            </label>
+            <input
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#2F7E7F] focus:ring-2 focus:ring-[#2F7E7F]/20"
+              name="cargo"
+              value={form.cargo}
+              onChange={handleChange}
+              placeholder="Ex.: Veterinário, Aplicador de defensivo…"
+            />
+          </div>
 
-      <select
-        name="especialidade_id"
-        className="border rounded px-3 py-2"
-        value={form.especialidade_id}
-        onChange={handleChange}
-      >
-        <option value="">Selecione a especialidade…</option>
-        {especialidades.map((e) => (
-          <option key={e.id} value={e.id}>
-            {e.nome}
-          </option>
-        ))}
-      </select>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
+              WhatsApp
+            </label>
+            <input
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#2F7E7F] focus:ring-2 focus:ring-[#2F7E7F]/20"
+              name="whatsapp"
+              value={form.whatsapp}
+              onChange={handleChange}
+              placeholder="(00) 90000-0000"
+              required
+            />
+          </div>
+        </div>
 
-      {/* imagens existentes */}
+        {/* Coluna direita */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
+              Especialidade
+            </label>
+            <select
+              name="especialidade_id"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:border-[#2F7E7F] focus:ring-2 focus:ring-[#2F7E7F]/20"
+              value={form.especialidade_id}
+              onChange={handleChange}
+            >
+              <option value="">Selecione a especialidade…</option>
+              {especialidades.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
+              Descrição do serviço
+            </label>
+            <textarea
+              name="descricao"
+              className="min-h-[96px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#2F7E7F] focus:ring-2 focus:ring-[#2F7E7F]/20"
+              placeholder="Como esse colaborador atua, quais serviços presta, região de atendimento…"
+              value={form.descricao}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Imagens existentes */}
       {isEditing && existingImgs.length > 0 && (
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Imagens atuais</label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <label className="text-xs font-medium uppercase tracking-wide text-gray-600">
+            Imagens atuais
+          </label>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {existingImgs.map((u) => {
               const rel = toRel(u);
               const marked = removeExisting.has(rel);
@@ -304,14 +363,20 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
                   key={u}
                   type="button"
                   onClick={() => toggleRemoveExisting(u)}
-                  className={`relative rounded overflow-hidden border ${
-                    marked ? "ring-2 ring-red-500" : "ring-1 ring-black/10"
+                  className={`relative overflow-hidden rounded-lg border text-left shadow-sm transition ${
+                    marked
+                      ? "ring-2 ring-red-500"
+                      : "ring-1 ring-black/5 hover:ring-[#2F7E7F]"
                   }`}
                   title={marked ? "Remover imagem" : "Manter imagem"}
                 >
-                  <img src={u} alt="img existente" className="w-full h-28 object-cover" />
+                  <img
+                    src={u}
+                    alt="img existente"
+                    className="h-28 w-full object-cover"
+                  />
                   <span
-                    className={`absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded ${
+                    className={`absolute right-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
                       marked ? "bg-red-600 text-white" : "bg-black/60 text-white"
                     }`}
                   >
@@ -326,29 +391,34 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
 
       {/* upload novas imagens */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium">Adicionar novas imagens (opcional)</label>
+        <label className="text-xs font-medium uppercase tracking-wide text-gray-600">
+          Adicionar novas imagens (opcional)
+        </label>
         <input
           ref={fileInputRef}
           type="file"
           multiple
           accept="image/*"
           onChange={onPickFiles}
-          className="block"
+          className="block w-full text-xs text-gray-600 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-[#2F7E7F] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-white hover:file:bg-[#256466]"
         />
 
         {newPreviews.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {newPreviews.map((src, i) => (
-              <div key={`${src}-${i}`} className="relative">
+              <div
+                key={`${src}-${i}`}
+                className="relative overflow-hidden rounded-lg border border-gray-200 shadow-sm"
+              >
                 <img
                   src={src}
                   alt={`preview-${i}`}
-                  className="w-full h-28 object-cover rounded border"
+                  className="h-28 w-full object-cover"
                 />
                 <button
                   type="button"
                   onClick={() => removeNewImage(i)}
-                  className="absolute top-1 right-1 text-xs bg-black/70 text-white px-2 py-1 rounded"
+                  className="absolute right-1 top-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] text-white"
                 >
                   remover
                 </button>
@@ -360,15 +430,18 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
 
       {msg && (
         <div
-          className={`text-sm rounded px-3 py-2 ${
-            msg.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+          className={`rounded-lg px-3 py-2 text-sm ${
+            msg.type === "success"
+              ? "bg-green-50 text-green-700"
+              : "bg-red-50 text-red-700"
           }`}
         >
           {msg.text}
         </div>
       )}
 
-      <div className="flex justify-end gap-3">
+      {/* Ações */}
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={() => {
@@ -376,23 +449,26 @@ export default function ServiceFormUnificado({ servicoEditado, onSaved, onCancel
             onCancel();
           }}
           disabled={loading}
-          className="px-4 py-2 rounded border hover:bg-gray-50 disabled:opacity-50"
+          className="w-full rounded-full border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
         >
           Limpar
         </button>
-        <button
+        <CustomButton
           type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-[#2F7E7F] text-white rounded hover:opacity-90 disabled:opacity-50"
-        >
-          {loading
-            ? isEditing
-              ? "Atualizando..."
-              : "Salvando..."
-            : isEditing
-            ? "Atualizar Serviço"
-            : "Adicionar Serviço"}
-        </button>
+          label={
+            loading
+              ? isEditing
+                ? "Atualizando..."
+                : "Salvando..."
+              : isEditing
+              ? "Atualizar Serviço"
+              : "Adicionar Serviço"
+          }
+          variant="primary"
+          size="medium"
+          isLoading={loading}
+          className="w-full sm:w-auto"
+        />
       </div>
     </form>
   );
