@@ -23,6 +23,7 @@ const navItems: NavItem[] = [
   { label: "Pedidos", href: "/admin/pedidos", icon: "🧾" },
   { label: "Serviços", href: "/admin/servicos", icon: "🛠️" },
   { label: "Clientes", href: "/admin/clientes", icon: "👥" },
+  { label: "Carrinhos", href: "/admin/carrinhos", icon: "🛒" },
 ];
 
 export default function AdminSidebar({

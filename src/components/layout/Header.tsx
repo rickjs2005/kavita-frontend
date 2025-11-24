@@ -26,7 +26,7 @@ const NAV_LINKS = [
 const EXCLUDED_ROUTES = [
   "/checkout", "/login", "/register", "/forgot-password", "/reset-password",
   "/admin", "/admin/login", "/admin/produtos", "/admin/destaques",
-  "/admin/pedidos", "/admin/servicos", "/admin/clientes",
+  "/admin/pedidos", "/admin/servicos", "/admin/clientes","/admin/carrinhos",
 ] as const;
 
 export default function Header() {
