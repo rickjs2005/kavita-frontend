@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
+import {
+  formatCpfMask,
+  formatTelefoneMask,
+} from "@/utils/formatters";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -90,11 +94,15 @@ export default function MeusDadosPage() {
     };
   }, [user?.id]);
 
-  // helpers
+  // helper genérico de set, aceitando função de formatação
   const set =
-    (k: keyof Perfil) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
-      perfil && setPerfil({ ...perfil, [k]: e.target.value });
+    (k: keyof Perfil, transform?: (v: string) => string) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!perfil) return;
+      const raw = e.target.value;
+      const value = transform ? transform(raw) : raw;
+      setPerfil({ ...perfil, [k]: value });
+    };
 
   const diff = useMemo(() => {
     if (!perfil || !original) return {};
@@ -202,7 +210,7 @@ export default function MeusDadosPage() {
                 <input
                   className={ui.input}
                   value={perfil.telefone || ""}
-                  onChange={set("telefone")}
+                  onChange={set("telefone", formatTelefoneMask)}
                   inputMode="tel"
                   autoComplete="tel"
                   placeholder="(DD) 99999-9999"
@@ -222,10 +230,11 @@ export default function MeusDadosPage() {
                 <input
                   className={ui.input}
                   value={perfil.cpf || ""}
-                  onChange={set("cpf")}
+                  onChange={set("cpf", formatCpfMask)}
                   inputMode="numeric"
                   autoComplete="off"
                   placeholder="111.111.111-11"
+                  maxLength={14}
                 />
               </Field>
             </div>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserAddresses, UserAddressPayload } from "@/hooks/useUserAddresses";
+import { ESTADOS_BR } from "@/utils/brasil";
 
 export default function NovoEnderecoPage() {
   const router = useRouter();
@@ -23,10 +24,94 @@ export default function NovoEnderecoPage() {
     is_default: true,
   });
 
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cities, setCities] = useState<string[]>([]);
+
   const set =
     (field: keyof UserAddressPayload) =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const handleCepChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+    const masked =
+      digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    setForm((prev) => ({ ...prev, cep: masked }));
+  };
+
+  useEffect(() => {
+    const digits = form.cep.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+
+    let aborted = false;
+
+    (async () => {
+      try {
+        setCepLoading(true);
+        const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (aborted || data.erro) return;
+
+        setForm((prev) => ({
+          ...prev,
+          endereco: data.logradouro || prev.endereco,
+          bairro: data.bairro || prev.bairro,
+          cidade: data.localidade || prev.cidade,
+          estado: data.uf || prev.estado,
+        }));
+      } catch {
+      } finally {
+        if (!aborted) setCepLoading(false);
+      }
+    })();
+
+    return () => {
+      aborted = true;
+    };
+  }, [form.cep]);
+
+  useEffect(() => {
+    const uf = (form.estado || "").toUpperCase();
+    if (!uf) {
+      setCities([]);
+      return;
+    }
+
+    let aborted = false;
+
+    (async () => {
+      try {
+        const res = await fetch(
+          `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (aborted || !Array.isArray(data)) return;
+        const names = data.map((m: any) => m.nome).sort();
+        setCities(names);
+      } catch {
+      }
+    })();
+
+    return () => {
+      aborted = true;
+    };
+  }, [form.estado]);
+
+  const handleEstadoChange: React.ChangeEventHandler<HTMLSelectElement> = (
+    e
+  ) => {
+    const uf = e.target.value;
+    setForm((prev) => ({ ...prev, estado: uf, cidade: "" }));
+  };
+
+  const handleCidadeChange: React.ChangeEventHandler<HTMLInputElement> = (
+    e
+  ) => {
+    const value = e.target.value;
+    setForm((prev) => ({ ...prev, cidade: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +129,6 @@ export default function NovoEnderecoPage() {
     }
   };
 
-  // classes de estilo (apenas layout)
   const ui = {
     wrap: "pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 lg:px-10",
     container: "mx-auto w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl",
@@ -72,7 +156,6 @@ export default function NovoEnderecoPage() {
   return (
     <div className={ui.wrap}>
       <div className={ui.container}>
-        {/* título da página */}
         <div className={ui.header}>
           <h1 className={ui.title}>Novo endereço</h1>
           <p className={ui.subtitle}>
@@ -80,7 +163,6 @@ export default function NovoEnderecoPage() {
           </p>
         </div>
 
-        {/* card do formulário */}
         <div className={ui.card}>
           <form onSubmit={handleSubmit} className={ui.form}>
             <div className={ui.grid}>
@@ -94,13 +176,20 @@ export default function NovoEnderecoPage() {
               </Field>
 
               <Field label="CEP">
-                <input
-                  className={`${ui.input} input-kavita`}
-                  value={form.cep || ""}
-                  onChange={set("cep")}
-                  inputMode="numeric"
-                  placeholder="00000-000"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    className={`${ui.input} input-kavita`}
+                    value={form.cep || ""}
+                    onChange={handleCepChange}
+                    inputMode="numeric"
+                    placeholder="00000-000"
+                  />
+                  {cepLoading && (
+                    <span className="text-[11px] text-gray-500">
+                      Buscando...
+                    </span>
+                  )}
+                </div>
               </Field>
 
               <Field label="Endereço" full>
@@ -133,17 +222,31 @@ export default function NovoEnderecoPage() {
               <Field label="Cidade">
                 <input
                   className={`${ui.input} input-kavita`}
+                  list="novo-endereco-cidades"
                   value={form.cidade || ""}
-                  onChange={set("cidade")}
+                  onChange={handleCidadeChange}
+                  placeholder="Cidade"
                 />
+                <datalist id="novo-endereco-cidades">
+                  {cities.map((city) => (
+                    <option key={city} value={city} />
+                  ))}
+                </datalist>
               </Field>
 
               <Field label="Estado">
-                <input
+                <select
                   className={`${ui.input} input-kavita`}
-                  value={form.estado || ""}
-                  onChange={set("estado")}
-                />
+                  value={(form.estado || "").toUpperCase()}
+                  onChange={handleEstadoChange}
+                >
+                  <option value="">Selecione o estado</option>
+                  {ESTADOS_BR.map((uf) => (
+                    <option key={uf.sigla} value={uf.sigla}>
+                      {uf.sigla} - {uf.nome}
+                    </option>
+                  ))}
+                </select>
               </Field>
 
               <Field label="Complemento" full>
@@ -211,7 +314,6 @@ export default function NovoEnderecoPage() {
           </form>
         </div>
 
-        {/* respiro final da página */}
         <div className="h-8 sm:h-10" />
       </div>
     </div>
