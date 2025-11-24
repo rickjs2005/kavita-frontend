@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 
 type AdminAuth = {
   isAdmin: boolean;
+  markAsAdmin: () => void;
   logout: () => void;
 };
 
@@ -13,11 +14,17 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
-  // Checa o cookie quando carrega a página (e sempre que o doc mudar)
+  // Checa o cookie quando carrega a aplicação (refresh, abrir nova aba, etc.)
   useEffect(() => {
-    const hasToken = document.cookie.split('; ').some(c => c.startsWith('adminToken='));
+    const hasToken = document.cookie
+      .split('; ')
+      .some((c) => c.startsWith('adminToken='));
     setIsAdmin(hasToken);
   }, []);
+
+  const markAsAdmin = () => {
+    setIsAdmin(true);
+  };
 
   const logout = () => {
     // Limpa o cookie e manda para o login
@@ -27,7 +34,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AdminAuthContext.Provider value={{ isAdmin, logout }}>
+    <AdminAuthContext.Provider value={{ isAdmin, markAsAdmin, logout }}>
       {children}
     </AdminAuthContext.Provider>
   );

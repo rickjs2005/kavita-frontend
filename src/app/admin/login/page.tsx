@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAdminAuth } from '@/context/AdminAuthContext'; // 👈 usa o contexto
 
 type LoginResponse = { token: string; [k: string]: unknown };
 
@@ -10,6 +11,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
 export default function AdminLoginPage() {
   const router = useRouter();
   const search = useSearchParams();
+  const { markAsAdmin } = useAdminAuth(); // 👈 vamos avisar o contexto depois do login
 
   // ---- state
   const [email, setEmail] = useState('');
@@ -19,10 +21,11 @@ export default function AdminLoginPage() {
 
   const redirectTo = useMemo(() => search.get('from') || '/admin', [search]);
 
-  // limpa token antigo ao abrir a tela (não altera backend/lógica)
+  // limpa token antigo ao abrir a tela
   useEffect(() => {
-    try { localStorage.removeItem('adminToken'); } catch {}
-    // remove cookie se existir
+    try {
+      localStorage.removeItem('adminToken');
+    } catch {}
     document.cookie = 'adminToken=; path=/; max-age=0; samesite=lax';
   }, []);
 
@@ -39,11 +42,10 @@ export default function AdminLoginPage() {
       });
 
       if (!res.ok) {
-        // tenta extrair msg do backend; se não vier, mostra genérica
         let msg = 'Credenciais inválidas.';
         try {
           const data = await res.json();
-          if (typeof data?.message === 'string') msg = data.message;
+          if (typeof (data as any)?.message === 'string') msg = (data as any).message;
         } catch {}
         setErrMsg(msg);
         setLoading(false);
@@ -52,22 +54,29 @@ export default function AdminLoginPage() {
 
       const data = (await res.json()) as LoginResponse;
 
-      // persiste cookie para o middleware
+      // salva cookie para o backend autenticar
       const maxAge = 60 * 60 * 8; // 8h
-      const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+      const isHttps =
+        typeof window !== 'undefined' && window.location.protocol === 'https:';
       const secure = isHttps ? '; secure' : '';
       document.cookie = `adminToken=${data.token}; path=/; max-age=${maxAge}; samesite=lax${secure}`;
 
-      // opcional: localStorage para uso em fetches client-side
-      try { localStorage.setItem('adminToken', String(data.token)); } catch {}
+      // opcional: localStorage
+      try {
+        localStorage.setItem('adminToken', String(data.token));
+      } catch {}
 
+      // 👇 AQUI ESTAVA FALTANDO: marca como admin no contexto
+      markAsAdmin();
+
+      // manda pro dashboard (ou para a rota que pediu)
       router.replace(redirectTo);
     } catch (e) {
       console.error('Erro de login:', e);
       setErrMsg('Falha de conexão com o servidor.');
       setLoading(false);
     }
-  }, [API, email, senha, loading, redirectTo, router]);
+  }, [email, senha, loading, redirectTo, router, markAsAdmin]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleLogin();
@@ -185,7 +194,6 @@ export default function AdminLoginPage() {
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
 
-        {/* rodapé opcional (help / versão) */}
         <footer className="mt-4 text-xs text-gray-400 text-center">
           <span>Área restrita • Kavita Admin</span>
         </footer>
