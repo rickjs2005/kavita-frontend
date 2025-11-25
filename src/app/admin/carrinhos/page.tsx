@@ -83,25 +83,24 @@ export default function AdminCarrinhosAbandonadosPage() {
 
   useEffect(() => {
     async function carregar() {
-      try {
-        setLoading(true);
-        setErro(null);
+      setLoading(true);
+      setErro(null);
 
+      try {
         const token =
           typeof window !== "undefined"
             ? localStorage.getItem("adminToken")
             : null;
 
-        const resp = await axios.get<AbandonedCart[]>(
+        const resp = await axios.get<{ carrinhos: AbandonedCart[] }>(
           `${API_BASE}/api/admin/carrinhos`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-            withCredentials: true,
           }
         );
 
         // garante que itens esteja como array
-        const data = (resp.data || []).map((c: any) => ({
+        const data = (resp.data?.carrinhos ?? []).map((c) => ({
           ...c,
           itens: Array.isArray(c.itens) ? c.itens : [],
         }));
