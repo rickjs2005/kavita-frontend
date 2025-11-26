@@ -319,12 +319,17 @@ export default function CheckoutPage() {
       // LIMPAR CARRINHO APÓS COMPRA
       // =========================
 
-      // MERCADO PAGO: redireciona para o link do MP
-      if (payload.formaPagamento === "mercadopago") {
+      const isGatewayPayment = ["mercadopago", "pix", "boleto"].includes(
+        payload.formaPagamento
+      );
+
+      if (isGatewayPayment) {
+        // Inicia pagamento no Mercado Pago (Checkout Pro)
         const res = await axios.post<PaymentResponse>(
           `${API_BASE}/api/payment/start`,
           { pedidoId }
         );
+
         const initPoint =
           res.data?.init_point || res.data?.sandbox_init_point || null;
 
@@ -332,16 +337,20 @@ export default function CheckoutPage() {
         clearCart?.();
 
         if (initPoint) {
-          window.location.href = initPoint;
+          window.location.href = initPoint; // abre a tela igual do print
           return;
         }
-      } else {
-        // PIX / BOLETO / PRAZO
-        // → zera estado + localStorage antes de ir para tela de pedido
-        clearCart?.();
-        toast.success("Compra concluída com sucesso!");
-        router.push(`/pedidos/${pedidoId}`);
+
+        toast.error(
+          "Não foi possível abrir a tela de pagamento. Tente novamente."
+        );
+        return;
       }
+
+      // Se não for via gateway (ex.: Prazo a combinar)
+      clearCart?.();
+      toast.success("Pedido criado com sucesso!");
+      router.push(`/pedidos/${pedidoId}`);
     } catch (err: any) {
       const status = err?.response?.status;
       const msgBackend = err?.response?.data?.message as string | undefined;
@@ -507,13 +516,10 @@ export default function CheckoutPage() {
                     />
                     <span className="text-sm text-gray-700">
                       Entregar no endereço salvo:{" "}
-                      {`${
-                        enderecoSalvo?.rua || enderecoSalvo?.logradouro || ""
-                      }, ${enderecoSalvo?.numero || ""} - ${
-                        enderecoSalvo?.bairro || ""
-                      } - ${enderecoSalvo?.cidade || ""}/${
-                        enderecoSalvo?.estado || ""
-                      }`}
+                      {`${enderecoSalvo?.rua || enderecoSalvo?.logradouro || ""
+                        }, ${enderecoSalvo?.numero || ""} - ${enderecoSalvo?.bairro || ""
+                        } - ${enderecoSalvo?.cidade || ""}/${enderecoSalvo?.estado || ""
+                        }`}
                     </span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
