@@ -302,6 +302,51 @@ export default function PedidosAdminPage() {
     }
   };
 
+  // 🔔 Envio de comunicação (e-mail + WhatsApp) baseado em template
+  const enviarComunicacao = async (
+    id: number,
+    template: "confirmacao_pedido" | "pagamento_aprovado" | "pedido_enviado"
+  ) => {
+    try {
+      setAtualizandoId(id);
+
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("adminToken")
+          : null;
+
+      const config = {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      };
+
+      // e-mail
+      try {
+        await axios.post(
+          `${API_BASE}/api/admin/comunicacao/email`,
+          { template, pedidoId: id },
+          config
+        );
+      } catch (err) {
+        console.error("Erro ao enviar e-mail de comunicação:", err);
+        alert("Erro ao enviar e-mail de comunicação.");
+      }
+
+      // WhatsApp
+      try {
+        await axios.post(
+          `${API_BASE}/api/admin/comunicacao/whatsapp`,
+          { template, pedidoId: id },
+          config
+        );
+      } catch (err) {
+        console.error("Erro ao enviar WhatsApp de comunicação:", err);
+        alert("Erro ao enviar mensagem de WhatsApp.");
+      }
+    } finally {
+      setAtualizandoId(null);
+    }
+  };
+
   if (loading) {
     return (
       <main className="min-h-svh w-full px-4 py-8 sm:px-6 lg:px-8">
@@ -509,7 +554,7 @@ export default function PedidosAdminPage() {
                         </ul>
                       </div>
 
-                      {/* Pagamento + botão manual */}
+                      {/* Pagamento + botões manuais */}
                       <div className="table-cell px-4 py-4 align-top">
                         <span
                           className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${CLASSE_BADGE_PAGAMENTO[pedido.status_pagamento]}`}
@@ -533,6 +578,48 @@ export default function PedidosAdminPage() {
                               : "Marcar como pago manualmente"}
                           </button>
                         )}
+
+                        {/* Comunicação manual */}
+                        <div className="mt-3 flex flex-col gap-1 text-[11px]">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              enviarComunicacao(
+                                pedido.id,
+                                "confirmacao_pedido"
+                              )
+                            }
+                            disabled={atualizandoId === pedido.id}
+                            className="inline-flex items-center justify-center rounded-md border border-gray-300 px-3 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                          >
+                            Enviar confirmação
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              enviarComunicacao(
+                                pedido.id,
+                                "pagamento_aprovado"
+                              )
+                            }
+                            disabled={atualizandoId === pedido.id}
+                            className="inline-flex items-center justify-center rounded-md border border-gray-300 px-3 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                          >
+                            Enviar comprovante
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              enviarComunicacao(pedido.id, "pedido_enviado")
+                            }
+                            disabled={atualizandoId === pedido.id}
+                            className="inline-flex items-center justify-center rounded-md border border-gray-300 px-3 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                          >
+                            Enviar atualização de entrega
+                          </button>
+                        </div>
                       </div>
 
                       {/* Entrega (select) */}
@@ -711,6 +798,42 @@ export default function PedidosAdminPage() {
                         <option value="entregue">Entregue</option>
                         <option value="cancelado">Cancelado</option>
                       </select>
+
+                      {/* Comunicação manual (mobile) */}
+                      <div className="flex flex-col gap-1 pt-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            enviarComunicacao(pedido.id, "confirmacao_pedido")
+                          }
+                          disabled={atualizandoId === pedido.id}
+                          className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 px-3 py-2 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                        >
+                          Enviar confirmação
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            enviarComunicacao(pedido.id, "pagamento_aprovado")
+                          }
+                          disabled={atualizandoId === pedido.id}
+                          className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 px-3 py-2 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                        >
+                          Enviar comprovante
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            enviarComunicacao(pedido.id, "pedido_enviado")
+                          }
+                          disabled={atualizandoId === pedido.id}
+                          className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 px-3 py-2 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                        >
+                          Enviar atualização de entrega
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
