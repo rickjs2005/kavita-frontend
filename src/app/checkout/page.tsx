@@ -20,16 +20,32 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 interface CheckoutResponse {
   pedido_id: number;
 }
+
 interface PaymentResponse {
   init_point?: string;
   sandbox_init_point?: string;
 }
+
 interface CartItem {
   id: number;
   name?: string;
   nome?: string;
   price: number;
   quantity: number;
+}
+
+interface CouponPreviewResponse {
+  success: boolean;
+  message?: string;
+  desconto?: number;
+  total_original?: number;
+  total_com_desconto?: number;
+  cupom?: {
+    id: number;
+    codigo: string;
+    tipo: string;
+    valor: number;
+  };
 }
 
 const money = (v: number) =>
@@ -98,7 +114,24 @@ export default function CheckoutPage() {
   const { formData, updateForm } = useCheckoutForm();
 
   // -----------------------------
-  // ENDEREÇO SALVO (padrão da conta ou último pedido)
+  // CUPOM
+  // -----------------------------
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponMessage, setCouponMessage] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [discount, setDiscount] = useState(0);
+
+  // reseta cupom quando valor do carrinho muda
+  useEffect(() => {
+    setDiscount(0);
+    setCouponCode("");
+    setCouponMessage(null);
+    setCouponError(null);
+  }, [cartTotal]);
+
+  // -----------------------------
+  // ENDEREÇO SALVO
   // -----------------------------
   const [usarEnderecoSalvo, setUsarEnderecoSalvo] = useState<boolean>(false);
   const [enderecoSalvo, setEnderecoSalvo] = useState<any>(null);
@@ -106,7 +139,6 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // tenta pegar endereço do último pedido salvo no navegador (fallback)
     let lastOrderAddress: any = null;
     if (userId) {
       const key = `lastOrder_${userId}`;
@@ -119,11 +151,10 @@ export default function CheckoutPage() {
           }
         }
       } catch {
-        // ignora erro de parse
+        // ignora
       }
     }
 
-    // se não tiver usuário logado, só pode usar o fallback (se existir)
     if (!userId || !user?.token) {
       if (lastOrderAddress) {
         setEnderecoSalvo(lastOrderAddress);
@@ -135,7 +166,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // usuário logado → tenta buscar endereço padrão no backend
     (async () => {
       try {
         const res = await axios.get(`${API_BASE}/api/users/addresses`, {
@@ -148,10 +178,9 @@ export default function CheckoutPage() {
           list.find((a: any) => a.is_default === 1) || list[0] || null;
 
         if (preferred) {
-          // mapeia campos do banco → formato esperado pelo payload
           setEnderecoSalvo({
             cep: preferred.cep,
-            logradouro: preferred.endereco, // rua
+            logradouro: preferred.endereco,
             numero: preferred.numero,
             bairro: preferred.bairro,
             cidade: preferred.cidade,
@@ -166,7 +195,6 @@ export default function CheckoutPage() {
         console.error("Erro ao carregar endereços do usuário:", e);
       }
 
-      // se não tiver endereço padrão, cai pro endereço do último pedido (se existir)
       if (lastOrderAddress) {
         setEnderecoSalvo(lastOrderAddress);
         setUsarEnderecoSalvo(true);
@@ -187,7 +215,7 @@ export default function CheckoutPage() {
   };
 
   // -----------------------------
-  // PAYLOAD com CPF/telefone limpos
+  // PAYLOAD
   // -----------------------------
   const payload = useMemo(() => {
     const enderecoSelecionado =
@@ -225,6 +253,7 @@ export default function CheckoutPage() {
       cpf: cpfDigits,
       telefone: telefoneDigits,
       email,
+      cupom_codigo: couponCode ? couponCode.trim() : undefined,
     };
   }, [
     userId,
@@ -233,27 +262,94 @@ export default function CheckoutPage() {
     cartTotal,
     usarEnderecoSalvo,
     enderecoSalvo,
+    couponCode,
   ]);
 
+  // -----------------------------
+  // APLICAR CUPOM
+  // -----------------------------
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error("Digite o código do cupom.");
+      return;
+    }
+
+    if (!isLoggedIn) {
+      toast.error("Você precisa estar logado para aplicar um cupom.");
+      router.push("/login");
+      return;
+    }
+
+    const subtotal = Number(cartTotal || 0);
+    if (!subtotal || subtotal <= 0) {
+      toast.error("Seu carrinho está vazio.");
+      return;
+    }
+
+    try {
+      setCouponLoading(true);
+      setCouponError(null);
+      setCouponMessage(null);
+
+      const token = user?.token ?? null;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const { data } = await axios.post<CouponPreviewResponse>(
+        `${API_BASE}/api/checkout/preview-cupom`,
+        {
+          codigo: couponCode.trim(),
+          total: subtotal,
+        },
+        { headers }
+      );
+
+      if (!data?.success) {
+        const msg =
+          data?.message || "Não foi possível aplicar este cupom.";
+        setDiscount(0);
+        setCouponError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      const desconto = Number(data.desconto || 0);
+      setDiscount(desconto > 0 ? desconto : 0);
+
+      const msg = data.message || "Cupom aplicado com sucesso!";
+      setCouponMessage(msg);
+      setCouponError(null);
+      toast.success(msg);
+    } catch (err: any) {
+      const msgBackend = err?.response?.data?.message;
+      const msg = msgBackend || "Não foi possível aplicar este cupom.";
+      setDiscount(0);
+      setCouponError(msg);
+      toast.error(msg);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  // -----------------------------
+  // FINALIZAR CHECKOUT
+  // -----------------------------
   const handleSubmit = async () => {
     if (submitting) return;
 
-    // precisa estar logado
     if (!isLoggedIn) {
       toast.error("Você precisa estar logado para finalizar a compra.");
       router.push("/login");
       return;
     }
 
-    // precisa ter produtos
     if (!payload.produtos?.length) {
       toast.error("Seu carrinho está vazio.");
       return;
     }
 
-    // -----------------------------
-    // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
-    // -----------------------------
     const errors: string[] = [];
 
     if (!payload.nome) {
@@ -266,7 +362,6 @@ export default function CheckoutPage() {
       errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
     }
 
-    // telefone = WhatsApp
     if (!payload.telefone) {
       errors.push("Informe o WhatsApp.");
     } else if (payload.telefone.length < 10) {
@@ -274,7 +369,6 @@ export default function CheckoutPage() {
     }
 
     if (errors.length) {
-      // mostra só o primeiro erro por vez
       toast.error(errors[0]);
       return;
     }
@@ -284,9 +378,7 @@ export default function CheckoutPage() {
 
       const token = user?.token ?? null;
       const headers: any = { "Content-Type": "application/json" };
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
+      if (token) headers.Authorization = `Bearer ${token}`;
 
       const { data } = await axios.post<CheckoutResponse>(
         `${API_BASE}/api/checkout`,
@@ -295,7 +387,6 @@ export default function CheckoutPage() {
       );
       const pedidoId = data.pedido_id;
 
-      // salva último pedido (para endereço salvo) por usuário
       if (typeof window !== "undefined" && payload.usuario_id) {
         const key = `lastOrder_${payload.usuario_id}`;
         sessionStorage.setItem(
@@ -315,16 +406,11 @@ export default function CheckoutPage() {
         );
       }
 
-      // =========================
-      // LIMPAR CARRINHO APÓS COMPRA
-      // =========================
-
       const isGatewayPayment = ["mercadopago", "pix", "boleto"].includes(
         payload.formaPagamento
       );
 
       if (isGatewayPayment) {
-        // Inicia pagamento no Mercado Pago (Checkout Pro)
         const res = await axios.post<PaymentResponse>(
           `${API_BASE}/api/payment/start`,
           { pedidoId }
@@ -333,11 +419,10 @@ export default function CheckoutPage() {
         const initPoint =
           res.data?.init_point || res.data?.sandbox_init_point || null;
 
-        // → zera estado + localStorage antes de redirecionar
         clearCart?.();
 
         if (initPoint) {
-          window.location.href = initPoint; // abre a tela igual do print
+          window.location.href = initPoint;
           return;
         }
 
@@ -347,7 +432,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Se não for via gateway (ex.: Prazo a combinar)
       clearCart?.();
       toast.success("Pedido criado com sucesso!");
       router.push(`/pedidos/${pedidoId}`);
@@ -362,7 +446,7 @@ export default function CheckoutPage() {
       ) {
         toast.error(
           msgBackend ||
-          "Sua sessão expirou. Faça login novamente para finalizar a compra."
+            "Sua sessão expirou. Faça login novamente para finalizar a compra."
         );
 
         try {
@@ -390,7 +474,7 @@ export default function CheckoutPage() {
   );
   const subtotal = Number(cartTotal || 0);
   const frete = 0;
-  const total = subtotal + frete;
+  const total = Math.max(subtotal + frete - discount, 0);
 
   // ==============================
   // Tela para usuário não logado
@@ -567,23 +651,39 @@ export default function CheckoutPage() {
                 onChange={updateForm}
               />
 
+              {/* CUPOM */}
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
                 <div className="flex items-center gap-2 border border-dashed border-black/20 rounded-xl px-3">
                   <Icon.ticket />
                   <input
-                    placeholder="Possui um cupom? (em breve)"
+                    placeholder="Possui um cupom?"
                     className="h-11 w-full bg-transparent outline-none text-sm"
-                    disabled
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value.toUpperCase());
+                      setCouponMessage(null);
+                      setCouponError(null);
+                    }}
                   />
                 </div>
                 <button
                   type="button"
-                  disabled
-                  className="h-11 px-4 rounded-xl border border-black/10 text-sm font-semibold text-gray-500 bg-white/60"
+                  onClick={handleApplyCoupon}
+                  disabled={couponLoading || !couponCode.trim()}
+                  className="h-11 px-4 rounded-xl border border-[#EC5B20] text-sm font-semibold text-white bg-[#EC5B20] hover:bg-[#d84e1a] disabled:opacity-60"
                 >
-                  Aplicar
+                  {couponLoading ? "Aplicando..." : "Aplicar"}
                 </button>
               </div>
+
+              {couponMessage && (
+                <p className="mt-2 text-xs text-emerald-600">
+                  {couponMessage}
+                </p>
+              )}
+              {couponError && (
+                <p className="mt-2 text-xs text-red-600">{couponError}</p>
+              )}
 
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="flex items-center gap-2 text-gray-700 text-sm">
@@ -653,6 +753,12 @@ export default function CheckoutPage() {
                   <span>Frete</span>
                   <span>{frete ? money(frete) : "Grátis"}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex items-center justify-between text-emerald-600">
+                    <span>Desconto (cupom)</span>
+                    <span>- {money(discount)}</span>
+                  </div>
+                )}
                 <div className="pt-2 flex items-center justify-between">
                   <span className="text-gray-800 font-semibold">Total</span>
                   <span className="text-xl font-extrabold text-[#EC5B20]">

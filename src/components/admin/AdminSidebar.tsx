@@ -20,10 +20,12 @@ const navItems: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: "🏠" },
   { label: "Produtos", href: "/admin/produtos", icon: "📦" },
   { label: "Destaques", href: "/admin/destaques", icon: "⭐" },
+  { label: "Cupons", href: "/admin/cupons", icon: "🏷️" },
   { label: "Pedidos", href: "/admin/pedidos", icon: "🧾" },
   { label: "Serviços", href: "/admin/servicos", icon: "🛠️" },
   { label: "Clientes", href: "/admin/clientes", icon: "👥" },
   { label: "Carrinhos", href: "/admin/carrinhos", icon: "🛒" },
+  { label: "Configurações", href: "/admin/configuracoes", icon: "⚙️" },
 ];
 
 export default function AdminSidebar({

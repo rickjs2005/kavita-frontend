@@ -18,7 +18,7 @@ const NAV_LINKS = [
   { route: "/categorias/pets", label: "Pets" },
   { route: "/categorias/fazenda", label: "Fazenda" },
   { route: "/drones", label: "Kavita-Drone" },
-  { route: "/servicos", label: "Serviços" }, // continua igual
+  { route: "/servicos", label: "Serviços" }, 
   { route: "/categorias/pragas-e-insetos", label: "Pragas e Insetos" },
   { route: "/categorias/outros", label: "Outros" },
 ] as const;
@@ -27,6 +27,7 @@ const EXCLUDED_ROUTES = [
   "/checkout", "/login", "/register", "/forgot-password", "/reset-password",
   "/admin", "/admin/login", "/admin/produtos", "/admin/destaques",
   "/admin/pedidos", "/admin/servicos", "/admin/clientes","/admin/carrinhos",
+  "/admin/configuracoes","/admin/cupons",
 ] as const;
 
 export default function Header() {
