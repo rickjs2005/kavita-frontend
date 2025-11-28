@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { label: "Serviços", href: "/admin/servicos", icon: "🛠️" },
   { label: "Clientes", href: "/admin/clientes", icon: "👥" },
   { label: "Carrinhos", href: "/admin/carrinhos", icon: "🛒" },
+  { label: "Relatórios", href: "/admin/relatorios", icon: "📊" },
   { label: "Configurações", href: "/admin/configuracoes", icon: "⚙️" },
 ];
 
