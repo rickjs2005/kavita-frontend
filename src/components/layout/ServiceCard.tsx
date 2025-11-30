@@ -68,6 +68,10 @@ export default function ServiceCard({
   const waDigits = (servico.whatsapp || "").replace(/\D/g, "");
   const waLabel = formatWhatsApp(servico.whatsapp || "");
 
+  // ⭐ média de avaliações vinda do backend (compatível com o Service tipo antigo)
+  const ratingAvg = (servico as any).rating_avg as number | null | undefined;
+  const ratingCount = (servico as any).rating_count as number | null | undefined;
+
   async function handleRemove() {
     if (!onRemover || readOnly) return;
     if (!servico) return;
@@ -129,6 +133,17 @@ export default function ServiceCard({
             </span>
           )}
         </div>
+
+        {/* ⭐ bloco de nota média estilo marketplace */}
+        {typeof ratingAvg === "number" && (ratingCount ?? 0) > 0 && (
+          <div className="mt-0.5 flex items-center gap-1 text-xs text-amber-600">
+            <span>⭐ {ratingAvg.toFixed(1)}</span>
+            <span className="text-[11px] text-gray-500">
+              ({ratingCount} avaliação
+              {ratingCount && ratingCount > 1 ? "s" : ""})
+            </span>
+          </div>
+        )}
 
         {servico.cargo && (
           <p className="text-sm text-gray-700">

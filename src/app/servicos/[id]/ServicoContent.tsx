@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { absUrl } from "@/utils/absUrl";
 import type { Service } from "@/types/service";
 import { toast } from "react-hot-toast";
+import { useAuth } from "@/context/AuthContext";
 
 const PLACEHOLDER = "/placeholder.png";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -41,7 +42,20 @@ function coerceImages(imagem?: unknown, images?: unknown): string[] {
 
 const onlyDigits = (s?: string | null) => (s ?? "").replace(/\D/g, "");
 
+// Tipo das avaliações com nome do autor
+type Avaliacao = {
+  id: number;
+  colaborador_id: number;
+  nota: number;
+  comentario: string | null;
+  autor_nome: string | null;
+  created_at: string;
+};
+
 export default function ServicoContent({ servico }: { servico: Service }) {
+  const { user } = useAuth();
+  const autorNome = user?.nome || user?.email || "Cliente Kavita";
+
   const titulo = servico.nome || "Serviço";
 
   const imagens = useMemo(() => {
@@ -72,6 +86,10 @@ export default function ServicoContent({ servico }: { servico: Service }) {
   const [descPedido, setDescPedido] = useState("");
   const [sendingLead, setSendingLead] = useState(false);
 
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
+  const [loadingAval, setLoadingAval] = useState(true);
+
+  // registra visualização
   useEffect(() => {
     fetch(`${API}/api/public/servicos/${servico.id}/view`, {
       method: "POST",
@@ -85,6 +103,30 @@ export default function ServicoContent({ servico }: { servico: Service }) {
     }).catch(() => {});
     window.open(whatsappHref, "_blank");
   };
+
+  // carrega avaliações
+  async function carregarAvaliacoes() {
+    try {
+      setLoadingAval(true);
+      const res = await fetch(
+        `${API}/api/public/servicos/${servico.id}/avaliacoes`
+      );
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+      const data = (await res.json()) as Avaliacao[];
+      setAvaliacoes(data);
+    } catch (err) {
+      console.error("Erro ao carregar avaliações:", err);
+    } finally {
+      setLoadingAval(false);
+    }
+  }
+
+  useEffect(() => {
+    carregarAvaliacoes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servico.id]);
 
   async function enviarAvaliacao() {
     if (!nota || nota < 1 || nota > 5) {
@@ -101,10 +143,12 @@ export default function ServicoContent({ servico }: { servico: Service }) {
           colaborador_id: servico.id,
           nota,
           comentario,
+          autor_nome: autorNome,
         }),
       });
       toast.success("Obrigado pela avaliação!");
       setComentario("");
+      await carregarAvaliacoes();
     } catch (err) {
       console.error(err);
       toast.error("Erro ao enviar avaliação, tente novamente.");
@@ -145,10 +189,9 @@ export default function ServicoContent({ servico }: { servico: Service }) {
 
   return (
     <section className="mx-auto max-w-6xl">
-      {/* CARD BRANCO PEGANDO TUDO (texto bem forte) */}
       <div className="rounded-3xl bg-white p-5 text-slate-900 shadow-2xl sm:p-6 lg:p-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
-          {/* Coluna esquerda: imagens */}
+          {/* Coluna esquerda: imagens + comentários */}
           <div className="flex w-full flex-col items-center gap-4">
             <div className="w-full overflow-hidden rounded-2xl bg-gray-50 shadow-md">
               <img
@@ -190,6 +233,56 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                 ))}
               </div>
             )}
+
+            {/* Lista de avaliações embaixo da imagem */}
+            <div className="mt-4 w-full space-y-3">
+              <h2 className="text-sm font-semibold text-slate-900">
+                O que outros clientes dizem
+              </h2>
+
+              {loadingAval ? (
+                <p className="text-xs text-slate-500">
+                  Carregando avaliações…
+                </p>
+              ) : avaliacoes.length === 0 ? (
+                <p className="text-xs text-slate-500">
+                  Ainda não há comentários para este profissional. Seja o
+                  primeiro a avaliar!
+                </p>
+              ) : (
+                <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+                  {avaliacoes.map((av) => (
+                    <div
+                      key={av.id}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800"
+                    >
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-semibold text-slate-900">
+                            {Array.from({ length: av.nota }).map(
+                              (_, i) => "⭐"
+                            )}
+                          </span>
+                          {av.autor_nome && (
+                            <span className="text-[11px] text-slate-700">
+                              {av.autor_nome}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(av.created_at).toLocaleDateString("pt-BR")}
+                        </span>
+                      </div>
+                      {av.comentario && (
+                        <p className="text-[11px] leading-relaxed text-slate-700">
+                          {av.comentario}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Coluna direita: texto, botões, forms */}
@@ -319,7 +412,8 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                   Pedir orçamento rápido
                 </h2>
                 <p className="text-xs text-slate-700">
-                  Seus dados serão enviados diretamente para este profissional.
+                  Seus dados serão enviados diretamente para este
+                  profissional.
                 </p>
 
                 <input

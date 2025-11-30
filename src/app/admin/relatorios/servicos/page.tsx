@@ -37,9 +37,31 @@ type ServicosResponse = {
   porEspecialidade: EspecialidadeStats[];
 };
 
+// 🔹 tipos para ranking de colaboradores (melhores avaliados)
+type ServicoRankingRow = {
+  id: number;
+  nome: string;
+  cargo: string | null;
+  rating_avg: number | null;
+  rating_count: number | null;
+  total_servicos: number | null;
+  views_count: number | null;
+  whatsapp_clicks: number | null;
+  especialidade_nome: string | null;
+};
+
+type ServicosRankingResponse = {
+  labels: string[];
+  values: number[];
+  rows: ServicoRankingRow[];
+};
+
 export default function RelatorioServicosPage() {
   const [data, setData] = useState<ServicosResponse | null>(null);
+  const [ranking, setRanking] = useState<ServicosRankingResponse | null>(null);
+
   const [loading, setLoading] = useState(true);
+  const [loadingRanking, setLoadingRanking] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // ====== FETCH ======
@@ -48,28 +70,38 @@ export default function RelatorioServicosPage() {
     if (!token) {
       toast.error("Sessão expirada. Faça login novamente.");
       setLoading(false);
+      setLoadingRanking(false);
       return;
     }
 
     const fetchData = async () => {
       try {
         setLoading(true);
+        setLoadingRanking(true);
         setError(null);
 
-        const res = await axios.get<ServicosResponse>(
-          `${API_BASE}/api/admin/relatorios/servicos`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const headers = { Authorization: `Bearer ${token}` };
 
-        setData(res.data);
+        const [resServicos, resRanking] = await Promise.all([
+          axios.get<ServicosResponse>(
+            `${API_BASE}/api/admin/relatorios/servicos`,
+            { headers }
+          ),
+          axios.get<ServicosRankingResponse>(
+            `${API_BASE}/api/admin/relatorios/servicos-ranking`,
+            { headers }
+          ),
+        ]);
+
+        setData(resServicos.data);
+        setRanking(resRanking.data);
       } catch (err) {
         console.error(err);
         setError("Não foi possível carregar o relatório de serviços.");
         toast.error("Erro ao carregar relatório de serviços.");
       } finally {
         setLoading(false);
+        setLoadingRanking(false);
       }
     };
 
@@ -112,6 +144,29 @@ export default function RelatorioServicosPage() {
       total: item.total_servicos,
     }));
   }, [data]);
+
+  // ====== DERIVADOS DO RANKING (MELHORES AVALIADOS) ======
+  const rankingComAval = useMemo(() => {
+    if (!ranking || !ranking.rows) return [];
+    // só quem tem pelo menos 1 avaliação
+    return ranking.rows.filter((r) => (r.rating_count ?? 0) > 0);
+  }, [ranking]);
+
+  const melhorAvaliado = useMemo(() => {
+    if (!rankingComAval.length) return null;
+
+    return rankingComAval.reduce((prev, curr) => {
+      const prevRating = prev.rating_avg ?? 0;
+      const currRating = curr.rating_avg ?? 0;
+
+      if (currRating === prevRating) {
+        const prevCount = prev.rating_count ?? 0;
+        const currCount = curr.rating_count ?? 0;
+        return currCount > prevCount ? curr : prev;
+      }
+      return currRating > prevRating ? curr : prev;
+    });
+  }, [rankingComAval]);
 
   return (
     <main className="min-h-screen bg-[#050816] text-gray-100">
@@ -220,9 +275,7 @@ export default function RelatorioServicosPage() {
               />
               <KpiCard
                 label="Especialidade destaque"
-                value={
-                  especialidadeDestaque?.especialidade_nome || "—"
-                }
+                value={especialidadeDestaque?.especialidade_nome || "—"}
                 helper={
                   especialidadeDestaque
                     ? `Com ${especialidadeDestaque.total_servicos} serviço(s) cadastrado(s).`
@@ -319,7 +372,7 @@ export default function RelatorioServicosPage() {
               </div>
             </div>
 
-            {/* RANKING / LISTA */}
+            {/* RANKING / LISTA – ESPECIALIDADES */}
             <div className="mt-8 space-y-3">
               <div>
                 <h2 className="text-sm font-semibold text-slate-100 sm:text-base">
@@ -488,6 +541,198 @@ export default function RelatorioServicosPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* RANKING DE COLABORADORES MELHOR AVALIADOS */}
+            <div className="mt-10 space-y-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-100 sm:text-base">
+                    Colaboradores mais bem avaliados
+                  </h2>
+                  <p className="mt-1 text-[11px] text-slate-400 sm:text-xs">
+                    Baseado na nota média das avaliações registradas para cada
+                    profissional.
+                  </p>
+                </div>
+
+                {!loadingRanking && melhorAvaliado && (
+                  <p className="text-[11px] text-slate-300 sm:text-xs">
+                    Destaque:{" "}
+                    <span className="font-semibold text-[#35c2c4]">
+                      {melhorAvaliado.nome}
+                    </span>{" "}
+                    — nota média{" "}
+                    <span className="font-semibold">
+                      {Number(melhorAvaliado.rating_avg || 0).toFixed(1)}
+                    </span>{" "}
+                    ({melhorAvaliado.rating_count} avaliação
+                    {melhorAvaliado.rating_count === 1 ? "" : "s"})
+                  </p>
+                )}
+              </div>
+
+              {loadingRanking ? (
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-[11px] text-slate-300">
+                  Carregando ranking de colaboradores...
+                </div>
+              ) : !rankingComAval.length ? (
+                <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-950/60 px-4 py-3 text-[11px] text-slate-400">
+                  Ainda não há avaliações suficientes para montar este ranking.
+                </div>
+              ) : (
+                <>
+                  {/* Desktop: tabela */}
+                  <div className="hidden overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/80 md:block">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-left text-xs text-slate-200 sm:text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-800 bg-slate-900/80">
+                            <th className="px-4 py-3 font-semibold">
+                              Posição
+                            </th>
+                            <th className="px-4 py-3 font-semibold">
+                              Profissional
+                            </th>
+                            <th className="px-4 py-3 font-semibold">
+                              Especialidade
+                            </th>
+                            <th className="px-4 py-3 text-right font-semibold">
+                              Nota média
+                            </th>
+                            <th className="px-4 py-3 text-right font-semibold">
+                              Avaliações
+                            </th>
+                            <th className="px-4 py-3 text-right font-semibold">
+                              Serviços
+                            </th>
+                            <th className="px-4 py-3 text-right font-semibold">
+                              Cliques WhatsApp
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rankingComAval.map((row, index) => (
+                            <tr
+                              key={row.id}
+                              className="border-b border-slate-900/80 last:border-none hover:bg-slate-900/40"
+                            >
+                              <td className="px-4 py-2.5 align-middle">
+                                <span
+                                  className={`
+                                    inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold
+                                    ${
+                                      index === 0
+                                        ? "bg-amber-500/20 text-amber-100"
+                                        : index === 1
+                                        ? "bg-slate-700/60 text-slate-100"
+                                        : index === 2
+                                        ? "bg-orange-500/15 text-orange-100"
+                                        : "bg-slate-900/80 text-slate-100"
+                                    }
+                                  `}
+                                >
+                                  #{index + 1}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2.5 align-middle">
+                                <p className="text-[13px] font-medium text-slate-50 sm:text-sm">
+                                  {row.nome}
+                                </p>
+                                {row.cargo && (
+                                  <p className="text-[11px] text-slate-400">
+                                    {row.cargo}
+                                  </p>
+                                )}
+                              </td>
+                              <td className="px-4 py-2.5 align-middle">
+                                <p className="text-[12px] text-slate-200">
+                                  {row.especialidade_nome || "—"}
+                                </p>
+                              </td>
+                              <td className="px-4 py-2.5 text-right align-middle">
+                                {Number(row.rating_avg || 0).toFixed(1)}
+                              </td>
+                              <td className="px-4 py-2.5 text-right align-middle">
+                                {row.rating_count}
+                              </td>
+                              <td className="px-4 py-2.5 text-right align-middle">
+                                {row.total_servicos ?? 0}
+                              </td>
+                              <td className="px-4 py-2.5 text-right align-middle">
+                                {row.whatsapp_clicks ?? 0}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Mobile: cards */}
+                  <div className="space-y-3 md:hidden">
+                    {rankingComAval.map((row, index) => (
+                      <div
+                        key={row.id}
+                        className="rounded-2xl border border-slate-800 bg-slate-950/90 p-3 text-xs shadow-lg shadow-black/40"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`
+                                  inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold
+                                  ${
+                                    index === 0
+                                      ? "bg-amber-500/25 text-amber-100"
+                                      : index === 1
+                                      ? "bg-slate-700/70 text-slate-100"
+                                      : index === 2
+                                      ? "bg-orange-500/20 text-orange-100"
+                                      : "bg-slate-800 text-slate-100"
+                                  }
+                                `}
+                              >
+                                #{index + 1}
+                              </span>
+                              <p className="text-[12px] font-semibold text-slate-50">
+                                {row.nome}
+                              </p>
+                            </div>
+                            {row.cargo && (
+                              <p className="text-[11px] text-slate-400">
+                                {row.cargo}
+                              </p>
+                            )}
+                            <p className="text-[11px] text-slate-400">
+                              Especialidade:{" "}
+                              {row.especialidade_nome || "—"}
+                            </p>
+                          </div>
+                          <div className="text-right text-[11px] text-slate-300">
+                            <p>
+                              ⭐{" "}
+                              <span className="font-semibold">
+                                {Number(row.rating_avg || 0).toFixed(1)}
+                              </span>
+                            </p>
+                            <p>{row.rating_count} avaliação(s)</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-400">
+                          <span className="rounded-full bg-slate-900 px-2 py-0.5">
+                            {row.total_servicos ?? 0} serviço(s)
+                          </span>
+                          <span className="rounded-full bg-slate-900 px-2 py-0.5">
+                            {row.whatsapp_clicks ?? 0} clique(s) WhatsApp
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </section>
         )}
