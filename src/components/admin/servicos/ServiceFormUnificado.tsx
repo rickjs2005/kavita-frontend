@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import CustomButton from "@/components/buttons/CustomButton";
 import { Service } from "@/types/service";
+// ⚠️ Ajuste o caminho se o FormattedInput estiver em outra pasta
+import FormattedInput from "@/components/layout/FormattedInput";
 
 interface Especialidade {
   id: number;
@@ -270,46 +272,35 @@ export default function ServiceFormUnificado({
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {/* Coluna esquerda */}
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
-              Nome do colaborador
-            </label>
-            <input
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#2F7E7F] focus:ring-2 focus:ring-[#2F7E7F]/20"
-              name="nome"
-              value={form.nome}
-              onChange={handleChange}
-              placeholder="Nome completo"
-              required
-            />
-          </div>
+          {/* Nome */}
+          <FormattedInput
+            label="Nome do colaborador"
+            name="nome"
+            value={form.nome}
+            onChange={handleChange}
+            placeholder="Nome completo"
+            required
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
-              Cargo ou função
-            </label>
-            <input
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#2F7E7F] focus:ring-2 focus:ring-[#2F7E7F]/20"
-              name="cargo"
-              value={form.cargo}
-              onChange={handleChange}
-              placeholder="Ex.: Veterinário, Aplicador de defensivo…"
-            />
-          </div>
+          {/* Cargo */}
+          <FormattedInput
+            label="Cargo ou função"
+            name="cargo"
+            value={form.cargo}
+            onChange={handleChange}
+            placeholder="Ex.: Veterinário, Aplicador de defensivo…"
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
-              WhatsApp
-            </label>
-            <input
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#2F7E7F] focus:ring-2 focus:ring-[#2F7E7F]/20"
-              name="whatsapp"
-              value={form.whatsapp}
-              onChange={handleChange}
-              placeholder="(00) 90000-0000"
-              required
-            />
-          </div>
+          {/* WhatsApp com máscara */}
+          <FormattedInput
+            label="WhatsApp"
+            name="whatsapp"
+            value={form.whatsapp}
+            onChange={handleChange}
+            placeholder="(00) 90000-0000"
+            mask="telefone"
+            required
+          />
         </div>
 
         {/* Coluna direita */}

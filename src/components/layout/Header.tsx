@@ -26,7 +26,7 @@ const NAV_LINKS = [
 const EXCLUDED_ROUTES = [
   "/checkout", "/login", "/register", "/forgot-password", "/reset-password",
   "/admin", "/admin/login", "/admin/produtos", "/admin/destaques",
-  "/admin/pedidos", "/admin/servicos", "/admin/clientes","/admin/carrinhos",
+  "/admin/pedidos", "/admin/servicos", "/admin/servicos/pendentes", "/admin/clientes","/admin/carrinhos",
   "/admin/configuracoes","/admin/cupons","/admin/relatorios", "/admin/relatorios/vendas", "/admin/relatorios/servicos",
   "/admin/relatorios/clientes", "/admin/relatorios/estoque","/admin/relatorios/produtos",
 ] as const;

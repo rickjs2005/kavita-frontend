@@ -1,86 +1,76 @@
 // src/app/servicos/[id]/page.tsx
+
 import { notFound } from "next/navigation";
 import type { Service } from "@/types/service";
+import ServicoContent from "./ServicoContent";
 
-export const dynamic = "force-dynamic";
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-async function fetchJSON<T>(url: string) {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) return null;
+type PageProps = {
+  params: { id: string };
+};
+
+// 🔍 Busca um serviço público pelo ID
+async function fetchService(id: string): Promise<Service | null> {
+  if (!id) return null;
+
   try {
-    return (await res.json()) as T;
-  } catch {
+    const res = await fetch(`${API_BASE}/api/public/servicos/${id}`, {
+      // sempre dado fresquinho
+      cache: "no-store",
+    });
+
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      console.error("Erro ao buscar serviço:", await res.text());
+      return null;
+    }
+
+    const data = await res.json();
+
+    // garante que images seja sempre array
+    const normalizado: Service = {
+      ...data,
+      images: Array.isArray(data.images)
+        ? data.images
+        : typeof data.images === "string" && data.images
+        ? [data.images]
+        : [],
+    };
+
+    return normalizado;
+  } catch (err) {
+    console.error("Erro inesperado ao buscar serviço:", err);
     return null;
   }
 }
 
-function toArray<T = any>(data: any): T[] {
-  if (Array.isArray(data)) return data as T[];
-  if (data?.data && Array.isArray(data.data)) return data.data as T[];
-  if (data?.items && Array.isArray(data.items)) return data.items as T[];
-  if (data?.results && Array.isArray(data.results)) return data.results as T[];
-  return [];
-}
+export default async function ServicoPage({ params }: PageProps) {
+  const id = params.id;
+  const servico = await fetchService(id);
 
-async function getServicoById(id: string): Promise<Service | null> {
-  // 👉 Tente o endpoint PÚBLICO primeiro (singular/plural)
-  const direct = [
-    `${API}/api/public/servicos/${id}`,
-    `${API}/api/public/servico/${id}`,
-    // compat/legado:
-    `${API}/api/servicos/${id}`,
-    `${API}/api/servico/${id}`,
-    `${API}/admin/servicos/${id}`,
-  ];
-
-  for (const url of direct) {
-    const json = await fetchJSON<any>(url);
-    const s = (json?.data ?? json) as Service | null;
-    if (s?.id !== undefined) return s;
+  if (!servico) {
+    // 404 padrão do Next
+    notFound();
   }
 
-  // Query (?id=)
-  const query = [
-    `${API}/api/public/servicos?id=${id}`,
-    `${API}/api/public/servico?id=${id}`,
-    `${API}/api/servicos?id=${id}`,
-    `${API}/api/servico?id=${id}`,
-  ];
-  for (const url of query) {
-    const json = await fetchJSON<any>(url);
-    const arr = toArray<Service>(json);
-    const found = arr.find((x) => String(x.id) === String(id));
-    if (found) return found;
-  }
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-[#041a24] via-[#053a3f] to-[#021117] text-white">
+      <section className="container mx-auto px-4 pt-6 pb-10 lg:pt-8 lg:pb-16">
+        {/* link de voltar */}
+        <div className="mb-4 lg:mb-6">
+          <a
+            href="/servicos"
+            className="inline-flex items-center gap-1 text-sm font-medium text-emerald-200 hover:text-emerald-100"
+          >
+            <span aria-hidden>←</span>
+            <span>Voltar para lista de serviços</span>
+          </a>
+        </div>
 
-  // Fallback: lista e filtra
-  const lists = [
-    `${API}/api/public/servicos`,
-    `${API}/api/servicos`,
-    `${API}/admin/servicos`,
-  ];
-  for (const url of lists) {
-    const json = await fetchJSON<any>(url);
-    const arr = toArray<Service>(json);
-    const found = arr.find((x) => String(x.id) === String(id));
-    if (found) return found;
-  }
-
-  // Loga 1x só no fim
-  console.error(`[servico:get] não encontrado em nenhum endpoint (id=${id})`);
-  return null;
-}
-
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const servico = await getServicoById(id);
-  if (!servico) return notFound();
-
-  const ServicoContent = (await import("./ServicoContent")).default;
-  return <ServicoContent servico={servico} />;
+        <ServicoContent servico={servico} />
+      </section>
+    </main>
+  );
 }

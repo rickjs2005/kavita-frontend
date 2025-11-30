@@ -9,4 +9,5 @@ export type Service = {
   whatsapp?: string | null;
   especialidade_nome?: string | null;
   especialidade_id?: number | string | null;
+  verificado?: number | boolean;
 };

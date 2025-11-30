@@ -1,90 +1,58 @@
+// src/hooks/useFetchServicos.ts
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { Service } from "@/types/service";
+import useSWR from "swr";
 
-// 👉 agora usa o novo service centralizado
-import { getServices, type ListMeta } from "@/services/services";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-export type Params = {
+type Params = {
   q?: string;
-  especialidade?: string;
+  especialidade?: string | number | null;
   page?: number;
   limit?: number;
-  sort?: "id" | "nome" | "cargo" | "especialidade";
+  sort?: string;
   order?: "asc" | "desc";
 };
 
-type State = {
-  data: Service[];
-  meta: ListMeta | null;
-  loading: boolean;
-  error: string | null;
-};
+const fetcher = (url: string) =>
+  fetch(url, { cache: "no-store" }).then((r) => r.json());
 
-export function useFetchServicos(params?: Params): State {
-  const [state, setState] = useState<State>({
-    data: [],
-    meta: null,
-    loading: true,
-    error: null,
-  });
+export function useFetchServicos({
+  q = "",
+  especialidade = "",
+  page = 1,
+  limit = 12,
+  sort = "id",
+  order = "desc",
+}: Params) {
+  const url = new URL(`${API_BASE}/api/public/servicos`);
 
-  // memoização dos parâmetros para evitar rerender loop
-  const memoParams = useMemo(
-    () => ({
-      q: params?.q,
-      specialty: params?.especialidade, // traduz para o field do backend
-      page: params?.page ?? 1,
-      limit: params?.limit ?? 12,
-      sort: params?.sort ?? "id",
-      order: params?.order ?? "desc",
-    }),
-    [
-      params?.q,
-      params?.especialidade,
-      params?.page,
-      params?.limit,
-      params?.sort,
-      params?.order,
-    ]
-  );
+  if (q.trim().length > 0) url.searchParams.set("busca", q.trim());
 
-  useEffect(() => {
-    let active = true;
+  // 🔥 CORREÇÃO: enviar **ID numérico**, não nome
+  if (
+    especialidade !== "" &&
+    especialidade !== null &&
+    !Number.isNaN(Number(especialidade))
+  ) {
+    url.searchParams.set("especialidade", String(Number(especialidade)));
+  }
 
-    setState((s) => ({ ...s, loading: true, error: null }));
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("limit", String(limit));
+  url.searchParams.set("sort", sort);
+  url.searchParams.set("order", order);
 
-    async function fetchData() {
-      try {
-        const { data, meta } = await getServices(memoParams);
+  const { data, error, isLoading } = useSWR(url.toString(), fetcher);
 
-        if (!active) return;
-
-        setState({
-          data,
-          meta,
-          loading: false,
-          error: null,
-        });
-      } catch (e: any) {
-        if (!active) return;
-
-        setState({
-          data: [],
-          meta: null,
-          loading: false,
-          error: e?.message || "Erro ao buscar serviços",
-        });
-      }
-    }
-
-    fetchData();
-
-    return () => {
-      active = false;
-    };
-  }, [memoParams]);
-
-  return state;
+  return {
+    data: data?.data || [],
+    meta: {
+      total: data?.total || 0,
+      totalPages: data?.totalPages || 1,
+      page: data?.page || 1,
+    },
+    loading: isLoading,
+    error,
+  };
 }

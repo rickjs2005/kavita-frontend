@@ -21,10 +21,14 @@ export default function ServicosPage() {
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
-  const authHeader: HeadersInit | undefined = token
-    ? { Authorization: `Bearer ${token}` }
-    : undefined;
 
+  const authHeader: HeadersInit = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+
+  /* ==========================
+     Carregar lista de serviços
+  ========================== */
   const carregarServicos = async () => {
     setLoading(true);
     setErro(null);
@@ -37,13 +41,21 @@ export default function ServicosPage() {
         const txt = await res.text().catch(() => "");
         throw new Error(`Falha ao buscar serviços (${res.status}). ${txt}`);
       }
+
       const data = await res.json();
-      const lista = Array.isArray(data)
+
+      const lista: Service[] = Array.isArray(data)
         ? data.map((s: any) => ({
           ...s,
           images: Array.isArray(s.images) ? s.images : [],
+          // garante boolean certinho
+          verificado:
+            s.verificado === true ||
+            s.verificado === 1 ||
+            s.verificado === "1",
         }))
         : [];
+
       setServicos(lista);
     } catch (err: any) {
       console.error("Erro ao carregar serviços:", err);
@@ -59,6 +71,9 @@ export default function ServicosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* ==========================
+     Remover serviço
+  ========================== */
   const removerServico = async (id: number) => {
     if (!confirm("Tem certeza que deseja remover este serviço?")) return;
     try {
@@ -77,6 +92,9 @@ export default function ServicosPage() {
     }
   };
 
+  /* ==========================
+     Editar serviço
+  ========================== */
   const editarServico = (servico: Service) => {
     setServicoEditado(servico);
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -84,21 +102,87 @@ export default function ServicosPage() {
 
   const limparEdicao = () => setServicoEditado(null);
 
+  /* ==========================
+     Verificar / Desverificar
+  ========================== */
+  const toggleVerificado = async (id: number, novoValor: boolean) => {
+    try {
+      const res = await fetch(`${API_BASE}/${id}/verificado`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader,
+        },
+        body: JSON.stringify({ verificado: novoValor }),
+      });
+
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j?.message || "Erro ao atualizar verificação.");
+      }
+
+      setServicos((prev) =>
+        prev.map((s) =>
+          s.id === id ? { ...s, verificado: novoValor } : s
+        )
+      );
+    } catch (err) {
+      console.error("Erro ao atualizar verificação:", err);
+      alert("Erro ao atualizar verificação do serviço.");
+    }
+  };
+
+  // 🔹 Separa aprovados x pendentes
+  const servicosAprovados = servicos.filter((s) => s.verificado);
+  const servicosPendentes = servicos.filter((s) => !s.verificado);
+
   return (
     <div className="w-full px-3 py-5 sm:px-4 lg:px-6">
       <div className="mx-auto w-full max-w-6xl">
-        {/* Header com botão Voltar só no mobile */}
+        {/* HEADER */}
         <div className="relative mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
               Serviços Cadastrados
             </h1>
             <p className="mt-1 text-sm text-gray-300">
-              Adicione, edite ou remova serviços e colaboradores.
+              Adicione, edite, remova e{" "}
+              <span className="font-semibold">verifique</span> colaboradores.
+              Somente profissionais verificados aparecem abaixo.
             </p>
+            {servicosPendentes.length > 0 && (
+              <p className="mt-1 text-xs text-amber-300">
+                {servicosPendentes.length} profissional
+                {servicosPendentes.length > 1 && "es"} pendente
+                {servicosPendentes.length > 1 && "s"} de verificação — recebido
+                via Trabalhe com a Kavita.
+              </p>
+            )}
           </div>
 
-          {/* Botão Voltar – só mobile, topo direito do header */}
+          {/* Ações no desktop */}
+          <div className="hidden items-center gap-2 sm:flex">
+            <Link href="/admin/servicos/pendentes">
+              <CustomButton
+                label="Ver colaboradores pendentes"
+                variant="secondary"
+                size="small"
+                isLoading={false}
+              />
+            </Link>
+
+
+            <Link href="/admin">
+              <CustomButton
+                label="Voltar"
+                variant="secondary"
+                size="small"
+                isLoading={false}
+              />
+            </Link>
+          </div>
+
+          {/* Botão Voltar – mobile */}
           <Link
             href="/admin"
             className="absolute -right-1 -top-3 z-10 block sm:hidden"
@@ -110,9 +194,19 @@ export default function ServicosPage() {
               isLoading={false}
             />
           </Link>
+
+          {/* Botão Solicitações – mobile */}
+          <Link href="/admin/servicos/solicitacoes" className="block sm:hidden">
+            <CustomButton
+              label="Ver solicitações de trabalho"
+              variant="secondary"
+              size="small"
+              isLoading={false}
+            />
+          </Link>
         </div>
 
-        {/* Form em card responsivo */}
+        {/* FORMULÁRIO */}
         <section
           ref={formRef}
           className="mb-6 rounded-2xl bg-white p-4 shadow sm:mb-8 sm:p-6 md:p-8"
@@ -133,44 +227,43 @@ export default function ServicosPage() {
           />
         </section>
 
-        {/* Estados */}
-        {loading && (
+        {/* ESTADOS (loading / erro / lista) */}
+        {loading ? (
           <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
             Carregando serviços…
           </div>
-        )}
-
-        {!loading && erro && (
+        ) : erro ? (
           <div className="rounded-2xl border border-red-300 bg-red-50 p-4 text-red-700 sm:p-5">
             {erro}
           </div>
-        )}
-
-        {!loading && !erro && servicos.length === 0 && (
+        ) : servicosAprovados.length === 0 ? (
           <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
-            Nenhum serviço cadastrado.
+            Nenhum serviço verificado no momento.
           </div>
-        )}
-
-        {/* Grid de cards responsiva */}
-        {!loading && !erro && servicos.length > 0 && (
+        ) : (
           <section className="mt-4">
             <div className="mb-3 flex items-center justify-between sm:mb-4">
               <h3 className="text-lg font-semibold text-gray-50">
                 Lista de serviços
               </h3>
               <span className="text-sm text-gray-300">
-                {servicos.length} itens
+                {servicosAprovados.length}{" "}
+                {servicosAprovados.length === 1 ? "item" : "itens"}
               </span>
             </div>
 
+            {/* GRID DE CARDS (apenas verificados) */}
             <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {servicos.map((servico) => (
+              {servicosAprovados.map((servico) => (
                 <ServiceCard
                   key={servico.id}
                   servico={servico}
                   onRemover={removerServico}
                   onEditar={editarServico}
+                  // @ts-ignore enquanto o tipo do ServiceCard não tiver essa prop
+                  onToggleVerificado={(id, novo) =>
+                    toggleVerificado(id, novo)
+                  }
                 />
               ))}
             </div>
