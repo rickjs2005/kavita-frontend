@@ -196,9 +196,9 @@ export default function ServicosPage() {
           </Link>
 
           {/* Botão Solicitações – mobile */}
-          <Link href="/admin/servicos/solicitacoes" className="block sm:hidden">
+          <Link href="/admin/servicos/pendentes" className="block sm:hidden">
             <CustomButton
-              label="Ver solicitações de trabalho"
+              label="Ver colaboradores pendentes"
               variant="secondary"
               size="small"
               isLoading={false}
