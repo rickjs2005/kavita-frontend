@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useAdminAuth } from "@/context/AdminAuthContext";
-import { useAdminRouteGuard } from "@/hooks/useAdminRouteGuard"; // ⬅ novo
+import { useAdminAuth, AdminRole } from "@/context/AdminAuthContext";
+import { KpiCard } from "@/components/admin/KpiCard";
+import CloseButton from "@/components/buttons/CloseButton";
+import { FiUsers, FiUserCheck, FiClock } from "react-icons/fi";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const API_URL = `${API_BASE}/api`;
@@ -12,15 +14,17 @@ type AdminRow = {
   id: number;
   nome: string;
   email: string;
-  role: string; // slug do papel
-  ativo: number;
+  role: AdminRole | string;
+  ativo: 0 | 1;
+  criado_em: string;
+  ultimo_login: string | null;
 };
 
 type RoleRow = {
   id: number;
   nome: string;
   slug: string;
-  descricao: string | null;
+  descricao?: string | null;
 };
 
 function getAdminToken(): string {
@@ -32,107 +36,148 @@ function getAdminToken(): string {
   }
 }
 
+function parseAdminDate(dateStr: string | null | undefined): Date | null {
+  if (!dateStr) return null;
+
+  const isoCandidate = new Date(dateStr);
+  if (!Number.isNaN(isoCandidate.getTime())) {
+    return isoCandidate;
+  }
+
+  const match = dateStr.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+  );
+  if (match) {
+    const [, dd, mm, yyyy, hh = "00", min = "00", ss = "00"] = match;
+    const dt = new Date(
+      Number(yyyy),
+      Number(mm) - 1,
+      Number(dd),
+      Number(hh),
+      Number(min),
+      Number(ss)
+    );
+    if (!Number.isNaN(dt.getTime())) {
+      return dt;
+    }
+  }
+
+  return null;
+}
+
+function formatDateTime(dateStr: string | null | undefined) {
+  if (!dateStr) return "—";
+  const dt = parseAdminDate(dateStr);
+  if (!dt) return dateStr || "—";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  }).format(dt);
+}
+
+function formatRelative(dateStr: string | null | undefined) {
+  if (!dateStr) return "—";
+  const dt = parseAdminDate(dateStr);
+  if (!dt) return dateStr || "—";
+
+  const diffMs = Date.now() - dt.getTime();
+  const diffMin = Math.floor(diffMs / (1000 * 60));
+  const diffH = Math.floor(diffMin / 60);
+  const diffD = Math.floor(diffH / 24);
+
+  if (diffMin < 1) return "agora";
+  if (diffMin < 60) return `${diffMin} min atrás`;
+  if (diffH < 24) return `${diffH} h atrás`;
+  if (diffD === 1) return "ontem";
+  if (diffD < 30) return `${diffD} dias atrás`;
+  return formatDateTime(dateStr);
+}
+
 export default function EquipePage() {
   const router = useRouter();
-  const { logout, hasPermission } = useAdminAuth();
-
-  // 🔐 Proteção da rota — só entra quem tem admins_view OU admins_manage
-  const { allowed, checking } = useAdminRouteGuard({
-    permission: ["admins_view", "admins_manage"],
-    redirectTo: "/admin",
-  });
-
-  // 🔐 Controle de quem pode criar/editar
-  const canManageTeam = hasPermission("admins_manage");
+  const { hasPermission, logout } = useAdminAuth();
 
   const [admins, setAdmins] = useState<AdminRow[]>([]);
   const [roles, setRoles] = useState<RoleRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingAdmin, setEditingAdmin] = useState<AdminRow | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [roleSlug, setRoleSlug] = useState("");
 
-  // 🔄 Só carrega dados quando permitido
-  const fetchData = useCallback(async () => {
-    if (!allowed) return;
-
-    const token = getAdminToken();
-    if (!token) {
-      logout();
-      router.replace("/admin/login");
-      return;
-    }
-
-    setLoading(true);
-    setErrorMsg(null);
-
-    try {
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const [adminsRes, rolesRes] = await Promise.all([
-        fetch(`${API_URL}/admin/admins`, { headers }),
-        fetch(`${API_URL}/admin/roles`, { headers }),
-      ]);
-
-      if (adminsRes.status === 401 || rolesRes.status === 401) {
-        logout();
-        router.replace("/admin/login");
-        return;
-      }
-
-      if (!adminsRes.ok || !rolesRes.ok) {
-        throw new Error("Erro ao carregar administradores.");
-      }
-
-      const [adminsJson, rolesJson] = await Promise.all([
-        adminsRes.json(),
-        rolesRes.json(),
-      ]);
-
-      setAdmins(adminsJson);
-      setRoles(rolesJson);
-    } catch (err) {
-      console.error(err);
-      setErrorMsg("Não foi possível carregar a equipe administrativa.");
-    } finally {
-      setLoading(false);
-    }
-  }, [allowed, logout, router]);
+  const canManageAdmins = hasPermission("admins_manage");
 
   useEffect(() => {
-    if (allowed) fetchData();
-  }, [allowed, fetchData]);
+    const token = getAdminToken();
+    if (!token) {
+      logout();
+      router.replace("/admin/login");
+      return;
+    }
 
-  const totalAtivos = admins.filter((a) => a.ativo).length;
+    const load = async () => {
+      try {
+        setLoading(true);
+        setErrorMsg(null);
 
-  // =========================
-  // 🔐 ESTADO DE PROTEÇÃO
-  // =========================
+        const [adminsRes, rolesRes] = await Promise.all([
+          fetch(`${API_URL}/admin/admins`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${API_URL}/admin/roles`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-  if (checking) {
-    return (
-      <main className="p-6 text-slate-50">
-        <div className="h-6 w-48 animate-pulse rounded bg-slate-800" />
-        <div className="mt-4 h-40 animate-pulse rounded-xl bg-slate-900" />
-      </main>
-    );
-  }
+        if (adminsRes.status === 401 || rolesRes.status === 401) {
+          logout();
+          router.replace("/admin/login");
+          return;
+        }
 
-  if (!allowed) return null; // o hook já redirecionou
+        if (!adminsRes.ok) {
+          const data = await adminsRes.json().catch(() => null);
+          throw new Error(data?.message || "Erro ao carregar administradores.");
+        }
+        if (!rolesRes.ok) {
+          const data = await rolesRes.json().catch(() => null);
+          throw new Error(data?.message || "Erro ao carregar papéis.");
+        }
 
-  // =========================
-  // A PARTIR DAQUI É SUA PÁGINA NORMAL
-  // =========================
+        const adminsData: AdminRow[] = await adminsRes.json();
+        const rolesData: RoleRow[] = await rolesRes.json();
 
-  async function handleCreateAdmin(payload: {
-    nome: string;
-    email: string;
-    senha: string;
-    papelSlug: string;
-  }) {
-    if (!canManageTeam) return;
+        const orderedAdmins = [...adminsData].sort((a, b) => {
+          const da = parseAdminDate(a.criado_em);
+          const db = parseAdminDate(b.criado_em);
+          const ta = da ? da.getTime() : 0;
+          const tb = db ? db.getTime() : 0;
+          return tb - ta;
+        });
+
+        setAdmins(orderedAdmins);
+        setRoles(rolesData);
+      } catch (err: any) {
+        console.error(err);
+        setErrorMsg(err.message || "Erro inesperado ao carregar equipe.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [logout, router]);
+
+  async function handleCreateAdmin(event: FormEvent) {
+    event.preventDefault();
 
     const token = getAdminToken();
     if (!token) {
@@ -141,400 +186,423 @@ export default function EquipePage() {
       return;
     }
 
-    setSaving(true);
-    setErrorMsg(null);
+    if (!nome.trim() || !email.trim() || !senha.trim() || !roleSlug.trim()) {
+      alert("Preencha todos os campos para criar o administrador.");
+      return;
+    }
 
     try {
       const res = await fetch(`${API_URL}/admin/admins`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          nome: payload.nome,
-          email: payload.email,
-          senha: payload.senha,
-          papel: payload.papelSlug,
+          nome: nome.trim(),
+          email: email.trim(),
+          senha: senha,
+          role: roleSlug.trim().toLowerCase(),
         }),
       });
 
-      if (res.status === 401) {
-        logout();
-        router.replace("/admin/login");
-        return;
-      }
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.message || "Erro ao criar administrador.");
+        throw new Error(data?.message || "Erro ao criar administrador.");
       }
 
-      setShowCreateForm(false);
-      await fetchData();
+      if (data?.admin) {
+        setAdmins((prev) => {
+          const updated = [...prev, data.admin as AdminRow];
+          return updated.sort((a, b) => {
+            const da = parseAdminDate(a.criado_em);
+            const db = parseAdminDate(b.criado_em);
+            const ta = da ? da.getTime() : 0;
+            const tb = db ? db.getTime() : 0;
+            return tb - ta;
+          });
+        });
+      } else {
+        const refetch = await fetch(`${API_URL}/admin/admins`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (refetch.ok) {
+          const adminsData: AdminRow[] = await refetch.json();
+          const orderedAdmins = [...adminsData].sort((a, b) => {
+            const da = parseAdminDate(a.criado_em);
+            const db = parseAdminDate(b.criado_em);
+            const ta = da ? da.getTime() : 0;
+            const tb = db ? db.getTime() : 0;
+            return tb - ta;
+          });
+          setAdmins(orderedAdmins);
+        }
+      }
+
+      setNome("");
+      setEmail("");
+      setSenha("");
+      setRoleSlug("");
+      setShowForm(false);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message);
-    } finally {
-      setSaving(false);
+      alert(err.message || "Erro inesperado ao criar administrador.");
     }
   }
 
-  async function handleEditAdmin(payload: {
-    id: number;
-    papelSlug: string;
-    ativo: boolean;
-  }) {
-    if (!canManageTeam) return;
+  const totalAdmins = admins.length;
+  const ativos = admins.filter((a) => a.ativo === 1).length;
 
-    const token = getAdminToken();
-    if (!token) {
-      logout();
-      router.replace("/admin/login");
-      return;
+  const lastLoginStr = useMemo(() => {
+    let best: { date: Date; raw: string } | null = null;
+
+    for (const admin of admins) {
+      if (!admin.ultimo_login) continue;
+      const dt = parseAdminDate(admin.ultimo_login);
+      if (!dt) continue;
+      if (!best || dt.getTime() > best.date.getTime()) {
+        best = { date: dt, raw: admin.ultimo_login };
+      }
     }
 
-    setSaving(true);
-    setErrorMsg(null);
+    return best?.raw ?? null;
+  }, [admins]);
 
-    try {
-      const res = await fetch(`${API_URL}/admin/admins/${payload.id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          papel: payload.papelSlug,
-          ativo: payload.ativo ? 1 : 0,
-        }),
-      });
-
-      if (res.status === 401) {
-        logout();
-        router.replace("/admin/login");
-        return;
-      }
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.message || "Erro ao atualizar administrador.");
-      }
-
-      setEditingAdmin(null);
-      await fetchData();
-    } catch (err: any) {
-      console.error(err);
-      setErrorMsg(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  // =========================
-  // UI
-  // =========================
+  const lastLoginLabel = lastLoginStr ? formatRelative(lastLoginStr) : "—";
+  const lastLoginHelper = lastLoginStr
+    ? `Último acesso em ${formatDateTime(lastLoginStr)}`
+    : "Nenhum administrador acessou ainda";
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-3 py-4 text-slate-50 sm:px-4 lg:py-6">
-      {/* HEADER */}
-      <header className="space-y-2">
-        <p className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] uppercase tracking-wide text-emerald-300">
-          Equipe • Administradores
-        </p>
-
-        <h1 className="mt-2 text-xl font-semibold">Gestão da equipe administrativa</h1>
-
-        <p className="mt-1 text-sm text-slate-400">
-          Controle quem acessa o painel, qual papel cada um possui e o status da conta.
-        </p>
-
-        <div className="flex gap-2 text-xs text-slate-400">
-          <span>
-            <span className="font-semibold text-emerald-300">{totalAtivos}</span> ativos
-          </span>
-          <span>•</span>
-          <span>
-            <span className="font-semibold">{admins.length}</span> total
-          </span>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-8">
+      {/* HEADER COM X NO TOPO */}
+      <header className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        {/* X fixo no topo direito (somente mobile) */}
+        <div className="absolute right-0 top-0 sm:hidden">
+          <CloseButton className="text-3xl text-slate-400 hover:text-slate-100" />
         </div>
+
+        <div className="flex-1 space-y-1 pr-10 sm:pr-0">
+          <p className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-300">
+            Equipe · Administradores
+          </p>
+          <h1 className="text-2xl font-bold text-slate-50 sm:text-3xl">
+            Gestão da equipe administrativa
+          </h1>
+          <p className="max-w-2xl text-sm text-slate-400">
+            Controle quem acessa o painel, qual papel cada um possui, o status
+            da conta e o histórico de acessos da sua equipe.
+          </p>
+        </div>
+
+        {/* Botão de ação à direita no desktop */}
+        {canManageAdmins && (
+          <div className="hidden sm:flex">
+            <button
+              type="button"
+              onClick={() => setShowForm((prev) => !prev)}
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600"
+            >
+              + Novo administrador
+            </button>
+          </div>
+        )}
       </header>
 
-      {/* ERRO */}
-      {errorMsg && (
-        <section className="rounded-xl border border-red-500/50 bg-red-900/20 p-3 text-sm text-red-200">
-          {errorMsg}
-        </section>
-      )}
-
-      {/* FORM CRIAÇÃO / EDIÇÃO */}
-      {canManageTeam && (showCreateForm || editingAdmin) && (
-        <section className="rounded-2xl border border-slate-800 bg-slate-950/90 p-5">
-          <AdminForm
-            mode={showCreateForm ? "create" : "edit"}
-            roles={roles}
-            admin={editingAdmin}
-            saving={saving}
-            onCancel={() => {
-              setShowCreateForm(false);
-              setEditingAdmin(null);
-            }}
-            onSubmit={async (values) => {
-              if (showCreateForm) {
-                await handleCreateAdmin({
-                  nome: values.nome,
-                  email: values.email,
-                  senha: values.senha,
-                  papelSlug: values.papelSlug,
-                });
-              } else if (editingAdmin) {
-                await handleEditAdmin({
-                  id: editingAdmin.id,
-                  papelSlug: values.papelSlug,
-                  ativo: values.ativo,
-                });
-              }
-            }}
-          />
-        </section>
-      )}
-
-      {/* TABELA */}
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/80">
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-50">Administradores</h2>
-          <p className="text-[11px] text-slate-400">Nome, email, papel e status</p>
+      {/* Botão separado no mobile (linha própria, full width) */}
+      {canManageAdmins && (
+        <div className="sm:hidden">
+          <button
+            type="button"
+            onClick={() => setShowForm((prev) => !prev)}
+            className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-600"
+          >
+            + Novo administrador
+          </button>
         </div>
+      )}
+
+      {/* KPIs */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <KpiCard
+          label="Total de administradores"
+          value={totalAdmins}
+          helper="contas cadastradas no painel"
+          icon={<FiUsers />}
+          variant="default"
+        />
+        <KpiCard
+          label="Administradores ativos"
+          value={ativos}
+          helper={
+            totalAdmins > 0
+              ? `de ${totalAdmins} conta(s) habilitada(s)`
+              : "Nenhum administrador cadastrado ainda"
+          }
+          icon={<FiUserCheck />}
+          variant="success"
+        />
+        <KpiCard
+          label="Último acesso"
+          value={lastLoginLabel}
+          helper={lastLoginHelper}
+          icon={<FiClock />}
+          variant="warning"
+        />
+      </section>
+
+      {/* Formulário de criação */}
+      {canManageAdmins && showForm && (
+        <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-6">
+          <h2 className="text-lg font-semibold text-slate-50">
+            Criar novo administrador
+          </h2>
+          <p className="text-xs text-slate-400">
+            Defina os dados de acesso do novo membro da equipe. Ele utilizará
+            esse e-mail e senha na tela de login do painel.
+          </p>
+
+          <form
+            onSubmit={handleCreateAdmin}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+          >
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-300">Nome</label>
+              <input
+                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex: João Gerente"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-300">E-mail</label>
+              <input
+                type="email"
+                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="ex: gerente@kavita.com"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-300">Senha</label>
+              <input
+                type="password"
+                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="Defina uma senha segura"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-300">Papel</label>
+              <select
+                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
+                value={roleSlug}
+                onChange={(e) => setRoleSlug(e.target.value)}
+              >
+                <option value="">Selecione um papel</option>
+                {roles.map((role) => (
+                  <option key={role.id} value={role.slug}>
+                    {role.nome} ({role.slug})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-2 flex justify-end gap-3 sm:col-span-2">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600"
+              >
+                Criar administrador
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
+      {/* Lista de admins */}
+      <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
+        <header className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-100">
+            Administradores
+          </h2>
+          <span className="text-xs text-slate-500">
+            {ativos} ativos · {totalAdmins} no total
+          </span>
+        </header>
 
         {loading ? (
-          <div className="p-4 text-sm text-slate-300">Carregando...</div>
+          <div className="px-4 py-6 text-sm text-slate-400">
+            Carregando administradores...
+          </div>
+        ) : errorMsg ? (
+          <div className="px-4 py-6 text-sm text-red-400">{errorMsg}</div>
         ) : admins.length === 0 ? (
-          <div className="p-4 text-sm text-slate-300">Nenhum administrador encontrado.</div>
+          <div className="px-4 py-6 text-sm text-slate-400">
+            Nenhum administrador cadastrado ainda.
+          </div>
         ) : (
-          <table className="min-w-full border-separate border-spacing-0 text-xs">
-            <thead>
-              <tr className="bg-slate-900/80 text-[11px] uppercase tracking-wide text-slate-400">
-                <th className="px-3 py-2">Nome</th>
-                <th className="px-3 py-2">Email</th>
-                <th className="px-3 py-2">Papel</th>
-                <th className="px-3 py-2">Status</th>
-                {canManageTeam && <th className="px-3 py-2 text-right">Ações</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {admins.map((adm, index) => {
-                const roleInfo = roles.find((r) => r.slug === adm.role);
-
-                return (
-                  <tr
-                    key={adm.id}
-                    className={
-                      index % 2 === 0
-                        ? "bg-slate-950/60"
-                        : "bg-slate-900/40"
-                    }
-                  >
-                    <td className="px-3 py-2 text-xs">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{adm.nome}</span>
-                        <span className="text-[10px] text-slate-500">#{adm.id}</span>
-                      </div>
-                    </td>
-
-                    <td className="px-3 py-2 text-xs">{adm.email}</td>
-
-                    <td className="px-3 py-2 text-xs">
-                      <span className="rounded-full bg-slate-800/80 px-2 py-[2px] text-[10px]">
-                        {roleInfo?.nome ?? adm.role}
+          <>
+            {/* Mobile: cards */}
+            <div className="divide-y divide-slate-800/70 md:hidden">
+              {admins.map((admin) => (
+                <div
+                  key={admin.id}
+                  className="flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-slate-900/80"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs text-slate-400">Administrador</p>
+                      <p className="text-sm font-semibold text-slate-100">
+                        {admin.nome}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        {admin.email}
+                      </p>
+                      <p className="mt-1 text-[11px] text-slate-600">
+                        Criado em {formatDateTime(admin.criado_em)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="inline-flex items-center rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-100">
+                        {String(admin.role).toUpperCase()}
                       </span>
-                    </td>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
+                          admin.ativo
+                            ? "border border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                            : "border border-red-500/40 bg-red-500/10 text-red-300"
+                        }`}
+                      >
+                        {admin.ativo ? "Ativo" : "Inativo"}
+                      </span>
+                    </div>
+                  </div>
 
-                    <td className="px-3 py-2 text-xs">
-                      {adm.ativo ? (
-                        <span className="rounded-full bg-emerald-500/10 px-2 py-[2px] text-[10px] font-semibold text-emerald-300">
-                          Ativo
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-slate-700/40 px-2 py-[2px] text-[10px] font-semibold">
-                          Inativo
+                  <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] text-slate-400">
+                        Último login
+                      </span>
+                      <span className="text-xs text-slate-200">
+                        {admin.ultimo_login
+                          ? formatRelative(admin.ultimo_login)
+                          : "Nunca acessou"}
+                      </span>
+                      {admin.ultimo_login && (
+                        <span className="text-[11px] text-slate-500">
+                          {formatDateTime(admin.ultimo_login)}
                         </span>
                       )}
-                    </td>
+                    </div>
 
-                    {canManageTeam && (
-                      <td className="px-3 py-2 text-right">
-                        <button
-                          onClick={() => {
-                            setShowCreateForm(false);
-                            setEditingAdmin(adm);
-                          }}
-                          className="rounded-md bg-slate-800 px-3 py-1.5 text-[11px] hover:bg-slate-700"
-                        >
-                          Editar
-                        </button>
-                      </td>
-                    )}
+                    <div className="ml-auto flex flex-col text-right">
+                      <span className="text-[11px] text-slate-400">
+                        ID interno
+                      </span>
+                      <span className="text-sm text-slate-200">
+                        #{admin.id}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: tabela */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full text-sm">
+                <thead className="border-b border-slate-800 bg-slate-950/50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400">
+                      Administrador
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400">
+                      Papel
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400">
+                      Status
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400">
+                      Criado em
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400">
+                      Último login
+                    </th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {admins.map((admin) => (
+                    <tr
+                      key={admin.id}
+                      className="border-b border-slate-800/80 transition-colors hover:bg-slate-900/80"
+                    >
+                      <td className="px-4 py-3 text-slate-100">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{admin.nome}</span>
+                          <span className="text-[11px] text-slate-500">
+                            {admin.email}
+                          </span>
+                          <span className="mt-1 text-[11px] text-slate-600">
+                            ID #{admin.id}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-300">
+                        <span className="inline-flex items-center rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-100">
+                          {String(admin.role).toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
+                            admin.ativo
+                              ? "border border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                              : "border border-red-500/40 bg-red-500/10 text-red-300"
+                          }`}
+                        >
+                          {admin.ativo ? "Ativo" : "Inativo"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-300">
+                        {formatDateTime(admin.criado_em)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-300">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-slate-200">
+                            {admin.ultimo_login
+                              ? formatRelative(admin.ultimo_login)
+                              : "Nunca acessou"}
+                          </span>
+                          {admin.ultimo_login && (
+                            <span className="text-[11px] text-slate-500">
+                              {formatDateTime(admin.ultimo_login)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </main>
-  );
-}
-
-/* ===========================================
-   FORM DO ADMIN (SEM ALTERAR SUA LÓGICA)
-=========================================== */
-
-type AdminFormValues = {
-  nome: string;
-  email: string;
-  senha: string;
-  papelSlug: string;
-  ativo: boolean;
-};
-
-type AdminFormProps = {
-  mode: "create" | "edit";
-  roles: RoleRow[];
-  admin: AdminRow | null;
-  saving: boolean;
-  onCancel: () => void;
-  onSubmit: (values: AdminFormValues) => Promise<void>;
-};
-
-function AdminForm({ mode, roles, admin, saving, onCancel, onSubmit }: AdminFormProps) {
-  const isEdit = mode === "edit";
-
-  const [nome, setNome] = useState(admin?.nome ?? "");
-  const [email, setEmail] = useState(admin?.email ?? "");
-  const [senha, setSenha] = useState("");
-  const [papelSlug, setPapelSlug] = useState(admin?.role ?? roles[0]?.slug ?? "");
-  const [ativo, setAtivo] = useState(admin ? !!admin.ativo : true);
-
-  useEffect(() => {
-    if (admin) {
-      setNome(admin.nome);
-      setEmail(admin.email);
-      setPapelSlug(admin.role);
-      setAtivo(!!admin.ativo);
-    }
-  }, [admin]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
-    await onSubmit({
-      nome,
-      email,
-      senha,
-      papelSlug,
-      ativo,
-    });
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-sm">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-50">
-          {isEdit ? "Editar administrador" : "Novo administrador"}
-        </h2>
-
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800"
-        >
-          Fechar
-        </button>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-300">Nome</label>
-          <input
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
-            value={nome}
-            required
-            onChange={(e) => setNome(e.target.value)}
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-300">Email</label>
-          <input
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
-            type="email"
-            required
-            disabled={isEdit}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {!isEdit && (
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-300">Senha</label>
-          <input
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
-            type="password"
-            minLength={6}
-            required
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-          />
-        </div>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-300">Papel</label>
-          <select
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
-            required
-            value={papelSlug}
-            onChange={(e) => setPapelSlug(e.target.value)}
-          >
-            {roles.map((r) => (
-              <option key={r.id} value={r.slug}>
-                {r.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <label className="mt-6 inline-flex items-center gap-2 text-xs text-slate-300">
-          <input
-            type="checkbox"
-            checked={ativo}
-            onChange={(e) => setAtivo(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-700 bg-slate-900"
-          />
-          Conta ativa
-        </label>
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200"
-        >
-          Cancelar
-        </button>
-
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-        >
-          {saving ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar administrador"}
-        </button>
-      </div>
-    </form>
   );
 }

@@ -2,24 +2,26 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminRole, useAdminAuth } from "@/context/AdminAuthContext";
-
-type AdminLog = {
-  id: number;
-  acao: string;
-  entidade: string;
-  entidade_id: number | null;
-  data: string;
-  admin_id: number;
-  admin_nome: string;
-  admin_email: string;
-  admin_role: AdminRole;
-};
+import { useAdminAuth } from "@/context/AdminAuthContext";
+import { KpiCard } from "@/components/admin/KpiCard";
+import CloseButton from "@/components/buttons/CloseButton";
+import { FiDatabase, FiUsers, FiClock } from "react-icons/fi";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const API_URL = `${API_BASE}/api`;
 
-// Recupera token salvo no browser
+type AdminLog = {
+  id: number;
+  admin_nome: string;
+  admin_email: string;
+  acao: string;
+  entidade: string;
+  entidade_id: number | null;
+  ip?: string | null;
+  user_agent?: string | null;
+  criado_em: string; // string vinda do backend
+};
+
 function getAdminToken(): string {
   if (typeof window === "undefined") return "";
   try {
@@ -29,9 +31,48 @@ function getAdminToken(): string {
   }
 }
 
-// Data formatada com Intl.DateTimeFormat no fuso de São Paulo
+/**
+ * Converte a string de data do backend em Date.
+ * Suporta:
+ *  - ISO: 2025-12-03T18:44:10.000Z, 2025-12-03 18:44:10
+ *  - BR: 03/12/2025 18:44[:10]
+ */
+function parseLogDate(dateStr: string | null | undefined): Date | null {
+  if (!dateStr) return null;
+
+  // 1) Tenta como ISO direto
+  const isoCandidate = new Date(dateStr);
+  if (!Number.isNaN(isoCandidate.getTime())) {
+    return isoCandidate;
+  }
+
+  // 2) Tenta formato BR dd/mm/yyyy HH:MM[:SS]
+  const match = dateStr.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+  );
+  if (match) {
+    const [, dd, mm, yyyy, hh = "00", min = "00", ss = "00"] = match;
+    const dt = new Date(
+      Number(yyyy),
+      Number(mm) - 1,
+      Number(dd),
+      Number(hh),
+      Number(min),
+      Number(ss)
+    );
+    if (!Number.isNaN(dt.getTime())) {
+      return dt;
+    }
+  }
+
+  // 3) Se nada funcionar, retorna null
+  return null;
+}
+
 function formatDateTime(dateStr: string) {
-  const dt = new Date(dateStr);
+  const dt = parseLogDate(dateStr);
+  if (!dt) return dateStr || "—"; // fallback: mostra valor bruto se não conseguir formatar
+
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -43,7 +84,9 @@ function formatDateTime(dateStr: string) {
 }
 
 function formatRelative(dateStr: string) {
-  const dt = new Date(dateStr);
+  const dt = parseLogDate(dateStr);
+  if (!dt) return dateStr || "—";
+
   const diffMs = Date.now() - dt.getTime();
   const diffMin = Math.floor(diffMs / (1000 * 60));
   const diffH = Math.floor(diffMin / 60);
@@ -58,414 +101,399 @@ function formatRelative(dateStr: string) {
 }
 
 export default function AdminLogsPage() {
-  const { hasPermission, logout } = useAdminAuth();
   const router = useRouter();
+  const { hasPermission, logout } = useAdminAuth();
+
+  const canViewLogs = hasPermission("logs_view");
 
   const [logs, setLogs] = useState<AdminLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [entityFilter, setEntityFilter] = useState<string>("all");
   const [adminFilter, setAdminFilter] = useState<string>("all");
-  const [entidadeFilter, setEntidadeFilter] = useState<string>("all");
-  const [searchText, setSearchText] = useState("");
 
-  // Controle de acesso via permission
-  const canViewLogs = hasPermission("logs_view");
-
+  // Carregar logs
   useEffect(() => {
-    if (!canViewLogs) return;
+    const token = getAdminToken();
+    if (!token) {
+      logout();
+      router.replace("/admin/login");
+      return;
+    }
 
-    let cancelado = false;
+    if (!canViewLogs) {
+      setLoading(false);
+      return;
+    }
 
-    async function loadLogs() {
-      const token = getAdminToken();
-      if (!token) {
-        logout();
-        router.replace("/admin/login");
-        return;
-      }
-
-      setLoading(true);
-      setErrorMsg(null);
-
+    const loadLogs = async () => {
       try {
-        const res = await fetch(`${API_URL}/admin/logs?limit=20`, {
-          method: "GET",
-          credentials: "include",
+        setLoading(true);
+        setErrorMsg(null);
+
+        const res = await fetch(`${API_URL}/admin/logs`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        // se o token for inválido, volta pro login
         if (res.status === 401) {
-          console.warn("[LOGS] Não autorizado, redirecionando para login");
           logout();
           router.replace("/admin/login");
           return;
         }
 
         if (!res.ok) {
-          const errorText = await res.text().catch(() => "");
-          console.error(
-            "[LOGS] Erro ao buscar logs:",
-            res.status,
-            res.statusText,
-            errorText
-          );
-          setErrorMsg(
-            `Erro ao buscar logs (status ${res.status}). Veja o console para detalhes.`
-          );
-          return; // não joga exceção, só mostra mensagem na página
+          const data = await res.json().catch(() => null);
+          throw new Error(data?.message || "Erro ao carregar logs.");
         }
 
         const data: AdminLog[] = await res.json();
-        if (cancelado) return;
 
-        data.sort(
-          (a, b) =>
-            new Date(b.data).getTime() - new Date(a.data).getTime()
-        );
-        setLogs(data);
-      } catch (err) {
-        if (cancelado) return;
-        console.error("[LOGS] Erro inesperado ao buscar logs:", err);
-        setErrorMsg("Não foi possível carregar os logs de auditoria.");
+        // Ordenar por data (mais recentes primeiro)
+        const ordered = [...data].sort((a, b) => {
+          const da = parseLogDate(a.criado_em);
+          const db = parseLogDate(b.criado_em);
+          const ta = da ? da.getTime() : 0;
+          const tb = db ? db.getTime() : 0;
+          return tb - ta;
+        });
+
+        setLogs(ordered);
+      } catch (err: any) {
+        console.error("Erro ao carregar logs:", err);
+        setErrorMsg(err.message || "Erro inesperado ao carregar logs.");
       } finally {
-        if (!cancelado) setLoading(false);
+        setLoading(false);
       }
-    }
+    };
 
     loadLogs();
-
-    return () => {
-      cancelado = true;
-    };
   }, [canViewLogs, logout, router]);
 
-  // Se não tem permissão, mostra tela de bloqueio
-  if (!canViewLogs) {
-    return (
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-3 py-5 sm:px-4 lg:py-6 text-slate-50">
-        <header className="mb-2">
-          <p className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-amber-300">
-            Segurança
-          </p>
-          <h1 className="mt-2 text-lg font-semibold sm:text-xl">
-            Acesso negado
-          </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Você não tem permissão para visualizar os{" "}
-            <span className="font-semibold">logs de auditoria</span>. Fale com
-            o administrador principal da loja para solicitar acesso
-            (permissão <code className="text-amber-300">logs_view</code>).
-          </p>
-        </header>
+  const uniqueEntities = useMemo(
+    () => Array.from(new Set(logs.map((l) => l.entidade))).sort(),
+    [logs]
+  );
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-950/90 p-5">
-          <p className="text-sm text-slate-300">
-            Esta área é reservada para monitorar quem fez o quê dentro do
-            painel admin, garantindo rastreabilidade e segurança.
-          </p>
-        </section>
-      </main>
-    );
-  }
+  const uniqueAdmins = useMemo(
+    () => Array.from(new Set(logs.map((l) => l.admin_email))).sort(),
+    [logs]
+  );
 
-  // Admins únicos para filtro
-  const adminsOptions = useMemo(() => {
-    const map = new Map<number, { id: number; nome: string; role: AdminRole }>();
-    for (const log of logs) {
-      if (!map.has(log.admin_id)) {
-        map.set(log.admin_id, {
-          id: log.admin_id,
-          nome: log.admin_nome,
-          role: log.admin_role,
-        });
-      }
-    }
-    return Array.from(map.values()).sort((a, b) =>
-      a.nome.localeCompare(b.nome, "pt-BR")
-    );
-  }, [logs]);
-
-  // Entidades únicas para filtro
-  const entidadesOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const log of logs) {
-      if (log.entidade) set.add(log.entidade);
-    }
-    return Array.from(set.values()).sort((a, b) =>
-      a.localeCompare(b, "pt-BR")
-    );
-  }, [logs]);
-
-  // Aplica filtros em memória (admin, entidade, palavra-chave)
   const filteredLogs = useMemo(() => {
     let result = [...logs];
 
-    // filtro por admin
+    if (entityFilter !== "all") {
+      result = result.filter((l) => l.entidade === entityFilter);
+    }
+
     if (adminFilter !== "all") {
-      const id = Number(adminFilter);
-      result = result.filter((log) => log.admin_id === id);
+      result = result.filter((l) => l.admin_email === adminFilter);
     }
 
-    // filtro por entidade
-    if (entidadeFilter !== "all") {
-      result = result.filter(
-        (log) => log.entidade.toLowerCase() === entidadeFilter.toLowerCase()
-      );
-    }
-
-    // buscar por texto (nome, email, ação, entidade)
-    if (searchText.trim()) {
-      const q = searchText.trim().toLowerCase();
-      result = result.filter((log) => {
+    if (searchTerm.trim()) {
+      const term = searchTerm.trim().toLowerCase();
+      result = result.filter((l) => {
         return (
-          log.admin_nome.toLowerCase().includes(q) ||
-          log.admin_email.toLowerCase().includes(q) ||
-          log.acao.toLowerCase().includes(q) ||
-          log.entidade.toLowerCase().includes(q)
+          l.admin_nome.toLowerCase().includes(term) ||
+          l.admin_email.toLowerCase().includes(term) ||
+          l.acao.toLowerCase().includes(term) ||
+          l.entidade.toLowerCase().includes(term) ||
+          String(l.entidade_id ?? "").includes(term)
         );
       });
     }
 
     return result;
-  }, [logs, adminFilter, entidadeFilter, searchText]);
+  }, [logs, entityFilter, adminFilter, searchTerm]);
 
-  // Pequenos KPIs
-  const totalAdminsAtivos = adminsOptions.length;
+  const totalLogs = logs.length;
+  const totalFiltrados = filteredLogs.length;
+  const totalAdmins = uniqueAdmins.length;
+  const lastEvent =
+    logs.length > 0 ? formatRelative(logs[0].criado_em) : "—";
 
-  return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-3 py-4 sm:px-4 lg:py-6 text-slate-50">
-      {/* HEADER */}
-      <header className="space-y-1">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300">
-              Segurança • Auditoria
-            </p>
-            <h1 className="mt-2 text-lg font-semibold sm:text-xl">
-              Logs de auditoria do painel
-            </h1>
+  // 🔒 Tela de acesso negado
+  if (!canViewLogs) {
+    return (
+      <main className="px-4 sm:px-8 py-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="inline-flex items-center rounded-full bg-rose-500/10 border border-rose-500/40 px-3 py-1 mb-4">
+            <span className="text-[11px] font-semibold tracking-[0.16em] uppercase text-rose-300">
+              Segurança
+            </span>
           </div>
-          <p className="text-[11px] text-slate-400 sm:text-xs">
-            Monitoramento em tempo quase real de{" "}
-            <span className="font-semibold text-emerald-300">
-              quem fez o quê
-            </span>{" "}
-            dentro do admin.
+
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-50 mb-2">
+            Acesso negado aos logs administrativos
+          </h1>
+          <p className="text-sm text-slate-400 mb-4">
+            Seu usuário não possui a permissão{" "}
+            <span className="font-mono text-rose-300">logs_view</span>. Apenas
+            perfis autorizados podem visualizar o histórico de ações
+            administrativas do painel.
           </p>
+
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => router.push("/admin")}
+              className="inline-flex items-center rounded-lg bg-slate-800 hover:bg-slate-700 px-4 py-2 text-sm font-medium text-slate-100 border border-slate-700/80 transition-colors"
+            >
+              Voltar para o dashboard
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // 🔎 Tela normal de logs
+  return (
+    <main className="px-4 sm:px-8 py-6 space-y-6">
+      {/* Header + botão fechar mobile */}
+      <header className="flex items-start justify-between gap-3">
+        <div className="flex-1">
+          <p className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-emerald-400 mb-1">
+            Segurança · Logs
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-50">
+            Histórico de ações administrativas
+          </h1>
+          <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+            Veja quem fez o quê dentro do painel, em quais módulos e em qual
+            horário. Acompanhe de perto a atividade da sua equipe.
+          </p>
+        </div>
+
+        {/* Só mobile */}
+        <div className="sm:hidden">
+          <CloseButton className="text-slate-400 hover:text-slate-100 text-3xl" />
         </div>
       </header>
 
-      {/* KPI CARDS */}
-      <section className="grid gap-3 sm:grid-cols-3">
+      {/* KPIs */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KpiCard
           label="Registros carregados"
-          value={filteredLogs.length}
-          helper={`de ${logs.length} eventos`}
+          value={totalFiltrados}
+          helper={`de ${totalLogs} evento(s) encontrado(s)`}
+          icon={<FiDatabase />}
+          variant="success"
         />
         <KpiCard
-          label="Eventos registrados"
-          value={logs.length}
-          helper="no período carregado"
+          label="Perfis envolvidos"
+          value={totalAdmins}
+          helper="administradores diferentes nos registros"
+          icon={<FiUsers />}
+          variant="default"
         />
         <KpiCard
-          label="Admins ativos"
-          value={totalAdminsAtivos}
-          helper="com ações registradas"
+          label="Último evento"
+          value={lastEvent}
+          helper={
+            logs.length > 0
+              ? `Registrado em ${formatDateTime(logs[0].criado_em)}`
+              : "Ainda sem eventos registrados"
+          }
+          icon={<FiClock />}
+          variant="warning"
         />
       </section>
 
-      {/* FILTROS */}
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3 sm:p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-1 flex-wrap gap-2">
-            {/* Filtro Admin */}
-            <div className="flex min-w-[180px] flex-col text-[11px] text-slate-300">
-              <span className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
-                Admin
-              </span>
-              <select
-                value={adminFilter}
-                onChange={(e) => setAdminFilter(e.target.value)}
-                className="h-9 rounded-lg border border-slate-700 bg-slate-900 px-2 text-xs text-slate-100 outline-none focus:border-emerald-500"
-              >
-                <option value="all">Todos</option>
-                {adminsOptions.map((adm) => (
-                  <option key={adm.id} value={adm.id}>
-                    {adm.nome} ({adm.role})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Filtro Entidade */}
-            <div className="flex min-w-[150px] flex-col text-[11px] text-slate-300">
-              <span className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
-                Entidade
-              </span>
-              <select
-                value={entidadeFilter}
-                onChange={(e) => setEntidadeFilter(e.target.value)}
-                className="h-9 rounded-lg border border-slate-700 bg-slate-900 px-2 text-xs text-slate-100 outline-none focus:border-emerald-500"
-              >
-                <option value="all">Todas</option>
-                {entidadesOptions.map((ent) => (
-                  <option key={ent} value={ent}>
-                    {ent}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Busca por palavra-chave */}
-          <div className="flex flex-1 flex-col gap-1 text-[11px] text-slate-300 md:max-w-xs">
-            <span className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
-              Buscar
-            </span>
+      {/* Filtros */}
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-slate-300">Buscar</label>
             <input
-              type="text"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Filtrar por admin, ação, entidade..."
-              className="h-9 rounded-lg border border-slate-700 bg-slate-900 px-3 text-xs text-slate-100 placeholder:text-slate-500 outline-none focus:border-emerald-500"
+              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
+              placeholder="Nome, e-mail, ação, entidade..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-slate-300">Entidade</label>
+            <select
+              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
+              value={entityFilter}
+              onChange={(e) => setEntityFilter(e.target.value)}
+            >
+              <option value="all">Todas</option>
+              {uniqueEntities.map((ent) => (
+                <option key={ent} value={ent}>
+                  {ent}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-slate-300">Administrador</label>
+            <select
+              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
+              value={adminFilter}
+              onChange={(e) => setAdminFilter(e.target.value)}
+            >
+              <option value="all">Todos</option>
+              {uniqueAdmins.map((adm) => (
+                <option key={adm} value={adm}>
+                  {adm}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 
-      {/* TABELA */}
-      <section className="flex-1 rounded-2xl border border-slate-800 bg-slate-950/90">
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-50">
-            Histórico de ações
+      {/* Lista de logs */}
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/60 overflow-hidden">
+        <header className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-100">
+            Eventos recentes
           </h2>
-          <p className="text-[11px] text-slate-400">
-            Mostrando{" "}
-            <span className="font-semibold">{filteredLogs.length}</span>{" "}
-            registros filtrados
-          </p>
-        </div>
+          <span className="text-xs text-slate-500">
+            {totalFiltrados} registro(s) exibido(s)
+          </span>
+        </header>
 
         {loading ? (
-          <div className="p-4 text-sm text-slate-300">
-            Carregando registros de auditoria...
+          <div className="px-4 py-6 text-sm text-slate-400">
+            Carregando logs...
           </div>
         ) : errorMsg ? (
-          <div className="p-4 text-sm text-rose-200">{errorMsg}</div>
+          <div className="px-4 py-6 text-sm text-red-400">{errorMsg}</div>
         ) : filteredLogs.length === 0 ? (
-          <div className="p-4 text-sm text-slate-300">
+          <div className="px-4 py-6 text-sm text-slate-400">
             Nenhum log encontrado com os filtros atuais.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-separate border-spacing-0 text-xs">
-              <thead>
-                <tr className="bg-slate-900/80 text-[11px] uppercase tracking-wide text-slate-400">
-                  <th className="sticky left-0 z-10 border-b border-slate-800 bg-slate-900/90 px-3 py-2 text-left">
-                    Administrador
-                  </th>
-                  <th className="border-b border-slate-800 px-3 py-2 text-left">
-                    Ação
-                  </th>
-                  <th className="border-b border-slate-800 px-3 py-2 text-left">
-                    Entidade
-                  </th>
-                  <th className="border-b border-slate-800 px-3 py-2 text-left">
-                    ID da entidade
-                  </th>
-                  <th className="border-b border-slate-800 px-3 py-2 text-left">
-                    Data
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLogs.map((log, index) => {
-                  const isOdd = index % 2 === 1;
-                  return (
+          <>
+            {/* Mobile: cards */}
+            <div className="md:hidden divide-y divide-slate-800/70">
+              {filteredLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="px-4 py-3 flex flex-col gap-2 hover:bg-slate-900/80 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-xs text-slate-400">Administrador</p>
+                      <p className="text-sm font-semibold text-slate-100">
+                        {log.admin_nome}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        {log.admin_email}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-slate-800 text-slate-100">
+                      {log.entidade}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] text-slate-400">
+                        Ação
+                      </span>
+                      <span className="text-sm text-slate-200">
+                        {log.acao}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <span className="text-[11px] text-slate-400">
+                        ID entidade
+                      </span>
+                      <span className="text-sm text-slate-200">
+                        {log.entidade_id ?? "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col text-right ml-auto">
+                      <span className="text-[11px] text-slate-400">
+                        Data
+                      </span>
+                      <span className="text-xs text-slate-100">
+                        {formatRelative(log.criado_em)}
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        {formatDateTime(log.criado_em)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: tabela */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-950/50 border-b border-slate-800">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400">
+                      Administrador
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400">
+                      Ação
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400">
+                      Entidade
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400">
+                      ID entidade
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-slate-400">
+                      Data
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLogs.map((log) => (
                     <tr
                       key={log.id}
-                      className={
-                        isOdd
-                          ? "bg-slate-900/40"
-                          : "bg-slate-950/60 hover:bg-slate-900/70"
-                      }
+                      className="border-b border-slate-800/80 hover:bg-slate-900/80 transition-colors"
                     >
-                      {/* Administrador (nome + e-mail) */}
-                      <td className="sticky left-0 z-0 whitespace-nowrap border-b border-slate-900/80 bg-inherit px-3 py-2 text-xs">
+                      <td className="px-4 py-3 text-slate-100">
                         <div className="flex flex-col">
-                          <span className="font-medium text-slate-50">
-                            {log.admin_nome || log.admin_email}
+                          <span className="font-medium">{log.admin_nome}</span>
+                          <span className="text-[11px] text-slate-500">
+                            {log.admin_email}
                           </span>
-                          {log.admin_email && (
-                            <span className="text-[10px] text-slate-400">
-                              {log.admin_email}
-                            </span>
-                          )}
                         </div>
                       </td>
-
-                      {/* Ação */}
-                      <td className="border-b border-slate-900/80 px-3 py-2 text-xs">
-                        <span className="inline-flex rounded-full bg-slate-800/80 px-2 py-[2px] text-[10px] font-medium text-slate-50">
-                          {log.acao}
+                      <td className="px-4 py-3 text-slate-300">{log.acao}</td>
+                      <td className="px-4 py-3 text-slate-300">
+                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-slate-800 text-slate-100">
+                          {log.entidade}
                         </span>
                       </td>
-
-                      {/* Entidade */}
-                      <td className="border-b border-slate-900/80 px-3 py-2 text-xs capitalize">
-                        {log.entidade}
-                      </td>
-
-                      {/* ID da entidade */}
-                      <td className="border-b border-slate-900/80 px-3 py-2 text-xs">
+                      <td className="px-4 py-3 text-slate-300">
                         {log.entidade_id ?? "-"}
                       </td>
-
-                      {/* Data (relativa + formatada) */}
-                      <td className="border-b border-slate-900/80 px-3 py-2 text-xs">
+                      <td className="px-4 py-3 text-slate-300">
                         <div className="flex flex-col">
-                          <span className="text-[11px] text-slate-100">
-                            {formatRelative(log.data)}
+                          <span className="text-xs text-slate-200">
+                            {formatRelative(log.criado_em)}
                           </span>
-                          <span className="text-[10px] text-slate-500">
-                            {formatDateTime(log.data)}
+                          <span className="text-[11px] text-slate-500">
+                            {formatDateTime(log.criado_em)}
                           </span>
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </main>
-  );
-}
-
-type KpiCardProps = {
-  label: string;
-  value: number;
-  helper?: string;
-};
-
-function KpiCard({ label, value, helper }: KpiCardProps) {
-  return (
-    <article className="flex h-full flex-col rounded-2xl border border-slate-800 bg-slate-950/80 p-4 sm:p-5">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 sm:text-xs">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-semibold text-slate-50 sm:text-3xl">
-        {value}
-      </p>
-      {helper && (
-        <p className="mt-1 text-[11px] text-slate-400 sm:text-xs">{helper}</p>
-      )}
-    </article>
   );
 }

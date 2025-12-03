@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useAdminRouteGuard } from "@/hooks/useAdminRouteGuard";
+import CloseButton from "@/components/buttons/CloseButton";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const API_URL = `${API_BASE}/api`;
@@ -73,6 +74,10 @@ export default function AdminUserPermissionsConfigPage() {
   const [newPermGroup, setNewPermGroup] = useState("");
   const [newPermDescription, setNewPermDescription] = useState("");
   const [creatingPerm, setCreatingPerm] = useState(false);
+
+  // 🔍 filtros da matriz
+  const [filterGroup, setFilterGroup] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // 🔄 Carrega dados só depois que o hook liberar o acesso
   useEffect(() => {
@@ -152,15 +157,49 @@ export default function AdminUserPermissionsConfigPage() {
     loadData();
   }, [allowed, checking, logout, router]);
 
+  // grupos únicos para o select do filtro
+  const permissionGroups = useMemo(() => {
+    const set = new Set<string>();
+    permissions.forEach((p) => {
+      if (p.grupo) set.add(p.grupo);
+    });
+    return Array.from(set).sort();
+  }, [permissions]);
+
+  // aplica filtros (grupo + busca)
+  const filteredPermissions = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+
+    return permissions.filter((p) => {
+      const matchGroup =
+        filterGroup === "all" ? true : p.grupo === filterGroup;
+
+      if (!matchGroup) return false;
+
+      if (!term) return true;
+
+      const inKey = p.chave.toLowerCase().includes(term);
+      const inDesc = (p.descricao ?? "").toLowerCase().includes(term);
+
+      return inKey || inDesc;
+    });
+  }, [permissions, filterGroup, searchTerm]);
+
   // Enquanto o hook está checando, exibimos um skeleton simples
   if (checking) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-3 py-5 text-slate-50 sm:px-4">
-        <header className="space-y-1">
-          <p className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300">
-            Configurações • Usuários & Permissões
-          </p>
-          <div className="mt-2 h-5 w-48 animate-pulse rounded bg-slate-800" />
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 text-slate-50 sm:px-8">
+        <header className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <p className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300">
+              Configurações • Usuários & Permissões
+            </p>
+            <div className="mt-2 h-5 w-48 animate-pulse rounded bg-slate-800" />
+          </div>
+          {/* Close no mobile */}
+          <div className="sm:hidden">
+            <CloseButton className="text-slate-400 hover:text-slate-100 text-3xl" />
+          </div>
         </header>
         <section className="mt-4 h-40 animate-pulse rounded-2xl border border-slate-800 bg-slate-950/80" />
       </main>
@@ -338,18 +377,29 @@ export default function AdminUserPermissionsConfigPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-3 py-5 text-slate-50 sm:px-4">
-      <header className="space-y-1">
-        <p className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300">
-          Configurações • Usuários & Permissões
-        </p>
-        <h1 className="mt-1 text-lg font-semibold sm:text-xl">
-          Papéis e permissões
-        </h1>
-        <p className="text-sm text-slate-400">
-          Defina os papéis administrativos (master, gerente, suporte, leitura,
-          etc.) e quais permissões cada um deles possui dentro do painel.
-        </p>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 text-slate-50 sm:px-8">
+      {/* Header estilo logs/equipe + Close mobile */}
+      <header className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <p className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300">
+            Configurações • Usuários & Permissões
+          </p>
+          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">
+            Papéis e permissões
+          </h1>
+          <p className="max-w-2xl text-sm text-slate-400">
+            Defina os papéis administrativos (master, gerente, suporte,
+            leitura, etc.) e quais permissões cada um deles possui dentro do
+            painel.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-end gap-2">
+          {/* Só no mobile: botão de fechar, igual logs/equipe */}
+          <div className="sm:hidden">
+            <CloseButton className="text-slate-400 hover:text-slate-100 text-3xl" />
+          </div>
+        </div>
       </header>
 
       {loading ? (
@@ -386,9 +436,9 @@ export default function AdminUserPermissionsConfigPage() {
                   {newRoleName.trim() && (
                     <p className="mt-1 text-[11px] text-slate-500">
                       Slug gerado:{" "}
-                        <span className="font-mono">
-                          {slugify(newRoleName.trim())}
-                        </span>
+                      <span className="font-mono">
+                        {slugify(newRoleName.trim())}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -488,18 +538,46 @@ export default function AdminUserPermissionsConfigPage() {
 
           {/* Matriz de papéis x permissões */}
           <section className="rounded-2xl border border-slate-800 bg-slate-950/90">
-            <div className="flex flex-col gap-2 border-b border-slate-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-sm font-semibold">
-                  Matriz de papéis x permissões
-                </h2>
-                <p className="text-[11px] text-slate-400">
-                  Marque quais permissões cada papel administrativo possui. Essa
-                  é a base do controle de acesso do seu painel.
-                </p>
+            <div className="border-b border-slate-800 px-4 py-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold">
+                    Matriz de papéis x permissões
+                  </h2>
+                  <p className="text-[11px] text-slate-400">
+                    Marque quais permissões cada papel administrativo possui.
+                    Essa é a base do controle de acesso do seu painel.
+                  </p>
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  {roles.length} papel(is) • {permissions.length} permissão(ões)
+                </div>
               </div>
-              <div className="text-[11px] text-slate-400">
-                {roles.length} papel(is) • {permissions.length} permissão(ões)
+
+              {/* Filtros (grupo + busca) */}
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex gap-2">
+                  <select
+                    className="h-9 rounded-lg border border-slate-700 bg-slate-900 px-3 text-xs text-slate-100"
+                    value={filterGroup}
+                    onChange={(e) => setFilterGroup(e.target.value)}
+                  >
+                    <option value="all">Todos os grupos</option>
+                    {permissionGroups.map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-1 gap-2 sm:justify-end">
+                  <input
+                    className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-xs text-slate-100 sm:max-w-xs"
+                    placeholder="Buscar permissão por chave ou descrição..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
@@ -508,57 +586,42 @@ export default function AdminUserPermissionsConfigPage() {
                 Cadastre ao menos um papel e uma permissão para começar a
                 configurar a matriz.
               </div>
+            ) : filteredPermissions.length === 0 ? (
+              <div className="p-4 text-sm text-slate-300">
+                Nenhuma permissão encontrada com os filtros atuais.
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full border-separate border-spacing-0 text-xs">
-                  <thead>
-                    <tr className="bg-slate-900/80 text-[11px] uppercase tracking-wide text-slate-400">
-                      <th className="border-b border-slate-800 px-3 py-2 text-left">
-                        Permissão
-                      </th>
-                      {roles.map((role) => (
-                        <th
-                          key={role.id}
-                          className="border-b border-slate-800 px-3 py-2 text-center"
-                        >
-                          {role.name}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {permissions.map((perm, index) => (
-                      <tr
-                        key={perm.id}
-                        className={
-                          index % 2 === 0
-                            ? "bg-slate-950/60"
-                            : "bg-slate-900/40"
-                        }
-                      >
-                        <td className="border-b border-slate-900/80 px-3 py-2 align-top">
-                          <div className="flex flex-col gap-1">
-                            <span className="font-medium text-slate-50">
-                              {perm.chave}
-                            </span>
-                            <span className="text-[11px] text-emerald-300">
-                              Grupo: {perm.grupo}
-                            </span>
-                            {perm.descricao && (
-                              <span className="text-[11px] text-slate-500">
-                                {perm.descricao}
-                              </span>
-                            )}
-                          </div>
-                        </td>
+              <>
+                {/* Mobile: cards por permissão, com papéis em grid */}
+                <div className="md:hidden divide-y divide-slate-900/80">
+                  {filteredPermissions.map((perm) => (
+                    <div
+                      key={perm.id}
+                      className="px-4 py-3 hover:bg-slate-950/80 transition-colors"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-semibold text-slate-50">
+                          {perm.chave}
+                        </span>
+                        <span className="text-[11px] text-emerald-300">
+                          Grupo: {perm.grupo}
+                        </span>
+                        {perm.descricao && (
+                          <span className="text-[11px] text-slate-400">
+                            {perm.descricao}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2">
                         {roles.map((role) => {
                           const checked = role.permissions.includes(
                             perm.chave
                           );
                           return (
-                            <td
+                            <label
                               key={role.id}
-                              className="border-b border-slate-900/80 px-3 py-2 text-center align-middle"
+                              className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/80 px-2 py-2 text-[11px]"
                             >
                               <input
                                 type="checkbox"
@@ -572,14 +635,90 @@ export default function AdminUserPermissionsConfigPage() {
                                   )
                                 }
                               />
-                            </td>
+                              <span className="text-slate-100">
+                                {role.name}
+                              </span>
+                            </label>
                           );
                         })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop: tabela matriz completa */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full border-separate border-spacing-0 text-xs">
+                    <thead>
+                      <tr className="bg-slate-900/80 text-[11px] uppercase tracking-wide text-slate-400">
+                        <th className="border-b border-slate-800 px-3 py-2 text-left">
+                          Permissão
+                        </th>
+                        {roles.map((role) => (
+                          <th
+                            key={role.id}
+                            className="border-b border-slate-800 px-3 py-2 text-center"
+                          >
+                            {role.name}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filteredPermissions.map((perm, index) => (
+                        <tr
+                          key={perm.id}
+                          className={
+                            index % 2 === 0
+                              ? "bg-slate-950/60"
+                              : "bg-slate-900/40"
+                          }
+                        >
+                          <td className="border-b border-slate-900/80 px-3 py-2 align-top">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-medium text-slate-50">
+                                {perm.chave}
+                              </span>
+                              <span className="text-[11px] text-emerald-300">
+                                Grupo: {perm.grupo}
+                              </span>
+                              {perm.descricao && (
+                                <span className="text-[11px] text-slate-500">
+                                  {perm.descricao}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          {roles.map((role) => {
+                            const checked = role.permissions.includes(
+                              perm.chave
+                            );
+                            return (
+                              <td
+                                key={role.id}
+                                className="border-b border-slate-900/80 px-3 py-2 text-center align-middle"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 accent-emerald-500"
+                                  checked={checked}
+                                  onChange={(e) =>
+                                    handleToggleRolePermission(
+                                      role.id,
+                                      perm.chave,
+                                      e.target.checked
+                                    )
+                                  }
+                                />
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </section>
         </>
