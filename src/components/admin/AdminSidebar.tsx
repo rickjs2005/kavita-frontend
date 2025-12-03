@@ -14,19 +14,98 @@ type NavItem = {
   label: string;
   href: string;
   icon: string;
+  permission: string;
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: "🏠" },
-  { label: "Produtos", href: "/admin/produtos", icon: "📦" },
-  { label: "Destaques", href: "/admin/destaques", icon: "⭐" },
-  { label: "Cupons", href: "/admin/cupons", icon: "🏷️" },
-  { label: "Pedidos", href: "/admin/pedidos", icon: "🧾" },
-  { label: "Serviços", href: "/admin/servicos", icon: "🛠️" },
-  { label: "Clientes", href: "/admin/clientes", icon: "👥" },
-  { label: "Carrinhos", href: "/admin/carrinhos", icon: "🛒" },
-  { label: "Relatórios", href: "/admin/relatorios", icon: "📊" },
-  { label: "Configurações", href: "/admin/configuracoes", icon: "⚙️" },
+  // Dashboard
+  {
+    label: "Dashboard",
+    href: "/admin",
+    icon: "🏠",
+    permission: "dashboard_view",
+  },
+  // Catálogo
+  {
+    label: "Produtos",
+    href: "/admin/produtos",
+    icon: "📦",
+    permission: "products_manage",
+  },
+  {
+    label: "Destaques",
+    href: "/admin/destaques",
+    icon: "⭐",
+    permission: "highlights_manage",
+  },
+  {
+    label: "Cupons",
+    href: "/admin/cupons",
+    icon: "🏷️",
+    permission: "coupons_manage",
+  },
+  // Pedidos
+  {
+    label: "Pedidos",
+    href: "/admin/pedidos",
+    icon: "🧾",
+    permission: "orders_view",
+  },
+  // Serviços / Clientes
+  {
+    label: "Serviços",
+    href: "/admin/servicos",
+    icon: "🛠️",
+    permission: "services_manage",
+  },
+  {
+    label: "Clientes",
+    href: "/admin/clientes",
+    icon: "👥",
+    permission: "customers_view",
+  },
+  // Carrinhos
+  {
+    label: "Carrinhos",
+    href: "/admin/carrinhos",
+    icon: "🛒",
+    permission: "carts_view",
+  },
+  // Relatórios
+  {
+    label: "Relatórios",
+    href: "/admin/relatorios",
+    icon: "📊",
+    permission: "reports_view",
+  },
+  // Configurações gerais
+  {
+    label: "Configurações",
+    href: "/admin/configuracoes",
+    icon: "⚙️",
+    permission: "settings_manage",
+  },
+  // Papéis & Permissões
+  {
+    label: "Papéis & Permissões",
+    href: "/admin/configuracoes/usuarios",
+    icon: "🛡️",
+    permission: "roles_permissions_manage", // usamos como marcador
+  },
+  // Equipe (gestão de administradores)
+  {
+    label: "Equipe",
+    href: "/admin/equipe",
+    icon: "🧑‍🌾",
+    permission: "admins_manage",
+  },
+   // Logs
+  {
+    label: "Logs",
+    href: "/admin/logs",
+    icon: "📜",
+    permission: "logs_view",
+  },
 ];
 
 export default function AdminSidebar({
@@ -35,19 +114,24 @@ export default function AdminSidebar({
   onNavigate,
 }: AdminSidebarProps) {
   const pathname = usePathname();
-  const { logout } = useAdminAuth();
+  const { logout, hasPermission } = useAdminAuth();
 
   const handleLogout = () => {
     logout();
   };
 
+  // Filtra por permissão no momento da renderização
+  const itemsVisiveis = navItems.filter((item) =>
+    hasPermission(item.permission)
+  );
+
   return (
     <div
-      className={`flex h-full min-h-0 flex-col justify-between bg-slate-950 text-slate-50 ${className}`}
+      className={`flex h-full min-h-0 flex-col bg-slate-950 text-slate-50 ${className}`}
     >
-      {/* Topo */}
-      <div className="px-5 pb-4 pt-5">
-        <div className="mb-6 flex items-center gap-3">
+      {/* TOPO (fixo) */}
+      <div className="shrink-0 px-5 pb-3 pt-5">
+        <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/40">
             <span className="text-lg">🌱</span>
           </div>
@@ -60,10 +144,12 @@ export default function AdminSidebar({
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Navegação */}
+      {/* ÁREA SCROLLÁVEL (nav) */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-4">
         <nav className="space-y-1 text-sm">
-          {navItems.map((item) => {
+          {itemsVisiveis.map((item) => {
             const isActive =
               pathname === item.href ||
               (item.href !== "/admin" && pathname.startsWith(item.href));
@@ -92,9 +178,9 @@ export default function AdminSidebar({
         </nav>
       </div>
 
-      {/* Rodapé (logout) */}
+      {/* RODAPÉ (logout fixo embaixo) */}
       {!hideLogoutButton && (
-        <div className="border-t border-slate-800/80 bg-slate-950/95 px-5 py-4">
+        <div className="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-5 py-4">
           <button
             onClick={handleLogout}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-transform hover:translate-y-[1px] hover:shadow-rose-900/10"

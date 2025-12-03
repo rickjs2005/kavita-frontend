@@ -1,32 +1,43 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAdminAuth } from '@/context/AdminAuthContext'; // 👈 usa o contexto
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAdminAuth, AdminRole } from "@/context/AdminAuthContext"; // 👈 importa AdminRole também
 
-type LoginResponse = { token: string; [k: string]: unknown };
+type LoginResponse = {
+  token: string;
+  message?: string;
+  admin: {
+    id: number;
+    email: string;
+    nome: string;
+    role: AdminRole;
+    permissions?: string[];
+  };
+};
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const search = useSearchParams();
-  const { markAsAdmin } = useAdminAuth(); // 👈 vamos avisar o contexto depois do login
+  const { markAsAdmin } = useAdminAuth();
 
-  // ---- state
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
-  const redirectTo = useMemo(() => search.get('from') || '/admin', [search]);
+  const redirectTo = useMemo(() => search.get("from") || "/admin", [search]);
 
   // limpa token antigo ao abrir a tela
   useEffect(() => {
     try {
-      localStorage.removeItem('adminToken');
-    } catch {}
-    document.cookie = 'adminToken=; path=/; max-age=0; samesite=lax';
+      localStorage.removeItem("adminToken");
+      localStorage.removeItem("adminRole");
+      localStorage.removeItem("adminNome");
+    } catch { }
+    document.cookie = "adminToken=; path=/; max-age=0; samesite=lax";
   }, []);
 
   const handleLogin = useCallback(async () => {
@@ -36,17 +47,19 @@ export default function AdminLoginPage() {
 
     try {
       const res = await fetch(`${API}/api/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha }),
       });
 
       if (!res.ok) {
-        let msg = 'Credenciais inválidas.';
+        let msg = "Credenciais inválidas.";
         try {
           const data = await res.json();
-          if (typeof (data as any)?.message === 'string') msg = (data as any).message;
-        } catch {}
+          if (typeof (data as any)?.message === "string") {
+            msg = (data as any).message;
+          }
+        } catch { }
         setErrMsg(msg);
         setLoading(false);
         return;
@@ -54,38 +67,48 @@ export default function AdminLoginPage() {
 
       const data = (await res.json()) as LoginResponse;
 
-      // salva cookie para o backend autenticar
-      const maxAge = 60 * 60 * 8; // 8h
+      const maxAge = 60 * 60 * 8;
       const isHttps =
-        typeof window !== 'undefined' && window.location.protocol === 'https:';
-      const secure = isHttps ? '; secure' : '';
+        typeof window !== "undefined" &&
+        window.location.protocol === "https:";
+      const secure = isHttps ? "; secure" : "";
       document.cookie = `adminToken=${data.token}; path=/; max-age=${maxAge}; samesite=lax${secure}`;
 
-      // opcional: localStorage
       try {
-        localStorage.setItem('adminToken', String(data.token));
-      } catch {}
+        localStorage.setItem("adminToken", String(data.token));
+        localStorage.setItem("adminRole", data.admin.role);
+        localStorage.setItem("adminNome", data.admin.nome);
+        if (Array.isArray(data.admin.permissions)) {
+          localStorage.setItem(
+            "adminPermissions",
+            JSON.stringify(data.admin.permissions)
+          );
+        }
+      } catch { }
 
-      // 👇 AQUI ESTAVA FALTANDO: marca como admin no contexto
-      markAsAdmin();
+      // agora com permissões
+      markAsAdmin({
+        role: data.admin.role,
+        nome: data.admin.nome,
+        permissions: data.admin.permissions ?? [],
+      });
 
-      // manda pro dashboard (ou para a rota que pediu)
       router.replace(redirectTo);
     } catch (e) {
-      console.error('Erro de login:', e);
-      setErrMsg('Falha de conexão com o servidor.');
+      console.error("Erro de login:", e);
+      setErrMsg("Falha de conexão com o servidor.");
       setLoading(false);
     }
   }, [email, senha, loading, redirectTo, router, markAsAdmin]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleLogin();
+    if (e.key === "Enter") handleLogin();
   };
 
   return (
     <main
       className="
-        fixed inset-0                /* FULLSCREEN real, ignora paddings do layout */
+        fixed inset-0
         bg-gray-950
         flex items-center justify-center
         overflow-y-auto
@@ -191,7 +214,7 @@ export default function AdminLoginPage() {
             transition disabled:opacity-60 disabled:cursor-not-allowed
           "
         >
-          {loading ? 'Entrando...' : 'Entrar'}
+          {loading ? "Entrando..." : "Entrar"}
         </button>
 
         <footer className="mt-4 text-xs text-gray-400 text-center">

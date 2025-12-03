@@ -28,7 +28,8 @@ const EXCLUDED_ROUTES = [
   "/admin", "/admin/login", "/admin/produtos", "/admin/destaques",
   "/admin/pedidos", "/admin/servicos", "/admin/servicos/pendentes", "/admin/clientes","/admin/carrinhos",
   "/admin/configuracoes","/admin/cupons","/admin/relatorios", "/admin/relatorios/vendas", "/admin/relatorios/servicos",
-  "/admin/relatorios/clientes", "/admin/relatorios/estoque","/admin/relatorios/produtos",
+  "/admin/relatorios/clientes", "/admin/relatorios/estoque","/admin/relatorios/produtos",  "/admin/configuracoes/usuarios",
+  "/admin/logs", "/admin/equipe"
 ] as const;
 
 export default function Header() {
