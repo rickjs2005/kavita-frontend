@@ -99,7 +99,7 @@ const navItems: NavItem[] = [
     icon: "🧑‍🌾",
     permission: "admins_manage",
   },
-   // Logs
+  // Logs
   {
     label: "Logs",
     href: "/admin/logs",
@@ -122,7 +122,7 @@ export default function AdminSidebar({
 
   // Filtra por permissão no momento da renderização
   const itemsVisiveis = navItems.filter((item) =>
-    hasPermission(item.permission)
+    item.href === "/admin" ? true : hasPermission(item.permission)
   );
 
   return (
