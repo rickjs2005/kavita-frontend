@@ -70,7 +70,7 @@ export default function AdminLayout({
 }) {
   return (
     <AdminAuthProvider>
-      <AdminLayoutInner>{children}</AdminLayoutInner>
+        <AdminLayoutInner>{children}</AdminLayoutInner>
     </AdminAuthProvider>
   );
 }

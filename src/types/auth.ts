@@ -3,6 +3,7 @@ export type BackendLoginResponse =
   | Record<string, unknown>;
 
 export type AuthUser = {
+  name: string | null | undefined;
   id?: number | string | null;
   nome?: string | null;
   email?: string | null;

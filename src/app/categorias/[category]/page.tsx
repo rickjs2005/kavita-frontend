@@ -2,35 +2,47 @@
 import CategoryPage from "@/components/products/CategoryPage";
 import { redirect, notFound } from "next/navigation";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 type PageProps = {
   params: Promise<{ category: string }>;
 };
 
-const CATEGORY_SLUG_MAP: Record<string, string> = {
-  medicamentos: "medicamentos",
-  pets: "pets",
-  fazenda: "fazenda",
-  "pragas-e-insetos": "pragas-e-insetos",
-  outros: "outros",
+type PublicCategoria = {
+  id: number;
+  name: string;
+  slug: string;
+  is_active?: boolean | 0 | 1;
 };
 
 export default async function CategoryRoute({ params }: PageProps) {
   const { category } = await params;
 
-  // 🔁 se alguém tentar /categorias/drones, manda pra página especial
+  // rota especial que você já usa
   if (category === "drones") {
     redirect("/drones");
   }
 
-  const backendCategory = CATEGORY_SLUG_MAP[category];
+  // buscar categorias públicas ativas
+  const res = await fetch(`${API_BASE}/api/public/categorias`, {
+    // evitar cache agressivo
+    next: { revalidate: 30 },
+  });
 
-  // se não estiver no mapa, mostra 404 bonitinho em vez de chamar a API
-  if (!backendCategory) {
+  if (!res.ok) {
+    // se der erro na API, melhor 404 do que quebrar
     notFound();
   }
 
-  const title =
-    category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, " ");
+  const categorias = (await res.json()) as PublicCategoria[];
 
-  return <CategoryPage categoria={backendCategory} title={title} />;
+  const cat = categorias.find((c) => c.slug === category);
+
+  if (!cat) {
+    notFound();
+  }
+
+  const title = cat.name;
+
+  return <CategoryPage categoria={cat.slug} title={title} />;
 }

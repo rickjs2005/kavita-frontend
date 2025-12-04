@@ -2,7 +2,13 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-type Category = { id: number; name: string };
+// 🔹 AJUSTE: tipo agora aceita slug + is_active
+type Category = {
+  id: number;
+  name: string;
+  slug?: string;
+  is_active?: 0 | 1 | boolean;
+};
 
 export type Product = {
   id?: number;
@@ -73,7 +79,13 @@ export default function ProdutoForm({
         });
         if (!res.ok) throw new Error(`Falha ao carregar categorias (${res.status})`);
         const data: Category[] = await res.json();
-        setCategories(data);
+
+        // 🔹 NOVO: usa só categorias ativas (mas se API não mandar is_active, usa todas)
+        const onlyActive = (data || []).filter(
+          (c) => c.is_active === undefined || c.is_active === 1 || c.is_active === true
+        );
+
+        setCategories(onlyActive);
       } catch (e: any) {
         setMsg({ type: "error", text: e?.message || "Erro ao carregar categorias." });
       }

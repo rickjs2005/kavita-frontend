@@ -131,17 +131,19 @@ export default function AdminSidebar({
     >
       {/* TOPO (fixo) */}
       <div className="shrink-0 px-5 pb-3 pt-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/40">
-            <span className="text-lg">🌱</span>
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">
-              Kavita
-            </p>
-            <p className="truncate text-sm font-semibold text-slate-50">
-              Painel Admin
-            </p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/40">
+              <span className="text-lg">🌱</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">
+                Kavita
+              </p>
+              <p className="truncate text-sm font-semibold text-slate-50">
+                Painel Admin
+              </p>
+            </div>
           </div>
         </div>
       </div>
