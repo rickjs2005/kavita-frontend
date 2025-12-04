@@ -66,6 +66,11 @@ export default function MainNavCategories() {
           {cat.name}
         </Link>
       ))}
+      <Link 
+        href="/servicos"
+        className="text-sm font-medium text-emerald-50/95 hover:text-[#EC5B20] transition-colors">
+        Serviços
+      </Link>
 
       {/* Link manual do Drone, destaque especial mas hover igual ao carrinho */}
       <Link
