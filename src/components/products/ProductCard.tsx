@@ -1,11 +1,6 @@
 "use client";
 
-import React, {
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart } from "lucide-react";
@@ -50,7 +45,7 @@ export default function ProductCard({
   className = "",
   initialIsFavorite,
 }: Props) {
-  const { user } = useAuth(); // ✅ pega user + token do contexto
+  const { user } = useAuth(); // pega user + token do contexto
 
   // === Imagens ===
   const images = useMemo(() => {
@@ -78,6 +73,22 @@ export default function ProductCard({
   );
   const outOfStock = typeof stock === "number" ? stock <= 0 : false;
 
+  // === Avaliação (⭐) ===
+  const ratingAvgRaw = (product as any).rating_avg;
+  const ratingCountRaw = (product as any).rating_count;
+
+  const ratingAvg =
+    ratingAvgRaw !== null && ratingAvgRaw !== undefined
+      ? Number(ratingAvgRaw)
+      : NaN;
+  const ratingCount =
+    ratingCountRaw !== null && ratingCountRaw !== undefined
+      ? Number(ratingCountRaw)
+      : 0;
+
+  const hasRating =
+    !Number.isNaN(ratingAvg) && ratingAvg > 0 && ratingCount > 0;
+
   // === Favoritos ===
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [favLoading, setFavLoading] = useState(false);
@@ -87,7 +98,7 @@ export default function ProductCard({
   }, [initialIsFavorite]);
 
   const handleToggleFavorite = useCallback(async () => {
-    // 1) se não tiver user, manda pra login
+    // se não tiver user, manda pra login
     if (!user) {
       if (typeof window !== "undefined") {
         window.location.href = "/login";
@@ -95,8 +106,7 @@ export default function ProductCard({
       return;
     }
 
-    // 2) usa o token do AuthContext (salvo em auth:user) 
-    const token = user.token;
+    const token = (user as any).token;
     if (!token) {
       console.warn("Usuário logado mas sem token. Faça login novamente.");
       return;
@@ -205,6 +215,16 @@ export default function ProductCard({
         >
           {product.name}
         </Link>
+
+        {/* ⭐ Avaliação resumida (igual nos serviços: só estrelas + quantidade) */}
+        {hasRating && (
+          <div className="mt-1 flex items-center gap-1 text-xs text-amber-600">
+            <span>⭐ {ratingAvg.toFixed(1)}</span>
+            <span className="text-[11px] text-gray-500">
+              ({ratingCount} avaliação{ratingCount > 1 ? "s" : ""})
+            </span>
+          </div>
+        )}
 
         {product.description && (
           <p className="mt-1 min-h-[36px] line-clamp-2 text-xs sm:text-sm text-gray-600">

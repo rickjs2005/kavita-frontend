@@ -12,4 +12,12 @@ export type Product = {
   category_id?: string | null;
   third_category?: string | null;
   destaque?: "mais_vendido" | "super_oferta" | "promocao" | null;
+  rating_avg?: number | null;
+  rating_count?: number | null;
 };
+
+export interface ProductReview {
+  nota: number;
+  comentario: string | null;
+  created_at: string;
+}
