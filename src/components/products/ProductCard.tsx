@@ -39,6 +39,18 @@ function formatBRL(value: unknown): string {
   return `R$ ${mil},${dec}`;
 }
 
+// Promoção vinda da rota pública
+type ProductPromotion = {
+  id: number;
+  product_id?: number;
+  title?: string | null;
+  original_price?: number | string | null;
+  final_price?: number | string | null;
+  discount_percent?: number | string | null;
+  promo_price?: number | string | null;
+  ends_at?: string | null;
+};
+
 export default function ProductCard({
   product,
   images: externalImages,
@@ -88,6 +100,99 @@ export default function ProductCard({
 
   const hasRating =
     !Number.isNaN(ratingAvg) && ratingAvg > 0 && ratingCount > 0;
+
+  // === Promoção / desconto ===
+  const [promotion, setPromotion] = useState<ProductPromotion | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function fetchPromotion() {
+      try {
+        if (!product?.id) return;
+
+        const res = await fetch(
+          `${API_BASE}/api/public/promocoes/${product.id}`
+        );
+
+        if (!res.ok) {
+          // 404 = não tem promo pra esse produto, só ignora
+          return;
+        }
+
+        const data = await res.json();
+        if (!ignore) {
+          setPromotion(data as ProductPromotion);
+        }
+      } catch (err) {
+        console.error("[ProductCard] erro ao buscar promoção:", err);
+      }
+    }
+
+    fetchPromotion();
+
+    return () => {
+      ignore = true;
+    };
+  }, [product?.id]);
+
+  // === Cálculo de preço final (mesma lógica do produto) ===
+  const precoBase = Number(product.price ?? 0);
+
+  const originalFromPromo =
+    promotion?.original_price != null
+      ? Number(promotion.original_price)
+      : null;
+  const finalFromPromo =
+    promotion?.final_price != null
+      ? Number(promotion.final_price)
+      : promotion?.promo_price != null
+      ? Number(promotion.promo_price)
+      : null;
+
+  const originalPrice =
+    originalFromPromo !== null ? originalFromPromo : precoBase || 0;
+
+  let finalPrice =
+    finalFromPromo !== null ? finalFromPromo : originalPrice;
+
+  let discountPercent: number | null = null;
+
+  if (promotion) {
+    const explicitDiscount =
+      promotion.discount_percent != null
+        ? Number(promotion.discount_percent)
+        : NaN;
+
+    // se veio só % de desconto sem final_price calculado
+    if (
+      finalFromPromo === null &&
+      !Number.isNaN(explicitDiscount) &&
+      explicitDiscount > 0 &&
+      originalPrice > 0
+    ) {
+      finalPrice = originalPrice * (1 - explicitDiscount / 100);
+    }
+
+    // calcula % real
+    if (originalPrice > 0 && finalPrice < originalPrice) {
+      discountPercent =
+        ((originalPrice - finalPrice) / originalPrice) * 100;
+    } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
+      discountPercent = explicitDiscount;
+    }
+  }
+
+  const hasDiscount =
+    discountPercent !== null &&
+    discountPercent > 0 &&
+    finalPrice < originalPrice;
+
+  // produto que vai para o carrinho com o PREÇO FINAL
+  const productForCart: Product = {
+    ...product,
+    price: finalPrice,
+  };
 
   // === Favoritos ===
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
@@ -204,6 +309,12 @@ export default function ProductCard({
             Esgotado
           </span>
         )}
+
+        {hasDiscount && !outOfStock && (
+          <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+            -{discountPercent!.toFixed(0)}% OFF
+          </span>
+        )}
       </Link>
 
       {/* Conteúdo */}
@@ -216,7 +327,7 @@ export default function ProductCard({
           {product.name}
         </Link>
 
-        {/* ⭐ Avaliação resumida (igual nos serviços: só estrelas + quantidade) */}
+        {/* ⭐ Avaliação resumida */}
         {hasRating && (
           <div className="mt-1 flex items-center gap-1 text-xs text-amber-600">
             <span>⭐ {ratingAvg.toFixed(1)}</span>
@@ -232,15 +343,24 @@ export default function ProductCard({
           </p>
         )}
 
-        <div className="mt-3">
+        {/* Preço + desconto */}
+        <div className="mt-3 space-y-0.5">
+          {hasDiscount && (
+            <div className="text-xs text-gray-400 line-through">
+              {formatBRL(originalPrice)}
+            </div>
+          )}
           <span className="text-lg sm:text-xl font-extrabold text-emerald-600">
-            {formatBRL(product.price)}
+            {formatBRL(finalPrice)}
           </span>
         </div>
 
         <div className="mt-auto pt-4 flex flex-col gap-2">
           <div className="w-full">
-            <AddToCartButton product={product} disabled={outOfStock} />
+            <AddToCartButton
+              product={productForCart}
+              disabled={outOfStock}
+            />
           </div>
 
           <Link

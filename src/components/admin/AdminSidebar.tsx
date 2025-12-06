@@ -33,7 +33,7 @@ const navItems: NavItem[] = [
     permission: "products_manage",
   },
   {
-    label: "Destaques",
+    label: "marketing & Promoções",
     href: "/admin/destaques",
     icon: "⭐",
     permission: "highlights_manage",

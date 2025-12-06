@@ -353,11 +353,10 @@ export default function Header() {
                   <li key={cat.id}>
                     <Link
                       href={`/categorias/${cat.slug}`}
-                      className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${
-                        pathname === `/categorias/${cat.slug}`
+                      className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${pathname === `/categorias/${cat.slug}`
                           ? "bg-[#EC5B20]/10 text-[#EC5B20]"
                           : "text-[#083E46] hover:bg-gray-100"
-                      }`}
+                        }`}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {cat.name}
@@ -366,12 +365,23 @@ export default function Header() {
                 ))}
                 <li>
                   <Link
-                    href="/contato"
-                    className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${
-                      pathname === "/contato"
+                    href="/servicos"
+                    className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${pathname === "/servicos"
                         ? "bg-[#EC5B20]/10 text-[#EC5B20]"
                         : "text-[#083E46] hover:bg-gray-100"
-                    }`}
+                      }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Serviços
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/contato"
+                    className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${pathname === "/contato"
+                        ? "bg-[#EC5B20]/10 text-[#EC5B20]"
+                        : "text-[#083E46] hover:bg-gray-100"
+                      }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Atendimento
@@ -436,9 +446,8 @@ export default function Header() {
       <div className="flex">
         <main
           id="conteudo"
-          className={`flex-1 transition-all duration-300 ${
-            isCartOpen ? "md:ml-96" : "ml-0"
-          }`}
+          className={`flex-1 transition-all duration-300 ${isCartOpen ? "md:ml-96" : "ml-0"
+            }`}
         >
           <CartCar
             isCartOpen={isCartOpen}

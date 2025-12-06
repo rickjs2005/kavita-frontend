@@ -1,4 +1,4 @@
-// Exporta diretamente a página de destaques como a página principal do módulo
-import DestaquesPage from "./DestaquesPage";
+// Exporta a página de Marketing & Promoções como principal do módulo
+import MarketingPromocoesPage from "./MarketingPromocoesPage";
 
-export default DestaquesPage;
+export default MarketingPromocoesPage;

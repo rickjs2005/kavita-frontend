@@ -225,9 +225,9 @@ const quickLinks: QuickLink[] = [
   },
   {
     href: "/admin/destaques",
-    label: "Destaques",
-    description: "Vitrines, homepage e promoções",
-    icon: "⭐",
+    label: "Marketing & Promoções",
+    description: "Campanhas, promoções e ofertas",
+    icon: "📢",
     permission: "highlights_manage",
   },
   {

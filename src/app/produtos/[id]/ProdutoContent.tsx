@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import type { Product } from "@/types/product";
 import Gallery from "@/components/ui/Gallery";
@@ -30,6 +28,22 @@ function absUrl(raw?: string | null): string | null {
   return `${API_BASE}${s}`;
 }
 
+// MESMO TIPO DE PROMOÇÃO QUE USAMOS NA PAGE SERVER
+type ProductPromotion = {
+  id: number;
+  product_id: number;
+  title?: string;
+  price?: number | string | null;
+  original_price?: number | string | null;
+  final_price?: number | string | null;
+  discount_percent?: number | string | null;
+  promo_price?: number | string | null;
+  start_at?: string | null;
+  end_at?: string | null;
+  ends_at?: string | null;
+  is_active?: number | boolean;
+};
+
 export default function ProdutoContent({ produto }: Props) {
   // ===== IMAGENS =====
   const extras = Array.isArray(produto.images)
@@ -49,12 +63,102 @@ export default function ProdutoContent({ produto }: Props) {
   );
   const disponivel = estoque > 0;
 
-  const priceBRL = Number(produto.price).toLocaleString("pt-BR", {
+  // ===== PROMOÇÃO / DESCONTO =====
+  const [promocao, setPromocao] = useState<ProductPromotion | null>(null);
+
+  useEffect(() => {
+    async function carregarPromocao() {
+      try {
+        if (!produto?.id) return;
+
+        // espera-se rota GET /api/public/promocoes/:productId
+        const res = await fetch(
+          `${API_BASE}/api/public/promocoes/${produto.id}`
+        );
+
+        if (!res.ok) {
+          // se não tiver promo para esse produto, só ignora
+          return;
+        }
+
+        const data = await res.json();
+        const promo = Array.isArray(data)
+          ? ((data[0] as ProductPromotion) ?? null)
+          : (data as ProductPromotion);
+
+        setPromocao(promo);
+      } catch (err) {
+        console.error("Erro ao carregar promoção do produto:", err);
+      }
+    }
+
+    carregarPromocao();
+  }, [produto?.id]);
+
+  // ===== LÓGICA DE PREÇO / DESCONTO (mesma da page.tsx) =====
+  const precoBase = Number(produto.price ?? 0);
+
+  const originalFromPromo =
+    promocao?.original_price ?? promocao?.price ?? null;
+  const finalFromPromo =
+    promocao?.final_price ??
+    promocao?.promo_price ??
+    promocao?.price ??
+    null;
+
+  const originalPrice =
+    originalFromPromo != null ? Number(originalFromPromo) : precoBase || 0;
+
+  let finalPrice =
+    finalFromPromo != null ? Number(finalFromPromo) : originalPrice;
+
+  let discountPercent: number | null = null;
+
+  if (promocao) {
+    const explicitDiscount =
+      promocao.discount_percent != null
+        ? Number(promocao.discount_percent)
+        : NaN;
+
+    if (
+      !finalFromPromo &&
+      !Number.isNaN(explicitDiscount) &&
+      explicitDiscount > 0 &&
+      originalPrice > 0
+    ) {
+      finalPrice = originalPrice * (1 - explicitDiscount / 100);
+    }
+
+    if (originalPrice > 0 && finalPrice < originalPrice) {
+      discountPercent =
+        ((originalPrice - finalPrice) / originalPrice) * 100;
+    } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
+      discountPercent = explicitDiscount;
+    }
+  }
+
+  const priceBRL = finalPrice.toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
 
-  // ===== AVALIAÇÕES =====
+  const originalPriceBRL = originalPrice.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+
+  const promoEndsAt =
+    (promocao?.ends_at as string | null) ??
+    (promocao?.end_at as string | null) ??
+    null;
+
+  // Esse é o produto que vai para o carrinho já com o preço final
+  const produtoComPrecoFinal: Product = {
+    ...produto,
+    price: finalPrice,
+  };
+
+  // ===== AVALIAÇÕES (igual antes) =====
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [nota, setNota] = useState<number>(0);
@@ -124,7 +228,6 @@ export default function ProdutoContent({ produto }: Props) {
     }
   }
 
-  // Média vinda do backend (se existir) ou calculada
   const ratingAvgBackend: number | undefined = (produto as any)?.rating_avg;
   const ratingCountBackend: number | undefined = (produto as any)?.rating_count;
 
@@ -138,12 +241,10 @@ export default function ProdutoContent({ produto }: Props) {
 
   const totalAval = ratingCountBackend ?? reviews.length;
 
-  // Total de comentários com texto
   const totalComentarios = reviews.filter(
     (r) => r.comentario && r.comentario.trim() !== ""
   ).length;
 
-  // Distribuição 5★ → 1★ (para as barrinhas tipo Magalu)
   const dist = [5, 4, 3, 2, 1].map((star) => {
     const count = reviews.filter((r) => Number(r.nota) === star).length;
     const percent = totalAval ? (count / totalAval) * 100 : 0;
@@ -166,7 +267,7 @@ export default function ProdutoContent({ produto }: Props) {
               {produto.name}
             </h1>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span
                 className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
                   disponivel
@@ -177,6 +278,12 @@ export default function ProdutoContent({ produto }: Props) {
                 {disponivel ? "Em estoque" : "Esgotado"}
               </span>
               <span className="text-xs text-gray-500">ID #{produto.id}</span>
+
+              {discountPercent && discountPercent > 0 && (
+                <span className="inline-flex items-center rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+                  -{discountPercent.toFixed(0)}% OFF
+                </span>
+              )}
             </div>
 
             {/* Resumo de avaliação (estrelinhas + média) */}
@@ -212,11 +319,35 @@ export default function ProdutoContent({ produto }: Props) {
             </div>
           </header>
 
-          {/* Preço */}
-          <div>
+          {/* PREÇO + DESCONTO (mesma lógica da page.tsx) */}
+          <div className="space-y-1">
+            {discountPercent &&
+              discountPercent > 0 &&
+              originalPrice > finalPrice && (
+                <div className="flex flex-wrap items-baseline gap-2 text-sm">
+                  <span className="text-sm text-gray-400 line-through">
+                    {originalPriceBRL}
+                  </span>
+                  <span className="text-xs font-semibold text-emerald-700">
+                    economia de {discountPercent.toFixed(0)}%
+                  </span>
+                </div>
+              )}
+
             <p className="text-3xl font-extrabold text-emerald-600">
               {priceBRL}
             </p>
+
+            {promoEndsAt && (
+              <p className="text-xs text-amber-700">
+                Promoção válida até{" "}
+                {new Date(promoEndsAt).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                })}
+                , ou enquanto durarem os estoques.
+              </p>
+            )}
           </div>
 
           {/* Descrição */}
@@ -224,8 +355,8 @@ export default function ProdutoContent({ produto }: Props) {
             <p>{produto.description || "Sem descrição disponível."}</p>
           </div>
 
-          {/* Caixa de compra (já usa seu CartContext internamente) */}
-          <ProductBuyBox product={produto} stock={estoque} />
+          {/* Caixa de compra usando PREÇO FINAL */}
+          <ProductBuyBox product={produtoComPrecoFinal} stock={estoque} />
         </div>
       </div>
 
@@ -291,7 +422,7 @@ export default function ProdutoContent({ produto }: Props) {
           </div>
         </div>
 
-        {/* Filtros visuais simples (você pode ligar depois em estados reais) */}
+        {/* Filtros visuais simples */}
         <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3 text-xs sm:text-sm">
           <span className="text-gray-600 font-medium">Filtrar:</span>
           <button className="rounded-full border border-emerald-500/60 bg-emerald-50 px-3 py-1 text-emerald-700 text-xs font-medium">
@@ -302,7 +433,7 @@ export default function ProdutoContent({ produto }: Props) {
           </button>
         </div>
 
-        {/* Formulário + lista */}
+        {/* Form + lista */}
         <div className="mt-2 grid gap-4 border-t border-gray-100 pt-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           {/* Formulário */}
           <div className="space-y-2">
