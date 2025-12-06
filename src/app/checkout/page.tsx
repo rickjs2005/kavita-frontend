@@ -48,6 +48,18 @@ interface CouponPreviewResponse {
   };
 }
 
+/** Promoção vinda da API pública */
+type ProductPromotion = {
+  id: number;
+  product_id?: number;
+  title?: string | null;
+  original_price?: number | string | null;
+  final_price?: number | string | null;
+  discount_percent?: number | string | null;
+  promo_price?: number | string | null;
+  ends_at?: string | null;
+};
+
 const money = (v: number) =>
   `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
 
@@ -110,8 +122,131 @@ export default function CheckoutPage() {
   const userId = user?.id ?? null;
   const isLoggedIn = !!userId;
 
-  const { cartItems, cartTotal, clearCart } = useCart();
+  const { cartItems, clearCart } = useCart();
   const { formData, updateForm } = useCheckoutForm();
+
+  // -----------------------------
+  // PROMOÇÕES POR PRODUTO
+  // -----------------------------
+  const [promotions, setPromotions] = useState<
+    Record<number, ProductPromotion | null>
+  >({});
+
+  useEffect(() => {
+    if (!cartItems?.length) {
+      setPromotions({});
+      return;
+    }
+
+    const uniqueIds = Array.from(
+      new Set(cartItems.map((it) => Number(it.id)))
+    ).filter(Boolean);
+
+    (async () => {
+      try {
+        const results = await Promise.all(
+          uniqueIds.map(async (id) => {
+            try {
+              const res = await axios.get<ProductPromotion>(
+                `${API_BASE}/api/public/promocoes/${id}`
+              );
+              return { id, promo: res.data };
+            } catch (err: any) {
+              if (err?.response?.status === 404) {
+                // sem promoção para esse produto
+                return { id, promo: null };
+              }
+              console.error(
+                "[Checkout] erro ao buscar promoção do produto",
+                id,
+                err?.response?.data || err
+              );
+              return { id, promo: null };
+            }
+          })
+        );
+
+        setPromotions((prev) => {
+          const next = { ...prev };
+          for (const { id, promo } of results) {
+            next[id] = promo;
+          }
+          return next;
+        });
+      } catch (err) {
+        console.error("[Checkout] erro geral ao carregar promoções:", err);
+      }
+    })();
+  }, [cartItems]);
+
+  /** Calcula preço original/final e desconto com base na promoção */
+  const getPriceInfo = (item: CartItem) => {
+    const basePrice = Number(item.price ?? 0);
+    const promo = promotions[item.id];
+
+    if (!promo) {
+      return {
+        originalPrice: basePrice,
+        finalPrice: basePrice,
+        discountValue: 0,
+        hasDiscount: false,
+      };
+    }
+
+    const originalFromPromo =
+      promo.original_price != null ? Number(promo.original_price) : null;
+    const finalFromPromo =
+      promo.final_price != null
+        ? Number(promo.final_price)
+        : promo.promo_price != null
+        ? Number(promo.promo_price)
+        : null;
+
+    const originalPrice =
+      originalFromPromo !== null ? originalFromPromo : basePrice || 0;
+
+    let finalPrice =
+      finalFromPromo !== null ? finalFromPromo : originalPrice;
+
+    let discountPercent: number | null = null;
+
+    if (promo) {
+      const explicitDiscount =
+        promo.discount_percent != null
+          ? Number(promo.discount_percent)
+          : NaN;
+
+      if (
+        finalFromPromo === null &&
+        !Number.isNaN(explicitDiscount) &&
+        explicitDiscount > 0 &&
+        originalPrice > 0
+      ) {
+        finalPrice = originalPrice * (1 - explicitDiscount / 100);
+      }
+
+      if (originalPrice > 0 && finalPrice < originalPrice) {
+        discountPercent =
+          ((originalPrice - finalPrice) / originalPrice) * 100;
+      } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
+        discountPercent = explicitDiscount;
+      }
+    }
+
+    const hasDiscount =
+      discountPercent !== null &&
+      discountPercent > 0 &&
+      finalPrice < originalPrice;
+
+    const discountValue = hasDiscount ? originalPrice - finalPrice : 0;
+
+    return {
+      originalPrice,
+      finalPrice,
+      discountValue,
+      hasDiscount,
+    };
+  };
 
   // -----------------------------
   // CUPOM
@@ -122,13 +257,31 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
 
-  // reseta cupom quando valor do carrinho muda
+  // Subtotal SEM cupom (apenas promoções)
+  const itemsCount = (cartItems || []).reduce(
+    (acc, it) => acc + Number(it?.quantity ?? 0),
+    0
+  );
+
+  const subtotal = useMemo(
+    () =>
+      (cartItems || []).reduce((acc, it) => {
+        const info = getPriceInfo(it);
+        return acc + info.finalPrice * Number(it.quantity ?? 1);
+      }, 0),
+    [cartItems, promotions]
+  );
+
+  const frete = 0;
+  const total = Math.max(subtotal + frete - discount, 0);
+
+  // reseta cupom quando subtotal muda (por promo ou quantidade)
   useEffect(() => {
     setDiscount(0);
     setCouponCode("");
     setCouponMessage(null);
     setCouponError(null);
-  }, [cartTotal]);
+  }, [subtotal]);
 
   // -----------------------------
   // ENDEREÇO SALVO
@@ -215,7 +368,7 @@ export default function CheckoutPage() {
   };
 
   // -----------------------------
-  // PAYLOAD
+  // PAYLOAD (usa total com promo+cupom)
   // -----------------------------
   const payload = useMemo(() => {
     const enderecoSelecionado =
@@ -248,7 +401,7 @@ export default function CheckoutPage() {
         id: Number(i.id),
         quantidade: Number(i.quantity ?? 1),
       })),
-      total: Number(cartTotal || 0),
+      total: Number(total || 0),
       nome,
       cpf: cpfDigits,
       telefone: telefoneDigits,
@@ -259,14 +412,14 @@ export default function CheckoutPage() {
     userId,
     formData,
     cartItems,
-    cartTotal,
     usarEnderecoSalvo,
     enderecoSalvo,
+    total,
     couponCode,
   ]);
 
   // -----------------------------
-  // APLICAR CUPOM
+  // APLICAR CUPOM (usa subtotal com promo)
   // -----------------------------
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -280,8 +433,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    const subtotal = Number(cartTotal || 0);
-    if (!subtotal || subtotal <= 0) {
+    const subtotalAtual = Number(subtotal || 0);
+    if (!subtotalAtual || subtotalAtual <= 0) {
       toast.error("Seu carrinho está vazio.");
       return;
     }
@@ -301,7 +454,7 @@ export default function CheckoutPage() {
         `${API_BASE}/api/checkout/preview-cupom`,
         {
           codigo: couponCode.trim(),
-          total: subtotal,
+          total: subtotalAtual,
         },
         { headers }
       );
@@ -468,14 +621,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const itemsCount = (cartItems || []).reduce(
-    (acc, it) => acc + Number(it?.quantity ?? 0),
-    0
-  );
-  const subtotal = Number(cartTotal || 0);
-  const frete = 0;
-  const total = Math.max(subtotal + frete - discount, 0);
-
   // ==============================
   // Tela para usuário não logado
   // ==============================
@@ -629,7 +774,7 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          {/* Pagamento */}
+          {/* Pagamento + cupom */}
           <section className="rounded-2xl border border-black/10 bg-white/90 shadow-sm overflow-hidden">
             <header className="px-5 sm:px-6 py-3 sm:py-4 border-b border-black/10 flex items-center gap-3">
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#EC5B20]/15 text-[#EC5B20]">
@@ -709,10 +854,9 @@ export default function CheckoutPage() {
           </section>
         </div>
 
-        {/* Coluna direita */}
+        {/* Coluna direita – Resumo */}
         <aside className="lg:col-span-4">
           <div className="lg:sticky lg:top-24 space-y-4">
-            {/* Resumo */}
             <div className="rounded-2xl border border-black/10 bg-white/95 p-5 sm:p-6 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-800">
@@ -724,24 +868,41 @@ export default function CheckoutPage() {
               </div>
 
               <div className="divide-y divide-black/5">
-                {(cartItems || []).map((it: CartItem) => (
-                  <div
-                    key={it.id}
-                    className="py-3 flex items-start justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">
-                        {it.name || it.nome || `Produto #${it.id}`}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Qtd: {it.quantity}
-                      </p>
+                {(cartItems || []).map((it: CartItem) => {
+                  const info = getPriceInfo(it);
+                  const lineTotal = info.finalPrice * it.quantity;
+
+                  return (
+                    <div
+                      key={it.id}
+                      className="py-3 flex items-start justify-between gap-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">
+                          {it.name || it.nome || `Produto #${it.id}`}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Qtd: {it.quantity}
+                        </p>
+                        {info.hasDiscount && (
+                          <p className="text-xs text-gray-400 line-through">
+                            {money(info.originalPrice)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        {info.hasDiscount && (
+                          <p className="text-xs text-gray-400 line-through">
+                            {money(info.originalPrice * it.quantity)}
+                          </p>
+                        )}
+                        <p className="text-sm font-semibold text-gray-800">
+                          {money(lineTotal)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-sm font-semibold text-gray-800">
-                      {money(it.price * it.quantity)}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="mt-4 space-y-2 text-sm">

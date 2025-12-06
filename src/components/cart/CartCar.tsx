@@ -26,11 +26,21 @@ interface CouponPreviewResponse {
   };
 }
 
+const money = (v: number) =>
+  `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
+
+// Promoção normalizada para o carrinho
+type Promotion = {
+  originalPrice: number;
+  finalPrice: number;
+  discountPercent?: number;
+};
+
 const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
   isCartOpen,
   closeCart,
 }) => {
-  const { cartItems, cartTotal } = useCart();
+  const { cartItems } = useCart();
   const auth = useAuth() as any;
   const router = useRouter();
 
@@ -45,6 +55,9 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
 
   const isEmpty = cartItems.length === 0;
 
+  // ============================
+  // 🔐 Verifica se está logado
+  // ============================
   useEffect(() => {
     const localUid =
       typeof window !== "undefined" ? localStorage.getItem("userId") : null;
@@ -58,28 +71,132 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
     setLogged(authenticated);
   }, [auth?.isAuthenticated, auth?.userId, auth?.user]);
 
-  // se carrinho mudar, zera cupom
-  useEffect(() => {
-    setDiscount(0);
-    setCouponMessage(null);
-    setCouponError(null);
-  }, [cartTotal, cartItems]);
+  // ============================
+  // 🔥 Promoções por produto
+  // ============================
+  const [promotions, setPromotions] = useState<
+    Record<number, Promotion | null>
+  >({});
 
+  useEffect(() => {
+    if (!cartItems.length) {
+      setPromotions({});
+      return;
+    }
+
+    const uniqueIds = Array.from(
+      new Set(cartItems.map((it) => Number(it.id)))
+    ).filter(Boolean);
+
+    (async () => {
+      try {
+        const results = await Promise.all(
+          uniqueIds.map(async (id) => {
+            try {
+              const res = await fetch(
+                `${API_BASE}/api/public/promocoes/${id}`
+              );
+
+              if (!res.ok) {
+                // 404 = sem promoção para esse produto
+                return { id, promo: null };
+              }
+
+              const data = await res.json();
+
+              const original = Number(
+                data.original_price ?? data.price ?? 0
+              );
+              const final = Number(
+                data.final_price ??
+                  data.promo_price ??
+                  data.price ??
+                  original
+              );
+
+              const discountPercent =
+                data.discount_percent != null
+                  ? Number(data.discount_percent)
+                  : undefined;
+
+              return {
+                id,
+                promo: {
+                  originalPrice: original,
+                  finalPrice: final,
+                  discountPercent,
+                } as Promotion,
+              };
+            } catch (err) {
+              console.warn(
+                "[CartCar] erro ao buscar promoção do produto",
+                id,
+                err
+              );
+              return { id, promo: null };
+            }
+          })
+        );
+
+        setPromotions((prev) => {
+          const next: Record<number, Promotion | null> = { ...prev };
+          for (const { id, promo } of results) {
+            next[id] = promo;
+          }
+          return next;
+        });
+      } catch (err) {
+        console.error("[CartCar] erro geral ao carregar promoções:", err);
+      }
+    })();
+  }, [cartItems]);
+
+  // ============================
+  // ⚠️ Warnings de estoque
+  // ============================
   const warnings = useMemo(() => {
     return (cartItems as any[])
       .filter(
         (i) =>
-          typeof i._stock === "number" && i._stock > 0 && i.quantity >= i._stock
+          typeof i._stock === "number" &&
+          i._stock > 0 &&
+          i.quantity >= i._stock
       )
       .map((i) => `“${i.name}” atingiu o limite de estoque (${i._stock}).`);
   }, [cartItems]);
 
-  const subtotal = useMemo(() => cartTotal, [cartTotal]);
+  // ============================
+  // 💰 Subtotal (usando promo)
+  // ============================
+  const subtotal = useMemo(
+    () =>
+      cartItems.reduce((acc, it) => {
+        const basePrice = Number((it as any).price) || 0;
+        const qty = Number(it.quantity || 1);
+        const promo = promotions[it.id];
+
+        const finalPricePerUnit = promo ? promo.finalPrice : basePrice;
+
+        return acc + finalPricePerUnit * qty;
+      }, 0),
+    [cartItems, promotions]
+  );
+
   const total = useMemo(
     () => Math.max(subtotal - discount, 0),
     [subtotal, discount]
   );
 
+  // sempre que carrinho mudar (itens ou promoções), limpa estado de cupom
+  useEffect(() => {
+    setDiscount(0);
+    setCouponMessage(null);
+    setCouponError(null);
+  }, [cartItems, promotions]);
+
+  // ============================
+  // 🎫 Aplicar cupom
+  // ============================
   const applyDiscount = async () => {
     const code = coupon.trim().toUpperCase();
 
@@ -150,6 +267,9 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
     }
   };
 
+  // ============================
+  // 🧾 Ir para checkout
+  // ============================
   const handleCheckout = () => {
     if (isEmpty) {
       toast.error("Seu carrinho está vazio!");
@@ -212,18 +332,27 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
             </div>
           )}
 
-          <div className="flex items-center justify-between font-semibold">
-            <span>Total:</span>
-            <span className="text-lg font-extrabold text-green-600">
-              R$ {total.toFixed(2)}
-            </span>
-          </div>
+          {/* Resumo financeiro */}
+          <div className="space-y-1 text-sm">
+            <div className="flex items-center justify-between text-gray-700">
+              <span>Subtotal</span>
+              <span>{money(subtotal)}</span>
+            </div>
 
-          {discount > 0 && (
-            <p className="mt-1 text-xs text-emerald-700">
-              Desconto aplicado: - R$ {discount.toFixed(2)}
-            </p>
-          )}
+            {discount > 0 && (
+              <div className="flex items-center justify-between text-emerald-700">
+                <span>Desconto (cupom)</span>
+                <span>- {money(discount)}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between font-semibold pt-1 border-t border-gray-100 mt-1">
+              <span>Total</span>
+              <span className="text-lg font-extrabold text-green-600">
+                {money(total)}
+              </span>
+            </div>
+          </div>
 
           {couponMessage && (
             <p className="mt-1 text-xs text-emerald-600">{couponMessage}</p>
@@ -232,6 +361,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
             <p className="mt-1 text-xs text-red-600">{couponError}</p>
           )}
 
+          {/* Campo de cupom */}
           <div className="mt-3 flex gap-2">
             <input
               type="text"

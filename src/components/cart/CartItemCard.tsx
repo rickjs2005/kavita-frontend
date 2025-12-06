@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { CartItem } from "../../types/CartCarProps";
 import { useCart } from "../../context/CartContext";
 import CustomButton from "../buttons/CustomButton";
@@ -9,6 +9,7 @@ import CustomButton from "../buttons/CustomButton";
 const API = process.env.NEXT_PUBLIC_API_URL || "";
 const PLACEHOLDER = "/placeholder.png";
 
+/* Helpers de preço/imagem */
 function normalizePrice(price: unknown): number {
   if (typeof price === "number" && !Number.isNaN(price)) return price;
   if (typeof price === "string") {
@@ -18,9 +19,11 @@ function normalizePrice(price: unknown): number {
   }
   return 0;
 }
+
 function formatPriceBRL(n: number): string {
-  return n.toFixed(2);
+  return n.toFixed(2).replace(".", ",");
 }
+
 function resolveImage(raw: any): string {
   if (!raw) return PLACEHOLDER;
   if (typeof raw === "object") {
@@ -37,14 +40,23 @@ function resolveImage(raw: any): string {
 }
 
 const quantityButtonClasses =
-  "min-w-[36px] h-9 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-semibold transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#359293] disabled:opacity-50 disabled:cursor-not-allowed";
+  "min-w-[36px] h-9 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-semibold transition hover:bg-gray-100 disabled:opacity-50";
 
-const CartItemCard: React.FC<{ item: CartItem }> = ({ item }) => {
+/**
+ * Estrutura normalizada de promoção dentro do carrinho.
+ * Aqui NÃO usamos null, só number ou undefined para ficar fácil pro TS.
+ */
+type Promotion = {
+  originalPrice: number;
+  finalPrice: number;
+  discountPercent?: number;
+};
+
+export default function CartItemCard({ item }: { item: CartItem }) {
   const { removeFromCart, updateQuantity } = useCart();
 
-  const unit = normalizePrice((item as any).price);
+  const unitFromCart = normalizePrice(item.price); // preço que veio do addToCart
   const qty = typeof item.quantity === "number" ? item.quantity : 1;
-  const total = unit * qty;
 
   const rawImage =
     (item as any).image ||
@@ -56,6 +68,68 @@ const CartItemCard: React.FC<{ item: CartItem }> = ({ item }) => {
   const atMax = hasStock && stock > 0 && qty >= stock;
   const canDecrease = qty > 1;
   const canIncrease = !atMax;
+
+  // ========================
+  // 🔥 BUSCAR PROMOÇÃO DO PRODUTO
+  // ========================
+  const [promo, setPromo] = useState<Promotion | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    (async () => {
+      try {
+        const res = await fetch(`${API}/api/public/promocoes/${item.id}`);
+        if (!res.ok) return; // 404 = sem promo, só ignora
+
+        const data = await res.json();
+
+        // normaliza para sempre ter number (sem null)
+        const original = Number(
+          data.original_price ?? data.price ?? unitFromCart ?? 0
+        );
+        const final = Number(
+          data.final_price ??
+            data.promo_price ??
+            data.price ??
+            unitFromCart ??
+            0
+        );
+
+        const discountPercent =
+          data.discount_percent != null
+            ? Number(data.discount_percent)
+            : undefined;
+
+        if (!ignore) {
+          setPromo({
+            originalPrice: original,
+            finalPrice: final,
+            discountPercent,
+          });
+        }
+      } catch (err) {
+        console.warn("[CartItemCard] erro ao buscar promoção:", err);
+      }
+    })();
+
+    return () => {
+      ignore = true;
+    };
+  }, [item.id, unitFromCart]);
+
+  // ========================
+  // 🔥 CÁLCULO DE PREÇO
+  // ========================
+
+  // se tiver promoção, usamos o finalPrice; senão, o preço que está no carrinho
+  const finalUnit = promo ? promo.finalPrice : unitFromCart;
+  const originalUnit = promo ? promo.originalPrice : unitFromCart;
+
+  const hasDiscount = !!promo && promo.finalPrice < promo.originalPrice;
+
+  const lineTotal = finalUnit * qty;
+  const lineOriginalTotal = originalUnit * qty;
 
   return (
     <li
@@ -75,8 +149,27 @@ const CartItemCard: React.FC<{ item: CartItem }> = ({ item }) => {
       {/* infos */}
       <div className="min-w-0">
         <h3 className="text-sm font-semibold line-clamp-2">{item.name}</h3>
-        <p className="text-gray-500 text-xs">R$ {formatPriceBRL(unit)}</p>
 
+        {/* 🔥 PREÇO UNITÁRIO COM DESCONTO */}
+        {hasDiscount ? (
+          <div className="mt-1">
+            <p className="text-[11px] text-gray-400 line-through">
+              R$ {formatPriceBRL(originalUnit)}
+            </p>
+            <p className="text-green-600 font-bold text-sm">
+              R$ {formatPriceBRL(finalUnit)}
+            </p>
+            <span className="inline-block mt-1 text-[10px] px-2 py-1 bg-red-500 text-white rounded-full font-semibold">
+              -{promo.discountPercent?.toFixed(0)}% OFF
+            </span>
+          </div>
+        ) : (
+          <p className="mt-1 text-gray-700 text-sm">
+            R$ {formatPriceBRL(unitFromCart)}
+          </p>
+        )}
+
+        {/* quantidade */}
         <div className="mt-2 flex items-center gap-2" aria-live="polite">
           <button
             type="button"
@@ -87,7 +180,10 @@ const CartItemCard: React.FC<{ item: CartItem }> = ({ item }) => {
           >
             -
           </button>
-          <span className="w-8 text-center text-sm" aria-label={`Quantidade de ${item.name}`}>
+          <span
+            className="w-8 text-center text-sm"
+            aria-label={`Quantidade de ${item.name}`}
+          >
             {qty}
           </span>
           <button
@@ -114,9 +210,17 @@ const CartItemCard: React.FC<{ item: CartItem }> = ({ item }) => {
 
       {/* ações / total */}
       <div className="col-span-2 sm:col-span-1 sm:pl-2 flex items-center justify-between sm:block sm:justify-end gap-2">
-        <p className="text-green-600 font-bold text-sm sm:text-base sm:text-right">
-          R$ {formatPriceBRL(total)}
-        </p>
+        {/* total com “de/por” */}
+        <div className="text-right mb-1 sm:mb-2">
+          {hasDiscount && (
+            <p className="text-[11px] text-gray-400 line-through">
+              R$ {formatPriceBRL(lineOriginalTotal)}
+            </p>
+          )}
+          <p className="text-green-600 font-bold text-sm sm:text-base">
+            R$ {formatPriceBRL(lineTotal)}
+          </p>
+        </div>
 
         <CustomButton
           label="Remover"
@@ -129,6 +233,4 @@ const CartItemCard: React.FC<{ item: CartItem }> = ({ item }) => {
       </div>
     </li>
   );
-};
-
-export default CartItemCard;
+}
