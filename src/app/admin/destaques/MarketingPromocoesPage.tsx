@@ -480,7 +480,8 @@ export default function MarketingPromocoesPage() {
                   type="datetime-local"
                   value={formStartAt}
                   onChange={(e) => setFormStartAt(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 
+                  text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
@@ -492,7 +493,8 @@ export default function MarketingPromocoesPage() {
                   type="datetime-local"
                   value={formEndAt}
                   onChange={(e) => setFormEndAt(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 
+                  text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 

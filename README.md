@@ -1,118 +1,139 @@
-🐮 Kavita Frontend - Interface Web para E-commerce Agropecuário
+Kavita Frontend
 
-Este é o frontend da aplicação **Kavita**, um e-commerce completo voltado para produtos e serviços agropecuários. Construído com Next.js, TypeScript e Tailwind CSS, o projeto oferece uma experiência intuitiva para o cliente final e uma área administrativa eficiente.
+Kavita é uma plataforma de e‑commerce voltada para o setor agropecuário, permitindo a comercialização de produtos e serviços em um único lugar. Este repositório contém o código do front‑end da aplicação, desenvolvido com Next.js, TypeScript e TailwindCSS. A interface foi projetada para oferecer uma experiência moderna e intuitiva tanto para clientes quanto para administradores.
 
----
+✨ Visão geral
 
-🚀 Tecnologias Utilizadas
+Frontend completo com páginas dinâmicas, carrinho, checkout com cupom de desconto e integração com gateway de pagamento.
 
-- **Next.js**: estrutura React com suporte a SSR e rotas dinâmicas
-- **TypeScript**: tipagem estática para maior segurança
-- **Tailwind CSS**: framework utilitário para estilização moderna
-- **Context API**: controle de autenticação e carrinho de compras
-- **React Hook Form + Zod**: validação de formulários
-- **Axios**: requisições para a API RESTful
+Suporte a produtos e serviços: exibe categorias, produtos com detalhes, promoções, avaliações de usuários e lista de serviços com informações de contato.
 
----
+Área administrativa protegida com autenticação JWT, permitindo cadastro, edição e exclusão de produtos, serviços, promoções e gestão de pedidos.
 
-📂 Estrutura de Pastas
+🛠️ Tecnologias principais
 
+Next.js 15 – Renderização server‑side, roteamento de arquivos e API Routes
+github.com
 .
-├── components/ # Componentes reutilizáveis
-│ ├── admin/ # Formulários, cards e layout do painel admin
-│ └── ui/ # Botões, inputs, carrosséis, etc.
-├── context/ # Contextos globais (auth, carrinho)
-├── hooks/ # Hooks personalizados
-├── pages/
-│ ├── index.tsx # Página inicial
-│ ├── produtos/ # Listagem e detalhes de produtos
-│ ├── servicos/ # Página pública de serviços agro
-│ ├── admin/ # Área administrativa protegida
-│ └── login.tsx # Login e cadastro de usuários
-├── public/ # Imagens e arquivos estáticos
-└── styles/ # Estilos globais e configs do Tailwind
 
----
+React 19 com TypeScript – Tipagem estática e componentes funcionais.
 
-🔐 Autenticação
+TailwindCSS – Framework utilitário para estilos responsivos e modernos
+github.com
+.
 
-- **Usuário comum**:
-  - Cadastro e login com verificação simples
-  - Sessão salva em `localStorage`
-- **Administrador**:
-  - Login protegido por JWT
-  - Token armazenado localmente e verificado nas rotas privadas
+Context API + Hooks – Gerenciamento de estado global (autenticação, carrinho, checkout).
 
----
+React Hook Form + Zod – Formulários reativos com validação descritiva
+github.com
+.
 
-🛠️ Funcionalidades da Interface
+Axios/Fetch – Consumo de API RESTful com tratamento de erros e normalização de dados
+github.com
+.
 
-### 👨‍🌾 Área Pública
+📂 Estrutura de pastas
+src/
+ ├─ app/                 # Rotas de página (Next.js)
+ │  ├─ categorias/       # Páginas dinâmicas para cada categoria
+ │  ├─ produtos/         # Páginas de listagem e detalhes de produtos
+ │  ├─ servicos/         # Listagem e detalhes de serviços
+ │  ├─ checkout/         # Página de checkout com etapas de compra
+ │  └─ admin/            # Área administrativa (CRUD de produtos, serviços, pedidos)
+ ├─ components/          # Componentes reutilizáveis
+ │  ├─ admin/            # Componentes do painel administrativo
+ │  ├─ products/         # Componentes de produtos (cards, buy box, etc.)
+ │  ├─ checkout/         # Forms de checkout (dados pessoais, endereço, pagamento)
+ │  └─ ui/               # Botões, formulários, galerias e outros
+ ├─ context/             # Contextos globais: Auth, Cart, CheckoutForm
+ ├─ hooks/               # Hooks customizados
+ └─ types/               # Tipagens de entidades (Product, Service, etc.)
+public/                  # Arquivos estáticos e imagens
+README.md                # Este documento
 
-- **Página Inicial** com:
-  - Hero Section (destaque de produto, ex: drones)
-  - Produtos por categoria (carrossel)
-  - Lista de serviços agropecuários
-  - Produtos em destaque
-- **Produtos**:
-  - Filtro por categoria e subcategoria
-  - Página de detalhes com botão "Adicionar ao carrinho"
-- **Serviços**:
-  - Lista com imagem, descrição, nome do colaborador e WhatsApp
-- **Carrinho de compras**:
-  - Visualização lateral flutuante
-  - Persistência via localStorage
-- **Checkout**:
-  - Formulário com dados do usuário, endereço e pagamento
-- **Cadastro/Login**:
-  - Validação com React Hook Form + Zod
+✅ Funcionalidades
+Área pública
 
-### 🛠️ Painel Admin
+Home – Destaque de categorias e produtos em formato de carrossel. Exibe banner principal e produtos em promoção.
 
-- **CRUD de produtos**
-- **Cadastro de serviços e colaboradores**
-- **Controle de destaques**
-- **Gerenciamento de pedidos**:
-  - Editar status, endereço e itens
-- **Filtros e buscas por nome, categoria e subcategoria**
+Busca – Pesquisa simultânea de produtos e serviços com exibição dos resultados por categoria
+github.com
+.
 
----
+Produtos – Páginas de listagem com filtros básicos e páginas de detalhes exibindo galeria de imagens, preço original e promocional, disponibilidade de estoque, avaliações de clientes e formulário de review
+github.com
+.
 
-🌐 Integração com Backend
+Serviços – Listagem de serviços oferecidos com imagem, descrição, preço (se existir) e link para contato/WhatsApp.
 
-- Requisições feitas para: `http://localhost:5000`
-- Todas as rotas protegidas exigem token JWT no `Authorization`
+Carrinho – Adição e remoção de itens, cálculo de subtotal e persistência via localStorage.
 
----
+Checkout – Formulários para dados pessoais, endereço, método de pagamento e cupom; resumo do pedido e integração com gateway de pagamento (Mercado Pago)
+github.com
+.
 
-▶️ Executar localmente
+Autenticação – Cadastro e login de usuários, com sessão persistida em localStorage.
 
-```bash
-# Clone o projeto
+Área administrativa
+
+Login de administrador com proteção por cookie adminToken e redirecionamento automático para a página de login se não houver sessão ativa
+github.com
+.
+
+Dashboard para visualização e gerenciamento de produtos, serviços e pedidos.
+
+CRUD completo de produtos, incluindo upload de imagens, promoções, destaque e controle de estoque.
+
+Gerenciamento de serviços com cadastro de colaboradores e informações de contato.
+
+Gestão de pedidos – Visualização dos pedidos feitos pelos clientes, edição de status e atualização de itens.
+
+🚀 Como executar
+
+Clone o repositório e instale as dependências:
+
 git clone https://github.com/seu-usuario/kavita-frontend.git
 cd kavita-frontend
-
-# Instale as dependências
 npm install
 
-# Crie o arquivo .env.local
-echo "NEXT_PUBLIC_API_URL=http://localhost:5000" > .env.local
 
-# Rode o projeto
+Configuração do ambiente: crie um arquivo .env.local na raiz com a URL da API backend:
+
+NEXT_PUBLIC_API_URL=http://localhost:5000
+
+
+Rodar em modo de desenvolvimento:
+
 npm run dev
-O site estará disponível em http://localhost:3000.
+# o projeto ficará disponível em http://localhost:3000
 
-📌 Requisitos
 
-Node.js instalado
+Build para produção:
 
-Backend rodando em http://localhost:5000
+npm run build
+npm start
 
-Variáveis de ambiente configuradas no .env.local
 
-✉️ Contato
+Pré‑requisitos
 
-Dúvidas ou sugestões? Entre em contato:
+Node.js (versão compatível com Next.js 15)
 
-Email: suporte@kavita.com
-Desenvolvido com ❤️ para o agro brasileiro.
+Backend da aplicação executando em http://localhost:5000
+
+🔒 Autenticação
+
+Usuários comuns: registram‑se e fazem login pela interface pública, com dados armazenados em localStorage.
+
+Administradores: utilizam login específico (/admin/login); o token JWT é salvo em cookie e checado nas rotas protegidas
+github.com
+.
+
+📈 Próximos passos
+
+Implementar filtros avançados na busca e listagem de produtos (por preço, avaliação, marca).
+
+Adicionar lista de desejos (wishlist) e recomendações personalizadas.
+
+Integrar cálculo de frete em tempo real e outros gateways de pagamento.
+
+Melhorar o SEO adicionando metadados e dados estruturados.
