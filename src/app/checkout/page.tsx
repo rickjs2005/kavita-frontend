@@ -28,8 +28,8 @@ interface PaymentResponse {
 
 interface CartItem {
   id: number;
-  name?: string;
-  nome?: string;
+  name?: string; // nome no front
+  nome?: string; // nome vindo da API
   price: number;
   quantity: number;
 }
@@ -139,7 +139,7 @@ export default function CheckoutPage() {
     }
 
     const uniqueIds = Array.from(
-      new Set(cartItems.map((it) => Number(it.id)))
+      new Set(cartItems.map((it: any) => Number(it.id)))
     ).filter(Boolean);
 
     (async () => {
@@ -153,7 +153,6 @@ export default function CheckoutPage() {
               return { id, promo: res.data };
             } catch (err: any) {
               if (err?.response?.status === 404) {
-                // sem promoção para esse produto
                 return { id, promo: null };
               }
               console.error(
@@ -167,7 +166,7 @@ export default function CheckoutPage() {
         );
 
         setPromotions((prev) => {
-          const next = { ...prev };
+          const next: Record<number, ProductPromotion | null> = { ...prev };
           for (const { id, promo } of results) {
             next[id] = promo;
           }
@@ -199,8 +198,8 @@ export default function CheckoutPage() {
       promo.final_price != null
         ? Number(promo.final_price)
         : promo.promo_price != null
-        ? Number(promo.promo_price)
-        : null;
+          ? Number(promo.promo_price)
+          : null;
 
     const originalPrice =
       originalFromPromo !== null ? originalFromPromo : basePrice || 0;
@@ -210,27 +209,25 @@ export default function CheckoutPage() {
 
     let discountPercent: number | null = null;
 
-    if (promo) {
-      const explicitDiscount =
-        promo.discount_percent != null
-          ? Number(promo.discount_percent)
-          : NaN;
+    const explicitDiscount =
+      promo.discount_percent != null
+        ? Number(promo.discount_percent)
+        : NaN;
 
-      if (
-        finalFromPromo === null &&
-        !Number.isNaN(explicitDiscount) &&
-        explicitDiscount > 0 &&
-        originalPrice > 0
-      ) {
-        finalPrice = originalPrice * (1 - explicitDiscount / 100);
-      }
+    if (
+      finalFromPromo === null &&
+      !Number.isNaN(explicitDiscount) &&
+      explicitDiscount > 0 &&
+      originalPrice > 0
+    ) {
+      finalPrice = originalPrice * (1 - explicitDiscount / 100);
+    }
 
-      if (originalPrice > 0 && finalPrice < originalPrice) {
-        discountPercent =
-          ((originalPrice - finalPrice) / originalPrice) * 100;
-      } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
-        discountPercent = explicitDiscount;
-      }
+    if (originalPrice > 0 && finalPrice < originalPrice) {
+      discountPercent =
+        ((originalPrice - finalPrice) / originalPrice) * 100;
+    } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
+      discountPercent = explicitDiscount;
     }
 
     const hasDiscount =
@@ -257,15 +254,15 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
 
-  // Subtotal SEM cupom (apenas promoções)
   const itemsCount = (cartItems || []).reduce(
-    (acc, it) => acc + Number(it?.quantity ?? 0),
+    (acc: number, it: any) => acc + Number(it?.quantity ?? 0),
     0
   );
 
+  // Subtotal SEM cupom (apenas promoções)
   const subtotal = useMemo(
     () =>
-      (cartItems || []).reduce((acc, it) => {
+      (cartItems || []).reduce((acc: number, it: CartItem) => {
         const info = getPriceInfo(it);
         return acc + info.finalPrice * Number(it.quantity ?? 1);
       }, 0),
@@ -308,7 +305,8 @@ export default function CheckoutPage() {
       }
     }
 
-    if (!userId || !user?.token) {
+    // se não estiver logado, só usa último endereço do sessionStorage
+    if (!userId) {
       if (lastOrderAddress) {
         setEnderecoSalvo(lastOrderAddress);
         setUsarEnderecoSalvo(true);
@@ -319,10 +317,10 @@ export default function CheckoutPage() {
       return;
     }
 
+    // busca endereços do usuário autenticado (usa cookie HttpOnly)
     (async () => {
       try {
         const res = await axios.get(`${API_BASE}/api/users/addresses`, {
-          headers: { Authorization: `Bearer ${user.token}` },
           withCredentials: true,
         });
 
@@ -331,7 +329,7 @@ export default function CheckoutPage() {
           list.find((a: any) => a.is_default === 1) || list[0] || null;
 
         if (preferred) {
-          setEnderecoSalvo({
+          const salvo = {
             cep: preferred.cep,
             logradouro: preferred.endereco,
             numero: preferred.numero,
@@ -340,7 +338,8 @@ export default function CheckoutPage() {
             estado: preferred.estado,
             complemento: preferred.complemento,
             referencia: preferred.ponto_referencia,
-          });
+          };
+          setEnderecoSalvo(salvo);
           setUsarEnderecoSalvo(true);
           return;
         }
@@ -356,7 +355,7 @@ export default function CheckoutPage() {
         setUsarEnderecoSalvo(false);
       }
     })();
-  }, [userId, user?.token]);
+  }, [userId]);
 
   const normalizeFormaPagamento = (value?: string) => {
     const v = String(value || "").toLowerCase();
@@ -371,12 +370,7 @@ export default function CheckoutPage() {
   // PAYLOAD (usa total com promo+cupom)
   // -----------------------------
   const payload = useMemo(() => {
-    const enderecoSelecionado =
-      usarEnderecoSalvo && enderecoSalvo
-        ? enderecoSalvo
-        : formData?.endereco || {};
-
-    const endereco = enderecoSelecionado || {};
+    const endereco = formData?.endereco || {};
     const formaPagamento = normalizeFormaPagamento(formData?.formaPagamento);
 
     const nome = String(formData?.nome || "").trim();
@@ -385,16 +379,15 @@ export default function CheckoutPage() {
     const email = String(formData?.email || "").trim();
 
     return {
-      usuario_id: userId ? Number(userId) : undefined,
+      // usuario_id NÃO vai no body → backend usa req.user.id do JWT
       endereco: {
         cep: endereco?.cep || "",
-        rua: endereco?.logradouro || endereco?.rua || "",
+        rua: endereco?.logradouro || "",      // 👈 só logradouro
         numero: endereco?.numero || "",
         bairro: endereco?.bairro || "",
         cidade: endereco?.cidade || "",
         estado: endereco?.estado || "",
-        complemento:
-          endereco?.referencia || endereco?.complemento || null,
+        complemento: endereco?.referencia || null, // 👈 usa apenas referencia
       },
       formaPagamento,
       produtos: (cartItems || []).map((i: CartItem) => ({
@@ -408,15 +401,7 @@ export default function CheckoutPage() {
       email,
       cupom_codigo: couponCode ? couponCode.trim() : undefined,
     };
-  }, [
-    userId,
-    formData,
-    cartItems,
-    usarEnderecoSalvo,
-    enderecoSalvo,
-    total,
-    couponCode,
-  ]);
+  }, [formData, cartItems, total, couponCode]);
 
   // -----------------------------
   // APLICAR CUPOM (usa subtotal com promo)
@@ -444,19 +429,15 @@ export default function CheckoutPage() {
       setCouponError(null);
       setCouponMessage(null);
 
-      const token = user?.token ?? null;
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers.Authorization = `Bearer ${token}`;
-
       const { data } = await axios.post<CouponPreviewResponse>(
         `${API_BASE}/api/checkout/preview-cupom`,
         {
           codigo: couponCode.trim(),
           total: subtotalAtual,
         },
-        { headers }
+        {
+          withCredentials: true,
+        }
       );
 
       if (!data?.success) {
@@ -529,24 +510,22 @@ export default function CheckoutPage() {
     try {
       setSubmitting(true);
 
-      const token = user?.token ?? null;
-      const headers: any = { "Content-Type": "application/json" };
-      if (token) headers.Authorization = `Bearer ${token}`;
-
       const { data } = await axios.post<CheckoutResponse>(
         `${API_BASE}/api/checkout`,
         payload,
-        { headers }
+        {
+          withCredentials: true,
+        }
       );
       const pedidoId = data.pedido_id;
 
-      if (typeof window !== "undefined" && payload.usuario_id) {
-        const key = `lastOrder_${payload.usuario_id}`;
+      if (typeof window !== "undefined" && userId) {
+        const key = `lastOrder_${userId}`;
         sessionStorage.setItem(
           key,
           JSON.stringify({
             id: pedidoId,
-            usuario_id: payload.usuario_id,
+            usuario_id: userId,
             email: payload.email,
             cpf: payload.cpf,
             nome: payload.nome,
@@ -566,7 +545,8 @@ export default function CheckoutPage() {
       if (isGatewayPayment) {
         const res = await axios.post<PaymentResponse>(
           `${API_BASE}/api/payment/start`,
-          { pedidoId }
+          { pedidoId },
+          { withCredentials: true }
         );
 
         const initPoint =
@@ -599,13 +579,13 @@ export default function CheckoutPage() {
       ) {
         toast.error(
           msgBackend ||
-            "Sua sessão expirou. Faça login novamente para finalizar a compra."
+          "Sua sessão expirou. Faça login novamente para finalizar a compra."
         );
 
         try {
-          logout();
+          await logout();
         } catch {
-          /* ignore */
+          //
         }
 
         router.push("/login");
@@ -667,302 +647,308 @@ export default function CheckoutPage() {
   // ==============================
   // Checkout normal (logado)
   // ==============================
-
   return (
     <div className="min-h-[100dvh] bg-gradient-to-b from-[#F7FBFA] via-white to-white">
-      {/* Header compacto */}
-      <div className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-black/5">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
-            <CloseButton className="text-2xl sm:text-3xl text-gray-600 hover:text-[#EC5B20]" />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 flex flex-col gap-6">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3">
+          <CloseButton className="text-2xl sm:text-3xl text-gray-600 hover:text-[#EC5B20]" />
+          <div className="flex-1 flex flex-col items-center sm:items-start">
             <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">
-              Finalize sua Compra
+              Finalizar compra
             </h1>
-            <div className="hidden sm:flex gap-2 text-xs text-gray-600">
-              <span className="px-2 py-1 rounded-full bg-black/5">Carrinho</span>
-              <span>→</span>
-              <span className="px-2 py-1 rounded-full bg-[#EC5B20]/10 text-[#EC5B20] font-semibold">
-                Checkout
-              </span>
-              <span>→</span>
-              <span className="px-2 py-1 rounded-full bg-black/5">
-                Confirmação
-              </span>
-            </div>
+            <p className="text-xs sm:text-sm text-gray-600">
+              Revise seus dados e confirme o pedido com segurança.
+            </p>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+            <Icon.shield />
+            <span>Compra protegida</span>
           </div>
         </div>
-      </div>
 
-      {/* Conteúdo */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-28 lg:pb-8">
-        {/* Coluna esquerda */}
-        <div className="lg:col-span-8 space-y-6 sm:space-y-8">
-          {/* Dados pessoais */}
-          <section className="rounded-2xl border border-black/10 bg-white/90 shadow-sm overflow-hidden">
-            <header className="px-5 sm:px-6 py-3 sm:py-4 border-b border-black/10 flex items-center gap-3">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#EC5B20]/15 text-[#EC5B20]">
-                <Icon.user />
-              </span>
-              <div>
-                <h2 className="text-base sm:text-lg font-semibold text-gray-800">
-                  Dados Pessoais
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Informe nome, CPF, WhatsApp e e-mail.
-                </p>
-              </div>
-            </header>
-            <div className="p-5 sm:p-6">
-              <PersonalInfoForm formData={formData} onChange={updateForm} />
-            </div>
-          </section>
-
-          {/* Endereço */}
-          <section className="rounded-2xl border border-black/10 bg-white/90 shadow-sm overflow-hidden">
-            <header className="px-5 sm:px-6 py-3 sm:py-4 border-b border-black/10 flex items-center gap-3">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#EC5B20]/15 text-[#EC5B20]">
-                <Icon.pin />
-              </span>
-              <div>
-                <h2 className="text-base sm:text-lg font-semibold text-gray-800">
-                  Endereço de Entrega
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Receba seu pedido no endereço desejado.
-                </p>
-              </div>
-            </header>
-
-            <div className="p-5 sm:p-6">
-              {enderecoSalvo && (
-                <div className="mb-4 space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="enderecoOption"
-                      checked={usarEnderecoSalvo}
-                      onChange={() => setUsarEnderecoSalvo(true)}
-                    />
-                    <span className="text-sm text-gray-700">
-                      Entregar no endereço salvo:{" "}
-                      {`${enderecoSalvo?.rua || enderecoSalvo?.logradouro || ""
-                        }, ${enderecoSalvo?.numero || ""} - ${enderecoSalvo?.bairro || ""
-                        } - ${enderecoSalvo?.cidade || ""}/${enderecoSalvo?.estado || ""
-                        }`}
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="enderecoOption"
-                      checked={!usarEnderecoSalvo}
-                      onChange={() => setUsarEnderecoSalvo(false)}
-                    />
-                    <span className="text-sm text-gray-700">
-                      Entregar em outro endereço
-                    </span>
-                  </label>
+        {/* Conteúdo principal */}
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1.2fr)] gap-6 lg:gap-8 items-start">
+          {/* Coluna esquerda - formulários */}
+          <div className="flex flex-col gap-4 sm:gap-6">
+            {/* Dados pessoais */}
+            <section className="rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EC5B20]/10 text-[#EC5B20] text-xs font-bold">
+                  1
                 </div>
-              )}
-
-              {(!usarEnderecoSalvo || !enderecoSalvo) && (
-                <AddressForm
-                  endereco={formData.endereco}
-                  onChange={updateForm}
-                />
-              )}
-            </div>
-          </section>
-
-          {/* Pagamento + cupom */}
-          <section className="rounded-2xl border border-black/10 bg-white/90 shadow-sm overflow-hidden">
-            <header className="px-5 sm:px-6 py-3 sm:py-4 border-b border-black/10 flex items-center gap-3">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#EC5B20]/15 text-[#EC5B20]">
-                <Icon.card />
-              </span>
-              <div>
-                <h2 className="text-base sm:text-lg font-semibold text-gray-800">
-                  Forma de Pagamento
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Pix, Boleto, Cartão (Mercado Pago) ou Prazo.
-                </p>
+                <div>
+                  <h2 className="text-sm sm:text-base font-semibold text-gray-800 flex items-center gap-2">
+                    <Icon.user />
+                    Dados do cliente
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    Nome, CPF, e contato para confirmação do pedido.
+                  </p>
+                </div>
               </div>
-            </header>
 
-            <div className="p-5 sm:p-6">
+              <PersonalInfoForm formData={formData} onChange={updateForm} />
+            </section>
+
+            {/* Endereço */}
+            <section className="rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#22C55E]/10 text-[#16A34A] text-xs font-bold">
+                    2
+                  </div>
+                  <div>
+                    <h2 className="text-sm sm:text-base font-semibold text-gray-800 flex items-center gap-2">
+                      <Icon.pin />
+                      Endereço de entrega
+                    </h2>
+                    <p className="text-xs text-gray-500">
+                      Use um endereço salvo ou informe um novo.
+                    </p>
+                  </div>
+                </div>
+
+                {enderecoSalvo && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setUsarEnderecoSalvo((prev) => {
+                        const novo = !prev;
+                        if (novo && enderecoSalvo) {
+                          const e = enderecoSalvo;
+                          updateForm("endereco.cep", e.cep || "");
+                          updateForm(
+                            "endereco.logradouro",
+                            e.logradouro || ""
+                          );
+                          updateForm("endereco.numero", e.numero || "");
+                          updateForm("endereco.bairro", e.bairro || "");
+                          updateForm("endereco.cidade", e.cidade || "");
+                          updateForm("endereco.estado", e.estado || "");
+                          updateForm(
+                            "endereco.referencia",
+                            e.referencia || e.complemento || ""
+                          );
+                        }
+                        return novo;
+                      })
+                    }
+                    className="inline-flex items-center gap-1 rounded-full border border-black/10 px-3 py-1 text-[11px] font-medium text-gray-700 hover:bg-black/5 transition"
+                  >
+                    <span
+                      className={
+                        "h-2 w-2 rounded-full border " +
+                        (usarEnderecoSalvo
+                          ? "bg-[#22C55E] border-[#22C55E]"
+                          : "bg-white border-gray-400")
+                      }
+                    />
+                    {usarEnderecoSalvo ? "Usando endereço salvo" : "Usar endereço salvo"}
+                  </button>
+                )}
+              </div>
+
+              <AddressForm
+                endereco={formData.endereco}
+                onChange={updateForm}
+              />
+            </section>
+
+            {/* Forma de pagamento */}
+            <section className="rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0EA5E9]/10 text-[#0284C7] text-xs font-bold">
+                  3
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-semibold text-gray-800 flex items-center gap-2">
+                    <Icon.card />
+                    Pagamento
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    Escolha a melhor forma de pagamento para você.
+                  </p>
+                </div>
+              </div>
+
               <PaymentMethodForm
                 formaPagamento={formData.formaPagamento}
                 onChange={updateForm}
               />
+            </section>
+          </div>
 
-              {/* CUPOM */}
-              <div className="mt-5 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
-                <div className="flex items-center gap-2 border border-dashed border-black/20 rounded-xl px-3">
-                  <Icon.ticket />
-                  <input
-                    placeholder="Possui um cupom?"
-                    className="h-11 w-full bg-transparent outline-none text-sm"
-                    value={couponCode}
-                    onChange={(e) => {
-                      setCouponCode(e.target.value.toUpperCase());
-                      setCouponMessage(null);
-                      setCouponError(null);
-                    }}
-                  />
+          {/* Coluna direita - resumo do pedido */}
+          <div className="flex flex-col gap-4 sm:gap-5">
+            {/* Resumo dos produtos */}
+            <section className="rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-5 shadow-sm">
+              <header className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2">
+                  <Icon.truck />
+                  <h2 className="text-sm sm:text-base font-semibold text-gray-800">
+                    Resumo do pedido
+                  </h2>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleApplyCoupon}
-                  disabled={couponLoading || !couponCode.trim()}
-                  className="h-11 px-4 rounded-xl border border-[#EC5B20] text-sm font-semibold text-white bg-[#EC5B20] hover:bg-[#d84e1a] disabled:opacity-60"
-                >
-                  {couponLoading ? "Aplicando..." : "Aplicar"}
-                </button>
-              </div>
-
-              {couponMessage && (
-                <p className="mt-2 text-xs text-emerald-600">
-                  {couponMessage}
-                </p>
-              )}
-              {couponError && (
-                <p className="mt-2 text-xs text-red-600">{couponError}</p>
-              )}
-
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="flex items-center gap-2 text-gray-700 text-sm">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/5">
-                    <Icon.shield />
-                  </span>
-                  Pagamento seguro
-                </div>
-                <div className="flex items-center gap-2 text-gray-700 text-sm">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/5">
-                    <Icon.truck />
-                  </span>
-                  Entrega para todo Brasil
-                </div>
-                <div className="flex items-center gap-2 text-gray-700 text-sm">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/5">
-                    🏷️
-                  </span>
-                  Nota fiscal e garantia
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* Coluna direita – Resumo */}
-        <aside className="lg:col-span-4">
-          <div className="lg:sticky lg:top-24 space-y-4">
-            <div className="rounded-2xl border border-black/10 bg-white/95 p-5 sm:p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800">
-                  Resumo do Pedido
-                </h3>
-                <span className="text-xs sm:text-sm text-gray-600">
-                  {itemsCount} item(s)
+                <span className="text-xs text-gray-500">
+                  {itemsCount} {itemsCount === 1 ? "item" : "itens"}
                 </span>
-              </div>
+              </header>
 
-              <div className="divide-y divide-black/5">
-                {(cartItems || []).map((it: CartItem) => {
-                  const info = getPriceInfo(it);
-                  const lineTotal = info.finalPrice * it.quantity;
+              <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
+                {(cartItems || []).map((item: CartItem) => {
+                  const info = getPriceInfo(item);
 
                   return (
                     <div
-                      key={it.id}
-                      className="py-3 flex items-start justify-between gap-3"
+                      key={item.id}
+                      className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 last:border-none last:pb-0"
                     >
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">
-                          {it.name || it.nome || `Produto #${it.id}`}
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-800">
+                          {item.nome || item.name}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          Qtd: {it.quantity}
+                        <p className="text-[11px] text-gray-500">
+                          Quantidade: {item.quantity}
                         </p>
                         {info.hasDiscount && (
-                          <p className="text-xs text-gray-400 line-through">
-                            {money(info.originalPrice)}
+                          <p className="mt-1 text-[11px] text-emerald-600">
+                            Promoção aplicada automaticamente
                           </p>
                         )}
                       </div>
-                      <div className="text-right">
-                        {info.hasDiscount && (
-                          <p className="text-xs text-gray-400 line-through">
-                            {money(info.originalPrice * it.quantity)}
-                          </p>
+
+                      <div className="text-right text-xs sm:text-sm">
+                        {info.hasDiscount ? (
+                          <>
+                            <div className="text-gray-400 line-through">
+                              {money(info.originalPrice * item.quantity)}
+                            </div>
+                            <div className="text-[#EC5B20] font-semibold">
+                              {money(info.finalPrice * item.quantity)}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-gray-800 font-medium">
+                            {money(info.finalPrice * item.quantity)}
+                          </div>
                         )}
-                        <p className="text-sm font-semibold text-gray-800">
-                          {money(lineTotal)}
-                        </p>
                       </div>
                     </div>
                   );
                 })}
+
+                {!(cartItems || []).length && (
+                  <p className="text-xs text-gray-500">
+                    Seu carrinho está vazio.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            {/* Cupom + totais */}
+            <section className="rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-5 shadow-sm space-y-4">
+              {/* Cupom */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon.ticket />
+                  <span className="text-sm font-semibold text-gray-800">
+                    Cupom de desconto
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) =>
+                      setCouponCode(e.target.value.toUpperCase())
+                    }
+                    placeholder="Digite o código do cupom"
+                    className="flex-1 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#EC5B20]/70"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading || !couponCode.trim()}
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold bg-[#EC5B20] text-white hover:bg-[#d84e1a] disabled:opacity-60 disabled:cursor-not-allowed transition"
+                  >
+                    {couponLoading ? "Aplicando..." : "Aplicar"}
+                  </button>
+                </div>
+
+                {couponMessage && (
+                  <p className="mt-1 text-[11px] text-emerald-600">
+                    {couponMessage}
+                  </p>
+                )}
+                {couponError && (
+                  <p className="mt-1 text-[11px] text-red-500">
+                    {couponError}
+                  </p>
+                )}
               </div>
 
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center justify-between text-gray-600">
+              {/* Totais */}
+              <div className="border-t border-gray-100 pt-3 space-y-1 text-sm">
+                <div className="flex justify-between text-gray-700">
                   <span>Subtotal</span>
                   <span>{money(subtotal)}</span>
                 </div>
-                <div className="flex items-center justify-between text-gray-600">
-                  <span>Frete</span>
-                  <span>{frete ? money(frete) : "Grátis"}</span>
-                </div>
+
                 {discount > 0 && (
-                  <div className="flex items-center justify-between text-emerald-600">
-                    <span>Desconto (cupom)</span>
+                  <div className="flex justify-between text-emerald-600 text-sm">
+                    <span>Desconto</span>
                     <span>- {money(discount)}</span>
                   </div>
                 )}
-                <div className="pt-2 flex items-center justify-between">
-                  <span className="text-gray-800 font-semibold">Total</span>
-                  <span className="text-xl font-extrabold text-[#EC5B20]">
+
+                <div className="flex justify-between text-gray-700 text-sm">
+                  <span>Frete</span>
+                  <span>{frete > 0 ? money(frete) : "Grátis"}</span>
+                </div>
+
+                <div className="flex justify-between items-center border-t border-gray-100 pt-2 mt-1">
+                  <span className="text-sm font-semibold text-gray-900">
+                    Total
+                  </span>
+                  <span className="text-lg font-extrabold text-[#EC5B20]">
                     {money(total)}
                   </span>
                 </div>
-              </div>
 
+                <p className="mt-1 text-[11px] text-gray-500 flex items-center gap-1">
+                  <Icon.shield />
+                  Pagamento processado com segurança. Nenhum dado sensível fica
+                  salvo no navegador.
+                </p>
+              </div>
+            </section>
+
+            {/* Botão de finalizar */}
+            <div className="mt-2">
               <LoadingButton
-                isLoading={submitting}
                 onClick={handleSubmit}
-                className="mt-5 w-full bg-[#EC5B20] py-3 text-white hover:bg-[#d84e1a]"
+                isLoading={submitting}
+                className="w-full justify-center rounded-2xl bg-[#EC5B20] hover:bg-[#d84e1a] text-white font-semibold text-sm sm:text-base py-3 shadow-md shadow-[#EC5B20]/30"
               >
-                Concluir Compra
+                Confirmar pedido
               </LoadingButton>
 
-              <p className="mt-3 text-[12px] leading-relaxed text-gray-500">
-                Ao concluir, seu pedido será criado. Para cartão usamos o
-                Mercado Pago; Pix/Boleto exibem instruções na confirmação.
+              <p className="mt-2 text-[11px] text-center text-gray-500">
+                Ao continuar, você concorda com os{" "}
+                <span className="underline underline-offset-2">
+                  termos de uso
+                </span>{" "}
+                e{" "}
+                <span className="underline underline-offset-2">
+                  política de privacidade
+                </span>
+                .
               </p>
             </div>
-
-            {/* CTA fixo no mobile */}
-            <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 border-t border-black/10 backdrop-blur">
-              <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 pb-[env(safe-area-inset-bottom)]">
-                <div className="flex-1">
-                  <p className="text-xs text-gray-600">Total</p>
-                  <p className="text-lg font-extrabold text-[#EC5B20]">
-                    {money(total)}
-                  </p>
-                </div>
-
-                <LoadingButton
-                  isLoading={submitting}
-                  onClick={handleSubmit}
-                  className="flex-[2] bg-[#EC5B20] py-3 text-white hover:bg-[#d84e1a]"
-                >
-                  Concluir
-                </LoadingButton>
-              </div>
-            </div>
           </div>
-        </aside>
+        </div>
       </div>
     </div>
   );

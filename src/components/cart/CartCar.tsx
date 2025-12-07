@@ -59,17 +59,11 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
   // 🔐 Verifica se está logado
   // ============================
   useEffect(() => {
-    const localUid =
-      typeof window !== "undefined" ? localStorage.getItem("userId") : null;
-
     const authenticated =
-      Boolean(auth?.isAuthenticated) ||
-      Boolean(auth?.userId) ||
-      Boolean(auth?.user?.id) ||
-      Boolean(localUid);
+      Boolean(auth?.user?.id) || Boolean(auth?.isAuthenticated);
 
     setLogged(authenticated);
-  }, [auth?.isAuthenticated, auth?.userId, auth?.user]);
+  }, [auth?.user?.id, auth?.isAuthenticated]);
 
   // ============================
   // 🔥 Promoções por produto
@@ -221,19 +215,15 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
       setCouponError(null);
       setCouponMessage(null);
 
-      const token = auth?.user?.token ?? null;
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers.Authorization = `Bearer ${token}`;
-
       const { data } = await axios.post<CouponPreviewResponse>(
         `${API_BASE}/api/checkout/preview-cupom`,
         {
           codigo: code,
           total: subtotal,
         },
-        { headers }
+        {
+          withCredentials: true,
+        }
       );
 
       if (!data?.success) {

@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAdminAuth, AdminRole } from "@/context/AdminAuthContext"; // 👈 importa AdminRole também
+import { useAdminAuth, AdminRole } from "@/context/AdminAuthContext";
 
 type LoginResponse = {
-  token: string;
+  token: string; // ainda existe na resposta, mas não é usado pelo front
   message?: string;
   admin: {
     id: number;
@@ -30,14 +30,30 @@ export default function AdminLoginPage() {
 
   const redirectTo = useMemo(() => search.get("from") || "/admin", [search]);
 
-  // limpa token antigo ao abrir a tela
+  // Ao abrir a tela: limpa cache local e tenta encerrar sessão no backend
   useEffect(() => {
+    // limpa dados do admin no localStorage (cache visual)
     try {
-      localStorage.removeItem("adminToken");
       localStorage.removeItem("adminRole");
       localStorage.removeItem("adminNome");
-    } catch { }
-    document.cookie = "adminToken=; path=/; max-age=0; samesite=lax";
+      localStorage.removeItem("adminPermissions");
+      // limpa também possível token antigo de versões anteriores
+      localStorage.removeItem("adminToken");
+    } catch {
+      // ignore
+    }
+
+    // tenta encerrar sessão antiga no backend (limpar cookie HttpOnly)
+    (async () => {
+      try {
+        await fetch(`${API}/api/admin/logout`, {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch {
+        // se der erro, não quebra o fluxo de login
+      }
+    })();
   }, []);
 
   const handleLogin = useCallback(async () => {
@@ -49,6 +65,7 @@ export default function AdminLoginPage() {
       const res = await fetch(`${API}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // recebe cookie HttpOnly do backend
         body: JSON.stringify({ email, senha }),
       });
 
@@ -59,7 +76,9 @@ export default function AdminLoginPage() {
           if (typeof (data as any)?.message === "string") {
             msg = (data as any).message;
           }
-        } catch { }
+        } catch {
+          // ignore
+        }
         setErrMsg(msg);
         setLoading(false);
         return;
@@ -67,15 +86,11 @@ export default function AdminLoginPage() {
 
       const data = (await res.json()) as LoginResponse;
 
-      const maxAge = 60 * 60 * 8;
-      const isHttps =
-        typeof window !== "undefined" &&
-        window.location.protocol === "https:";
-      const secure = isHttps ? "; secure" : "";
-      document.cookie = `adminToken=${data.token}; path=/; max-age=${maxAge}; samesite=lax${secure}`;
+      // NÃO guarda token em localStorage, nem seta cookie via JS.
+      // O cookie HttpOnly já foi definido pelo backend.
 
+      // Mantemos apenas os dados de UX (role/nome/permissões)
       try {
-        localStorage.setItem("adminToken", String(data.token));
         localStorage.setItem("adminRole", data.admin.role);
         localStorage.setItem("adminNome", data.admin.nome);
         if (Array.isArray(data.admin.permissions)) {
@@ -84,9 +99,11 @@ export default function AdminLoginPage() {
             JSON.stringify(data.admin.permissions)
           );
         }
-      } catch { }
+      } catch {
+        // ignore
+      }
 
-      // agora com permissões
+      // Atualiza contexto de autenticação
       markAsAdmin({
         role: data.admin.role,
         nome: data.admin.nome,

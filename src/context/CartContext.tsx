@@ -69,7 +69,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
   const userId: number | null = user?.id ? Number(user.id) : null;
-  const token: string | null = user?.token ?? null;
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -104,7 +103,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     // convidado → só localStorage
-    if (!userId || !token) {
+    if (!userId) {
       loadFromLocal();
       return;
     }
@@ -122,11 +121,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // usuário logado → tenta sincronizar com backend
+    // usuário logado → tenta sincronizar com backend usando cookie HttpOnly
     (async () => {
       try {
         const res = await axios.get(`${API_BASE}/api/cart`, {
-          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
 
@@ -152,7 +150,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           const status = e.response?.status;
           if (status === 401 || status === 403) {
             console.warn(
-              "Token inválido/sem permissão para /api/cart, usando localStorage."
+              "Usuário não autenticado em /api/cart, usando localStorage."
             );
           } else {
             console.error("Erro ao sincronizar carrinho com backend:", e);
@@ -164,7 +162,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         loadFromLocal();
       }
     })();
-  }, [cartKey, userId, token, pathname]);
+  }, [cartKey, userId, pathname]);
 
   /* Persiste itens no storage da chave atual */
   useEffect(() => {
@@ -258,7 +256,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       ];
     });
 
-    if (userId && token) {
+    // sincroniza com backend se estiver logado (identificado via cookie/jwt)
+    if (userId) {
       axios
         .post(
           `${API_BASE}/api/cart/items`,
@@ -267,7 +266,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             quantidade: increment,
           },
           {
-            headers: { Authorization: `Bearer ${token}` },
             withCredentials: true,
           }
         )
@@ -327,11 +325,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     // sincroniza com backend
-    if (userId && token && finalQty !== null) {
+    if (userId && finalQty !== null) {
       if (finalQty <= 0) {
         axios
           .delete(`${API_BASE}/api/cart/items/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
             withCredentials: true,
           })
           .catch((err) =>
@@ -343,7 +340,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             `${API_BASE}/api/cart/items`,
             { produto_id: id, quantidade: finalQty },
             {
-              headers: { Authorization: `Bearer ${token}` },
               withCredentials: true,
             }
           )
@@ -372,10 +368,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       return updated;
     });
 
-    if (userId && token) {
+    if (userId) {
       axios
         .delete(`${API_BASE}/api/cart/items/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         })
         .catch((err) =>
@@ -428,10 +423,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
-    if (userId && token) {
+    if (userId) {
       axios
         .delete(`${API_BASE}/api/cart`, {
-          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         })
         .catch((err) =>

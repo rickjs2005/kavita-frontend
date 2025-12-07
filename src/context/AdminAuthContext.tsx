@@ -59,11 +59,15 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       if (nome) setNome(nome);
       if (Array.isArray(perms)) setPermissions(perms);
 
+      // Persistência leve apenas para UX (não é segurança)
       try {
         localStorage.setItem("adminRole", role);
         if (nome) localStorage.setItem("adminNome", nome);
         if (Array.isArray(perms)) {
-          localStorage.setItem("adminPermissions", JSON.stringify(perms));
+          localStorage.setItem(
+            "adminPermissions",
+            JSON.stringify(perms)
+          );
         }
       } catch {
         // ignorar erro de localStorage
@@ -73,11 +77,20 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    // limpa cookie do token
-    document.cookie = "adminToken=; path=/; max-age=0";
+    // 1) tenta limpar sessão no backend (cookie HttpOnly)
+    (async () => {
+      try {
+        await fetch(`${API_BASE}/api/admin/logout`, {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch (err) {
+        console.error("Erro ao chamar /api/admin/logout:", err);
+      }
+    })();
 
+    // 2) limpa apenas dados locais (não mexe em cookie diretamente)
     try {
-      localStorage.removeItem("adminToken");
       localStorage.removeItem("adminRole");
       localStorage.removeItem("adminNome");
       localStorage.removeItem("adminPermissions");
@@ -113,22 +126,20 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     [role]
   );
 
-  // Carrega estado inicial do client (cookie/localStorage) + sincroniza com /api/admin/me
+  // Carrega estado inicial (somente cache visual) + sincroniza com /api/admin/me via cookie HttpOnly
   useEffect(() => {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
+    if (typeof window === "undefined") return;
 
+    // 1) Carrega cache leve do localStorage (não é segurança)
     try {
-      const hasTokenCookie = document.cookie
-        .split("; ")
-        .some((c) => c.startsWith("adminToken="));
-
       const storedRole = localStorage.getItem("adminRole") as
         | AdminRole
         | null;
       const storedNome = localStorage.getItem("adminNome");
-      const storedPermsRaw = localStorage.getItem("adminPermissions");
+      const storedPermsRaw = localStorage.getItem(
+        "adminPermissions"
+      );
 
-      setIsAdmin(hasTokenCookie);
       if (storedRole) setRole(storedRole);
       if (storedNome) setNome(storedNome || null);
 
@@ -140,59 +151,63 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           // erro no parse -> ignora
         }
       }
-
-      // Se tiver token, sincroniza com /api/admin/me
-      const token = localStorage.getItem("adminToken");
-      if (hasTokenCookie && token) {
-        (async () => {
-          try {
-            const res = await fetch(`${API_BASE}/api/admin/me`, {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              credentials: "include",
-            });
-
-            if (res.status === 401) {
-              // token inválido/expirado -> força logout
-              logout();
-              return;
-            }
-
-            if (!res.ok) {
-              console.error(
-                "Erro ao carregar /api/admin/me:",
-                res.status,
-                res.statusText
-              );
-              return;
-            }
-
-            const data: {
-              id: number;
-              nome: string;
-              email: string;
-              role: AdminRole;
-              role_id: number | null;
-              permissions: string[];
-            } = await res.json();
-
-            markAsAdmin({
-              role: data.role,
-              nome: data.nome,
-              permissions: data.permissions || [],
-            });
-          } catch (err) {
-            console.error("Erro ao chamar /api/admin/me:", err);
-          }
-        })();
-      }
     } catch {
-      // se der erro em localStorage/cookie, só segue
+      // erro de localStorage -> ignora
     }
-  }, [logout, markAsAdmin]);
+
+    // 2) Faz chamada real para /api/admin/me
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/me`, {
+          method: "GET",
+          credentials: "include", // importante para enviar cookie HttpOnly
+        });
+
+        if (res.status === 401) {
+          // não autenticado: limpa só estado local
+          setIsAdmin(false);
+          setRole(null);
+          setNome(null);
+          setPermissions([]);
+          try {
+            localStorage.removeItem("adminRole");
+            localStorage.removeItem("adminNome");
+            localStorage.removeItem("adminPermissions");
+          } catch {
+            // ignore
+          }
+          return;
+        }
+
+        if (!res.ok) {
+          console.error(
+            "Erro ao carregar /api/admin/me:",
+            res.status,
+            res.statusText
+          );
+          return;
+        }
+
+        const data: {
+          id: number;
+          nome: string;
+          email: string;
+          role: AdminRole;
+          role_id: number | null;
+          permissions: string[];
+        } = await res.json();
+
+        markAsAdmin({
+          role: data.role,
+          nome: data.nome,
+          permissions: data.permissions || [],
+        });
+        setIsAdmin(true);
+      } catch (err) {
+        console.error("Erro ao chamar /api/admin/me:", err);
+      }
+    })();
+  }, [markAsAdmin]);
 
   return (
     <AdminAuthContext.Provider

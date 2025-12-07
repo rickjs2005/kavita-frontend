@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 import {
   formatCpfMask,
-  formatTelefoneMask,
+  formatPhoneMask,
 } from "@/utils/formatters";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -74,16 +74,22 @@ export default function MeusDadosPage() {
       try {
         const res = await fetch(`${API_BASE}/api/users/me`, {
           credentials: "include",
-          headers: { "x-user-id": String(user.id) },
         });
-        if (!res.ok) throw new Error("Não foi possível carregar seus dados.");
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          const msg =
+            (j as any)?.mensagem ||
+            (j as any)?.message ||
+            "Não foi possível carregar seus dados.";
+          throw new Error(msg);
+        }
         const data = (await res.json()) as Perfil;
         if (alive) {
           setPerfil(data);
           setOriginal(data);
         }
       } catch (e: any) {
-        toast.error(e.message || "Falha ao carregar.");
+        toast.error(e?.message || "Falha ao carregar.");
       } finally {
         if (alive) setLoading(false);
       }
@@ -149,20 +155,19 @@ export default function MeusDadosPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": String(user.id),
         },
         body: JSON.stringify(diff),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j?.mensagem || "Não foi possível salvar.");
+        throw new Error(j?.mensagem || j?.message || "Não foi possível salvar.");
       }
       const updated = (await res.json()) as Perfil;
       setPerfil(updated);
       setOriginal(updated);
       toast.success("Seus dados foram salvos com sucesso! ✅");
     } catch (e: any) {
-      toast.error(e.message || "Falha ao salvar.");
+      toast.error(e?.message || "Falha ao salvar.");
     } finally {
       setSaving(false);
     }
@@ -210,7 +215,7 @@ export default function MeusDadosPage() {
                 <input
                   className={ui.input}
                   value={perfil.telefone || ""}
-                  onChange={set("telefone", formatTelefoneMask)}
+                  onChange={set("telefone", formatPhoneMask)}
                   inputMode="tel"
                   autoComplete="tel"
                   placeholder="(DD) 99999-9999"

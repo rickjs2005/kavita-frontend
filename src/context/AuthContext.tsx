@@ -6,239 +6,117 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  ReactNode,
 } from "react";
-import { api } from "@/lib/api";
-import type { AuthUser, BackendLoginResponse } from "@/types/auth";
+import { api } from "@/lib/api"; // <-- export nomeado, usando fetch helper
 
-// -----------------------------
-// Tipagem do contexto
-// -----------------------------
+// --------------------------------------------------
+// Tipos
+// --------------------------------------------------
+export type AuthUser = {
+  id: number;
+  nome: string;
+  email: string;
+};
+
 type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
-  error: string | null;
   login: (
     email: string,
     senha: string
   ) => Promise<{ ok: boolean; message?: string }>;
-  register: (
-    payload: Record<string, unknown>
-  ) => Promise<{ ok: boolean; message?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// -----------------------------
-// Helpers
-// -----------------------------
-const STORAGE_KEY = "auth:user";
-
-function normalizeBackendUser(payload: BackendLoginResponse): AuthUser {
-  const p: any = payload || {};
-  return {
-    token: typeof p.token === "string" ? p.token : undefined,
-    id: p.id ?? p.user?.id ?? undefined,
-    nome: p.nome ?? p.user?.nome ?? undefined,
-    email: p.email ?? p.user?.email ?? undefined,
-  };
-}
-
-function persistUser(u: AuthUser | null) {
-  if (!u) {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-    return;
-  }
-  if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
-  }
-}
-
-/**
- * 🔥 Limpa tudo que for relacionado a carrinho no storage
- * - carrinhos por usuário (cartItems_123)
- * - carrinho de convidado (cartItems_guest)
- * - flags de sessão (_cleared)
- */
-function clearCartStorage() {
-  if (typeof window === "undefined") return;
-
-  try {
-    // localStorage
-    for (const key of Object.keys(localStorage)) {
-      if (key.startsWith("cartItems_")) {
-        localStorage.removeItem(key);
-      }
-      if (key.startsWith("lastOrder_")) {
-        localStorage.removeItem(key);
-      }
-    }
-
-    // sessionStorage
-    for (const key of Object.keys(sessionStorage)) {
-      if (key.startsWith("cartItems_") || key.endsWith("_cleared")) {
-        sessionStorage.removeItem(key);
-      }
-      if (key.startsWith("lastOrder_")) {
-        sessionStorage.removeItem(key);
-      }
-    }
-  } catch (e) {
-    console.warn("Não foi possível limpar storage do carrinho:", e);
-  }
-}
-
-// -----------------------------
+// --------------------------------------------------
 // Provider
-// -----------------------------
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+// --------------------------------------------------
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Hidratar usuário salvo
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      setLoading(false);
-      return;
-    }
-
+  // -----------------------------
+  // Carrega usuário pelo cookie
+  // -----------------------------
+  const refreshUser = async () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const u = JSON.parse(raw) as AuthUser;
-        if (u?.id || u?.token) {
-          setUser(u);
-        }
-      }
+      // backend: GET /api/users/me -> { id, nome, email }
+      const data = await api<AuthUser>("/api/users/me");
+      setUser(data);
     } catch {
-      // ignore
+      // 401/403/etc → sem sessão
+      setUser(null);
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    refreshUser();
   }, []);
 
-  // ---------------------------
-  // LOGIN
-  // - tenta /api/users/login (primeira preferência)
-  // - se a rota não existir, tenta /api/login
-  // - nunca lança erro: retorna { ok, message }
-  // ---------------------------
-  const login: AuthContextValue["login"] = async (email, senha) => {
-    setError(null);
-
-    const tryLogin = async (path: string) => {
-      const data = await api<BackendLoginResponse>(path, {
+  // -----------------------------
+  // LOGIN (via cookie HttpOnly)
+  // -----------------------------
+  const login = async (email: string, senha: string) => {
+    try {
+      // backend: POST /api/login -> { message, user: { id, nome, email } }
+      const data = await api<any>("/api/login", {
         method: "POST",
         body: JSON.stringify({ email, senha }),
       });
-      return data;
-    };
 
-    let data: BackendLoginResponse | null = null;
-
-    try {
-      data = await tryLogin("/api/users/login");
-    } catch (e: any) {
-      const msg: string = e?.message || "";
-      const notFound =
-        /404|rota n[aã]o encontrada|not found/i.test(msg) ||
-        /Cannot POST/i.test(msg);
-
-      // Se não for "rota não encontrada", é erro real (credencial, etc.)
-      if (!notFound) {
-        const message = msg || "Erro ao fazer login.";
-        setError(message);
-        return { ok: false, message };
+      const rawUser = data?.user ?? data;
+      if (!rawUser?.id) {
+        return { ok: false, message: "Credenciais inválidas." };
       }
 
-      // tenta rota alternativa
-      try {
-        data = await tryLogin("/api/login");
-      } catch (e2: any) {
-        const message = e2?.message || "Erro ao fazer login.";
-        setError(message);
-        return { ok: false, message };
-      }
-    }
+      const finalUser: AuthUser = {
+        id: rawUser.id,
+        nome: rawUser.nome ?? "",
+        email: rawUser.email ?? email,
+      };
 
-    // normaliza e valida
-    const normalized = normalizeBackendUser(data!);
-    if (!normalized.id && !normalized.token) {
-      const message = "Credenciais inválidas.";
-      setError(message);
-      return { ok: false, message };
-    }
-
-    const finalUser: AuthUser = {
-      id: normalized.id ?? null,
-      nome: normalized.nome ?? null,
-      email: normalized.email ?? email,
-      token: normalized.token ?? null,
-    };
-
-    // 🧹 Sempre que logar (mesmo usuário ou outro), garantimos que
-    // não existe carrinho "fantasma" preso no storage.
-    clearCartStorage();
-
-    setUser(finalUser);
-    persistUser(finalUser);
-    return { ok: true };
-  };
-
-  // ---------------------------
-  // REGISTER
-  // - usa /api/users/register (padrão do projeto)
-  // - nunca lança erro
-  // ---------------------------
-  const register: AuthContextValue["register"] = async (payload) => {
-    setError(null);
-    try {
-      await api("/api/users/register", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      setUser(finalUser);
       return { ok: true };
-    } catch (e: any) {
-      const message = e?.message || "Erro ao criar conta.";
-      setError(message);
+    } catch (err: any) {
+      const message = err?.message || "Erro ao fazer login.";
       return { ok: false, message };
     }
   };
 
-  // ---------------------------
+  // -----------------------------
   // LOGOUT
-  // ---------------------------
-  const logout = () => {
-    // 🧹 Limpa carrinho salvo (localStorage + sessionStorage)
-    clearCartStorage();
-
-    setUser(null);
-    persistUser(null);
-
-    // se quiser, limpe cookies aqui (ex.: document.cookie = 'userToken=; max-age=0; path=/')
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
+  // -----------------------------
+  const logout = async () => {
+    try {
+      await api("/api/logout", { method: "POST" });
+    } catch {
+      // ignore
     }
+    setUser(null);
   };
 
-  const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, error, login, register, logout }),
-    [user, loading, error]
+  const value: AuthContextValue = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      logout,
+      refreshUser,
+    }),
+    [user, loading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// -----------------------------
-// Hook
-// -----------------------------
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth deve ser usado dentro de <AuthProvider>");
-  }
+  if (!ctx) throw new Error("useAuth deve ser usado dentro de <AuthProvider>");
   return ctx;
 };
