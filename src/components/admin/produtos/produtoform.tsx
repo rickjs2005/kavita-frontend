@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-// 🔹 AJUSTE: tipo agora aceita slug + is_active
+// 🔹 Tipo de categoria (mantido, com slug + is_active)
 type Category = {
   id: number;
   name: string;
@@ -64,23 +64,25 @@ export default function ProdutoForm({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isEditing = !!produtoEditado?.id;
 
+  // 🔐 BUSCA DE CATEGORIAS — agora usando cookie HttpOnly (credentials: "include")
   useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    if (!token) {
-      setMsg({ type: "error", text: "Faça login no admin para continuar." });
-      return;
-    }
-
     (async () => {
       try {
         const res = await fetch(`${API_BASE}/api/admin/categorias`, {
-          headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
+          credentials: "include", // ✅ envia o cookie HttpOnly
         });
-        if (!res.ok) throw new Error(`Falha ao carregar categorias (${res.status})`);
+
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            throw new Error("Você não tem permissão para listar categorias. Faça login novamente.");
+          }
+          throw new Error(`Falha ao carregar categorias (${res.status})`);
+        }
+
         const data: Category[] = await res.json();
 
-        // 🔹 NOVO: usa só categorias ativas (mas se API não mandar is_active, usa todas)
+        // 🔹 Usa só categorias ativas (se API mandar is_active)
         const onlyActive = (data || []).filter(
           (c) => c.is_active === undefined || c.is_active === 1 || c.is_active === true
         );
@@ -201,12 +203,6 @@ export default function ProdutoForm({
       return;
     }
 
-    const token = localStorage.getItem("adminToken");
-    if (!token) {
-      setMsg({ type: "error", text: "Faça login no admin para continuar." });
-      return;
-    }
-
     const fd = new FormData();
     fd.append("name", name.trim());
     fd.append("description", (description || "").trim());
@@ -232,11 +228,18 @@ export default function ProdutoForm({
     try {
       const res = await fetch(url, {
         method,
-        headers: { Authorization: `Bearer ${token}` },
         body: fd,
+        credentials: "include", // ✅ cookie HttpOnly vai junto
       });
 
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          const txt = await safeText(res);
+          throw new Error(
+            txt || "Você não tem permissão para salvar este produto. Faça login novamente."
+          );
+        }
+
         const txt = await safeText(res);
         throw new Error(
           `Falha ao ${isEditing ? "atualizar" : "salvar"} (${res.status}). ${txt || ""}`
@@ -245,9 +248,7 @@ export default function ProdutoForm({
 
       setMsg({
         type: "success",
-        text: isEditing
-          ? "Produto atualizado com sucesso."
-          : "Produto salvo com sucesso.",
+        text: isEditing ? "Produto atualizado com sucesso." : "Produto salvo com sucesso.",
       });
 
       resetForm();
@@ -265,7 +266,7 @@ export default function ProdutoForm({
       const ct = res.headers.get("content-type") || "";
       if (ct.includes("application/json")) {
         const j = await res.json();
-        return j?.message || JSON.stringify(j);
+        return (j as any)?.message || JSON.stringify(j);
       }
       return await res.text();
     } catch {

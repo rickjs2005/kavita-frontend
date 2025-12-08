@@ -17,11 +17,6 @@ type Categoria = {
   sort_order: number;
 };
 
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
 export default function AdminCategoriasPage() {
   const router = useRouter();
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -41,25 +36,24 @@ export default function AdminCategoriasPage() {
   }
 
   async function loadCategorias() {
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Faça login no painel admin.");
-      router.push("/admin/login");
-      return;
-    }
-
     try {
       setLoading(true);
       const res = await axios.get<Categoria[]>(
         `${API_BASE}/api/admin/categorias`,
         {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
+          withCredentials: true, // 🔐 usa apenas cookie HttpOnly
         }
       );
       setCategorias(res.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Sessão expirada. Faça login no painel admin.");
+        router.push("/admin/login");
+        return;
+      }
+
       toast.error("Erro ao carregar categorias.");
     } finally {
       setLoading(false);
@@ -68,6 +62,7 @@ export default function AdminCategoriasPage() {
 
   useEffect(() => {
     loadCategorias();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleChange<K extends keyof typeof form>(
@@ -88,11 +83,6 @@ export default function AdminCategoriasPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Faça login no painel admin.");
-      return;
-    }
 
     if (!form.name.trim()) {
       toast.error("Nome é obrigatório.");
@@ -111,8 +101,7 @@ export default function AdminCategoriasPage() {
             sort_order: Number(form.sort_order) || 0,
           },
           {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
+            withCredentials: true, // 🔐 cookie HttpOnly
           }
         );
         toast.success("Categoria atualizada.");
@@ -125,8 +114,7 @@ export default function AdminCategoriasPage() {
             sort_order: Number(form.sort_order) || 0,
           },
           {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
+            withCredentials: true, // 🔐 cookie HttpOnly
           }
         );
         toast.success("Categoria criada.");
@@ -136,6 +124,13 @@ export default function AdminCategoriasPage() {
       await loadCategorias();
     } catch (err: any) {
       console.error(err);
+
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Sessão expirada. Faça login no painel admin.");
+        router.push("/admin/login");
+        return;
+      }
+
       const msg =
         err?.response?.data?.message || "Erro ao salvar categoria.";
       toast.error(msg);
@@ -145,27 +140,27 @@ export default function AdminCategoriasPage() {
   }
 
   async function toggleAtivo(cat: Categoria) {
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Faça login no painel admin.");
-      return;
-    }
-
     try {
       await axios.patch(
         `${API_BASE}/api/admin/categorias/${cat.id}/status`,
         { is_active: !cat.is_active },
         {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
+          withCredentials: true, // 🔐 cookie HttpOnly
         }
       );
       toast.success(
         !cat.is_active ? "Categoria ativada." : "Categoria desativada."
       );
       await loadCategorias();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Sessão expirada. Faça login no painel admin.");
+        router.push("/admin/login");
+        return;
+      }
+
       toast.error("Erro ao atualizar status.");
     }
   }
@@ -173,21 +168,21 @@ export default function AdminCategoriasPage() {
   async function handleDelete(cat: Categoria) {
     if (!window.confirm(`Remover categoria "${cat.name}"?`)) return;
 
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Faça login no painel admin.");
-      return;
-    }
-
     try {
       await axios.delete(`${API_BASE}/api/admin/categorias/${cat.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
+        withCredentials: true, // 🔐 cookie HttpOnly
       });
       toast.success("Categoria removida.");
       await loadCategorias();
     } catch (err: any) {
       console.error(err);
+
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Sessão expirada. Faça login no painel admin.");
+        router.push("/admin/login");
+        return;
+      }
+
       const msg =
         err?.response?.data?.message || "Erro ao remover categoria.";
       toast.error(msg);
@@ -309,7 +304,7 @@ export default function AdminCategoriasPage() {
                   size="medium"
                   variant="primary"
                   isLoading={saving}
-                    type="submit"
+                  type="submit"
                 />
                 {editingId && (
                   <button
@@ -389,7 +384,7 @@ export default function AdminCategoriasPage() {
                           {cat.is_active ? "Ativa" : "Inativa"}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-right space-x-1.5">
+                      <td className="px-3 py-2 space-x-1.5 text-right">
                         <button
                           onClick={() => handleEdit(cat)}
                           className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] hover:border-emerald-500 hover:text-emerald-300"
@@ -464,19 +459,19 @@ export default function AdminCategoriasPage() {
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       onClick={() => handleEdit(cat)}
-                      className="flex-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-center hover:border-emerald-500 hover:text-emerald-300"
+                      className="flex-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-center text-[11px] hover:border-emerald-500 hover:text-emerald-300"
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => toggleAtivo(cat)}
-                      className="flex-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-center hover:border-amber-500 hover:text-amber-300"
+                      className="flex-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-center text-[11px] hover:border-amber-500 hover:text-amber-300"
                     >
                       {cat.is_active ? "Desativar" : "Ativar"}
                     </button>
                     <button
                       onClick={() => handleDelete(cat)}
-                      className="flex-1 rounded-md border border-red-700/70 bg-slate-900 px-2 py-1 text-[11px] text-center text-red-300 hover:bg-red-900/30"
+                      className="flex-1 rounded-md border border-red-700/70 bg-slate-900 px-2 py-1 text-center text-[11px] text-red-300 hover:bg-red-900/30"
                     >
                       Remover
                     </button>

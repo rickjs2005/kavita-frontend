@@ -42,19 +42,24 @@ export default function AdminClienteEditPage() {
     const load = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("adminToken");
 
         const res = await axios.get<AdminUserDetail>(
           `${API_BASE}/api/users/admin/${userId}`,
           {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-            withCredentials: true,
+            withCredentials: true, // 🔐 Cookie HttpOnly
           }
         );
 
         setUser(res.data);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          toast.error("Sessão expirada. Faça login novamente.");
+          router.push("/admin/login");
+          return;
+        }
+
         toast.error("Não foi possível carregar os dados do cliente.");
       } finally {
         setLoading(false);
@@ -62,7 +67,7 @@ export default function AdminClienteEditPage() {
     };
 
     load();
-  }, [userId]);
+  }, [userId, router]);
 
   const handleChange =
     (field: keyof AdminUserDetail) =>
@@ -76,18 +81,22 @@ export default function AdminClienteEditPage() {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem("adminToken");
-
       const { id, email, status_conta, ...body } = user;
 
       await axios.put(`${API_BASE}/api/users/admin/${userId}`, body, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        withCredentials: true,
+        withCredentials: true, // 🔐 Cookie HttpOnly
       });
 
       toast.success("Dados do cliente atualizados com sucesso.");
     } catch (err: any) {
       console.error(err);
+
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        router.push("/admin/login");
+        return;
+      }
+
       const msg =
         err?.response?.data?.mensagem ||
         "Erro ao salvar dados do cliente.";
@@ -102,7 +111,6 @@ export default function AdminClienteEditPage() {
     setBlocking(true);
 
     try {
-      const token = localStorage.getItem("adminToken");
       const novoStatus: StatusConta =
         user.status_conta === "bloqueado" ? "ativo" : "bloqueado";
 
@@ -110,8 +118,7 @@ export default function AdminClienteEditPage() {
         `${API_BASE}/api/admin/users/${userId}/block`,
         { status_conta: novoStatus },
         {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          withCredentials: true,
+          withCredentials: true, // 🔐 Cookie HttpOnly
         }
       );
 
@@ -126,6 +133,13 @@ export default function AdminClienteEditPage() {
       );
     } catch (err: any) {
       console.error(err);
+
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        router.push("/admin/login");
+        return;
+      }
+
       const msg =
         err?.response?.data?.message ||
         "Erro ao atualizar status da conta.";
@@ -137,17 +151,21 @@ export default function AdminClienteEditPage() {
 
   const handleDelete = async () => {
     try {
-      const token = localStorage.getItem("adminToken");
-
       await axios.delete(`${API_BASE}/api/admin/users/${userId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        withCredentials: true,
+        withCredentials: true, // 🔐 Cookie HttpOnly
       });
 
       toast.success("Cliente removido com sucesso.");
       router.push("/admin/clientes");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        router.push("/admin/login");
+        return;
+      }
+
       toast.error("Não foi possível excluir o cliente.");
     }
   };
@@ -180,7 +198,7 @@ export default function AdminClienteEditPage() {
         {/* Cabeçalho */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+            <h1 className="text-xl sm:text-2xl font-semibold text-white">
               Editar Cliente
             </h1>
             <p className="text-xs sm:text-sm text-gray-500">

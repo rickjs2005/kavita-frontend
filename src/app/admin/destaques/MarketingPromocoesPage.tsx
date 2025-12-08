@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import DeleteButton from "@/components/buttons/DeleteButton";
 import SearchInputProdutos from "@/components/products/SearchInput";
 import CloseButton from "@/components/buttons/CloseButton";
-import { getAdminToken } from "@/utils/auth";
 
 type Promocao = {
   id: number;
@@ -89,13 +88,15 @@ export default function MarketingPromocoesPage() {
       setLoading(true);
       setErr(null);
 
-      const token = getAdminToken();
-      if (!token) throw new Error("Token de admin ausente (faça login).");
-
       const res = await fetch(`${API_ADMIN}/marketing/promocoes`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include", // 🔐 usa cookie HttpOnly
         cache: "no-store",
       });
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("Sessão expirada. Faça login novamente no admin.");
+      }
+
       if (!res.ok) {
         const t = await res.text().catch(() => "");
         throw new Error(t || `Erro ao listar promoções (${res.status}).`);
@@ -146,11 +147,7 @@ export default function MarketingPromocoesPage() {
     setFormPromoId(null);
     setFormProductId(id);
     setFormProductName(produto.name || produto.nome || `Produto #${id}`);
-    setFormBasePrice(
-      produto.price ??
-        produto.preco ??
-        null
-    );
+    setFormBasePrice(produto.price ?? produto.preco ?? null);
     setFormTitle("");
     setFormType("PROMOCAO");
     setFormDiscountPercent("10");
@@ -168,9 +165,7 @@ export default function MarketingPromocoesPage() {
     setFormProductName(promo.name);
     setFormBasePrice(Number(promo.original_price));
     setFormTitle(promo.title || "");
-    setFormType(
-      promo.type === "FLASH" ? "FLASH" : "PROMOCAO"
-    );
+    setFormType(promo.type === "FLASH" ? "FLASH" : "PROMOCAO");
     setFormDiscountPercent(
       promo.discount_percent != null ? String(promo.discount_percent) : ""
     );
@@ -206,9 +201,7 @@ export default function MarketingPromocoesPage() {
     }
 
     const discount =
-      formDiscountPercent.trim() !== ""
-        ? Number(formDiscountPercent)
-        : null;
+      formDiscountPercent.trim() !== "" ? Number(formDiscountPercent) : null;
     const promoPrice =
       formPromoPrice.trim() !== "" ? Number(formPromoPrice) : null;
 
@@ -224,12 +217,6 @@ export default function MarketingPromocoesPage() {
 
     if (promoPrice != null && (Number.isNaN(promoPrice) || promoPrice <= 0)) {
       toast.error("Preço promocional inválido.");
-      return;
-    }
-
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Faça login de admin para salvar promoção.");
       return;
     }
 
@@ -249,9 +236,9 @@ export default function MarketingPromocoesPage() {
       if (mode === "create") {
         const res = await fetch(`${API_ADMIN}/marketing/promocoes`, {
           method: "POST",
+          credentials: "include", // 🔐 cookie HttpOnly
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             product_id: formProductId,
@@ -259,10 +246,16 @@ export default function MarketingPromocoesPage() {
           }),
         });
 
+        if (res.status === 401 || res.status === 403) {
+          toast.error("Sessão expirada. Faça login novamente no admin.");
+          return;
+        }
+
         if (res.status === 409) {
           toast.error("Já existe uma promoção para este produto.");
           return;
         }
+
         if (!res.ok) {
           const t = await res.text().catch(() => "");
           throw new Error(t || "Erro ao criar promoção.");
@@ -274,13 +267,18 @@ export default function MarketingPromocoesPage() {
           `${API_ADMIN}/marketing/promocoes/${formPromoId}`,
           {
             method: "PUT",
+            credentials: "include",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify(payload),
           }
         );
+
+        if (res.status === 401 || res.status === 403) {
+          toast.error("Sessão expirada. Faça login novamente no admin.");
+          return;
+        }
 
         if (!res.ok) {
           const t = await res.text().catch(() => "");
@@ -301,20 +299,16 @@ export default function MarketingPromocoesPage() {
   }
 
   async function removerPromocao(id: number) {
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Faça login de admin para remover promoções.");
-      return;
-    }
-
     try {
-      const res = await fetch(
-        `${API_ADMIN}/marketing/promocoes/${id}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${API_ADMIN}/marketing/promocoes/${id}`, {
+        method: "DELETE",
+        credentials: "include", // 🔐 cookie HttpOnly
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente no admin.");
+        return;
+      }
 
       if (!res.ok) {
         const t = await res.text().catch(() => "");
@@ -365,16 +359,13 @@ export default function MarketingPromocoesPage() {
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-emerald-100 sm:text-lg">
-                  {mode === "create"
-                    ? "Criar promoção"
-                    : "Editar promoção"}
+                  {mode === "create" ? "Criar promoção" : "Editar promoção"}
                 </h2>
                 <p className="text-[11px] text-slate-300 sm:text-xs">
                   {formProductName}{" "}
                   {formBasePrice != null && (
                     <span className="ml-1 text-[11px] text-slate-400">
-                      (Preço cheio: R${" "}
-                      {formBasePrice.toFixed(2)})
+                      (Preço cheio: R$ {formBasePrice.toFixed(2)})
                     </span>
                   )}
                 </p>
@@ -414,9 +405,7 @@ export default function MarketingPromocoesPage() {
                   value={formType}
                   onChange={(e) =>
                     setFormType(
-                      e.target.value === "FLASH"
-                        ? "FLASH"
-                        : "PROMOCAO"
+                      e.target.value === "FLASH" ? "FLASH" : "PROMOCAO"
                     )
                   }
                   className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
@@ -436,17 +425,14 @@ export default function MarketingPromocoesPage() {
                     min={0}
                     step={0.01}
                     value={formDiscountPercent}
-                    onChange={(e) =>
-                      setFormDiscountPercent(e.target.value)
-                    }
+                    onChange={(e) => setFormDiscountPercent(e.target.value)}
                     className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     placeholder="Ex.: 10"
                   />
                   <span className="text-xs text-slate-400">%</span>
                 </div>
                 <p className="mt-1 text-[10px] text-slate-400">
-                  Se você preencher preço promocional abaixo, ele
-                  será prioridade.
+                  Se você preencher preço promocional abaixo, ele será prioridade.
                 </p>
               </div>
 
@@ -455,17 +441,13 @@ export default function MarketingPromocoesPage() {
                   Preço promocional (opcional)
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">
-                    R$
-                  </span>
+                  <span className="text-xs text-slate-400">R$</span>
                   <input
                     type="number"
                     min={0}
                     step={0.01}
                     value={formPromoPrice}
-                    onChange={(e) =>
-                      setFormPromoPrice(e.target.value)
-                    }
+                    onChange={(e) => setFormPromoPrice(e.target.value)}
                     className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     placeholder="Deixe em branco para usar apenas %"
                   />
@@ -480,8 +462,7 @@ export default function MarketingPromocoesPage() {
                   type="datetime-local"
                   value={formStartAt}
                   onChange={(e) => setFormStartAt(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 
-                  text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
@@ -493,8 +474,7 @@ export default function MarketingPromocoesPage() {
                   type="datetime-local"
                   value={formEndAt}
                   onChange={(e) => setFormEndAt(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 
-                  text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
@@ -510,8 +490,8 @@ export default function MarketingPromocoesPage() {
                   htmlFor="promo-active"
                   className="text-xs text-slate-200"
                 >
-                  Promoção ativa (aparece para os clientes enquanto
-                  estiver dentro do período configurado)
+                  Promoção ativa (aparece para os clientes enquanto estiver
+                  dentro do período configurado)
                 </label>
               </div>
 

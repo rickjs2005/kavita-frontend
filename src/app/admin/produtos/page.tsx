@@ -8,7 +8,6 @@ import ProdutoForm from "@/components/admin/produtos/produtoform";
 import ProdutoCard from "@/components/admin/produtos/produtocard";
 import type { Product } from "@/components/admin/produtos/produtocard";
 
-// ProdutoForm pode não exportar props tipadas — seguimos o cast temporário
 const ProdutoFormAny = ProdutoForm as unknown as (props: any) => JSX.Element;
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -20,24 +19,34 @@ export default function ProdutosPage() {
   const [produtoEditado, setProdutoEditado] = useState<Product | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
+  // =============================
+  //   NOVO PADRÃO SEGURO
+  //   -> usa cookie HttpOnly via credentials: "include"
+  // =============================
   async function carregarProdutos() {
     setLoading(true);
     setErro(null);
 
-    const token = localStorage.getItem("adminToken");
     try {
       const res = await fetch(`${API_BASE}/api/admin/produtos`, {
-        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+        credentials: "include", // >>> ESTE É O NOVO PADRÃO
         cache: "no-store",
       });
 
+      if (res.status === 401) {
+        setErro("Sessão expirada. Faça login novamente.");
+        return;
+      }
+
       if (!res.ok) {
-        const txt = await safeText(res);
-        throw new Error(`Falha ao carregar (${res.status}). ${txt || ""}`);
+        const texto = await safeText(res);
+        throw new Error(`Falha ao carregar (${res.status}) ${texto}`);
       }
 
       const data = await res.json();
       const arr = Array.isArray(data) ? data : [];
+
       const parsed: Product[] = arr.map((p: any) => ({
         ...p,
         price: Number(p.price),
@@ -64,32 +73,31 @@ export default function ProdutosPage() {
   }
 
   async function removerProduto(id: number) {
-    const token = localStorage.getItem("adminToken");
-    if (!token) {
-      alert("Faça login no admin.");
-      return;
-    }
     if (!confirm("Tem certeza que deseja remover este produto?")) return;
 
     try {
       const res = await fetch(`${API_BASE}/api/admin/produtos/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include", // >>> NOVO PADRÃO
       });
 
-      if (!res.ok && res.status !== 204) {
-        const txt = await safeText(res);
-        throw new Error(`Falha ao remover (${res.status}). ${txt || ""}`);
+      if (res.status === 401) {
+        alert("Sessão expirada. Faça login novamente.");
+        return;
       }
 
-      await carregarProdutos(); // recarrega para refletir remoção/imagens
+      if (!res.ok && res.status !== 204) {
+        const texto = await safeText(res);
+        throw new Error(`Falha ao remover (${res.status}). ${texto}`);
+      }
+
+      await carregarProdutos();
     } catch (e: any) {
       console.error("removerProduto:", e);
       alert(e?.message || "Erro ao remover produto.");
     }
   }
 
-  // util: lê body de erro com segurança
   async function safeText(res: Response) {
     try {
       const ct = res.headers.get("content-type") || "";
@@ -106,7 +114,7 @@ export default function ProdutosPage() {
   return (
     <div className="w-full px-3 py-5 sm:px-4 lg:px-6">
       <div className="mx-auto w-full max-w-6xl space-y-6 sm:space-y-8">
-        {/* Header com botão Voltar só no mobile */}
+        
         <header className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
@@ -117,7 +125,6 @@ export default function ProdutosPage() {
             </p>
           </div>
 
-          {/* Botão Voltar – só mobile, topo direito do header */}
           <Link
             href="/admin"
             className="absolute -right-1 -top-3 z-10 block sm:hidden"
@@ -131,7 +138,6 @@ export default function ProdutosPage() {
           </Link>
         </header>
 
-        {/* Formulário – já vem com o card pronto dentro do componente */}
         <section ref={formRef} aria-label="Formulário de produto">
           <ProdutoFormAny
             produtoEditado={produtoEditado}
@@ -140,7 +146,6 @@ export default function ProdutosPage() {
           />
         </section>
 
-        {/* Estados de lista */}
         {loading && (
           <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
             Carregando produtos…
@@ -170,7 +175,6 @@ export default function ProdutosPage() {
               </span>
             </div>
 
-            {/* Grid responsiva: 1 col (mobile) → 2 col (md) → 3 col (xl) */}
             <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
               {produtos.map((p) => (
                 <ProdutoCard
@@ -188,4 +192,3 @@ export default function ProdutosPage() {
     </div>
   );
 }
-

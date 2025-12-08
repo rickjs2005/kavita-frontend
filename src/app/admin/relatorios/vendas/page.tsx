@@ -2,19 +2,27 @@
 
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import {ResponsiveContainer,BarChart,Bar,XAxis,YAxis,Tooltip,CartesianGrid,} from "recharts";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 import toast from "react-hot-toast";
 import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
-import {formatCurrency,formatShortDate,formatFullDate,formatFullDateShortYear,} from "@/utils/formatters";
+import {
+  formatCurrency,
+  formatShortDate,
+  formatFullDate,
+  formatFullDateShortYear,
+} from "@/utils/formatters";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
 
 interface DailySale {
   date: string;
@@ -34,13 +42,6 @@ export default function RelatorioVendasPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Sessão expirada. Faça login novamente.");
-      setLoading(false);
-      return;
-    }
-
     const fetchSales = async () => {
       try {
         setLoading(true);
@@ -49,7 +50,8 @@ export default function RelatorioVendasPage() {
         const response = await axios.get<VendasAPIResponse>(
           `${API_BASE}/api/admin/relatorios/vendas`,
           {
-            headers: { Authorization: `Bearer ${token}` },
+            // ✅ agora usa apenas cookie HttpOnly do backend
+            withCredentials: true,
           }
         );
 
@@ -62,8 +64,17 @@ export default function RelatorioVendasPage() {
         setSales(mapped);
       } catch (err: any) {
         console.error(err);
-        setError("Não foi possível carregar o relatório de vendas.");
-        toast.error("Erro ao carregar relatório de vendas.");
+
+        let msg = "Não foi possível carregar o relatório de vendas.";
+
+          if (err.response.status === 401 || err.response.status === 403) {
+            msg =
+              "Sessão expirada ou sem permissão. Faça login novamente no admin.";
+          }
+        
+
+        setError(msg);
+        toast.error(msg);
       } finally {
         setLoading(false);
       }

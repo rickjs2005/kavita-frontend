@@ -32,25 +32,23 @@ export default function ColaboradoresPendentesPage() {
   const [items, setItems] = useState<ColaboradorPendente[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
-
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-
   async function carregar() {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/pending`, {
-        headers,
         cache: "no-store",
+        credentials: "include", // ✅ cookie HttpOnly
       });
 
       if (!res.ok) {
         console.error("Erro ao buscar pendentes:", res.status);
-        toast.error("Erro ao carregar colaboradores pendentes.");
+        if (res.status === 401 || res.status === 403) {
+          toast.error(
+            "Você não tem permissão para ver colaboradores pendentes. Faça login novamente."
+          );
+        } else {
+          toast.error("Erro ao carregar colaboradores pendentes.");
+        }
         setItems([]);
         return;
       }
@@ -77,12 +75,21 @@ export default function ColaboradoresPendentesPage() {
     try {
       const res = await fetch(`${API_BASE}/${id}/verify`, {
         method: "PUT",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // ✅ cookie HttpOnly
       });
 
       if (!res.ok) {
         console.error("Erro ao verificar colaborador:", res.status);
-        toast.error("Erro ao verificar colaborador.");
+        if (res.status === 401 || res.status === 403) {
+          toast.error(
+            "Você não tem permissão para aprovar colaboradores. Faça login novamente."
+          );
+        } else {
+          toast.error("Erro ao verificar colaborador.");
+        }
         return;
       }
 
@@ -100,12 +107,18 @@ export default function ColaboradoresPendentesPage() {
     try {
       const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
-        headers,
+        credentials: "include", // ✅ cookie HttpOnly
       });
 
       if (!res.ok) {
         console.error("Erro ao remover colaborador:", res.status);
-        toast.error("Erro ao remover colaborador.");
+        if (res.status === 401 || res.status === 403) {
+          toast.error(
+            "Você não tem permissão para remover colaboradores. Faça login novamente."
+          );
+        } else {
+          toast.error("Erro ao remover colaborador.");
+        }
         return;
       }
 

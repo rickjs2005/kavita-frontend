@@ -12,19 +12,16 @@ type PedidoAcoesProps = {
 };
 
 export default function PedidoAcoes({ pedidoId }: PedidoAcoesProps) {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
-
   const [isLoading, setIsLoading] = useState(false);
 
   const sendEmail = async (template: string) => {
     try {
       setIsLoading(true);
+      // 🔐 sem localStorage / Authorization, só cookie HttpOnly
       await axios.post(
         `${API_BASE}/api/admin/comunicacao/email`,
         { template, pedidoId },
         {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           withCredentials: true,
         }
       );
@@ -42,11 +39,11 @@ export default function PedidoAcoes({ pedidoId }: PedidoAcoesProps) {
   const sendWhatsapp = async (template: string) => {
     try {
       setIsLoading(true);
+      // 🔐 sem localStorage / Authorization, só cookie HttpOnly
       await axios.post(
         `${API_BASE}/api/admin/comunicacao/whatsapp`,
         { template, pedidoId },
         {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           withCredentials: true,
         }
       );

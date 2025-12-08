@@ -22,15 +22,6 @@ type AdminLog = {
   criado_em: string; // string vinda do backend
 };
 
-function getAdminToken(): string {
-  if (typeof window === "undefined") return "";
-  try {
-    return localStorage.getItem("adminToken") ?? "";
-  } catch {
-    return "";
-  }
-}
-
 /**
  * Converte a string de data do backend em Date.
  * Suporta:
@@ -116,13 +107,6 @@ export default function AdminLogsPage() {
 
   // Carregar logs
   useEffect(() => {
-    const token = getAdminToken();
-    if (!token) {
-      logout();
-      router.replace("/admin/login");
-      return;
-    }
-
     if (!canViewLogs) {
       setLoading(false);
       return;
@@ -134,12 +118,11 @@ export default function AdminLogsPage() {
         setErrorMsg(null);
 
         const res = await fetch(`${API_URL}/admin/logs`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          // 🔐 usa apenas o cookie HttpOnly; nada de Authorization nem localStorage
+          credentials: "include",
         });
 
-        if (res.status === 401) {
+        if (res.status === 401 || res.status === 403) {
           logout();
           router.replace("/admin/login");
           return;

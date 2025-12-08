@@ -27,15 +27,6 @@ type RoleRow = {
   descricao?: string | null;
 };
 
-function getAdminToken(): string {
-  if (typeof window === "undefined") return "";
-  try {
-    return localStorage.getItem("adminToken") ?? "";
-  } catch {
-    return "";
-  }
-}
-
 function parseAdminDate(dateStr: string | null | undefined): Date | null {
   if (!dateStr) return null;
 
@@ -115,14 +106,10 @@ export default function EquipePage() {
 
   const canManageAdmins = hasPermission("admins_manage");
 
+  // ===========================
+  //    🔐 SEGURANÇA NOVA
+  // ===========================
   useEffect(() => {
-    const token = getAdminToken();
-    if (!token) {
-      logout();
-      router.replace("/admin/login");
-      return;
-    }
-
     const load = async () => {
       try {
         setLoading(true);
@@ -130,10 +117,10 @@ export default function EquipePage() {
 
         const [adminsRes, rolesRes] = await Promise.all([
           fetch(`${API_URL}/admin/admins`, {
-            headers: { Authorization: `Bearer ${token}` },
+            credentials: "include", // ⬅️ AGORA É ASSIM
           }),
           fetch(`${API_URL}/admin/roles`, {
-            headers: { Authorization: `Bearer ${token}` },
+            credentials: "include",
           }),
         ]);
 
@@ -143,14 +130,9 @@ export default function EquipePage() {
           return;
         }
 
-        if (!adminsRes.ok) {
-          const data = await adminsRes.json().catch(() => null);
-          throw new Error(data?.message || "Erro ao carregar administradores.");
-        }
-        if (!rolesRes.ok) {
-          const data = await rolesRes.json().catch(() => null);
-          throw new Error(data?.message || "Erro ao carregar papéis.");
-        }
+        if (!adminsRes.ok)
+          throw new Error("Erro ao carregar administradores.");
+        if (!rolesRes.ok) throw new Error("Erro ao carregar papéis.");
 
         const adminsData: AdminRow[] = await adminsRes.json();
         const rolesData: RoleRow[] = await rolesRes.json();
@@ -158,9 +140,7 @@ export default function EquipePage() {
         const orderedAdmins = [...adminsData].sort((a, b) => {
           const da = parseAdminDate(a.criado_em);
           const db = parseAdminDate(b.criado_em);
-          const ta = da ? da.getTime() : 0;
-          const tb = db ? db.getTime() : 0;
-          return tb - ta;
+          return (db?.getTime() ?? 0) - (da?.getTime() ?? 0);
         });
 
         setAdmins(orderedAdmins);
@@ -176,68 +156,52 @@ export default function EquipePage() {
     load();
   }, [logout, router]);
 
+  // Criar admin com cookie HttpOnly
   async function handleCreateAdmin(event: FormEvent) {
     event.preventDefault();
 
-    const token = getAdminToken();
-    if (!token) {
-      logout();
-      router.replace("/admin/login");
-      return;
-    }
-
-    if (!nome.trim() || !email.trim() || !senha.trim() || !roleSlug.trim()) {
-      alert("Preencha todos os campos para criar o administrador.");
+    if (!nome || !email || !senha || !roleSlug) {
+      alert("Preencha todos os campos.");
       return;
     }
 
     try {
       const res = await fetch(`${API_URL}/admin/admins`, {
         method: "POST",
+        credentials: "include", // 🔐 obrigatório agora
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          nome: nome.trim(),
-          email: email.trim(),
-          senha: senha,
-          role: roleSlug.trim().toLowerCase(),
+          nome,
+          email,
+          senha,
+          role: roleSlug.toLowerCase(),
         }),
       });
 
       const data = await res.json().catch(() => null);
 
-      if (!res.ok) {
-        throw new Error(data?.message || "Erro ao criar administrador.");
+      if (res.status === 401) {
+        logout();
+        router.replace("/admin/login");
+        return;
       }
 
-      if (data?.admin) {
-        setAdmins((prev) => {
-          const updated = [...prev, data.admin as AdminRow];
-          return updated.sort((a, b) => {
-            const da = parseAdminDate(a.criado_em);
-            const db = parseAdminDate(b.criado_em);
-            const ta = da ? da.getTime() : 0;
-            const tb = db ? db.getTime() : 0;
-            return tb - ta;
-          });
+      if (!res.ok) throw new Error(data?.message || "Erro ao criar admin.");
+
+      const refetch = await fetch(`${API_URL}/admin/admins`, {
+        credentials: "include",
+      });
+
+      if (refetch.ok) {
+        const adminsData: AdminRow[] = await refetch.json();
+        const ordered = [...adminsData].sort((a, b) => {
+          const da = parseAdminDate(a.criado_em);
+          const db = parseAdminDate(b.criado_em);
+          return (db?.getTime() ?? 0) - (da?.getTime() ?? 0);
         });
-      } else {
-        const refetch = await fetch(`${API_URL}/admin/admins`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (refetch.ok) {
-          const adminsData: AdminRow[] = await refetch.json();
-          const orderedAdmins = [...adminsData].sort((a, b) => {
-            const da = parseAdminDate(a.criado_em);
-            const db = parseAdminDate(b.criado_em);
-            const ta = da ? da.getTime() : 0;
-            const tb = db ? db.getTime() : 0;
-            return tb - ta;
-          });
-          setAdmins(orderedAdmins);
-        }
+        setAdmins(ordered);
       }
 
       setNome("");
@@ -247,25 +211,21 @@ export default function EquipePage() {
       setShowForm(false);
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "Erro inesperado ao criar administrador.");
+      alert(err.message || "Erro ao criar administrador.");
     }
   }
 
+  // KPIs
   const totalAdmins = admins.length;
   const ativos = admins.filter((a) => a.ativo === 1).length;
 
   const lastLoginStr = useMemo(() => {
     let best: { date: Date; raw: string } | null = null;
-
     for (const admin of admins) {
       if (!admin.ultimo_login) continue;
       const dt = parseAdminDate(admin.ultimo_login);
-      if (!dt) continue;
-      if (!best || dt.getTime() > best.date.getTime()) {
-        best = { date: dt, raw: admin.ultimo_login };
-      }
+      if (dt && (!best || dt > best.date)) best = { date: dt, raw: admin.ultimo_login };
     }
-
     return best?.raw ?? null;
   }, [admins]);
 
@@ -274,7 +234,7 @@ export default function EquipePage() {
     ? `Último acesso em ${formatDateTime(lastLoginStr)}`
     : "Nenhum administrador acessou ainda";
 
-  return (
+   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-8">
       {/* HEADER COM X NO TOPO */}
       <header className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

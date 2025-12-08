@@ -1,11 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, } from "recharts";
-import { useAdminAuth, AdminRole, } from "@/context/AdminAuthContext";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  CartesianGrid,
+} from "recharts";
+import {
+  useAdminAuth,
+  AdminRole,
+} from "@/context/AdminAuthContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
@@ -102,15 +118,6 @@ const ROLE_BADGE_CLASS: Record<AdminRole, string> = {
   leitura:
     "border-slate-500/60 bg-slate-800/80 text-slate-100 shadow-[0_0_0_1px_rgba(148,163,184,0.4)]",
 };
-
-function getAdminToken(): string {
-  if (typeof window === "undefined") return "";
-  try {
-    return localStorage.getItem("adminToken") ?? "";
-  } catch {
-    return "";
-  }
-}
 
 function formatNumber(n: number) {
   return new Intl.NumberFormat("pt-BR").format(n || 0);
@@ -290,9 +297,7 @@ export default function AdminDashboardPage() {
 
   const [alertas, setAlertas] = useState<AlertItem[]>([]);
   const [alertasLoading, setAlertasLoading] = useState(false);
-  const [alertasError, setAlertasError] = useState<string | null>(
-    null
-  );
+  const [alertasError, setAlertasError] = useState<string | null>(null);
 
   const canViewLogs = role === "master" || role === "gerente";
 
@@ -306,35 +311,28 @@ export default function AdminDashboardPage() {
     router.replace("/admin/login");
   }, [logout, router]);
 
-  const createAuthOptions = useCallback((token: string): RequestInit => {
-    return {
+  // opções de fetch usando apenas cookie HttpOnly
+  const authOptions = useMemo<RequestInit>(
+    () => ({
       credentials: "include",
-      headers: { Authorization: `Bearer ${token}` },
-    };
-  }, []);
+    }),
+    []
+  );
 
   // === Resumo + gráfico ===
   useEffect(() => {
     let cancelado = false;
 
     async function loadDashboard() {
-      const token = getAdminToken();
-      if (!token) {
-        handleUnauthorized();
-        return;
-      }
-
       setLoading(true);
       setErrorMsg(null);
 
       try {
-        const options = createAuthOptions(token);
-
         const [resResumo, resVendas] = await Promise.all([
-          fetch(`${API_BASE}/api/admin/stats/resumo`, options),
+          fetch(`${API_BASE}/api/admin/stats/resumo`, authOptions),
           fetch(
             `${API_BASE}/api/admin/stats/vendas?range=7`,
-            options
+            authOptions
           ),
         ]);
 
@@ -379,7 +377,7 @@ export default function AdminDashboardPage() {
     return () => {
       cancelado = true;
     };
-  }, [createAuthOptions, handleUnauthorized]);
+  }, [authOptions, handleUnauthorized]);
 
   // === Logs (atividade recente) ===
   useEffect(() => {
@@ -388,19 +386,13 @@ export default function AdminDashboardPage() {
     let cancelado = false;
 
     async function loadLogs() {
-      const token = getAdminToken();
-      if (!token) {
-        handleUnauthorized();
-        return;
-      }
-
       setLogsLoading(true);
       setLogsError(null);
 
       try {
         const res = await fetch(
           `${API_BASE}/api/admin/logs?limit=20`,
-          createAuthOptions(token)
+          authOptions
         );
 
         if (res.status === 401) {
@@ -412,7 +404,6 @@ export default function AdminDashboardPage() {
         const data: any[] = await res.json();
         if (cancelado) return;
 
-        // já vem com campo criado_em do backend
         const parsed: AdminLog[] = data.map((log) => ({
           id: log.id,
           admin_nome: log.admin_nome,
@@ -437,47 +428,30 @@ export default function AdminDashboardPage() {
     return () => {
       cancelado = true;
     };
-  }, [canViewLogs, createAuthOptions, handleUnauthorized]);
+  }, [authOptions, canViewLogs, handleUnauthorized]);
 
   // === Mini-rankings (top clientes / produtos / serviços) ===
   useEffect(() => {
     let cancelado = false;
 
     async function loadTops() {
-      const token = getAdminToken();
-      if (!token) {
-        handleUnauthorized();
-        return;
-      }
-
       setTopsLoading(true);
       setTopsError(null);
 
       try {
-        const options = createAuthOptions(token);
-
-        // CLIENTES – reaproveita /relatorios/clientes-top
-        const clientesPromise = fetch(
-          `${API_BASE}/api/admin/relatorios/clientes-top`,
-          options
-        );
-
-        // PRODUTOS – usa /stats/produtos-mais-vendidos?limit=5
-        const produtosPromise = fetch(
-          `${API_BASE}/api/admin/stats/produtos-mais-vendidos?limit=5`,
-          options
-        );
-
-        // SERVIÇOS – usa /relatorios/servicos-ranking
-        const servicosPromise = fetch(
-          `${API_BASE}/api/admin/relatorios/servicos-ranking`,
-          options
-        );
-
         const [resCli, resProd, resServ] = await Promise.all([
-          clientesPromise,
-          produtosPromise,
-          servicosPromise,
+          fetch(
+            `${API_BASE}/api/admin/relatorios/clientes-top`,
+            authOptions
+          ),
+          fetch(
+            `${API_BASE}/api/admin/stats/produtos-mais-vendidos?limit=5`,
+            authOptions
+          ),
+          fetch(
+            `${API_BASE}/api/admin/relatorios/servicos-ranking`,
+            authOptions
+          ),
         ]);
 
         if (cancelado) return;
@@ -493,7 +467,6 @@ export default function AdminDashboardPage() {
 
         let algumaCoisaOk = false;
 
-        // CLIENTES
         if (resCli.ok) {
           const data: { rows: any[] } = await resCli.json();
           const rows = Array.isArray(data.rows) ? data.rows : [];
@@ -507,7 +480,6 @@ export default function AdminDashboardPage() {
           algumaCoisaOk = true;
         }
 
-        // PRODUTOS
         if (resProd.ok) {
           const data: any[] = await resProd.json();
           const mapped: TopProduto[] = (Array.isArray(data)
@@ -523,7 +495,6 @@ export default function AdminDashboardPage() {
           algumaCoisaOk = true;
         }
 
-        // SERVIÇOS
         if (resServ.ok) {
           const data: { rows: any[] } = await resServ.json();
           const rows = Array.isArray(data.rows) ? data.rows : [];
@@ -531,7 +502,7 @@ export default function AdminDashboardPage() {
             id: s.id,
             titulo: s.nome,
             total_contratos: Number(s.total_servicos || 0),
-            receita_total: 0, // ainda não temos receita no ranking de serviços
+            receita_total: 0,
             nota_media:
               typeof s.rating_avg === "number" ? s.rating_avg : null,
           }));
@@ -559,26 +530,20 @@ export default function AdminDashboardPage() {
     return () => {
       cancelado = true;
     };
-  }, [createAuthOptions, handleUnauthorized]);
+  }, [authOptions, handleUnauthorized]);
 
   // === Alertas da loja ===
   useEffect(() => {
     let cancelado = false;
 
     async function loadAlertas() {
-      const token = getAdminToken();
-      if (!token) {
-        handleUnauthorized();
-        return;
-      }
-
       setAlertasLoading(true);
       setAlertasError(null);
 
       try {
         const res = await fetch(
           `${API_BASE}/api/admin/stats/alertas`,
-          createAuthOptions(token)
+          authOptions
         );
 
         if (cancelado) return;
@@ -592,7 +557,6 @@ export default function AdminDashboardPage() {
           const data: AlertItem[] = await res.json();
           setAlertas(Array.isArray(data) ? data : []);
         } else if (res.status !== 404) {
-          // 404 a gente ignora (rota ainda não criada)
           throw new Error("Erro ao carregar alertas");
         }
       } catch (err) {
@@ -610,7 +574,7 @@ export default function AdminDashboardPage() {
     return () => {
       cancelado = true;
     };
-  }, [createAuthOptions, handleUnauthorized]);
+  }, [authOptions, handleUnauthorized]);
 
   const chartData = useMemo(
     () =>
@@ -653,7 +617,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  return (
+   return (
     <div className="relative min-h-screen w-full bg-slate-950 text-slate-50">
       {/* HEADER */}
       <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">

@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import CustomButton from "@/components/buttons/CustomButton";
 import { Service } from "@/types/service";
-// ⚠️ Ajuste o caminho se o FormattedInput estiver em outra pasta
 import FormattedInput from "@/components/layout/FormattedInput";
 
 interface Especialidade {
@@ -60,15 +59,15 @@ export default function ServiceFormUnificado({
 
   /* ---------------------------- carregar dados ---------------------------- */
   useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    if (!token) return;
-
     (async () => {
       try {
         const res = await fetch(API_ESPECIALIDADES, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include", // ✅ cookie HttpOnly
         });
-        if (!res.ok) throw new Error("Falha ao buscar especialidades");
+        if (!res.ok) {
+          console.error("Falha ao buscar especialidades:", res.status);
+          return;
+        }
         const data = await res.json();
         setEspecialidades(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -135,6 +134,19 @@ export default function ServiceFormUnificado({
     return null;
   }
 
+  async function safeText(res: Response) {
+    try {
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        const j = await res.json();
+        return (j as any)?.message || JSON.stringify(j);
+      }
+      return await res.text();
+    } catch {
+      return "";
+    }
+  }
+
   /* ------------------------------- eventos ------------------------------- */
   function handleChange(
     e:
@@ -177,12 +189,6 @@ export default function ServiceFormUnificado({
       return;
     }
 
-    const token = localStorage.getItem("adminToken");
-    if (!token) {
-      setMsg({ type: "error", text: "Faça login no admin para continuar." });
-      return;
-    }
-
     const fd = new FormData();
     fd.append("nome", form.nome.trim());
     fd.append("cargo", form.cargo.trim());
@@ -207,13 +213,18 @@ export default function ServiceFormUnificado({
     try {
       const res = await fetch(url, {
         method,
-        headers: { Authorization: `Bearer ${token}` },
         body: fd,
+        credentials: "include", // ✅ cookie HttpOnly
       });
 
       if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || "Falha ao salvar serviço.");
+        const txt = await safeText(res);
+        const msg =
+          txt ||
+          (res.status === 401 || res.status === 403
+            ? "Você não tem permissão para salvar serviço. Faça login novamente."
+            : "Falha ao salvar serviço.");
+        throw new Error(msg);
       }
 
       setMsg({

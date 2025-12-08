@@ -17,19 +17,26 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    const hasCookie = document.cookie
-      .split("; ")
-      .some((c) => c.startsWith("adminToken="));
+    if (typeof window === "undefined") return;
 
-    // se não tiver cookie e não estiver na tela de login → manda pro login
-    if (!hasCookie && pathname !== "/admin/login") {
+    let hasRole = false;
+
+    try {
+      const storedRole = localStorage.getItem("adminRole");
+      hasRole = !!storedRole;
+    } catch {
+      hasRole = false;
+    }
+
+    // se não tiver "sinal" de admin e não estiver na tela de login → manda pro login
+    if (!hasRole && pathname !== "/admin/login") {
       setIsAuthed(false);
       setChecking(false);
-      router.replace("/admin/login");
+      router.replace(`/admin/login?from=${encodeURIComponent(pathname)}`);
       return;
     }
 
-    setIsAuthed(hasCookie);
+    setIsAuthed(hasRole);
     setChecking(false);
   }, [pathname, router]);
 
@@ -70,7 +77,7 @@ export default function AdminLayout({
 }) {
   return (
     <AdminAuthProvider>
-        <AdminLayoutInner>{children}</AdminLayoutInner>
+      <AdminLayoutInner>{children}</AdminLayoutInner>
     </AdminAuthProvider>
   );
 }

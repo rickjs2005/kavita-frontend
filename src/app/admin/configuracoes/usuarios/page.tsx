@@ -11,15 +11,6 @@ import CloseButton from "@/components/buttons/CloseButton";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const API_URL = `${API_BASE}/api`;
 
-function getAdminToken() {
-  if (typeof window === "undefined") return "";
-  try {
-    return localStorage.getItem("adminToken") ?? "";
-  } catch {
-    return "";
-  }
-}
-
 // Gera um slug bonitinho a partir do nome do papel
 function slugify(value: string) {
   return value
@@ -84,27 +75,27 @@ export default function AdminUserPermissionsConfigPage() {
     if (checking || !allowed) return;
 
     async function loadData() {
-      const token = getAdminToken();
-      if (!token) {
-        logout();
-        router.replace("/admin/login");
-        return;
-      }
-
       setLoading(true);
       setErrorMsg(null);
 
       try {
         const [rolesRes, permsRes] = await Promise.all([
           fetch(`${API_URL}/admin/roles`, {
-            headers: { Authorization: `Bearer ${token}` },
+            credentials: "include", // 🔐 cookie HttpOnly
           }),
           fetch(`${API_URL}/admin/permissions`, {
-            headers: { Authorization: `Bearer ${token}` },
+            credentials: "include",
           }),
         ]);
 
-        if (rolesRes.status === 401 || permsRes.status === 401) {
+        // sessão expirada ou sem permissão
+        if (
+          rolesRes.status === 401 ||
+          rolesRes.status === 403 ||
+          permsRes.status === 401 ||
+          permsRes.status === 403
+        ) {
+          toast.error("Sessão expirada. Faça login novamente.");
           logout();
           router.replace("/admin/login");
           return;
@@ -214,9 +205,6 @@ export default function AdminUserPermissionsConfigPage() {
   async function handleCreateRole() {
     if (!newRoleName.trim()) return;
 
-    const token = getAdminToken();
-    if (!token) return;
-
     const nome = newRoleName.trim();
     const descricao = newRoleDescription.trim();
     const slug = slugify(nome);
@@ -225,9 +213,9 @@ export default function AdminUserPermissionsConfigPage() {
     try {
       const res = await fetch(`${API_URL}/admin/roles`, {
         method: "POST",
+        credentials: "include", // 🔐 cookie HttpOnly
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         // Mandamos com ambos os nomes para ficar compatível com qualquer backend:
         body: JSON.stringify({
@@ -238,6 +226,13 @@ export default function AdminUserPermissionsConfigPage() {
           descricao: descricao || undefined,
         }),
       });
+
+      if (res.status === 401 || res.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        logout();
+        router.replace("/admin/login");
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -278,9 +273,6 @@ export default function AdminUserPermissionsConfigPage() {
   async function handleCreatePermission() {
     if (!newPermKey.trim() || !newPermGroup.trim()) return;
 
-    const token = getAdminToken();
-    if (!token) return;
-
     const chave = newPermKey.trim().toLowerCase();
     const grupo = newPermGroup.trim();
     const descricao = newPermDescription.trim();
@@ -289,9 +281,9 @@ export default function AdminUserPermissionsConfigPage() {
     try {
       const res = await fetch(`${API_URL}/admin/permissions`, {
         method: "POST",
+        credentials: "include", // 🔐 cookie HttpOnly
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         // compatível com o backend: { chave, grupo, descricao }
         body: JSON.stringify({
@@ -300,6 +292,13 @@ export default function AdminUserPermissionsConfigPage() {
           descricao: descricao || undefined,
         }),
       });
+
+      if (res.status === 401 || res.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        logout();
+        router.replace("/admin/login");
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -325,9 +324,6 @@ export default function AdminUserPermissionsConfigPage() {
     permKey: string,
     checked: boolean
   ) {
-    const token = getAdminToken();
-    if (!token) return;
-
     const previousRoles = roles;
     const updatedRoles = roles.map((role) => {
       if (role.id !== roleId) return role;
@@ -351,15 +347,22 @@ export default function AdminUserPermissionsConfigPage() {
 
       const res = await fetch(`${API_URL}/admin/roles/${roleId}`, {
         method: "PUT",
+        credentials: "include", // 🔐 cookie HttpOnly
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         // aqui assumimos que o backend aceita uma lista de chaves
         body: JSON.stringify({
           permissions: roleToUpdate.permissions,
         }),
       });
+
+      if (res.status === 401 || res.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        logout();
+        router.replace("/admin/login");
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -376,7 +379,7 @@ export default function AdminUserPermissionsConfigPage() {
     }
   }
 
-  return (
+ return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 text-slate-50 sm:px-8">
       {/* Header estilo logs/equipe + Close mobile */}
       <header className="flex items-start justify-between gap-3">

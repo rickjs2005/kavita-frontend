@@ -11,11 +11,6 @@ import { formatCurrency } from "@/utils/formatters";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
 type ClienteTop = {
   id: number;
   nome: string;
@@ -42,13 +37,6 @@ export default function RelatorioClientesPage() {
   const [sortMode, setSortMode] = useState<SortMode>("valor");
 
   useEffect(() => {
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Sessão expirada. Faça login novamente.");
-      setLoading(false);
-      return;
-    }
-
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -57,15 +45,22 @@ export default function RelatorioClientesPage() {
         const res = await axios.get<ClientesResponse>(
           `${API_BASE}/api/admin/relatorios/clientes-top`,
           {
-            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true, // ✅ envia cookie HttpOnly
           }
         );
 
         setData(res.data.rows ?? []);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setError("Não foi possível carregar o relatório de clientes.");
-        toast.error("Erro ao carregar clientes top.");
+
+        let msg = "Não foi possível carregar o relatório de clientes.";
+          if (err.response.status === 401 || err.response.status === 403) {
+            msg =
+              "Sessão expirada ou sem permissão. Faça login novamente no admin.";
+          }
+        
+        setError(msg);
+        toast.error(msg);
       } finally {
         setLoading(false);
       }

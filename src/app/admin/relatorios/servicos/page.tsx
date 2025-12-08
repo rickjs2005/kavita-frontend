@@ -19,11 +19,6 @@ import { KpiCard } from "@/components/admin/KpiCard";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
 type EspecialidadeStats = {
   especialidade_id: number | null;
   especialidade_nome: string | null;
@@ -66,39 +61,39 @@ export default function RelatorioServicosPage() {
 
   // ====== FETCH ======
   useEffect(() => {
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Sessão expirada. Faça login novamente.");
-      setLoading(false);
-      setLoadingRanking(false);
-      return;
-    }
-
     const fetchData = async () => {
       try {
         setLoading(true);
         setLoadingRanking(true);
         setError(null);
 
-        const headers = { Authorization: `Bearer ${token}` };
+        const config = { withCredentials: true as const }; // ✅ cookie HttpOnly
 
         const [resServicos, resRanking] = await Promise.all([
           axios.get<ServicosResponse>(
             `${API_BASE}/api/admin/relatorios/servicos`,
-            { headers }
+            config
           ),
           axios.get<ServicosRankingResponse>(
             `${API_BASE}/api/admin/relatorios/servicos-ranking`,
-            { headers }
+            config
           ),
         ]);
 
         setData(resServicos.data);
         setRanking(resRanking.data);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setError("Não foi possível carregar o relatório de serviços.");
-        toast.error("Erro ao carregar relatório de serviços.");
+
+        let msg = "Não foi possível carregar o relatório de serviços.";
+          if (err.response.status === 401 || err.response.status === 403) {
+            msg =
+              "Sessão expirada ou sem permissão. Faça login novamente no admin.";
+          }
+        
+
+        setError(msg);
+        toast.error(msg);
       } finally {
         setLoading(false);
         setLoadingRanking(false);
@@ -421,7 +416,7 @@ export default function RelatorioServicosPage() {
                             <td className="px-4 py-2.5 align-middle">
                               <span
                                 className={`
-                                  inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold
+                                 inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold
                                   ${
                                     index === 0
                                       ? "bg-amber-500/20 text-amber-100"

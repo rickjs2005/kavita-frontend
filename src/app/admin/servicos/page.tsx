@@ -19,13 +19,6 @@ export default function ServicosPage() {
   const [servicoEditado, setServicoEditado] = useState<Service | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
-
-  const authHeader: HeadersInit = token
-    ? { Authorization: `Bearer ${token}` }
-    : {};
-
   /* ==========================
      Carregar lista de serviços
   ========================== */
@@ -34,11 +27,17 @@ export default function ServicosPage() {
     setErro(null);
     try {
       const res = await fetch(API_BASE, {
-        headers: authHeader,
         cache: "no-store",
+        credentials: "include", // ✅ envia cookie HttpOnly
       });
+
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
+        if (res.status === 401 || res.status === 403) {
+          throw new Error(
+            txt || "Você não tem permissão para listar serviços. Faça login novamente."
+          );
+        }
         throw new Error(`Falha ao buscar serviços (${res.status}). ${txt}`);
       }
 
@@ -46,14 +45,13 @@ export default function ServicosPage() {
 
       const lista: Service[] = Array.isArray(data)
         ? data.map((s: any) => ({
-          ...s,
-          images: Array.isArray(s.images) ? s.images : [],
-          // garante boolean certinho
-          verificado:
-            s.verificado === true ||
-            s.verificado === 1 ||
-            s.verificado === "1",
-        }))
+            ...s,
+            images: Array.isArray(s.images) ? s.images : [],
+            verificado:
+              s.verificado === true ||
+              s.verificado === 1 ||
+              s.verificado === "1",
+          }))
         : [];
 
       setServicos(lista);
@@ -79,16 +77,21 @@ export default function ServicosPage() {
     try {
       const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
-        headers: authHeader,
+        credentials: "include", // ✅ cookie HttpOnly
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j?.message || "Erro ao remover serviço.");
+        const msg =
+          j?.message ||
+          (res.status === 401 || res.status === 403
+            ? "Você não tem permissão para remover serviços. Faça login novamente."
+            : "Erro ao remover serviço.");
+        throw new Error(msg);
       }
       setServicos((prev) => prev.filter((s) => s.id !== id));
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao remover:", err);
-      alert("Erro ao remover serviço.");
+      alert(err?.message || "Erro ao remover serviço.");
     }
   };
 
@@ -111,24 +114,27 @@ export default function ServicosPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          ...authHeader,
         },
+        credentials: "include", // ✅ cookie HttpOnly
         body: JSON.stringify({ verificado: novoValor }),
       });
 
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j?.message || "Erro ao atualizar verificação.");
+        const msg =
+          j?.message ||
+          (res.status === 401 || res.status === 403
+            ? "Você não tem permissão para atualizar verificação. Faça login novamente."
+            : "Erro ao atualizar verificação.");
+        throw new Error(msg);
       }
 
       setServicos((prev) =>
-        prev.map((s) =>
-          s.id === id ? { ...s, verificado: novoValor } : s
-        )
+        prev.map((s) => (s.id === id ? { ...s, verificado: novoValor } : s))
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao atualizar verificação:", err);
-      alert("Erro ao atualizar verificação do serviço.");
+      alert(err?.message || "Erro ao atualizar verificação do serviço.");
     }
   };
 
@@ -170,7 +176,6 @@ export default function ServicosPage() {
                 isLoading={false}
               />
             </Link>
-
 
             <Link href="/admin">
               <CustomButton

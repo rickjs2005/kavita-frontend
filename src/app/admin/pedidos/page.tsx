@@ -196,17 +196,11 @@ export default function PedidosAdminPage() {
         setLoading(true);
         setErro(null);
 
-        const token =
-          typeof window !== "undefined"
-            ? localStorage.getItem("adminToken")
-            : null;
-
+        // 🔐 Agora usa só cookie HttpOnly (withCredentials), sem localStorage / Authorization
         const resp = await axios.get<PedidoAdmin[]>(
           `${API_BASE}/api/admin/pedidos`,
           {
-            headers: token
-              ? { Authorization: `Bearer ${token}` }
-              : undefined,
+            withCredentials: true,
           }
         );
 
@@ -239,18 +233,12 @@ export default function PedidosAdminPage() {
     try {
       setAtualizandoId(id);
 
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("adminToken")
-          : null;
-
+      // 🔐 Requisição autenticada só via cookie
       await axios.put(
         `${API_BASE}/api/admin/pedidos/${id}/entrega`,
         { status_entrega: novoStatus },
         {
-          headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : undefined,
+          withCredentials: true,
         }
       );
 
@@ -274,18 +262,12 @@ export default function PedidosAdminPage() {
     try {
       setAtualizandoId(id);
 
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("adminToken")
-          : null;
-
+      // 🔐 Requisição autenticada só via cookie
       await axios.put(
         `${API_BASE}/api/admin/pedidos/${id}/pagamento`,
         { status_pagamento: novoStatus },
         {
-          headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : undefined,
+          withCredentials: true,
         }
       );
 
@@ -310,13 +292,9 @@ export default function PedidosAdminPage() {
     try {
       setAtualizandoId(id);
 
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("adminToken")
-          : null;
-
+      // 🔐 Config global: só cookie HttpOnly
       const config = {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        withCredentials: true as const,
       };
 
       // e-mail
@@ -815,7 +793,10 @@ export default function PedidosAdminPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            enviarComunicacao(pedido.id, "pagamento_aprovado")
+                            enviarComunicacao(
+                              pedido.id,
+                              "pagamento_aprovado"
+                            )
                           }
                           disabled={atualizandoId === pedido.id}
                           className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 px-3 py-2 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"

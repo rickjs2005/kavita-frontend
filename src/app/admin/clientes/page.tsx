@@ -29,31 +29,26 @@ function onlyDigits(v?: string | null) {
   return v.replace(/\D/g, "");
 }
 
-// Formata telefone em (33) 12345-6789
 function formatTelefone(v?: string | null) {
   const digits = onlyDigits(v);
   if (!digits) return "-";
-
   const d = digits.slice(0, 11);
-
   if (d.length <= 2) return `(${d}`;
   if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
-// Formata CPF em 111.111.111-11
 function formatCpf(v?: string | null) {
   const digits = onlyDigits(v).slice(0, 11);
   if (!digits) return "-";
-
   if (digits.length <= 3) return digits;
-  if (digits.length <= 6) {
-    return digits.replace(/(\d{3})(\d{0,3})/, "$1.$2");
-  }
-  if (digits.length <= 9) {
+  if (digits.length <= 6) return digits.replace(/(\d{3})(\d{0,3})/, "$1.$2");
+  if (digits.length <= 9)
     return digits.replace(/(\d{3})(\d{3})(\d{0,3})/, "$1.$2.$3");
-  }
-  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4");
+  return digits.replace(
+    /(\d{3})(\d{3})(\d{3})(\d{0,2})/,
+    "$1.$2.$3-$4"
+  );
 }
 
 export default function AdminClientesPage() {
@@ -65,19 +60,23 @@ export default function AdminClientesPage() {
   useEffect(() => {
     async function load() {
       try {
-        const token = localStorage.getItem("adminToken");
-
         const res = await axios.get<AdminUser[]>(
           `${API_BASE}/api/admin/users`,
           {
-            headers: { Authorization: token ? `Bearer ${token}` : "" },
-            withCredentials: true,
+            withCredentials: true, // 🔐 Cookie HttpOnly
           }
         );
 
         setList(res.data ?? []);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          toast.error("Sessão expirada. Faça login novamente.");
+          router.push("/admin/login");
+          return;
+        }
+
         toast.error("Não foi possível carregar os clientes.");
       } finally {
         setLoading(false);
@@ -85,7 +84,7 @@ export default function AdminClientesPage() {
     }
 
     load();
-  }, []);
+  }, [router]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return list;
@@ -103,17 +102,21 @@ export default function AdminClientesPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      const token = localStorage.getItem("adminToken");
-
       await axios.delete(`${API_BASE}/api/admin/users/${id}`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-        withCredentials: true,
+        withCredentials: true, // 🔐 Cookie HttpOnly
       });
 
       setList((prev) => prev.filter((u) => u.id !== id));
       toast.success("Cliente removido com sucesso.");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        router.push("/admin/login");
+        return;
+      }
+
       toast.error("Não foi possível excluir o cliente.");
     }
   };

@@ -87,15 +87,11 @@ export default function AdminCarrinhosAbandonadosPage() {
       setErro(null);
 
       try {
-        const token =
-          typeof window !== "undefined"
-            ? localStorage.getItem("adminToken")
-            : null;
-
         const resp = await axios.get<{ carrinhos: AbandonedCart[] }>(
           `${API_BASE}/api/admin/carrinhos`,
           {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            // 🔐 Envia cookie HttpOnly para autenticação
+            withCredentials: true,
           }
         );
 
@@ -106,8 +102,15 @@ export default function AdminCarrinhosAbandonadosPage() {
         }));
 
         setCarrinhos(data);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Erro ao carregar carrinhos abandonados:", err);
+
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          toast.error("Sessão expirada. Faça login novamente.");
+          router.push("/admin/login");
+          return;
+        }
+
         setErro("Não foi possível carregar os carrinhos abandonados.");
       } finally {
         setLoading(false);
@@ -115,7 +118,7 @@ export default function AdminCarrinhosAbandonadosPage() {
     }
 
     carregar();
-  }, []);
+  }, [router]);
 
   const total = carrinhos.length;
   const apenasNaoRecuperados = useMemo(
@@ -127,16 +130,11 @@ export default function AdminCarrinhosAbandonadosPage() {
     try {
       setNotificandoId(id);
 
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("adminToken")
-          : null;
-
       await axios.post(
         `${API_BASE}/api/admin/carrinhos/${id}/notificar`,
         { tipo },
         {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          // 🔐 Usa o cookie HttpOnly do admin
           withCredentials: true,
         }
       );
@@ -146,8 +144,15 @@ export default function AdminCarrinhosAbandonadosPage() {
           ? "Lembrete de WhatsApp registrado."
           : "E-mail de recuperação registrado."
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao notificar carrinho abandonado:", err);
+
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        router.push("/admin/login");
+        return;
+      }
+
       toast.error("Erro ao enviar lembrete. Tente novamente.");
     } finally {
       setNotificandoId(null);

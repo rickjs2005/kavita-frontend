@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
 import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 import { useRouter } from "next/navigation";
@@ -11,121 +10,133 @@ import FormattedInput from "@/components/layout/FormattedInput";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-// Form vai trabalhar com um subset de AdminConfig
 type AdminConfigForm = Partial<AdminConfig>;
 
-function getAdminToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("adminToken");
-}
-
 export default function ConfiguracoesPage() {
-    const router = useRouter();
-    const [settings, setSettings] = useState<AdminConfigForm>({});
-    const [loading, setLoading] = useState<boolean>(true);
-    const [saving, setSaving] = useState<boolean>(false);
+  const router = useRouter();
+  const [settings, setSettings] = useState<AdminConfigForm>({});
+  const [loading, setLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
 
-    // Carrega configurações ao abrir a página
-    useEffect(() => {
-        const token = getAdminToken();
-        if (!token) {
-            setLoading(false);
-            toast.error("Faça login no painel admin.");
-            router.push("/admin/login");
-            return;
+  // ============================================================
+  // 🔐 Carregar configurações com cookie HttpOnly
+  // ============================================================
+  useEffect(() => {
+    async function loadConfig() {
+      try {
+        setLoading(true);
+
+        const res = await fetch(`${API_BASE}/api/admin/config`, {
+          method: "GET",
+          credentials: "include", // 🔐 Envia cookie seguro
+        });
+
+        if (res.status === 401 || res.status === 403) {
+          toast.error("Sessão expirada. Faça login novamente.");
+          router.push("/admin/login");
+          return;
         }
 
-        async function loadConfig() {
-            try {
-                setLoading(true);
-                const res = await axios.get<AdminConfig>(
-                    `${API_BASE}/api/admin/config`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                        withCredentials: true,
-                    }
-                );
-
-                const data = res.data || ({} as AdminConfig);
-
-                setSettings({
-                    ...data,
-                    // garante booleano e número mesmo se vier null/undefined
-                    checkout_require_cpf: !!data.checkout_require_cpf,
-                    checkout_require_address: !!data.checkout_require_address,
-                    checkout_allow_pickup: !!data.checkout_allow_pickup,
-                    checkout_enable_coupons: !!data.checkout_enable_coupons,
-                    checkout_enable_abandoned_cart:
-                        !!data.checkout_enable_abandoned_cart,
-
-                    payment_pix_enabled: !!data.payment_pix_enabled,
-                    payment_card_enabled: !!data.payment_card_enabled,
-                    payment_boleto_enabled: !!data.payment_boleto_enabled,
-
-                    mp_sandbox_mode: !!data.mp_sandbox_mode,
-
-                    shipping_flat_enabled: !!data.shipping_flat_enabled,
-                    shipping_flat_value: data.shipping_flat_value ?? 0,
-                    shipping_free_over: data.shipping_free_over ?? 0,
-
-                    comm_email_enabled: !!data.comm_email_enabled,
-                    comm_whatsapp_enabled: !!data.comm_whatsapp_enabled,
-                });
-            } catch (err) {
-                console.error(err);
-                toast.error("Não foi possível carregar as configurações.");
-            } finally {
-                setLoading(false);
-            }
+        if (!res.ok) {
+          throw new Error("Erro ao carregar configurações.");
         }
 
-        loadConfig();
-    }, [router]);
+        const data = (await res.json()) as AdminConfig;
 
-    function handleChange<K extends keyof AdminConfigForm>(
-        field: K,
-        value: AdminConfigForm[K]
-    ) {
-        setSettings((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
+        setSettings({
+          ...data,
+          checkout_require_cpf: !!data.checkout_require_cpf,
+          checkout_require_address: !!data.checkout_require_address,
+          checkout_allow_pickup: !!data.checkout_allow_pickup,
+          checkout_enable_coupons: !!data.checkout_enable_coupons,
+          checkout_enable_abandoned_cart: !!data.checkout_enable_abandoned_cart,
+
+          payment_pix_enabled: !!data.payment_pix_enabled,
+          payment_card_enabled: !!data.payment_card_enabled,
+          payment_boleto_enabled: !!data.payment_boleto_enabled,
+
+          mp_sandbox_mode: !!data.mp_sandbox_mode,
+
+          shipping_flat_enabled: !!data.shipping_flat_enabled,
+          shipping_flat_value: data.shipping_flat_value ?? 0,
+          shipping_free_over: data.shipping_free_over ?? 0,
+
+          comm_email_enabled: !!data.comm_email_enabled,
+          comm_whatsapp_enabled: !!data.comm_whatsapp_enabled,
+        });
+      } catch (err) {
+        console.error(err);
+        toast.error("Não foi possível carregar as configurações.");
+      } finally {
+        setLoading(false);
+      }
     }
 
-    const handleNumberChange =
-        (field: keyof AdminConfigForm) =>
-            (e: React.ChangeEvent<HTMLInputElement>) => {
-                const value = e.target.value;
-                handleChange(field, value === "" ? 0 : Number(value));
-            };
+    loadConfig();
+  }, [router]);
 
-    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-        event.preventDefault();
+  // ============================================================
+  // 🔧 Handlers
+  // ============================================================
+  function handleChange<K extends keyof AdminConfigForm>(
+    field: K,
+    value: AdminConfigForm[K]
+  ) {
+    setSettings((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }
 
-        const token = getAdminToken();
-        if (!token) {
-            toast.error("Faça login no painel admin.");
-            return;
-        }
+  const handleNumberChange =
+    (field: keyof AdminConfigForm) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      handleChange(field, value === "" ? 0 : Number(value));
+    };
 
-        try {
-            setSaving(true);
+  // ============================================================
+  // 🔐 Salvar configurações (cookie HttpOnly)
+  // ============================================================
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-            await axios.put(`${API_BASE}/api/admin/config`, settings, {
-                headers: { Authorization: `Bearer ${token}` },
-                withCredentials: true,
-            });
+    try {
+      setSaving(true);
 
-            toast.success("Configurações salvas com sucesso!");
-        } catch (err) {
-            console.error(err);
-            toast.error("Erro ao salvar as configurações.");
-        } finally {
-            setSaving(false);
-        }
+      const res = await fetch(`${API_BASE}/api/admin/config`, {
+        method: "PUT",
+        credentials: "include", // 🔐 importantíssimo
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(settings),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        router.push("/admin/login");
+        return;
+      }
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || "Erro ao salvar as configurações.");
+      }
+
+      toast.success("Configurações salvas com sucesso!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao salvar as configurações.");
+    } finally {
+      setSaving(false);
     }
+  }
 
-    return (
+  // ============================================================
+  // UI — idêntica ao arquivo original
+  // ============================================================
+  return (
         <main className="flex min-h-screen w-full flex-1 flex-col bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 text-slate-50">
             <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-3 py-6 sm:px-6 lg:px-8">
                 {/* HEADER */}

@@ -10,11 +10,6 @@ import { formatCurrency } from "@/utils/formatters";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-function getAdminToken() {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
 interface ProdutoEstoque {
   id: number;
   name: string;
@@ -36,13 +31,6 @@ export default function RelatorioEstoquePage() {
   const [sortMode, setSortMode] = useState<SortMode>("risco");
 
   useEffect(() => {
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Sessão expirada. Faça login novamente.");
-      setLoading(false);
-      return;
-    }
-
     const loadData = async () => {
       try {
         setLoading(true);
@@ -50,14 +38,24 @@ export default function RelatorioEstoquePage() {
 
         const res = await axios.get<ProdutoEstoque[]>(
           `${API_BASE}/api/admin/relatorios/estoque`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            withCredentials: true, // ✅ cookie HttpOnly
+          }
         );
 
         setRows(res.data ?? []);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setError("Não foi possível carregar o relatório de estoque.");
-        toast.error("Erro ao carregar estoque.");
+
+        let msg = "Não foi possível carregar o relatório de estoque.";
+          if (err.response.status === 401 || err.response.status === 403) {
+            msg =
+              "Sessão expirada ou sem permissão. Faça login novamente no admin.";
+          }
+        
+
+        setError(msg);
+        toast.error(msg);
       } finally {
         setLoading(false);
       }
@@ -377,7 +375,9 @@ export default function RelatorioEstoquePage() {
                           setLimit(
                             e.target.value === "all"
                               ? "all"
-                              : (Number(e.target.value) as LimitOption)
+                              : (Number(
+                                  e.target.value
+                                ) as LimitOption)
                           )
                         }
                         className="

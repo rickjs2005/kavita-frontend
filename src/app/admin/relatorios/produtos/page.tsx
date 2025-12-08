@@ -11,11 +11,6 @@ import { formatCurrency } from "@/utils/formatters";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
 type ProdutoMaisVendido = {
   id: number;
   name: string;
@@ -41,13 +36,6 @@ export default function RelatorioProdutosPage() {
   const [sortMode, setSortMode] = useState<SortMode>("faturado");
 
   useEffect(() => {
-    const token = getAdminToken();
-    if (!token) {
-      toast.error("Sessão expirada. Faça login novamente.");
-      setLoading(false);
-      return;
-    }
-
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -56,15 +44,23 @@ export default function RelatorioProdutosPage() {
         const res = await axios.get<ProdutosResponse>(
           `${API_BASE}/api/admin/relatorios/produtos-mais-vendidos`,
           {
-            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true, // ✅ cookie HttpOnly
           }
         );
 
         setData(res.data.rows ?? []);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setError("Não foi possível carregar o relatório de produtos.");
-        toast.error("Erro ao carregar produtos mais vendidos.");
+
+        let msg = "Não foi possível carregar o relatório de produtos.";
+          if (err.response.status === 401 || err.response.status === 403) {
+            msg =
+              "Sessão expirada ou sem permissão. Faça login novamente no admin.";
+          }
+        
+
+        setError(msg);
+        toast.error(msg);
       } finally {
         setLoading(false);
       }
