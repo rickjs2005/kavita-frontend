@@ -1,58 +1,69 @@
-// src/components/ui/SearchBar.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaSearch, FaCartPlus } from "react-icons/fa";
 import { useCart } from "@/context/CartContext";
 
-// use somente para mapear respostas da API (sem forçar o carrinho a ter o mesmo tipo)
-import type { Product } from "@/types/product";
-import type { Service } from "@/types/service";
-
-/** Item normalizado para a UI de sugestões */
 type ResultItem =
   | { type: "produto"; id: number; name: string; price: number; image?: string; images?: string[] }
   | { type: "servico"; id: number; name: string; price: number; image?: string; images?: string[] };
 
-/** Tipo do item que o addToCart espera (inferido do próprio contexto) */
 type CartItem = Parameters<ReturnType<typeof useCart>["addToCart"]>[0];
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const PLACEHOLDER = "/placeholder.png";
 const ORANGE = "#FF7A00";
 
-/* ---------------- helpers ---------------- */
+/** Blindado: nunca gera /api/api */
+function getApiBase(): string {
+  const raw = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const base = raw.replace(/\/+$/, "");
+  return base.endsWith("/api") ? base : `${base}/api`;
+}
+
+const API_BASE = getApiBase();
+
+function safeNumber(v: unknown, fallback = 0): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 function toArray<T = any>(data: any): T[] {
   if (Array.isArray(data)) return data as T[];
+  if (data?.products && Array.isArray(data.products)) return data.products as T[];
   if (data?.data && Array.isArray(data.data)) return data.data as T[];
   if (data?.items && Array.isArray(data.items)) return data.items as T[];
   if (data?.results && Array.isArray(data.results)) return data.results as T[];
-  if (data?.produtos && Array.isArray(data.produtos)) return data.produtos as T[];
   return [];
 }
 
 function resolveImage(raw?: unknown): string {
   if (!raw) return PLACEHOLDER;
+
   if (typeof raw === "object" && raw !== null) {
     const anyRaw = raw as any;
     const candidate = anyRaw.url || anyRaw.path || anyRaw.src || anyRaw.image || anyRaw.imagem;
-    if (candidate) return resolveImage(candidate);
-    return PLACEHOLDER;
+    return candidate ? resolveImage(candidate) : PLACEHOLDER;
   }
+
   let src = String(raw).trim().replace(/\\/g, "/");
+  if (!src) return PLACEHOLDER;
+
   if (/^https?:\/\//i.test(src)) return src;
-  if (src.startsWith("/uploads")) return `${API_URL}${src}`;
-  if (src.startsWith("uploads")) return `${API_URL}/${src}`;
-  return `${API_URL}/uploads/${src}`;
+
+  const serverBase = API_BASE.replace(/\/api$/, "");
+
+  if (src.startsWith("/uploads")) return `${serverBase}${src}`;
+  if (src.startsWith("uploads")) return `${serverBase}/${src}`;
+
+  return `${serverBase}/uploads/${src}`;
 }
 
 function formatPrice(v: unknown): string {
   const n = parseFloat(String(v ?? "").replace(/[^0-9,.-]/g, "").replace(",", "."));
-  return isNaN(n) ? "0,00" : n.toFixed(2);
+  return Number.isFinite(n) ? n.toFixed(2) : "0,00";
 }
 
-/* ---------------- componente ---------------- */
 export default function SearchBar() {
   const router = useRouter();
   const { addToCart } = useCart();
@@ -65,97 +76,115 @@ export default function SearchBar() {
 
   const abortRef = useRef<AbortController | null>(null);
 
-  // debounce ~350ms
+  // debounce
   useEffect(() => {
     const t = setTimeout(() => {
       const q = query.trim();
-      if (q.length > 1) doSearch(q);
-      else setResults([]);
+      if (q.length >= 1) doSearch(q);
+      else {
+        abortRef.current?.abort();
+        setResults([]);
+        setCursor(-1);
+        setLoading(false);
+      }
     }, 350);
+
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
+
+  // ✅ mappers tipados (resolve o erro do "type: string")
+  const mapProduto = (p: any): ResultItem => {
+    const price =
+      p.final_price != null
+        ? safeNumber(p.final_price, 0)
+        : p.original_price != null
+          ? safeNumber(p.original_price, 0)
+          : safeNumber(p.price ?? p.preco, 0);
+
+    const images = Array.isArray(p.images) ? p.images : [];
+    const image = images?.[0] ?? p.image ?? null;
+
+    return {
+      type: "produto",
+      id: Number(p.id),
+      name: p.name ?? p.nome ?? "Produto",
+      price,
+      image: image || undefined,
+      images,
+    };
+  };
+
+  const mapServico = (s: any): ResultItem => {
+    const images = Array.isArray(s.images) ? s.images : [];
+    const image = s.imagem ?? s.image ?? images?.[0] ?? null;
+
+    return {
+      type: "servico",
+      id: Number(s.id),
+      name: s.nome ?? s.name ?? "Serviço",
+      price: safeNumber(s.preco ?? s.price, 0),
+      image: image || undefined,
+      images,
+    };
+  };
 
   const doSearch = async (q: string) => {
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
+
     setLoading(true);
 
     try {
-      const produtoURLs = [
-        `${API_URL}/api/public/produtos?busca=${encodeURIComponent(q)}`,
-        // fallbacks (se existirem no seu backend)
-        `${API_URL}/api/produtos/search?query=${encodeURIComponent(q)}`,
-        `${API_URL}/api/produtos?busca=${encodeURIComponent(q)}`,
-      ];
-      const servicoURLs = [
-        `${API_URL}/api/public/servicos?busca=${encodeURIComponent(q)}`,
-        `${API_URL}/api/servicos/search?query=${encodeURIComponent(q)}`,
-        `${API_URL}/api/servicos?busca=${encodeURIComponent(q)}`,
-      ];
+      const produtosUrl = `${API_BASE}/products/search?q=${encodeURIComponent(q)}&page=1&limit=6&sort=newest`;
+      const servicosUrl = `${API_BASE}/public/servicos?busca=${encodeURIComponent(q)}&page=1&limit=6&sort=id&order=desc`;
 
-      const fetchFirstOk = async (urls: string[]) => {
-        for (const url of urls) {
-          try {
-            const res = await fetch(url, { signal: ctrl.signal });
-            if (!res.ok) continue;
-            const json = await res.json();
-            return toArray(json);
-          } catch (e: any) {
-            if (e?.name === "AbortError") return [];
-          }
-        }
-        return [];
-      };
-
-      const [produtosRaw, servicosRaw] = await Promise.all([
-        fetchFirstOk(produtoURLs),
-        fetchFirstOk(servicoURLs),
+      const [prodRes, servRes] = await Promise.all([
+        fetch(produtosUrl, { signal: ctrl.signal, credentials: "include" }),
+        fetch(servicosUrl, { signal: ctrl.signal, credentials: "include" }),
       ]);
 
-      const prods: ResultItem[] = toArray<Product>(produtosRaw).map((p: any) => ({
-        type: "produto",
-        id: Number(p.id),
-        name: p.name ?? p.nome ?? "Produto",
-        price: Number(p.price ?? p.preco ?? 0),
-        image: p.image,
-        images: p.images,
-      }));
+      const produtosJson = prodRes.ok ? await prodRes.json() : null;
+      const servicosJson = servRes.ok ? await servRes.json() : null;
 
-      const servs: ResultItem[] = toArray<Service>(servicosRaw).map((s: any) => ({
-        type: "servico",
-        id: Number(s.id),
-        name: s.nome ?? s.name ?? "Serviço",
-        price: Number(s.preco ?? s.price ?? 0),
-        image: s.imagem ?? s.image,
-        images: s.images,
-      }));
+      const produtosRaw = toArray<any>(produtosJson);
+      const servicosRaw = toArray<any>(servicosJson);
 
-      setResults([...prods, ...servs]);
+      const produtos: ResultItem[] = produtosRaw.map(mapProduto);
+      const servicos: ResultItem[] = servicosRaw.map(mapServico);
+
+      // ✅ agora TS entende que é ResultItem[]
+      setResults([...produtos, ...servicos].slice(0, 12));
       setCursor(-1);
       setOpen(true);
-    } catch (err) {
-      console.error("Search error:", err);
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      console.error("Search error:", e);
       setResults([]);
+      setCursor(-1);
     } finally {
       setLoading(false);
     }
   };
 
   const goTo = (item: ResultItem) => {
-    if (item.type === "produto") router.push(`/produtos/${item.id}`);
-    else router.push(`/servicos/${item.id}`);
+    router.push(item.type === "produto" ? `/produtos/${item.id}` : `/servicos/${item.id}`);
     setOpen(false);
     setQuery("");
+    setResults([]);
+    setCursor(-1);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") setCursor((v) => Math.min(v + 1, results.length - 1));
     else if (e.key === "ArrowUp") setCursor((v) => Math.max(v - 1, 0));
-    else if (e.key === "Enter") {
-      if (cursor >= 0 && results[cursor]) {
-        goTo(results[cursor]);
-      } else {
+    else if (e.key === "Escape") {
+      setOpen(false);
+      setCursor(-1);
+    } else if (e.key === "Enter") {
+      if (cursor >= 0 && results[cursor]) goTo(results[cursor]);
+      else {
         const q = query.trim();
         if (q.length > 0) {
           setOpen(false);
@@ -168,6 +197,7 @@ export default function SearchBar() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (cursor >= 0 && results[cursor]) return goTo(results[cursor]);
+
     const q = query.trim();
     if (q.length > 0) {
       setOpen(false);
@@ -190,6 +220,7 @@ export default function SearchBar() {
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           className="w-full px-4 py-2 text-sm text-gray-700 focus:outline-none"
           aria-label="Buscar"
+          autoComplete="off"
         />
         <button
           type="submit"
@@ -207,8 +238,7 @@ export default function SearchBar() {
             <li className="px-4 py-2 text-sm text-gray-500 italic">Carregando...</li>
           ) : results.length ? (
             results.map((item, i) => {
-              const first = item.image || (Array.isArray(item.images) ? item.images[0] : undefined);
-              const img = resolveImage(first);
+              const img = resolveImage(item.image || item.images?.[0]);
 
               return (
                 <li
@@ -223,9 +253,7 @@ export default function SearchBar() {
                     <img src={img} alt={item.name} className="w-12 h-12 object-cover rounded" />
                     <div>
                       <p className="text-sm font-semibold text-gray-800">{item.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.type === "produto" ? "🛒 Produto" : "🧰 Serviço"}
-                      </p>
+                      <p className="text-xs text-gray-500">{item.type === "produto" ? "Produto" : "Serviço"}</p>
                       <p className="text-xs text-green-600 font-semibold">R$ {formatPrice(item.price)}</p>
                     </div>
                   </div>
@@ -235,17 +263,13 @@ export default function SearchBar() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // monte o item do carrinho usando o tipo que o addToCart realmente espera
                         const prod: CartItem = {
                           id: item.id,
                           name: item.name,
                           price: item.price,
-                          // se o carrinho aceitar `image`, mandamos string simples
-                          image: typeof first === "string" ? first : undefined,
-                          // quantity opcional — se o seu carrinho exigir, mantenha:
+                          image: item.image,
                           quantity: 1 as any,
                         } as CartItem;
-
                         addToCart(prod);
                       }}
                       className="hover:opacity-80"
