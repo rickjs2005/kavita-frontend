@@ -8,7 +8,8 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import { api } from "@/lib/api"; // <-- export nomeado, usando fetch helper
+import { api } from "@/lib/api"; // helper de fetch já existente
+import { handleApiError } from "@/lib/handleApiError";
 
 // --------------------------------------------------
 // Tipos
@@ -44,11 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // -----------------------------
   const refreshUser = async () => {
     try {
-      // backend: GET /api/users/me -> { id, nome, email }
       const data = await api<AuthUser>("/api/users/me");
       setUser(data);
     } catch {
-      // 401/403/etc → sem sessão
+      // sessão inválida/expirada → apenas limpa user, sem toast
       setUser(null);
     } finally {
       setLoading(false);
@@ -64,7 +64,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // -----------------------------
   const login = async (email: string, senha: string) => {
     try {
-      // backend: POST /api/login -> { message, user: { id, nome, email } }
       const data = await api<any>("/api/login", {
         method: "POST",
         body: JSON.stringify({ email, senha }),
@@ -83,8 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(finalUser);
       return { ok: true };
-    } catch (err: any) {
-      const message = err?.message || "Erro ao fazer login.";
+    } catch (err) {
+      const message = handleApiError(
+        err,
+        "Não foi possível fazer login. Tente novamente."
+      );
       return { ok: false, message };
     }
   };
@@ -95,8 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await api("/api/logout", { method: "POST" });
-    } catch {
-      // ignore
+    } catch (err) {
+      // não impede logout local, mas mostra mensagem amigável se der erro
+      handleApiError(err, "Falha ao encerrar sessão do usuário.");
     }
     setUser(null);
   };

@@ -1,71 +1,60 @@
 // src/services/products.ts
+import { apiFetch } from "@/lib/apiClient";
 
-// Normaliza o slug da categoria
+// Normaliza o slug da categoria (mantém a mesma lógica: trim + lowercase)
 function normalizeCategory(category?: string): string | undefined {
   if (!category) return undefined;
   return String(category).trim().toLowerCase();
 }
 
-// Base da API (usa NEXT_PUBLIC_API_URL)
-const API_ROOT =
-  (process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
-    "http://localhost:5000");
-
-const API_BASE = `${API_ROOT}/api`;
-
 export interface GetProductsParams {
-  category?: string;          // slug da categoria
-  subcategory?: string;       // third_category
-  search?: string;
+  q?: string; // busca
+  category?: string; // categoria (slug)
+  subcategory?: string; // subcategoria (slug)
   page?: number;
   limit?: number;
-  sort?: "id" | "name" | "price" | "quantity";
+  sort?: string; // mantém flexível pra não quebrar seu backend se aceitar outros campos
   order?: "asc" | "desc";
 }
 
-// Lista de produtos
+/**
+ * Lista produtos com paginação/filtros.
+ * Mantém a mesma ideia: criar URLSearchParams e chamar GET /api/products
+ */
 export async function getProducts(params: GetProductsParams = {}) {
   const {
+    q,
     category,
     subcategory,
-    search,
     page = 1,
     limit = 12,
     sort = "id",
     order = "desc",
   } = params;
 
-  const url = new URL(`${API_BASE}/products`);
+  const qs = new URLSearchParams();
+  qs.set("page", String(page));
+  qs.set("limit", String(limit));
+  qs.set("sort", String(sort));
+  qs.set("order", String(order));
 
-  const categorySlug = normalizeCategory(category);
-  if (categorySlug) url.searchParams.set("category", categorySlug);
-  if (subcategory) url.searchParams.set("third_category", subcategory);
-  if (search) url.searchParams.set("search", search);
-  url.searchParams.set("page", String(page));
-  url.searchParams.set("limit", String(limit));
-  url.searchParams.set("sort", sort);
-  url.searchParams.set("order", order);
+  if (q) qs.set("q", String(q));
 
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `HTTP ${res.status}`);
-  }
+  const cat = normalizeCategory(category);
+  if (cat) qs.set("category", cat);
 
-  const payload = await res.json();
-  // Suporta array simples ou { data: [...] }
-  return Array.isArray(payload) ? payload : (payload?.data ?? []);
+  const sub = normalizeCategory(subcategory);
+  if (sub) qs.set("subcategory", sub);
+
+  const query = qs.toString();
+  const path = query ? `/api/products?${query}` : `/api/products`;
+
+  // apiFetch já padroniza erro (ApiError) e mantém cookies (credentials: include)
+  return apiFetch(path, { cache: "no-store" });
 }
 
-// Um único produto
+// Um único produto (mantém a validação do id)
 export async function getProductById(id: string | number) {
   if (!id && id !== 0) throw new Error("Product id is required");
-
-  const url = `${API_BASE}/products/${id}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `HTTP ${res.status}`);
-  }
-  return res.json();
+  return apiFetch(`/api/products/${id}`, { cache: "no-store" });
 }

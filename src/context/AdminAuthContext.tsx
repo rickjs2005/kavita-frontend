@@ -8,6 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { useRouter } from "next/navigation";
+import { handleApiError } from "@/lib/handleApiError";
 
 // permite roles fixos + futuros slugs (marketing, financeiro, etc.)
 export type AdminRole =
@@ -34,8 +35,7 @@ type AdminAuth = {
 
 const AdminAuthContext = createContext<AdminAuth | null>(null);
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -64,10 +64,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("adminRole", role);
         if (nome) localStorage.setItem("adminNome", nome);
         if (Array.isArray(perms)) {
-          localStorage.setItem(
-            "adminPermissions",
-            JSON.stringify(perms)
-          );
+          localStorage.setItem("adminPermissions", JSON.stringify(perms));
         }
       } catch {
         // ignorar erro de localStorage
@@ -85,7 +82,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           credentials: "include",
         });
       } catch (err) {
-        console.error("Erro ao chamar /api/admin/logout:", err);
+        // Mostra erro amigável, mas mantém lógica de limpar local e redirecionar
+        handleApiError(err, "Falha ao encerrar sessão de administrador.");
       }
     })();
 
@@ -132,13 +130,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
     // 1) Carrega cache leve do localStorage (não é segurança)
     try {
-      const storedRole = localStorage.getItem("adminRole") as
-        | AdminRole
-        | null;
+      const storedRole = localStorage.getItem("adminRole") as AdminRole | null;
       const storedNome = localStorage.getItem("adminNome");
-      const storedPermsRaw = localStorage.getItem(
-        "adminPermissions"
-      );
+      const storedPermsRaw = localStorage.getItem("adminPermissions");
 
       if (storedRole) setRole(storedRole);
       if (storedNome) setNome(storedNome || null);
@@ -180,10 +174,12 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (!res.ok) {
-          console.error(
-            "Erro ao carregar /api/admin/me:",
-            res.status,
-            res.statusText
+          // erro de servidor, mostra mensagem genérica
+          handleApiError(
+            new Error(
+              `Erro ao carregar dados do administrador. Código ${res.status}`
+            ),
+            "Erro ao carregar dados do administrador."
           );
           return;
         }
@@ -204,7 +200,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         });
         setIsAdmin(true);
       } catch (err) {
-        console.error("Erro ao chamar /api/admin/me:", err);
+        handleApiError(err, "Erro ao conectar com o servidor de admin.");
       }
     })();
   }, [markAsAdmin]);

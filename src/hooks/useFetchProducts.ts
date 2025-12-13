@@ -5,10 +5,12 @@ import type { Product } from "@/types/product";
 export type { Product } from "@/types/product";
 
 import { getProducts, type GetProductsParams } from "@/services/products";
+import { handleApiError } from "@/lib/handleApiError";
 
 type Opts = GetProductsParams & {
   categorySlug?: string; // compatível com versão antiga
   enabled?: boolean;
+  search?: number | string;
 };
 
 export function useFetchProducts(opts: Opts = {}) {
@@ -41,7 +43,7 @@ export function useFetchProducts(opts: Opts = {}) {
 
     async function run() {
       try {
-        const list = await getProducts({
+        const res: any = await getProducts({
           category: effectiveCategory,
           subcategory,
           search,
@@ -49,13 +51,18 @@ export function useFetchProducts(opts: Opts = {}) {
           limit,
           sort,
           order,
-        });
+        } as any);
 
-        if (alive) setData(list);
-      } catch (e: any) {
-        if (alive) {
-          setError(e?.message || "Erro ao buscar produtos");
-        }
+        // compatibilidade: backend pode retornar { data: [...] } ou [...]
+        const list = Array.isArray(res) ? res : res?.data;
+
+        if (alive) setData(Array.isArray(list) ? (list as Product[]) : []);
+      } catch (e) {
+        const msg = handleApiError(e, {
+          silent: true,
+          fallback: "Não foi possível carregar os produtos.",
+        });
+        if (alive) setError(msg);
       } finally {
         if (alive) setLoading(false);
       }

@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { usePathname } from "next/navigation";
 import { Product, CartItem } from "@/types/CartCarProps";
 import { useAuth } from "@/context/AuthContext";
+import { handleApiError } from "@/lib/handleApiError";
 
 /* Config API */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -149,14 +150,15 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         if (isAxiosError(e)) {
           const status = e.response?.status;
           if (status === 401 || status === 403) {
+            // sessão expirada / não autenticado → só log leve, sem toast
             console.warn(
               "Usuário não autenticado em /api/cart, usando localStorage."
             );
           } else {
-            console.error("Erro ao sincronizar carrinho com backend:", e);
+            handleApiError(e, "Erro ao sincronizar o carrinho com o servidor.");
           }
         } else {
-          console.error("Erro inesperado ao sincronizar carrinho:", e);
+          handleApiError(e, "Erro inesperado ao sincronizar o carrinho.");
         }
 
         loadFromLocal();
@@ -270,9 +272,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           }
         )
         .catch((err) => {
-          console.error(
-            "Erro ao sincronizar item com carrinho do backend:",
-            err
+          handleApiError(
+            err,
+            "Falha ao sincronizar item com o carrinho do servidor."
           );
         });
     }
@@ -332,7 +334,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             withCredentials: true,
           })
           .catch((err) =>
-            console.error("Erro ao remover item do carrinho (backend):", err)
+            handleApiError(
+              err,
+              "Erro ao remover item do carrinho no servidor."
+            )
           );
       } else {
         axios
@@ -344,7 +349,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             }
           )
           .catch((err) =>
-            console.error("Erro ao atualizar quantidade no backend:", err)
+            handleApiError(
+              err,
+              "Erro ao atualizar quantidade do item no servidor."
+            )
           );
       }
     }
@@ -374,7 +382,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           withCredentials: true,
         })
         .catch((err) =>
-          console.error("Erro ao remover item do carrinho (backend):", err)
+          handleApiError(
+            err,
+            "Erro ao remover item do carrinho no servidor."
+          )
         );
     }
 
@@ -429,7 +440,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           withCredentials: true,
         })
         .catch((err) =>
-          console.error("Erro ao limpar carrinho no backend:", err)
+          handleApiError(err, "Erro ao limpar o carrinho no servidor.")
         );
     }
 
