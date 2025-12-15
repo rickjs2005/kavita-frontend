@@ -18,33 +18,14 @@ type Props = {
   value: FiltersState;
   onChange: (patch: Partial<FiltersState>) => void;
   onClear: () => void;
-
-  /**
-   * Opcional: use no drawer mobile para ter um CTA "Aplicar".
-   * Se não passar, o painel funciona normalmente (onChange já aplica).
-   */
   onApply?: () => void;
-
-  /**
-   * Opcional: mostra/oculta a barra de ações fixa no rodapé do painel.
-   * Recomendo true no mobile drawer, false no desktop.
-   */
   stickyActions?: boolean;
-
-  /**
-   * Opcional: label do botão aplicar (ex.: "Ver resultados")
-   */
   applyLabel?: string;
 };
-
-function toggleInArray(arr: number[], id: number) {
-  return arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id];
-}
 
 function safeNumberOrNull(v: string): number | null {
   const s = v.trim();
   if (!s) return null;
-  // aceita “12,50” e “12.50”
   const n = Number(s.replace(",", "."));
   return Number.isFinite(n) ? n : null;
 }
@@ -73,9 +54,10 @@ export function FiltersPanel({
 
   const hasCategories = (categories || []).length > 0;
 
+  const selectedCategoryId = value.categories?.[0] ?? 0;
+
   return (
     <div className="relative">
-      {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-zinc-900">Filtros</h2>
@@ -109,70 +91,52 @@ export function FiltersPanel({
         {/* Busca */}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-zinc-700">Buscar</label>
-          <div className="relative">
-            <input
-              value={value.q}
-              onChange={(e) => onChange({ q: e.target.value })}
-              placeholder="Nome ou descrição…"
-              className="
-                h-11 w-full rounded-xl border border-zinc-200 bg-white
-                px-3 text-sm text-zinc-900 outline-none
-                focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200
-              "
-            />
-          </div>
+          <input
+            value={value.q}
+            onChange={(e) => onChange({ q: e.target.value })}
+            placeholder="Nome ou descrição…"
+            className="
+              h-11 w-full rounded-xl border border-zinc-200 bg-white
+              px-3 text-sm text-zinc-900 outline-none
+              focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200
+            "
+          />
         </div>
 
-        {/* Categorias */}
+        {/* Categoria (igual admin) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <label className="text-xs font-semibold text-zinc-700">Categorias</label>
-            {categoriesLoading ? (
-              <span className="text-xs text-zinc-500">Carregando…</span>
-            ) : null}
+            <label className="text-xs font-semibold text-zinc-700">Categoria</label>
+            {categoriesLoading ? <span className="text-xs text-zinc-500">Carregando…</span> : null}
           </div>
 
-          <div
+          <select
+            value={String(selectedCategoryId)}
+            onChange={(e) => {
+              const id = Number(e.target.value);
+              onChange({ categories: id > 0 ? [id] : [] });
+            }}
             className="
-              max-h-64 space-y-2 overflow-auto pr-1
-              rounded-xl border border-zinc-200 bg-white p-3
+              h-11 w-full rounded-xl border border-zinc-200 bg-white
+              px-3 text-sm text-zinc-900 outline-none
+              focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200
             "
           >
-            {hasCategories ? (
-              (categories || []).map((cat) => {
-                const checked = value.categories.includes(cat.id);
-                return (
-                  <label
-                    key={cat.id}
-                    className="
-                      flex cursor-pointer items-center justify-between gap-3
-                      rounded-lg px-2 py-2
-                      hover:bg-zinc-50
-                      transition
-                    "
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => onChange({ categories: toggleInArray(value.categories, cat.id) })}
-                        className="h-4 w-4 accent-emerald-600"
-                      />
-                      <span className="truncate text-sm text-zinc-800">{cat.name}</span>
-                    </span>
+            <option value="0">Selecione...</option>
 
-                    {typeof cat.total_products === "number" ? (
-                      <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
-                        {cat.total_products}
-                      </span>
-                    ) : null}
-                  </label>
-                );
-              })
-            ) : !categoriesLoading ? (
-              <p className="text-xs text-zinc-500">Nenhuma categoria encontrada.</p>
-            ) : null}
-          </div>
+            {hasCategories
+              ? categories.map((cat) => (
+                  <option key={cat.id} value={String(cat.id)}>
+                    {cat.name}
+                    {typeof cat.total_products === "number" ? ` (${cat.total_products})` : ""}
+                  </option>
+                ))
+              : null}
+          </select>
+
+          {!categoriesLoading && !hasCategories ? (
+            <p className="text-xs text-zinc-500">Nenhuma categoria encontrada.</p>
+          ) : null}
         </div>
 
         {/* Preço */}
@@ -210,72 +174,33 @@ export function FiltersPanel({
               />
             </div>
           </div>
-
-          {(value.minPrice != null || value.maxPrice != null) && (
-            <p className="text-[11px] text-zinc-500">
-              Dica: você pode usar “12,50” ou “12.50”.
-            </p>
-          )}
         </div>
 
         {/* Promo */}
-        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+        <div className="rounded-xl border border-zinc-200 bg-white p-3">
+          <label className="flex cursor-pointer items-start justify-between gap-3">
+            <div>
               <p className="text-sm font-semibold text-zinc-900">Somente promoções</p>
-              <p className="mt-0.5 text-xs text-zinc-600">Exibe apenas produtos com desconto ativo</p>
+              <p className="text-xs text-zinc-500">Exibe apenas produtos com desconto ativo</p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => onChange({ promo: !value.promo })}
-              aria-pressed={value.promo}
-              className={[
-                "relative inline-flex h-7 w-12 items-center rounded-full transition-colors",
-                value.promo ? "bg-emerald-600" : "bg-zinc-300",
-              ].join(" ")}
-            >
-              <span
-                className={[
-                  "inline-block h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
-                  value.promo ? "translate-x-5" : "translate-x-0.5",
-                ].join(" ")}
-              />
-            </button>
-          </div>
+            <input
+              type="checkbox"
+              checked={value.promo}
+              onChange={(e) => onChange({ promo: e.target.checked })}
+              className="mt-1 h-5 w-5 accent-emerald-600"
+            />
+          </label>
         </div>
       </div>
 
-      {/* Actions (opcional) */}
-      {onApply ? (
-        <div
-          className={[
-            "mt-5 flex items-center gap-2",
-            stickyActions
-              ? "sticky bottom-0 -mx-4 border-t border-zinc-200 bg-white px-4 py-4"
-              : "",
-          ].join(" ")}
-        >
+      {/* Ações fixas (mobile drawer) */}
+      {stickyActions ? (
+        <div className="sticky bottom-0 mt-5 border-t border-zinc-200 bg-white pt-4">
           <button
             type="button"
-            onClick={onClear}
-            className="
-              w-full rounded-xl border border-zinc-200 bg-white
-              px-4 py-3 text-sm font-semibold text-zinc-800
-              hover:bg-zinc-50
-            "
-          >
-            Limpar
-          </button>
-
-          <button
-            type="button"
-            onClick={onApply}
-            className="
-              w-full rounded-xl bg-emerald-600
-              px-4 py-3 text-sm font-semibold text-white
-              hover:bg-emerald-700
-            "
+            onClick={() => onApply?.()}
+            className="h-11 w-full rounded-xl bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 transition"
           >
             {applyLabel}
           </button>
