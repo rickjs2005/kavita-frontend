@@ -95,6 +95,7 @@ const EXCLUDED_ROUTES = [
   "/admin/logs",
   "/admin/equipe",
   "/admin/configuracoes/categorias",
+  "/admin/kavita-news",
 ] as const;
 
 export default function Header() {
@@ -328,7 +329,7 @@ export default function Header() {
                 <p className="text-sm text-gray-600">
                   Bem-vindo,{" "}
                   <span className="font-semibold text-[#083E46]">
-                    {user?.name || user?.email}
+                    {user?.nome || user?.email}
                   </span>
                 </p>
               ) : (

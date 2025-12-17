@@ -71,6 +71,12 @@ const navItems: NavItem[] = [
     icon: "🛒",
     permission: "carts_view",
   },
+  {
+    label: "Kavita News",
+    href: "/admin/kavita-news",
+    icon: "📰",
+    permission: "settings_manage",
+  },
   // Relatórios
   {
     label: "Relatórios",
