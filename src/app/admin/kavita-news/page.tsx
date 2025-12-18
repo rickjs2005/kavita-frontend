@@ -8,6 +8,7 @@ import CloseButton from "@/components/buttons/CloseButton";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import NewsTabs, { NewsTabKey } from "@/components/admin/kavita-news/NewsTabs";
 import ClimaSection from "@/components/admin/kavita-news/clima/ClimaSection";
+import CotacoesSection from "@/components/admin/kavita-news/cotacoes/CotacoesSection";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -58,9 +59,8 @@ export default function AdminKavitaNewsPage() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className={`md:hidden flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-900/40 ${
-                isMobileMenuOpen ? "hidden" : "flex"
-              }`}
+              className={`md:hidden flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-900/40 ${isMobileMenuOpen ? "hidden" : "flex"
+                }`}
               aria-label="Abrir menu do painel"
             >
               <span className="sr-only">Abrir menu</span>
@@ -125,10 +125,11 @@ export default function AdminKavitaNewsPage() {
             )}
 
             {activeTab === "cotacoes" && (
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                Cotações: em breve. (Vamos criar <code>CotacoesSection.tsx</code>{" "}
-                depois que o Clima estiver 100%.)
-              </div>
+              <CotacoesSection
+                apiBase={API_BASE}
+                authOptions={authOptions}
+                onUnauthorized={handleUnauthorized}
+              />
             )}
 
             {activeTab === "posts" && (

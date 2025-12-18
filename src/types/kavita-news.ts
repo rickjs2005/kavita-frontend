@@ -123,3 +123,52 @@ export type InmetStation = {
   admin2?: string;
   timezone?: string;
 };
+export type CotacaoSlug =
+  | "dolar"
+  | "cafe-arabica"
+  | "cafe-robusta"
+  | "soja"
+  | "milho"
+  | "boi-gordo"
+  | "boi-gordo-futuro"
+  | "milho-futuro"
+  | "soja-futuro"
+  | "cafe-arabica-futuro";
+
+export type CotacaoItem = {
+  id: number;
+  name: string;
+  slug: CotacaoSlug | string; // string para não quebrar legado
+  type: string;
+
+  price: number | null;
+  unit: string | null;
+  variation_day: number | null;
+
+  market: string | null;
+  source: string | null;
+
+  last_update_at: string | null;
+
+  ativo: 0 | 1;
+
+  // se seu backend já persiste isso:
+  last_sync_status?: "ok" | "error" | null;
+  last_sync_message?: string | null;
+};
+
+export type CotacaoFormState = {
+  name: string;
+  slug: CotacaoSlug | "";
+  type: string;
+
+  price: string; // input
+  unit: string;
+  variation_day: string;
+
+  market: string;
+  source: string;
+
+  last_update_at: string;
+  ativo: boolean;
+};
