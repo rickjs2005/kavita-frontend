@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   NewsPostDetail,
   NewsPostListItem,
@@ -21,128 +21,146 @@ import PostForm from "./PostForm";
 import PostPreview from "./PostPreview";
 
 export default function PostsTab() {
-  const [q, setQ] = useState("");
+  // Protege contra uncontrolled/controlled: sempre string definida
+  const [q, setQ] = useState<string>("");
   const [status, setStatus] = useState<"all" | NewsPostStatus>("all");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState<number>(1);
   const pageSize = 10;
 
   const [items, setItems] = useState<NewsPostListItem[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState<boolean>(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [selected, setSelected] = useState<NewsPostDetail | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState<boolean>(false);
   const [previewPost, setPreviewPost] = useState<NewsPostDetail | null>(null);
 
   const query = useMemo(
-    () => ({ q, status, page, pageSize }),
-    [q, status, page]
+    () => ({
+      q: q ?? "",
+      status: status ?? "all",
+      page: page ?? 1,
+      pageSize,
+    }),
+    [q, status, page, pageSize]
   );
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await listNewsPosts(query);
-      setItems(res.items || []);
-      setTotalPages(res.totalPages || 1);
+      setItems(Array.isArray(res?.items) ? res.items : []);
+      setTotalPages(Number(res?.totalPages || 1));
     } catch (e) {
       console.error(e);
       setItems([]);
       setTotalPages(1);
+      // Se quiser, aqui você pode disparar toast padronizado do admin
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [query]);
 
   useEffect(() => {
     refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, status, page]);
+  }, [refresh]);
 
-  function openCreate() {
+  const openCreate = useCallback(() => {
     setFormMode("create");
     setSelected(null);
     setFormOpen(true);
-  }
+  }, []);
 
-  function openEdit(p: NewsPostListItem) {
-    // Backend não tem GET /posts/:id, então edit usa dados já carregados na lista
+  const openEdit = useCallback((p: NewsPostListItem) => {
     setFormMode("edit");
+    // Mantém compatível com seu backend atual (sem GET detail)
     setSelected(p as unknown as NewsPostDetail);
     setFormOpen(true);
-  }
+  }, []);
 
-  function openPreview(p: NewsPostListItem) {
-    // Backend não tem GET /posts/:id, então preview usa dados já carregados na lista
+  const openPreview = useCallback((p: NewsPostListItem) => {
     setPreviewPost(p as unknown as NewsPostDetail);
     setPreviewOpen(true);
-  }
+  }, []);
 
-  async function onSubmit(payload: NewsPostUpsertInput) {
-    setIsSaving(true);
-    try {
-      if (formMode === "create") {
-        await createNewsPost(payload);
-      } else if (selected?.id) {
-        await updateNewsPost(selected.id, payload);
+  const onSubmit = useCallback(
+    async (payload: NewsPostUpsertInput) => {
+      setIsSaving(true);
+      try {
+        if (formMode === "create") {
+          await createNewsPost(payload);
+        } else if (selected?.id) {
+          await updateNewsPost(selected.id, payload);
+        }
+        setFormOpen(false);
+        await refresh();
+      } finally {
+        setIsSaving(false);
       }
-      setFormOpen(false);
-      await refresh();
-    } finally {
-      setIsSaving(false);
-    }
-  }
+    },
+    [formMode, selected?.id, refresh]
+  );
 
-  async function onDelete(p: NewsPostListItem) {
-    const ok = window.confirm(`Excluir o post "${p.title}"?`);
-    if (!ok) return;
+  const onDelete = useCallback(
+    async (p: NewsPostListItem) => {
+      const ok = window.confirm(`Excluir o post "${p.title}"?`);
+      if (!ok) return;
 
-    setIsLoading(true);
-    try {
-      await deleteNewsPost(p.id);
-      await refresh();
-    } finally {
-      setIsLoading(false);
-    }
-  }
+      setIsLoading(true);
+      try {
+        await deleteNewsPost(p.id);
+        // se apagar e ficar numa página vazia, volta uma página
+        if (items.length === 1 && page > 1) setPage((prev) => prev - 1);
+        await refresh();
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [items.length, page, refresh]
+  );
 
-  async function onTogglePublish(p: NewsPostListItem) {
-    // Backend não tem PATCH /status, então usamos PUT /posts/:id atualizando status
-    const nextStatus: NewsPostStatus = p.status === "published" ? "draft" : "published";
+  const onTogglePublish = useCallback(
+    async (p: NewsPostListItem) => {
+      const nextStatus: NewsPostStatus =
+        p.status === "published" ? "draft" : "published";
 
-    setIsLoading(true);
-    try {
-      await updateNewsPost(p.id, {
-        title: p.title,
-        slug: p.slug,
-        status: nextStatus,
-        category: p.category ?? null,
-        tags_csv: (p.tags || []).join(", "),
-        cover_url: p.cover_url ?? null,
-        excerpt: p.excerpt ?? null,
-        content: (p as any)?.content ?? null,
-      });
-      await refresh();
-    } finally {
-      setIsLoading(false);
-    }
-  }
+      setIsLoading(true);
+      try {
+        await updateNewsPost(p.id, {
+          title: p.title,
+          slug: p.slug,
+          status: nextStatus,
+          category: p.category ?? null,
+          tags_csv: (p.tags || []).join(", "),
+          cover_url: p.cover_url ?? null,
+          excerpt: p.excerpt ?? null,
+          content: (p as any)?.content ?? null,
+          publish_now: nextStatus === "published",
+        } as any);
+
+        await refresh();
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [refresh]
+  );
 
   return (
     <div className="flex flex-col gap-4">
       <PostsToolbar
-        q={q}
-        status={status}
+        q={q ?? ""}
+        status={(status ?? "all") as any}
         onChangeQ={(v) => {
-          setQ(v);
+          setQ(v ?? "");
           setPage(1);
         }}
         onChangeStatus={(v) => {
-          setStatus(v);
+          setStatus((v ?? "all") as any);
           setPage(1);
         }}
         onClickNew={openCreate}

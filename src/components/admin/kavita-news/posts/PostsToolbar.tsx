@@ -24,24 +24,30 @@ export default function PostsToolbar({
   onClickRefresh,
   isLoading,
 }: Props) {
+  const inputBase =
+    "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-emerald-200";
+
+  const selectBase =
+    "w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-emerald-200";
+
   return (
-    <div className="w-full rounded-xl border bg-white p-3 sm:p-4">
+    <div className="w-full rounded-xl border border-gray-200 bg-white p-3 text-gray-900 sm:p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
           <div className="w-full sm:max-w-md">
             <input
-              value={q}
+              value={q ?? ""}
               onChange={(e) => onChangeQ(e.target.value)}
               placeholder="Buscar por título, slug, tag..."
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-200"
+              className={inputBase}
             />
           </div>
 
           <div className="w-full sm:w-48">
             <select
-              value={status}
+              value={(status ?? "all") as any}
               onChange={(e) => onChangeStatus(e.target.value as any)}
-              className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-200"
+              className={selectBase}
             >
               <option value="all">Todos</option>
               <option value="draft">Rascunho</option>
@@ -54,7 +60,7 @@ export default function PostsToolbar({
               type="button"
               onClick={onClickRefresh}
               disabled={!!isLoading}
-              className="inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:opacity-60"
             >
               {isLoading ? "Atualizando..." : "Atualizar"}
             </button>
