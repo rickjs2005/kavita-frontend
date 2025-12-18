@@ -20,8 +20,48 @@ import PostsTable from "./PostsTable";
 import PostForm from "./PostForm";
 import PostPreview from "./PostPreview";
 
+/**
+ * Normaliza tags para CSV aceitando:
+ * - array (string[])
+ * - string (já CSV ou single tag)
+ * - campo alternativo tags_csv
+ * - valores inesperados (null/undefined/obj) -> ""
+ */
+function normalizeTagsCsv(p: any): string {
+  const raw = p?.tags ?? p?.tags_csv ?? p?.tagsCsv ?? null;
+
+  if (Array.isArray(raw)) {
+    return raw
+      .map((x) => String(x ?? "").trim())
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  if (typeof raw === "string") {
+    // se já é CSV, só limpa espaços duplicados
+    return raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  // caso venha algo estranho (ex: objeto), tenta extrair valores
+  if (raw && typeof raw === "object") {
+    try {
+      const vals = Object.values(raw)
+        .map((x) => String(x ?? "").trim())
+        .filter(Boolean);
+      return vals.join(", ");
+    } catch {
+      return "";
+    }
+  }
+
+  return "";
+}
+
 export default function PostsTab() {
-  // Protege contra uncontrolled/controlled: sempre string definida
   const [q, setQ] = useState<string>("");
   const [status, setStatus] = useState<"all" | NewsPostStatus>("all");
   const [page, setPage] = useState<number>(1);
@@ -59,7 +99,7 @@ export default function PostsTab() {
       console.error(e);
       setItems([]);
       setTotalPages(1);
-      // Se quiser, aqui você pode disparar toast padronizado do admin
+      // aqui você pode plugar seu toast padronizado
     } finally {
       setIsLoading(false);
     }
@@ -130,17 +170,22 @@ export default function PostsTab() {
 
       setIsLoading(true);
       try {
-        await updateNewsPost(p.id, {
-          title: p.title,
-          slug: p.slug,
-          status: nextStatus,
-          category: p.category ?? null,
-          tags_csv: (p.tags || []).join(", "),
-          cover_url: p.cover_url ?? null,
-          excerpt: p.excerpt ?? null,
-          content: (p as any)?.content ?? null,
-          publish_now: nextStatus === "published",
-        } as any);
+        const anyP: any = p as any;
+
+        await updateNewsPost(
+          p.id,
+          {
+            title: p.title,
+            slug: (anyP?.slug ?? p.slug ?? "") as any,
+            status: nextStatus,
+            category: (anyP?.category ?? p.category ?? null) as any,
+            tags_csv: normalizeTagsCsv(anyP),
+            cover_url: (anyP?.cover_url ?? p.cover_url ?? null) as any,
+            excerpt: (anyP?.excerpt ?? p.excerpt ?? null) as any,
+            content: anyP?.content ?? null,
+            publish_now: nextStatus === "published",
+          } as any
+        );
 
         await refresh();
       } finally {

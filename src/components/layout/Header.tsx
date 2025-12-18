@@ -115,6 +115,7 @@ export default function Header() {
 
   const menuRef = useRef<HTMLDivElement>(null);
   const isDronePage = pathname.startsWith("/drones");
+  const isNewsPage = pathname.startsWith("/news");
 
   const { categorias } = usePublicCategories();
 
@@ -234,6 +235,19 @@ export default function Header() {
 
             {/* lado direito */}
             <div className="flex items-center gap-4 md:gap-7">
+              {/* Kavita News (desktop) */}
+              <Link
+                href="/news"
+                className={`hidden md:inline-flex items-center text-sm font-semibold tracking-wide rounded-full px-4 py-1.5 border transition-all
+                  ${
+                    isNewsPage
+                      ? "border-white text-white bg-white/10"
+                      : "border-white/25 text-white/95 hover:border-white hover:text-white"
+                  }`}
+              >
+                Kavita News
+              </Link>
+
               {/* atendimento desktop */}
               <Link
                 href="/contato"
@@ -350,14 +364,30 @@ export default function Header() {
             {/* categorias do backend – mesma lista do desktop */}
             <nav className="mt-2">
               <ul className="space-y-1.5">
+                {/* Kavita News (mobile) */}
+                <li>
+                  <Link
+                    href="/news"
+                    className={`block rounded-xl px-3.5 py-2.5 text-sm font-semibold ${
+                      isNewsPage
+                        ? "bg-[#EC5B20]/10 text-[#EC5B20]"
+                        : "text-[#083E46] hover:bg-gray-100"
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Kavita News
+                  </Link>
+                </li>
+
                 {categorias.map((cat) => (
                   <li key={cat.id}>
                     <Link
                       href={`/categorias/${cat.slug}`}
-                      className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${pathname === `/categorias/${cat.slug}`
+                      className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${
+                        pathname === `/categorias/${cat.slug}`
                           ? "bg-[#EC5B20]/10 text-[#EC5B20]"
                           : "text-[#083E46] hover:bg-gray-100"
-                        }`}
+                      }`}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {cat.name}
@@ -367,10 +397,11 @@ export default function Header() {
                 <li>
                   <Link
                     href="/servicos"
-                    className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${pathname === "/servicos"
+                    className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${
+                      pathname === "/servicos"
                         ? "bg-[#EC5B20]/10 text-[#EC5B20]"
                         : "text-[#083E46] hover:bg-gray-100"
-                      }`}
+                    }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Serviços
@@ -379,10 +410,11 @@ export default function Header() {
                 <li>
                   <Link
                     href="/contato"
-                    className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${pathname === "/contato"
+                    className={`block rounded-xl px-3.5 py-2.5 text-sm font-medium ${
+                      pathname === "/contato"
                         ? "bg-[#EC5B20]/10 text-[#EC5B20]"
                         : "text-[#083E46] hover:bg-gray-100"
-                      }`}
+                    }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Atendimento
@@ -447,8 +479,9 @@ export default function Header() {
       <div className="flex">
         <main
           id="conteudo"
-          className={`flex-1 transition-all duration-300 ${isCartOpen ? "md:ml-96" : "ml-0"
-            }`}
+          className={`flex-1 transition-all duration-300 ${
+            isCartOpen ? "md:ml-96" : "ml-0"
+          }`}
         >
           <CartCar
             isCartOpen={isCartOpen}
