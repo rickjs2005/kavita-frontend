@@ -172,3 +172,55 @@ export type CotacaoFormState = {
   last_update_at: string;
   ativo: boolean;
 };
+
+export type NewsPostStatus = "draft" | "published";
+
+export type NewsPostListItem = {
+  id: number;
+  title: string;
+  slug: string;
+  status: NewsPostStatus;
+  category?: string | null;
+  tags?: string[] | null;
+
+  cover_url?: string | null;
+  excerpt?: string | null;
+
+  published_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type NewsPostDetail = NewsPostListItem & {
+  content?: string | null;
+};
+
+export type NewsPostsListResponse = {
+  items: NewsPostListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type NewsPostsListParams = {
+  q?: string;
+  status?: "all" | NewsPostStatus;
+  page?: number;
+  pageSize?: number;
+};
+
+export type NewsPostUpsertInput = {
+  title: string;
+  slug: string;
+  status: NewsPostStatus;
+
+  category?: string | null;
+  tags_csv?: string;
+
+  cover_url?: string | null;
+  excerpt?: string | null;
+  content?: string | null;
+
+  publish_now?: boolean;
+};

@@ -116,6 +116,12 @@ export default function CotacoesForm({
     return Array.from(set);
   }, [allowedSlugs, metaPresets]);
 
+  const selectedPreset = useMemo(() => {
+    const slug = String(form.slug || "").trim();
+    if (!slug) return null;
+    return metaPresets?.[slug] || null;
+  }, [form.slug, metaPresets]);
+
   function clearForm() {
     setForm({
       name: "",
@@ -136,12 +142,10 @@ export default function CotacoesForm({
 
   function applySlugPreset(nextSlug: string) {
     const preset = metaPresets?.[nextSlug];
+
     // sempre set o slug (mesmo sem preset)
     setForm((p) => {
-      const pick = <K extends keyof CotacaoFormState>(
-        key: K,
-        val?: any
-      ): CotacaoFormState[K] => {
+      const pick = <K extends keyof CotacaoFormState>(key: K, val?: any): CotacaoFormState[K] => {
         if (val === undefined || val === null || String(val).trim() === "") return p[key];
         const cur = String(p[key] ?? "").trim();
         // não sobrescreve o que já foi digitado
@@ -158,6 +162,23 @@ export default function CotacoesForm({
         source: pick("source", preset?.source),
       };
     });
+  }
+
+  function forceApplySelectedPreset() {
+    const slug = String(form.slug || "").trim();
+    if (!slug) return;
+    const preset = metaPresets?.[slug];
+    if (!preset) return;
+
+    // aplica "forçando" (sobrescreve)
+    setForm((p) => ({
+      ...p,
+      name: preset.name ?? p.name,
+      type: preset.type ?? p.type,
+      unit: preset.unit ?? p.unit,
+      market: preset.market ?? p.market,
+      source: preset.source ?? p.source,
+    }));
   }
 
   return (
@@ -200,11 +221,7 @@ export default function CotacoesForm({
 
           <div className="space-y-2">
             <label className={labelBase}>Slug (padrão)</label>
-            <select
-              value={form.slug}
-              onChange={(e) => applySlugPreset(e.target.value)}
-              className={inputBase}
-            >
+            <select value={form.slug} onChange={(e) => applySlugPreset(e.target.value)} className={inputBase}>
               <option value="">Selecione…</option>
               {(mergedAllowedSlugs || []).map((s) => (
                 <option key={s} value={s}>
@@ -212,9 +229,40 @@ export default function CotacoesForm({
                 </option>
               ))}
             </select>
-            <p className="text-xs text-slate-500">
-              Ao escolher um slug, o sistema pode auto-preencher alguns campos (se estiverem vazios).
-            </p>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-slate-500">
+                Ao escolher um slug, o sistema pode auto-preencher alguns campos (se estiverem vazios).
+              </p>
+
+              {selectedPreset ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-xs text-slate-600">
+                      <span className="font-semibold text-slate-800">Preset:</span>{" "}
+                      {[
+                        selectedPreset.name ? `nome: ${selectedPreset.name}` : null,
+                        selectedPreset.type ? `tipo: ${selectedPreset.type}` : null,
+                        selectedPreset.unit ? `unidade: ${selectedPreset.unit}` : null,
+                        selectedPreset.market ? `market: ${selectedPreset.market}` : null,
+                        selectedPreset.source ? `source: ${selectedPreset.source}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" • ")}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={forceApplySelectedPreset}
+                      className="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                      title="Aplica o preset sobrescrevendo os campos do formulário"
+                    >
+                      Aplicar preset do slug
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 

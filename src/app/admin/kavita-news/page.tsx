@@ -9,6 +9,8 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import NewsTabs, { NewsTabKey } from "@/components/admin/kavita-news/NewsTabs";
 import ClimaSection from "@/components/admin/kavita-news/clima/ClimaSection";
 import CotacoesSection from "@/components/admin/kavita-news/cotacoes/CotacoesSection";
+import PostsTab from "@/components/admin/kavita-news/posts/PostsTab";
+
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -132,12 +134,8 @@ export default function AdminKavitaNewsPage() {
               />
             )}
 
-            {activeTab === "posts" && (
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                Posts: em breve. (Depois do Clima, criamos{" "}
-                <code>PostsSection.tsx</code> com publicar/despublicar.)
-              </div>
-            )}
+            {activeTab === "posts" && <PostsTab />}
+
           </div>
         </div>
       </main>
