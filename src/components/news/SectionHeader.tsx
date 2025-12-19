@@ -13,18 +13,44 @@ export function SectionHeader({
   actionLabel?: string;
 }) {
   return (
-    <div className="flex items-end justify-between gap-4">
-      <div>
-        <h2 className="text-lg md:text-xl font-semibold text-zinc-900">{title}</h2>
-        {subtitle ? <p className="text-sm text-zinc-600 mt-1">{subtitle}</p> : null}
+    <div
+      className="
+        flex flex-col gap-3
+        sm:flex-row sm:items-end sm:justify-between
+      "
+    >
+      <div className="flex flex-col gap-1">
+        {/* kicker visual discreto */}
+        <div className="flex items-center gap-2">
+          <span className="h-1 w-6 rounded-full bg-emerald-600" aria-hidden />
+          <h2 className="text-lg md:text-xl font-semibold text-zinc-900">
+            {title}
+          </h2>
+        </div>
+
+        {subtitle ? (
+          <p className="text-sm text-zinc-600 leading-relaxed">
+            {subtitle}
+          </p>
+        ) : null}
       </div>
 
       {href ? (
         <Link
           href={href}
-          className="text-sm font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
+          className="
+            inline-flex items-center gap-1
+            text-sm font-medium text-emerald-700
+            hover:text-emerald-800
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2
+            rounded-md
+            whitespace-nowrap
+          "
         >
           {actionLabel}
+          <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
+            →
+          </span>
         </Link>
       ) : null}
     </div>
