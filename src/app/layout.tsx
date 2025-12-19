@@ -15,13 +15,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
-        {/* Evita o iPhone/iOS de auto-linkar telefone, datas, e-mails e endereços */}
-        <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
-        {/* Viewport correta + safe area para iPhones com notch */}
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        {/* Pede ao Chrome para não traduzir/alterar o DOM (evita __gchrome_uniqueid) */}
+        <meta
+          name="format-detection"
+          content="telephone=no, date=no, email=no, address=no"
+        />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
         <meta name="google" content="notranslate" />
-        {/* Charset explícito (boa prática) */}
         <meta charSet="utf-8" />
       </head>
 
@@ -29,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <CartProvider>
             <Header />
-            <main>{children}</main>
+            <main id="conteudo">{children}</main>
             <Toaster position="top-right" />
           </CartProvider>
         </AuthProvider>

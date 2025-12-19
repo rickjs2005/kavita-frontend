@@ -1,63 +1,79 @@
 // src/lib/handleApiError.ts
-import { toast } from "react-hot-toast";
-import { isApiError } from "./errors";
 
-type HandleApiErrorOptions = {
-  fallback?: string;
-  silent?: boolean; // não mostrar toast
-  onAuthError?: () => void; // opcional: logout/redirect
+export type HandleApiErrorOptions = {
+  silent?: boolean;   // não loga nada (ideal para UX pública)
+  fallback?: string;  // mensagem default
+  debug?: boolean;    // se true, pode logar (sem overlay no client)
+} & Record<string, any>;
+
+type NormalizedErr = {
+  status?: number;
+  code?: string;
+  message?: string;
+  url?: string;
+  details?: any;
 };
 
-function mapMessage(code?: string, status?: number, rawMessage?: string) {
-  // Normaliza "undefined" para um número seguro
-  const s = typeof status === "number" ? status : 0;
-
-  // Preferir mensagens previsíveis para o usuário final
-  if (code === "AUTH_ERROR" || s === 401) return "Sessão expirada. Faça login novamente.";
-  if (s === 403) return "Você não tem permissão para executar esta ação.";
-  if (s === 404) return "Não encontramos o recurso solicitado.";
-  if (s === 409) return "Conflito ao salvar. Tente novamente.";
-  if (s === 422) return rawMessage || "Dados inválidos. Verifique os campos e tente novamente.";
-  if (s >= 500) return "Instabilidade no servidor. Tente novamente em instantes.";
-
-  // Se o backend já manda message padronizada e segura, use-a
-  return rawMessage || "Não foi possível concluir a operação.";
+function isBrowser() {
+  return typeof window !== "undefined";
 }
 
-export function handleApiError(err: unknown, opts?: HandleApiErrorOptions) {
-  const fallback = opts?.fallback || "Não foi possível concluir a operação.";
-  const silent = opts?.silent ?? false;
+function normalizeError(err: any): NormalizedErr {
+  // Erro já normalizado (padrão que você usa no backend/front)
+  if (err && typeof err === "object") {
+    const status = err.status ?? err.response?.status;
+    const code = err.code ?? err.response?.data?.code;
+    const message =
+      err.message ??
+      err.response?.data?.message ??
+      err.response?.data?.mensagem ??
+      err.response?.data?.error;
 
-  let message = fallback;
+    const url = err.url ?? err.config?.url;
+    const details = err.details ?? err.response?.data;
 
-  if (isApiError(err)) {
-    message = mapMessage(err.code, err.status, err.message);
+    return { status, code, message, url, details };
+  }
 
-    if ((err.code === "AUTH_ERROR" || err.status === 401) && opts?.onAuthError) {
-      opts.onAuthError();
+  // string
+  if (typeof err === "string") return { message: err };
+
+  return {};
+}
+
+export function handleApiError(
+  err: unknown,
+  options: HandleApiErrorOptions = {}
+): string {
+  const { silent = false, fallback = "Ocorreu um erro. Tente novamente.", debug = false } = options;
+
+  const n = normalizeError(err);
+
+  // mensagem amigável final
+  const msg = (n.message && String(n.message).trim()) ? String(n.message) : fallback;
+
+  // IMPORTANTE:
+  // - silent = true => NÃO loga nada
+  // - no browser, evitar console.error (abre overlay no Next dev)
+  if (!silent) {
+    const payload = {
+      status: n.status,
+      code: n.code,
+      message: n.message,
+      url: n.url,
+      // details geralmente ajuda a debugar, mas pode ser grande:
+      details: n.details,
+    };
+
+    if (isBrowser()) {
+      // No client, use warn/log para não disparar overlay.
+      // Se quiser menos ruído, deixe só quando debug=true:
+      if (debug) console.warn("API warning:", payload);
+    } else {
+      // No server pode usar error sem problema
+      console.error("API error:", payload);
     }
-
-    if (!silent) toast.error(message);
-
-    // Log técnico (sem vazar para UI)
-    console.error("API error:", {
-      status: err.status,
-      code: err.code,
-      message: err.message,
-      requestId: err.requestId,
-      details: err.details,
-    });
-
-    return message;
   }
 
-  // Qualquer outro erro inesperado
-  if (err instanceof Error) {
-    message = err.message || fallback;
-  }
-
-  if (!silent) toast.error(message);
-  console.error("Unknown error:", err);
-
-  return message;
+  return msg;
 }

@@ -8,8 +8,7 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import { api } from "@/lib/api"; // helper de fetch já existente
-import { handleApiError } from "@/lib/handleApiError";
+import { api } from "@/lib/api";
 
 // --------------------------------------------------
 // Tipos
@@ -33,9 +32,6 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// --------------------------------------------------
-// Provider
-// --------------------------------------------------
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await api<AuthUser>("/api/users/me");
       setUser(data);
     } catch {
-      // sessão inválida/expirada → apenas limpa user, sem toast
       setUser(null);
     } finally {
       setLoading(false);
@@ -60,9 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // -----------------------------
-  // LOGIN (via cookie HttpOnly)
+  // LOGIN (consistente e silencioso)
   // -----------------------------
   const login = async (email: string, senha: string) => {
+    const invalidMsg = "Credenciais inválidas.";
+
     try {
       const data = await api<any>("/api/login", {
         method: "POST",
@@ -70,8 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const rawUser = data?.user ?? data;
+
+      // Se backend não retornou user válido, trata como inválido
       if (!rawUser?.id) {
-        return { ok: false, message: "Credenciais inválidas." };
+        setUser(null);
+        return { ok: false, message: invalidMsg };
       }
 
       const finalUser: AuthUser = {
@@ -82,12 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(finalUser);
       return { ok: true };
-    } catch (err) {
-      const message = handleApiError(
-        err,
-        "Não foi possível fazer login. Tente novamente."
-      );
-      return { ok: false, message };
+    } catch {
+      // Regra de UX: qualquer falha no login = credenciais inválidas (sem overlay)
+      setUser(null);
+      return { ok: false, message: invalidMsg };
     }
   };
 
@@ -97,9 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await api("/api/logout", { method: "POST" });
-    } catch (err) {
-      // não impede logout local, mas mostra mensagem amigável se der erro
-      handleApiError(err, "Falha ao encerrar sessão do usuário.");
+    } catch {
+      // silencioso por padrão (evita overlay e mantém UX limpa)
     }
     setUser(null);
   };

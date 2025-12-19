@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const schema = z.object({
-  email: z.string().email('Informe um e-mail válido'),
-  senha: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  email: z.string().email("Informe um e-mail válido"),
+  senha: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -31,21 +31,23 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     setServerMsg(null);
 
-    // chama o contexto -> ele já trata rotas e normalização
-    const r = await login(data.email, data.senha);
+    try {
+      const r = await login(data.email, data.senha);
 
-    if (!r.ok) {
-      // Mensagem de credenciais inválidas / usuário não encontrado etc.
-      const message = r.message || 'Credenciais inválidas.';
-      setServerMsg(message);
-      // Opcional: marcar campos com erro
-      setError('email', { message: undefined });
-      setError('senha', { message: undefined });
-      return; // ❌ fica na tela de login
+      if (!r.ok) {
+        // Consistência: SEMPRE a mesma frase
+        setServerMsg("Credenciais inválidas.");
+        // Opcional: marcar campos como inválidos sem mensagem técnica
+        setError("email", { message: undefined });
+        setError("senha", { message: undefined });
+        return; // fica na tela de login
+      }
+
+      router.push("/");
+    } catch {
+      // Blindagem final: nunca deixar erro estourar overlay
+      setServerMsg("Credenciais inválidas.");
     }
-
-    // sucesso -> ir para Home
-    router.push('/');
   };
 
   return (
@@ -88,13 +90,15 @@ export default function LoginPage() {
             </label>
             <input
               type="email"
-              {...register('email')}
+              {...register("email")}
               placeholder="seu@email.com"
               className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
               autoComplete="email"
             />
             {errors.email && (
-              <p className="mt-1 text-xs text-red-200">{errors.email.message}</p>
+              <p className="mt-1 text-xs text-red-200">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
@@ -105,8 +109,8 @@ export default function LoginPage() {
             </label>
             <div className="relative">
               <input
-                type={showPw ? 'text' : 'password'}
-                {...register('senha')}
+                type={showPw ? "text" : "password"}
+                {...register("senha")}
                 placeholder="••••••••"
                 className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 pr-11 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
                 autoComplete="current-password"
@@ -115,14 +119,16 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setShowPw((v) => !v)}
                 className="absolute inset-y-0 right-0 px-3 text-[#0f5e63] hover:text-[#EC5B20]"
-                aria-label={showPw ? 'Ocultar senha' : 'Mostrar senha'}
-                title={showPw ? 'Ocultar senha' : 'Mostrar senha'}
+                aria-label={showPw ? "Ocultar senha" : "Mostrar senha"}
+                title={showPw ? "Ocultar senha" : "Mostrar senha"}
               >
-                {showPw ? '🙈' : '👁️'}
+                {showPw ? "🙈" : "👁️"}
               </button>
             </div>
             {errors.senha && (
-              <p className="mt-1 text-xs text-red-200">{errors.senha.message}</p>
+              <p className="mt-1 text-xs text-red-200">
+                {errors.senha.message}
+              </p>
             )}
           </div>
 
@@ -131,12 +137,12 @@ export default function LoginPage() {
             disabled={isSubmitting}
             className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[#359293] hover:bg-[#2e7f81] active:bg-[#2a7476] text-white font-semibold py-3 shadow-lg transition"
           >
-            {isSubmitting ? 'Entrando…' : 'Entrar'}
+            {isSubmitting ? "Entrando…" : "Entrar"}
           </button>
 
           {/* Links */}
           <p className="text-center text-white/90 text-sm">
-            Esqueceu a senha?{' '}
+            Esqueceu a senha?{" "}
             <Link
               href="/forgot-password"
               className="underline text-[#EC5B20] hover:text-white transition"
@@ -145,7 +151,7 @@ export default function LoginPage() {
             </Link>
           </p>
           <p className="text-center text-white/90 text-sm">
-            Ainda não tem conta?{' '}
+            Ainda não tem conta?{" "}
             <Link
               href="/register"
               className="underline text-[#EC5B20] hover:text-white transition"
