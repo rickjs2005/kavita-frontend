@@ -129,7 +129,7 @@ export const formatFullDateShortYear = formatDateShortYear;
 
 /** Remove tudo que não for número */
 export function onlyDigits(value: string): string {
-  return value.replace(/\D/g, "");
+  return (value || "").replace(/\D/g, "");
 }
 
 /** CPF: 000.000.000-00 */

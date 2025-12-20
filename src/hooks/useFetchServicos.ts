@@ -16,15 +16,70 @@ type Params = {
   order?: "asc" | "desc";
 };
 
+type AnyObj = Record<string, any>;
+
 type ApiListResponse<T> = {
-  data: T[];
+  data?: T[];
+  items?: T[];
+  results?: T[];
+  servicos?: T[];
+  rows?: T[];
   total?: number;
   totalPages?: number;
   page?: number;
+  meta?: {
+    total?: number;
+    totalPages?: number;
+    page?: number;
+    [k: string]: any;
+  };
+  [k: string]: any;
 };
 
+function pickList<T>(payload: any): T[] {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload as T[];
+
+  const p = payload as AnyObj;
+
+  const directKeys = ["data", "items", "results", "servicos", "rows"];
+  for (const k of directKeys) {
+    if (Array.isArray(p?.[k])) return p[k] as T[];
+  }
+
+  // casos tipo { data: { items: [...] } } etc.
+  if (p?.data && typeof p.data === "object") {
+    for (const k of directKeys) {
+      if (Array.isArray(p.data?.[k])) return p.data[k] as T[];
+    }
+  }
+
+  return [];
+}
+
+function pickMeta(payload: any, fallbackPage: number) {
+  const p = (payload || {}) as AnyObj;
+
+  const metaFromMeta = p?.meta || p?.data?.meta;
+  const total =
+    Number(metaFromMeta?.total ?? p?.total ?? p?.data?.total ?? 0) || 0;
+
+  const totalPages =
+    Number(
+      metaFromMeta?.totalPages ??
+        p?.totalPages ??
+        p?.data?.totalPages ??
+        1
+    ) || 1;
+
+  const page =
+    Number(metaFromMeta?.page ?? p?.page ?? p?.data?.page ?? fallbackPage) ||
+    fallbackPage;
+
+  return { total, totalPages, page };
+}
+
 const fetcher = async (url: string) => {
-  // apiFetch aceita URL absoluta ou path relativo (dependendo do seu apiClient)
   return apiFetch(url);
 };
 
@@ -36,11 +91,16 @@ export function useFetchServicos({
   sort = "id",
   order = "desc",
 }: Params = {}) {
-  const url = new URL("/api/servicos", API_BASE);
+  // ✅ ROTA PÚBLICA (coerente com ServicosSection)
+  const url = new URL("/api/public/servicos", API_BASE);
 
-  if (q) url.searchParams.set("q", String(q));
+  if (q && String(q).trim().length > 0) url.searchParams.set("q", String(q));
 
-  if (especialidade !== undefined && especialidade !== null && String(especialidade).length > 0) {
+  if (
+    especialidade !== undefined &&
+    especialidade !== null &&
+    String(especialidade).length > 0
+  ) {
     url.searchParams.set("especialidade", String(especialidade));
   }
 
@@ -49,19 +109,24 @@ export function useFetchServicos({
   url.searchParams.set("sort", String(sort));
   url.searchParams.set("order", order);
 
-  const { data, error, isLoading } = useSWR<ApiListResponse<any>>(url.toString(), fetcher);
+  const { data, error, isLoading } = useSWR<ApiListResponse<any>>(
+    url.toString(),
+    fetcher
+  );
+
+  const list = pickList<any>(data);
+  const meta = pickMeta(data, page);
 
   const errorMessage = error
-    ? handleApiError(error, { silent: true, fallback: "Não foi possível carregar os serviços." })
+    ? handleApiError(error, {
+        silent: true,
+        fallback: "Não foi possível carregar os serviços.",
+      })
     : null;
 
   return {
-    data: data?.data || [],
-    meta: {
-      total: data?.total || 0,
-      totalPages: data?.totalPages || 1,
-      page: data?.page || page || 1,
-    },
+    data: list,
+    meta,
     loading: isLoading,
     error: errorMessage,
   };

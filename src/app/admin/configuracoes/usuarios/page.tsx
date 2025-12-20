@@ -47,7 +47,6 @@ export default function AdminUserPermissionsConfigPage() {
     redirectTo: "/admin",
   });
 
-  // ainda usamos essa checagem só para controlar a UI de "Criar permissão"
   const canManagePermissions = hasPermission("permissions_manage");
 
   const [roles, setRoles] = useState<Role[]>([]);
@@ -80,15 +79,10 @@ export default function AdminUserPermissionsConfigPage() {
 
       try {
         const [rolesRes, permsRes] = await Promise.all([
-          fetch(`${API_URL}/admin/roles`, {
-            credentials: "include", // 🔐 cookie HttpOnly
-          }),
-          fetch(`${API_URL}/admin/permissions`, {
-            credentials: "include",
-          }),
+          fetch(`${API_URL}/admin/roles`, { credentials: "include" }),
+          fetch(`${API_URL}/admin/permissions`, { credentials: "include" }),
         ]);
 
-        // sessão expirada ou sem permissão
         if (
           rolesRes.status === 401 ||
           rolesRes.status === 403 ||
@@ -162,9 +156,7 @@ export default function AdminUserPermissionsConfigPage() {
     const term = searchTerm.trim().toLowerCase();
 
     return permissions.filter((p) => {
-      const matchGroup =
-        filterGroup === "all" ? true : p.grupo === filterGroup;
-
+      const matchGroup = filterGroup === "all" ? true : p.grupo === filterGroup;
       if (!matchGroup) return false;
 
       if (!term) return true;
@@ -187,7 +179,6 @@ export default function AdminUserPermissionsConfigPage() {
             </p>
             <div className="mt-2 h-5 w-48 animate-pulse rounded bg-slate-800" />
           </div>
-          {/* Close no mobile */}
           <div className="sm:hidden">
             <CloseButton className="text-slate-400 hover:text-slate-100 text-3xl" />
           </div>
@@ -197,10 +188,7 @@ export default function AdminUserPermissionsConfigPage() {
     );
   }
 
-  // Se não foi permitido, o hook já redirecionou para /admin
-  if (!allowed) {
-    return null;
-  }
+  if (!allowed) return null;
 
   async function handleCreateRole() {
     if (!newRoleName.trim()) return;
@@ -213,11 +201,8 @@ export default function AdminUserPermissionsConfigPage() {
     try {
       const res = await fetch(`${API_URL}/admin/roles`, {
         method: "POST",
-        credentials: "include", // 🔐 cookie HttpOnly
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // Mandamos com ambos os nomes para ficar compatível com qualquer backend:
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: nome,
           nome,
@@ -243,8 +228,7 @@ export default function AdminUserPermissionsConfigPage() {
       const newRole: Role = {
         id: created.id,
         name: created.name ?? created.nome ?? nome,
-        description:
-          created.description ?? created.descricao ?? (descricao || ""),
+        description: created.description ?? created.descricao ?? (descricao || ""),
         slug: created.slug ?? slug,
         permissions: Array.isArray(created.permissions)
           ? created.permissions
@@ -281,11 +265,8 @@ export default function AdminUserPermissionsConfigPage() {
     try {
       const res = await fetch(`${API_URL}/admin/permissions`, {
         method: "POST",
-        credentials: "include", // 🔐 cookie HttpOnly
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // compatível com o backend: { chave, grupo, descricao }
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chave,
           grupo,
@@ -325,18 +306,18 @@ export default function AdminUserPermissionsConfigPage() {
     checked: boolean
   ) {
     const previousRoles = roles;
+
     const updatedRoles = roles.map((role) => {
       if (role.id !== roleId) return role;
       const alreadyHas = role.permissions.includes(permKey);
-      let newPermissions = role.permissions;
 
       if (checked && !alreadyHas) {
-        newPermissions = [...role.permissions, permKey];
-      } else if (!checked && alreadyHas) {
-        newPermissions = role.permissions.filter((p) => p !== permKey);
+        return { ...role, permissions: [...role.permissions, permKey] };
       }
-
-      return { ...role, permissions: newPermissions };
+      if (!checked && alreadyHas) {
+        return { ...role, permissions: role.permissions.filter((p) => p !== permKey) };
+      }
+      return role;
     });
 
     setRoles(updatedRoles);
@@ -347,14 +328,9 @@ export default function AdminUserPermissionsConfigPage() {
 
       const res = await fetch(`${API_URL}/admin/roles/${roleId}`, {
         method: "PUT",
-        credentials: "include", // 🔐 cookie HttpOnly
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // aqui assumimos que o backend aceita uma lista de chaves
-        body: JSON.stringify({
-          permissions: roleToUpdate.permissions,
-        }),
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permissions: roleToUpdate.permissions }),
       });
 
       if (res.status === 401 || res.status === 403) {
@@ -366,9 +342,7 @@ export default function AdminUserPermissionsConfigPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(
-          data?.message || "Erro ao atualizar permissões do papel"
-        );
+        throw new Error(data?.message || "Erro ao atualizar permissões do papel");
       }
 
       toast.success("Permissões do papel atualizadas.");
@@ -379,26 +353,88 @@ export default function AdminUserPermissionsConfigPage() {
     }
   }
 
- return (
+  async function handleDeletePermission(perm: Permission) {
+    if (!canManagePermissions) {
+      toast.error("Você não tem permissão para excluir permissões.");
+      return;
+    }
+
+    const ok = confirm(
+      `Tem certeza que deseja excluir esta permissão?\n\n${perm.chave}\nGrupo: ${perm.grupo}\n\nIsso pode afetar o acesso de usuários no admin.`
+    );
+    if (!ok) return;
+
+    const prevPerms = permissions;
+    const prevRoles = roles;
+
+    // otimista: remove permissão da lista e remove de todos os roles
+    setPermissions((p) => p.filter((x) => x.id !== perm.id));
+    setRoles((rs) =>
+      rs.map((r) => ({
+        ...r,
+        permissions: r.permissions.filter((k) => k !== perm.chave),
+      }))
+    );
+
+    try {
+      const res = await fetch(`${API_URL}/admin/permissions/${perm.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        logout();
+        router.replace("/admin/login");
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || "Erro ao excluir permissão");
+      }
+
+      toast.success("Permissão excluída com sucesso.");
+    } catch (err: any) {
+      console.error(err);
+      // rollback
+      setPermissions(prevPerms);
+      setRoles(prevRoles);
+      toast.error(err?.message || "Erro ao excluir permissão.");
+    }
+  }
+
+  const DeletePermButton = ({ perm }: { perm: Permission }) => {
+    if (!canManagePermissions) return null;
+    return (
+      <button
+        type="button"
+        onClick={() => handleDeletePermission(perm)}
+        title="Excluir permissão"
+        aria-label={`Excluir permissão ${perm.chave}`}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/70 text-base text-slate-200 hover:bg-rose-950/40 hover:text-rose-200 hover:border-rose-900/60 transition-colors"
+      >
+        🗑️
+      </button>
+    );
+  };
+
+  return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 text-slate-50 sm:px-8">
-      {/* Header estilo logs/equipe + Close mobile */}
+      {/* Header */}
       <header className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <p className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300">
             Configurações • Usuários & Permissões
           </p>
-          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">
-            Papéis e permissões
-          </h1>
+          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">Papéis e permissões</h1>
           <p className="max-w-2xl text-sm text-slate-400">
-            Defina os papéis administrativos (master, gerente, suporte,
-            leitura, etc.) e quais permissões cada um deles possui dentro do
-            painel.
+            Defina os papéis administrativos (master, gerente, suporte, leitura, etc.)
+            e quais permissões cada um deles possui dentro do painel.
           </p>
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          {/* Só no mobile: botão de fechar, igual logs/equipe */}
           <div className="sm:hidden">
             <CloseButton className="text-slate-400 hover:text-slate-100 text-3xl" />
           </div>
@@ -415,7 +451,7 @@ export default function AdminUserPermissionsConfigPage() {
         </section>
       ) : (
         <>
-          {/* Seção de criação de papel e permissão */}
+          {/* Seção de criação */}
           <section className="grid gap-4 lg:grid-cols-2">
             {/* Novo papel */}
             <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 sm:p-5">
@@ -425,6 +461,7 @@ export default function AdminUserPermissionsConfigPage() {
                   Ex: master, gerente_marketing, suporte_financeiro
                 </span>
               </div>
+
               <div className="space-y-3">
                 <div className="space-y-2">
                   <label className="block text-xs font-medium text-slate-300">
@@ -439,12 +476,11 @@ export default function AdminUserPermissionsConfigPage() {
                   {newRoleName.trim() && (
                     <p className="mt-1 text-[11px] text-slate-500">
                       Slug gerado:{" "}
-                      <span className="font-mono">
-                        {slugify(newRoleName.trim())}
-                      </span>
+                      <span className="font-mono">{slugify(newRoleName.trim())}</span>
                     </p>
                   )}
                 </div>
+
                 <div className="space-y-2">
                   <label className="block text-xs font-medium text-slate-300">
                     Descrição (opcional)
@@ -456,6 +492,7 @@ export default function AdminUserPermissionsConfigPage() {
                     onChange={(e) => setNewRoleDescription(e.target.value)}
                   />
                 </div>
+
                 <div className="flex justify-end">
                   <button
                     type="button"
@@ -520,14 +557,11 @@ export default function AdminUserPermissionsConfigPage() {
                       onChange={(e) => setNewPermDescription(e.target.value)}
                     />
                   </div>
+
                   <div className="flex justify-end">
                     <button
                       type="button"
-                      disabled={
-                        creatingPerm ||
-                        !newPermKey.trim() ||
-                        !newPermGroup.trim()
-                      }
+                      disabled={creatingPerm || !newPermKey.trim() || !newPermGroup.trim()}
                       onClick={handleCreatePermission}
                       className="inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
                     >
@@ -539,17 +573,14 @@ export default function AdminUserPermissionsConfigPage() {
             </div>
           </section>
 
-          {/* Matriz de papéis x permissões */}
+          {/* Matriz */}
           <section className="rounded-2xl border border-slate-800 bg-slate-950/90">
             <div className="border-b border-slate-800 px-4 py-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold">
-                    Matriz de papéis x permissões
-                  </h2>
+                  <h2 className="text-sm font-semibold">Matriz de papéis x permissões</h2>
                   <p className="text-[11px] text-slate-400">
                     Marque quais permissões cada papel administrativo possui.
-                    Essa é a base do controle de acesso do seu painel.
                   </p>
                 </div>
                 <div className="text-[11px] text-slate-400">
@@ -557,7 +588,6 @@ export default function AdminUserPermissionsConfigPage() {
                 </div>
               </div>
 
-              {/* Filtros (grupo + busca) */}
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex gap-2">
                   <select
@@ -586,8 +616,7 @@ export default function AdminUserPermissionsConfigPage() {
 
             {roles.length === 0 || permissions.length === 0 ? (
               <div className="p-4 text-sm text-slate-300">
-                Cadastre ao menos um papel e uma permissão para começar a
-                configurar a matriz.
+                Cadastre ao menos um papel e uma permissão para começar a configurar a matriz.
               </div>
             ) : filteredPermissions.length === 0 ? (
               <div className="p-4 text-sm text-slate-300">
@@ -595,32 +624,34 @@ export default function AdminUserPermissionsConfigPage() {
               </div>
             ) : (
               <>
-                {/* Mobile: cards por permissão, com papéis em grid */}
+                {/* Mobile */}
                 <div className="md:hidden divide-y divide-slate-900/80">
                   {filteredPermissions.map((perm) => (
                     <div
                       key={perm.id}
                       className="px-4 py-3 hover:bg-slate-950/80 transition-colors"
                     >
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm font-semibold text-slate-50">
-                          {perm.chave}
-                        </span>
-                        <span className="text-[11px] text-emerald-300">
-                          Grupo: {perm.grupo}
-                        </span>
-                        {perm.descricao && (
-                          <span className="text-[11px] text-slate-400">
-                            {perm.descricao}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-semibold text-slate-50">
+                            {perm.chave}
                           </span>
-                        )}
+                          <span className="text-[11px] text-emerald-300">
+                            Grupo: {perm.grupo}
+                          </span>
+                          {perm.descricao && (
+                            <span className="text-[11px] text-slate-400">
+                              {perm.descricao}
+                            </span>
+                          )}
+                        </div>
+
+                        <DeletePermButton perm={perm} />
                       </div>
 
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         {roles.map((role) => {
-                          const checked = role.permissions.includes(
-                            perm.chave
-                          );
+                          const checked = role.permissions.includes(perm.chave);
                           return (
                             <label
                               key={role.id}
@@ -631,16 +662,10 @@ export default function AdminUserPermissionsConfigPage() {
                                 className="h-4 w-4 accent-emerald-500"
                                 checked={checked}
                                 onChange={(e) =>
-                                  handleToggleRolePermission(
-                                    role.id,
-                                    perm.chave,
-                                    e.target.checked
-                                  )
+                                  handleToggleRolePermission(role.id, perm.chave, e.target.checked)
                                 }
                               />
-                              <span className="text-slate-100">
-                                {role.name}
-                              </span>
+                              <span className="text-slate-100">{role.name}</span>
                             </label>
                           );
                         })}
@@ -649,7 +674,7 @@ export default function AdminUserPermissionsConfigPage() {
                   ))}
                 </div>
 
-                {/* Desktop: tabela matriz completa */}
+                {/* Desktop */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="min-w-full border-separate border-spacing-0 text-xs">
                     <thead>
@@ -667,35 +692,33 @@ export default function AdminUserPermissionsConfigPage() {
                         ))}
                       </tr>
                     </thead>
+
                     <tbody>
                       {filteredPermissions.map((perm, index) => (
                         <tr
                           key={perm.id}
-                          className={
-                            index % 2 === 0
-                              ? "bg-slate-950/60"
-                              : "bg-slate-900/40"
-                          }
+                          className={index % 2 === 0 ? "bg-slate-950/60" : "bg-slate-900/40"}
                         >
                           <td className="border-b border-slate-900/80 px-3 py-2 align-top">
-                            <div className="flex flex-col gap-1">
-                              <span className="font-medium text-slate-50">
-                                {perm.chave}
-                              </span>
-                              <span className="text-[11px] text-emerald-300">
-                                Grupo: {perm.grupo}
-                              </span>
-                              {perm.descricao && (
-                                <span className="text-[11px] text-slate-500">
-                                  {perm.descricao}
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex flex-col gap-1">
+                                <span className="font-medium text-slate-50">{perm.chave}</span>
+                                <span className="text-[11px] text-emerald-300">
+                                  Grupo: {perm.grupo}
                                 </span>
-                              )}
+                                {perm.descricao && (
+                                  <span className="text-[11px] text-slate-500">
+                                    {perm.descricao}
+                                  </span>
+                                )}
+                              </div>
+
+                              <DeletePermButton perm={perm} />
                             </div>
                           </td>
+
                           {roles.map((role) => {
-                            const checked = role.permissions.includes(
-                              perm.chave
-                            );
+                            const checked = role.permissions.includes(perm.chave);
                             return (
                               <td
                                 key={role.id}
@@ -706,11 +729,7 @@ export default function AdminUserPermissionsConfigPage() {
                                   className="h-4 w-4 accent-emerald-500"
                                   checked={checked}
                                   onChange={(e) =>
-                                    handleToggleRolePermission(
-                                      role.id,
-                                      perm.chave,
-                                      e.target.checked
-                                    )
+                                    handleToggleRolePermission(role.id, perm.chave, e.target.checked)
                                   }
                                 />
                               </td>
