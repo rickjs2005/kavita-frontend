@@ -3,7 +3,7 @@ import type { Service } from "@/types/service";
 import { apiFetch } from "@/lib/apiClient";
 
 export interface GetServicesParams {
-  q?: string; // busca
+  q?: string;
   specialty?: string; // será convertido para "especialidade"
   page?: number;
   limit?: number;
@@ -11,9 +11,13 @@ export interface GetServicesParams {
   order?: "asc" | "desc";
 }
 
+function normText(v?: string) {
+  const s = (v ?? "").trim();
+  return s ? s.toLowerCase() : "";
+}
+
 /**
- * Lista serviços com paginação/filtros.
- * Mantém a lógica: params -> querystring e chama GET /api/servicos
+ * Lista serviços com paginação/filtros (contrato com backend).
  */
 export async function getServices(params: GetServicesParams = {}) {
   const {
@@ -31,32 +35,44 @@ export async function getServices(params: GetServicesParams = {}) {
   qs.set("sort", String(sort));
   qs.set("order", String(order));
 
-  if (q) qs.set("q", String(q));
+  const qNorm = (q ?? "").trim();
+  if (qNorm) qs.set("q", qNorm);
 
-  // mantém a conversão de specialty -> especialidade
-  if (specialty) qs.set("especialidade", String(specialty));
+  // specialty -> especialidade (normalizado)
+  const esp = normText(specialty);
+  if (esp) qs.set("especialidade", esp);
 
   const query = qs.toString();
   const path = query ? `/api/servicos?${query}` : `/api/servicos`;
 
-  return apiFetch(path, { cache: "no-store" });
+  try {
+    return await apiFetch(path, { cache: "no-store" });
+  } catch {
+    // erro limpo (não vaza stack/erro bruto)
+    throw new Error("Failed to fetch services");
+  }
 }
 
 /**
  * Um serviço por ID.
- * Mantém a mesma ideia e mantém a normalização de images exatamente como você fazia.
+ * Normaliza images para array.
  */
 export async function getServiceById(id: string | number): Promise<Service> {
   if (!id && id !== 0) throw new Error("Service id is required");
 
-  const json: any = await apiFetch(`/api/servicos/${id}`, { cache: "no-store" });
+  try {
+    const json: any = await apiFetch(`/api/servicos/${id}`, { cache: "no-store" });
 
-  return {
-    ...json,
-    images: Array.isArray(json.images)
-      ? json.images
-      : typeof json.images === "string" && json.images
-      ? [json.images]
-      : [],
-  } as Service;
+    return {
+      ...json,
+      images: Array.isArray(json.images)
+        ? json.images
+        : typeof json.images === "string" && json.images
+        ? [json.images]
+        : [],
+    } as Service;
+  } catch {
+    // erro limpo
+    throw new Error("Failed to fetch service");
+  }
 }
