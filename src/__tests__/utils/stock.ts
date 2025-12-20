@@ -3,57 +3,56 @@ import { parseStockValue, resolveStockValue } from "@/utils/stock";
 
 describe("utils/stock", () => {
   describe("parseStockValue", () => {
-    it("retorna o número quando já é number finito", () => {
-      expect(parseStockValue(10)).toBe(10);
-      expect(parseStockValue(10.5)).toBe(10.5);
+    it("retorna número quando entrada já é número válido", () => {
+      expect(parseStockValue("1234")).toBe(1234);
+      expect(parseStockValue("12.34")).toBe(12.34);
     });
 
-    it('converte string "10,5" para 10.5', () => {
-      const result = parseStockValue("10,5");
-      expect(result).toBeCloseTo(10.5, 2);
+    it('converte string pt-BR "1.234,56" para 1234.56', () => {
+      expect(parseStockValue("1.234,56")).toBe(1234.56);
     });
 
-    it('remove caracteres inválidos e converte " R$ 1.250,50 " para 1250.5', () => {
-      const result = parseStockValue(" R$ 1.250,50 ");
-      expect(result).toBeCloseTo(1250.5, 2);
+    it('remove símbolos e converte "R$ 2,50" para 2.5', () => {
+      expect(parseStockValue("R$ 2,50")).toBe(2.5);
     });
 
-    it("aceita número negativo em string", () => {
-      expect(parseStockValue("-10")).toBe(-10);
+    it("aceita sinal negativo", () => {
+      expect(parseStockValue("-10,5")).toBe(-10.5);
     });
 
-    it("retorna null para vazios e inválidos", () => {
-      expect(parseStockValue("")).toBeNull();
-      expect(parseStockValue("   ")).toBeNull();
-      expect(parseStockValue("--")).toBeNull();
-      expect(parseStockValue("abc")).toBeNull();
-      expect(parseStockValue(null)).toBeNull();
-      expect(parseStockValue(undefined)).toBeNull();
-      expect(parseStockValue(NaN)).toBeNull();
-      expect(parseStockValue({})).toBeNull();
-    });
-
-    it("retorna null para string com formato impossível", () => {
-      // exemplo com várias vírgulas vira algo não numérico depois do replace parcial
-      expect(parseStockValue("1,2,3")).toBeNull();
+    it("retorna null para inválidos", () => {
+      expect(parseStockValue("")).toBe(null);
+      expect(parseStockValue("   ")).toBe(null);
+      expect(parseStockValue("abc")).toBe(null);
+      expect(parseStockValue("12,34,56")).toBe(null); // vírgula inválida após normalização
     });
   });
 
   describe("resolveStockValue", () => {
-    it("retorna o primeiro valor parseável (prioridade por ordem)", () => {
-      const result = resolveStockValue(null, "--", "10,5", 99);
-      // deve parar em "10,5" (primeiro parseável)
-      expect(result).toBeCloseTo(10.5, 2);
+    it("retorna o número quando input é número válido", () => {
+      expect(resolveStockValue(10)).toBe(10);
+      expect(resolveStockValue(0)).toBe(0);
+      expect(resolveStockValue(-2.5)).toBe(-2.5);
     });
 
-    it("retorna number imediatamente se vier number válido antes", () => {
-      const result = resolveStockValue("--", 7, "10,5");
-      expect(result).toBe(7);
+    it("faz parse quando input é string válida", () => {
+      expect(resolveStockValue("1.234,56")).toBe(1234.56);
+      expect(resolveStockValue("R$ 2,50")).toBe(2.5);
+      expect(resolveStockValue("  3,00  ")).toBe(3);
     });
 
-    it("retorna null se nada for parseável", () => {
-      const result = resolveStockValue(null, undefined, "--", "abc", "");
-      expect(result).toBeNull();
+    it("retorna fallback quando input é inválido", () => {
+      expect(resolveStockValue(null, 0)).toBe(0);
+      expect(resolveStockValue(undefined, 99)).toBe(99);
+      expect(resolveStockValue("abc", 7)).toBe(7);
+      expect(resolveStockValue(NaN, 5)).toBe(5);
+      expect(resolveStockValue(Infinity, 5)).toBe(5);
+      expect(resolveStockValue({} as any, 123)).toBe(123);
+    });
+
+    it("usa fallback padrão (0) quando não informado", () => {
+      expect(resolveStockValue("abc")).toBe(0);
+      expect(resolveStockValue(null)).toBe(0);
     });
   });
 });
