@@ -38,9 +38,24 @@ export function createMockStorage(initial: Record<string, string> = {}) {
   };
 }
 
+export function installMockStorage() {
+  const ls = createMockStorage();
+  const ss = createMockStorage();
+
+  Object.defineProperty(window, "localStorage", {
+    value: ls.storage,
+    writable: true,
+  });
+  Object.defineProperty(window, "sessionStorage", {
+    value: ss.storage,
+    writable: true,
+  });
+
+  return { local: ls, session: ss };
+}
+
 export function mockGlobalFetch() {
   const mock = vi.fn();
-
   global.fetch = mock;
   return mock;
 }
