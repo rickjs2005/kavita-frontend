@@ -1,3 +1,4 @@
+// src/components/layout/Header.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -17,55 +18,16 @@ const SearchBar = dynamic(() => import("@/components/ui/SearchBar"), {
   ssr: false,
 });
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-type PublicCategory = {
+export type PublicCategory = {
   id: number;
   name: string;
   slug: string;
   is_active?: boolean | 0 | 1;
 };
 
-// hook simples pra reaproveitar as categorias no mobile
-function usePublicCategories() {
-  const [categorias, setCategorias] = useState<PublicCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadCategorias() {
-      try {
-        const res = await fetch(`${API_BASE}/api/public/categorias`, {
-          cache: "no-store",
-        });
-
-        if (!res.ok) throw new Error(`Erro ao carregar categorias (${res.status})`);
-
-        const data = await res.json();
-        const arr: PublicCategory[] = Array.isArray(data)
-          ? data
-          : (data?.categorias as PublicCategory[]) || [];
-
-        const ativas = arr.filter(
-          (c) =>
-            c.is_active === undefined ||
-            c.is_active === 1 ||
-            c.is_active === true
-        );
-
-        setCategorias(ativas);
-      } catch (err) {
-        console.error("[Header/usePublicCategories] Erro:", err);
-        setCategorias([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadCategorias();
-  }, []);
-
-  return { categorias, loading };
-}
+type HeaderProps = {
+  categories: PublicCategory[];
+};
 
 // rotas em que o header some
 const EXCLUDED_ROUTES = [
@@ -98,7 +60,7 @@ const EXCLUDED_ROUTES = [
   "/admin/kavita-news",
 ] as const;
 
-export default function Header() {
+export default function Header({ categories }: HeaderProps) {
   const pathname = usePathname();
   const { cartItems } = useCart();
   const { user, logout } = useAuth();
@@ -117,8 +79,6 @@ export default function Header() {
   const isDronePage = pathname.startsWith("/drones");
   const isNewsPage = pathname.startsWith("/news");
 
-  const { categorias } = usePublicCategories();
-
   useEffect(() => setMounted(true), []);
 
   const cartCount = cartItems.length;
@@ -126,7 +86,7 @@ export default function Header() {
     () => cartItems.reduce((t, i) => t + i.price * i.quantity, 0),
     [cartItems]
   );
-  // cartTotal está pronto se quiser mostrar depois
+  void cartTotal; // deixa pronto caso queira usar depois
 
   // fecha menu quando troca de rota
   useEffect(() => {
@@ -223,7 +183,7 @@ export default function Header() {
               />
             </Link>
 
-            {/* search desktop (mais compacto) */}
+            {/* search desktop */}
             <div
               className="hidden sm:flex flex-1 justify-center mx-3 md:mx-6"
               suppressHydrationWarning
@@ -261,7 +221,7 @@ export default function Header() {
                 {mounted && <UserMenu />}
               </div>
 
-              {/* carrinho – ícone mais “carrinho” */}
+              {/* carrinho */}
               <div className="relative">
                 <button
                   aria-label="Abrir carrinho"
@@ -283,6 +243,7 @@ export default function Header() {
                     <path d="M3 4h2l2.4 11h11.2l2-8H7" />
                   </svg>
                 </button>
+
                 {mounted && cartCount > 0 && (
                   <span className="absolute -top-1.5 -right-1 bg-white text-lime-600 text-[11px] md:text-xs rounded-full min-w-[1.25rem] h-5 md:min-w-[1.5rem] md:h-6 px-1 flex items-center justify-center">
                     {cartCount}
@@ -294,11 +255,9 @@ export default function Header() {
         </div>
 
         {/* barra de categorias desktop */}
-        <nav
-          className={`hidden md:block w-full h-[44px] ${navBg} text-[#083E46] shadow-sm`}
-        >
+        <nav className={`hidden md:block w-full h-[44px] ${navBg} shadow-sm`}>
           <div className="max-w-6xl mx-auto h-full px-4 md:px-6 flex items-center justify-center">
-            <MainNavCategories />
+            <MainNavCategories categories={categories} />
           </div>
         </nav>
       </header>
@@ -318,11 +277,8 @@ export default function Header() {
             className="fixed z-50 top-0 left-0 h-full w-80 max-w-[80vw] bg-white shadow-2xl p-5 flex flex-col gap-4 overflow-y-auto"
             ref={menuRef}
           >
-            {/* header do painel */}
             <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold text-[#083E46]">
-                Menu
-              </span>
+              <span className="text-lg font-semibold text-[#083E46]">Menu</span>
               <button
                 className="rounded-full p-2 hover:bg-gray-100"
                 onClick={() => setIsMenuOpen(false)}
@@ -332,12 +288,10 @@ export default function Header() {
               </button>
             </div>
 
-            {/* search mobile */}
             <div className="sm:hidden" suppressHydrationWarning>
               <SearchBar />
             </div>
 
-            {/* saudação / login */}
             <div className="mt-1">
               {mounted && isAuthenticated ? (
                 <p className="text-sm text-gray-600">
@@ -361,10 +315,8 @@ export default function Header() {
               )}
             </div>
 
-            {/* categorias do backend – mesma lista do desktop */}
             <nav className="mt-2">
               <ul className="space-y-1.5">
-                {/* Kavita News (mobile) */}
                 <li>
                   <Link
                     href="/news"
@@ -379,7 +331,7 @@ export default function Header() {
                   </Link>
                 </li>
 
-                {categorias.map((cat) => (
+                {categories.map((cat) => (
                   <li key={cat.id}>
                     <Link
                       href={`/categorias/${cat.slug}`}
@@ -394,6 +346,7 @@ export default function Header() {
                     </Link>
                   </li>
                 ))}
+
                 <li>
                   <Link
                     href="/servicos"
@@ -407,6 +360,7 @@ export default function Header() {
                     Serviços
                   </Link>
                 </li>
+
                 <li>
                   <Link
                     href="/contato"
@@ -423,7 +377,6 @@ export default function Header() {
               </ul>
             </nav>
 
-            {/* minha conta / sair */}
             <div className="border-top border-t pt-3 mt-2">
               {!mounted ? null : isAuthenticated ? (
                 <nav className="flex flex-col gap-1.5">
@@ -475,20 +428,8 @@ export default function Header() {
         </>
       )}
 
-      {/* carrinho + espaçador do header */}
-      <div className="flex">
-        <main
-          id="conteudo"
-          className={`flex-1 transition-all duration-300 ${
-            isCartOpen ? "md:ml-96" : "ml-0"
-          }`}
-        >
-          <CartCar
-            isCartOpen={isCartOpen}
-            closeCart={() => setIsCartOpen(false)}
-          />
-        </main>
-      </div>
+      {/* carrinho (sem <main id="conteudo"> aqui para não duplicar com o layout) */}
+      <CartCar isCartOpen={isCartOpen} closeCart={() => setIsCartOpen(false)} />
 
       {/* espaço pro conteúdo não ficar embaixo do header fixo */}
       <div aria-hidden className="h-[96px] md:h-[134px]" />

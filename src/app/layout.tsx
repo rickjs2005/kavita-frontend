@@ -6,12 +6,21 @@ import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
 import Header from "../components/layout/Header";
 
+import { fetchPublicCategories } from "@/server/data/categories";
+
 export const metadata: Metadata = {
   title: "Kavita",
   description: "Loja de agropecuária",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // SSR/ISR das categorias (revalidate: 60 definido no fetchPublicCategories)
+  const categories = await fetchPublicCategories();
+
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
@@ -30,7 +39,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-white text-gray-900 antialiased">
         <AuthProvider>
           <CartProvider>
-            <Header />
+            {/* Header global como era antes */}
+            <Header categories={categories} />
+
             <main id="conteudo">{children}</main>
             <Toaster position="top-right" />
           </CartProvider>
