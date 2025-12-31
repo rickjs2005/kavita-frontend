@@ -35,7 +35,6 @@ export default function MainNavCategories({ categories }: Props) {
         Serviços
       </Link>
 
-      {/* Link manual do Drone */}
       <Link
         href="/drones"
         className="text-sm font-semibold text-[#38bdf8]/110 hover:text-[#EC5B20] transition-colors"

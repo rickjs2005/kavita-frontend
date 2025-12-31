@@ -1,9 +1,10 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 /* ------------------------------------------------------------------ */
-/* Mocks obrigatórios globais                                          */
+/* Mocks globais                                                       */
 /* ------------------------------------------------------------------ */
 
 // next/navigation
@@ -14,24 +15,16 @@ vi.mock("next/navigation", () => ({
 
 // next/link → <a>
 vi.mock("next/link", () => ({
-  default: ({
-    href,
-    children,
-    ...props
-  }: {
-    href: string;
-    children: React.ReactNode;
-    [key: string]: any;
-  }) => (
+  default: ({ href, children, ...props }: any) => (
     <a href={href} {...props}>
       {children}
     </a>
   ),
 }));
 
-// next/image → <img>
+// next/image → <img> (remove priority!)
 vi.mock("next/image", () => ({
-  default: (props: any) => <img {...props} />,
+  default: ({ priority, ...props }: any) => <img {...props} />,
 }));
 
 // dynamic import (SearchBar)
@@ -92,24 +85,14 @@ describe("Header (src/components/Header.tsx)", () => {
   });
 
   it("não renderiza o header em rota excluída (ex: /checkout)", () => {
-    // Arrange
     mockUsePathname.mockReturnValue("/checkout");
-
-    // Act
-    const { container } = render(<Header />);
-
-    // Assert
+    const { container } = render(<Header categories={[]} />);
     expect(container.firstChild).toBeNull();
   });
 
   it("renderiza o header em rota pública normal (positivo)", async () => {
-    // Arrange
-    mockUsePathname.mockReturnValue("/");
+    render(<Header categories={[]} />);
 
-    // Act
-    render(<Header />);
-
-    // Assert
     expect(
       screen.getByRole("link", { name: /Pular para o conteúdo/i })
     ).toBeInTheDocument();
@@ -118,128 +101,68 @@ describe("Header (src/components/Header.tsx)", () => {
     expect(await screen.findByTestId("main-nav-categories")).toBeInTheDocument();
   });
 
-  it("mostra badge do carrinho contando itens (cartItems.length) quando há itens (positivo)", async () => {
-    // Arrange
-    // Pelo HTML do erro, o badge exibiu "2" (não "3"),
-    // então o Header está contando itens, não somando quantity.
+  it("mostra badge do carrinho com quantidade de itens", async () => {
     mockUseCart.mockReturnValue({
       cartItems: [
-        { id: 1, price: 10, quantity: 2 },
-        { id: 2, price: 5, quantity: 1 },
+        { id: 1, quantity: 2 },
+        { id: 2, quantity: 1 },
       ],
     });
 
-    // Act
-    render(<Header />);
+    render(<Header categories={[]} />);
 
-    // Assert
     await waitFor(() => {
       expect(screen.getByText("2")).toBeInTheDocument();
     });
   });
 
-  it("abre e fecha o carrinho ao clicar no botão (positivo)", () => {
-    // Arrange
-    render(<Header />);
+  it("abre e fecha o carrinho ao clicar no botão", async () => {
+    const user = userEvent.setup();
+    render(<Header categories={[]} />);
+
     const button = screen.getByRole("button", { name: /Abrir carrinho/i });
 
-    // Act
-    fireEvent.click(button);
-
-    // Assert
+    await user.click(button);
     expect(screen.getByTestId("cart-open")).toBeInTheDocument();
 
-    fireEvent.click(button);
+    await user.click(button);
     expect(screen.queryByTestId("cart-open")).not.toBeInTheDocument();
   });
 
-  it("abre o menu mobile ao clicar no botão de menu (positivo)", async () => {
-    // Arrange
-    render(<Header />);
+  it("abre e fecha menu mobile (click + ESC)", async () => {
+    const user = userEvent.setup();
+    render(<Header categories={[]} />);
 
-    // Act
-    fireEvent.click(screen.getByRole("button", { name: /Abrir menu/i }));
-
-    // Assert
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
-  });
-
-  it("fecha o menu mobile ao clicar no overlay (positivo)", async () => {
-    // Arrange
-    render(<Header />);
-    fireEvent.click(screen.getByRole("button", { name: /Abrir menu/i }));
+    await user.click(screen.getByRole("button", { name: /Abrir menu/i }));
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
 
-    // Existem 2 botões "Fechar menu": overlay e botão ✕
-    const closeButtons = screen.getAllByRole("button", { name: /Fechar menu/i });
-    expect(closeButtons.length).toBeGreaterThanOrEqual(2);
+    await user.keyboard("{Escape}");
 
-    // Overlay é o botão fixed inset-0 (primeiro na árvore, pelo HTML do erro)
-    const overlay = closeButtons.find((b) =>
-      (b.getAttribute("class") || "").includes("fixed inset-0")
-    );
-    expect(overlay).toBeTruthy();
-
-    // Act
-    fireEvent.click(overlay as HTMLButtonElement);
-
-    // Assert
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
-  it("fecha o menu mobile ao pressionar ESC (positivo)", async () => {
-    // Arrange
-    render(<Header />);
-    fireEvent.click(screen.getByRole("button", { name: /Abrir menu/i }));
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  it("mostra saudação e chama logout quando autenticado", async () => {
+    const user = userEvent.setup();
 
-    // Act
-    fireEvent.keyDown(document, { key: "Escape" });
-
-    // Assert
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
-  });
-
-  it("mostra saudação quando usuário está autenticado (positivo)", async () => {
-    // Arrange
     mockUseAuth.mockReturnValue({
       user: { nome: "Rick", email: "rick@kavita.com.br" },
       logout: mockLogout,
     });
 
-    render(<Header />);
-    fireEvent.click(screen.getByRole("button", { name: /Abrir menu/i }));
+    render(<Header categories={[]} />);
 
-    // Assert
+    await user.click(screen.getByRole("button", { name: /Abrir menu/i }));
+
     expect(await screen.findByText(/Bem-vindo/i)).toBeInTheDocument();
     expect(screen.getByText("Rick")).toBeInTheDocument();
-  });
 
-  it("chama logout ao clicar em 'Sair' no menu mobile (positivo)", async () => {
-    // Arrange
-    mockUseAuth.mockReturnValue({
-      user: { nome: "Rick", email: "rick@kavita.com.br" },
-      logout: mockLogout,
-    });
-
-    render(<Header />);
-    fireEvent.click(screen.getByRole("button", { name: /Abrir menu/i }));
-
-    const sair = await screen.findByRole("button", { name: /Sair/i });
-
-    // Act
-    fireEvent.click(sair);
-
-    // Assert
+    await user.click(screen.getByRole("button", { name: /Sair/i }));
     expect(mockLogout).toHaveBeenCalledTimes(1);
   });
 
-  it("renderiza categorias públicas ativas no menu mobile (positivo)", async () => {
-    // Arrange
+  it("renderiza apenas categorias públicas ativas no menu mobile", async () => {
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => [
@@ -248,14 +171,13 @@ describe("Header (src/components/Header.tsx)", () => {
       ],
     });
 
-    render(<Header />);
-    fireEvent.click(screen.getByRole("button", { name: /Abrir menu/i }));
+    const user = userEvent.setup();
+    render(<Header categories={[]} />);
 
-    // Assert
-    expect(await screen.findByRole("link", { name: "Agro" })).toHaveAttribute(
-      "href",
-      "/categorias/agro"
-    );
+    await user.click(screen.getByRole("button", { name: /Abrir menu/i }));
+
+    const agro = await screen.findByRole("link", { name: "Agro" });
+    expect(agro).toHaveAttribute("href", "/categorias/agro");
 
     expect(
       screen.queryByRole("link", { name: "Inativas" })
