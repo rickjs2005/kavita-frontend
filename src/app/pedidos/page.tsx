@@ -23,7 +23,6 @@ export default function PedidosClientePage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const token = user?.token;
   const isLoggedIn = !!user?.id;
 
   const [pedidos, setPedidos] = useState<PedidoResumo[]>([]);
@@ -38,7 +37,7 @@ export default function PedidosClientePage() {
     }
   }, [isLoggedIn, router]);
 
-  // Buscar pedidos do cliente
+  // Buscar pedidos do cliente (via cookie HttpOnly)
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -47,24 +46,19 @@ export default function PedidosClientePage() {
         setLoading(true);
         setError(null);
 
-        const headers: Record<string, string> = {};
-        if (token) headers.Authorization = `Bearer ${token}`;
-
-        const { data } = await axios.get<PedidoResumo[]>(
-          `${API_BASE}/api/pedidos`,
-          { headers }
-        );
+        const { data } = await axios.get<PedidoResumo[]>(`${API_BASE}/api/pedidos`, {
+          withCredentials: true,
+        });
 
         setPedidos(Array.isArray(data) ? data : []);
       } catch (err: any) {
         const status = err?.response?.status;
-        if (status === 401) {
+        if (status === 401 || status === 403) {
           setError("Sessão expirada. Faça login novamente.");
           router.push("/login");
         } else {
           setError(
-            err?.response?.data?.message ||
-              "Não foi possível carregar seus pedidos."
+            err?.response?.data?.message || "Não foi possível carregar seus pedidos."
           );
         }
       } finally {
@@ -73,7 +67,7 @@ export default function PedidosClientePage() {
     };
 
     fetchPedidos();
-  }, [isLoggedIn, token, router]);
+  }, [isLoggedIn, router]);
 
   // --------- RENDER ---------
 
@@ -81,7 +75,7 @@ export default function PedidosClientePage() {
     return (
       <main className="max-w-5xl mx-auto px-4 py-10">
         <h1 className="text-2xl font-bold mb-4">Painel de pedidos</h1>
-        <p className="text-gray-600">Carregando seus pedidos...</p>
+        <p className="text-gray-600">Carregando seus pedidos.</p>
       </main>
     );
   }
@@ -112,144 +106,42 @@ export default function PedidosClientePage() {
         <button
           type="button"
           onClick={() => router.push("/")}
-          className="hidden sm:inline-flex px-4 py-2 rounded-lg bg-[#EC5B20] text-white text-sm font-semibold hover:bg-[#d44f1c] transition-colors"
+          className="text-sm text-gray-600 hover:text-gray-900"
         >
           Voltar
         </button>
       </div>
 
-      {/* Nenhum pedido */}
-      {pedidos.length === 0 && (
-        <div className="bg-white rounded-2xl border shadow p-6 sm:p-8 text-center">
-          <p className="text-gray-700 mb-3">
-            Você ainda não tem nenhum pedido.
-          </p>
-          <Link href="/">
-            <CustomButton
-              label="Começar as compras"
-              variant="primary"
-              isLoading={false}
-              size="medium"
-            />
-          </Link>
-        </div>
-      )}
-
-      {/* Lista de pedidos */}
-      {pedidos.length > 0 && (
-        <>
-          {/* Tabela (desktop) */}
-          <div className="hidden md:block bg-white rounded-2xl shadow overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 text-gray-600">
-                <tr className="[&_th]:px-6 [&_th]:py-3 text-sm">
-                  <th>Pedido</th>
-                  <th>Data</th>
-                  <th>Status</th>
-                  <th>Forma de pagamento</th>
-                  <th>Total</th>
-                  <th className="w-32 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {pedidos.map((pedido) => (
-                  <tr
-                    key={pedido.id}
-                    className="[&_td]:px-6 [&_td]:py-4 align-middle text-sm"
-                  >
-                    <td className="font-semibold text-gray-900">
-                      #{pedido.id}
-                    </td>
-
-                    <td className="text-gray-700">
-                      {new Date(pedido.data_pedido).toLocaleString("pt-BR")}
-                    </td>
-
-                    <td className="text-gray-800 capitalize">
-                      {pedido.status}
-                    </td>
-
-                    <td className="text-gray-800">
-                      {pedido.forma_pagamento}
-                    </td>
-
-                    <td className="text-gray-900 font-semibold">
-                      {Number(pedido.total || 0).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      })}
-                    </td>
-
-                    <td className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => router.push(`/pedidos/${pedido.id}`)}
-                        className="inline-flex items-center justify-center px-3 py-2 rounded-lg bg-[#359293] text-white text-xs font-semibold hover:bg-[#2b7778] transition-colors"
-                      >
-                        Ver detalhes
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Cards (mobile) */}
-          <div className="md:hidden space-y-4">
-            {pedidos.map((pedido) => (
-              <div
-                key={pedido.id}
-                className="bg-white rounded-2xl border shadow p-4 text-sm"
-              >
-                <div className="flex justify-between items-start gap-3 mb-2">
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      Pedido #{pedido.id}
-                    </p>
-                    <p className="text-gray-600">
-                      {new Date(pedido.data_pedido).toLocaleString("pt-BR")}
-                    </p>
-                  </div>
-                  <span className="inline-flex px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
-                    {pedido.status}
-                  </span>
+      {pedidos.length === 0 ? (
+        <p className="text-gray-600">Você ainda não fez nenhuma compra.</p>
+      ) : (
+        <div className="grid gap-4">
+          {pedidos.map((p) => (
+            <Link
+              key={p.id}
+              href={`/pedidos/${p.id}`}
+              className="block rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold">Pedido #{p.id}</p>
+                  <p className="text-sm text-gray-600">
+                    {new Date(p.data_pedido).toLocaleString("pt-BR")}
+                  </p>
+                  <p className="text-sm text-gray-600">Status: {p.status}</p>
                 </div>
 
-                <p className="text-gray-700">
-                  <span className="font-semibold">Pagamento:</span>{" "}
-                  {pedido.forma_pagamento}
-                </p>
-
-                <p className="mt-1 text-gray-900 font-semibold">
-                  Total:{" "}
-                  {Number(pedido.total || 0).toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })}
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => router.push(`/pedidos/${pedido.id}`)}
-                  className="mt-3 w-full px-4 py-2 rounded-lg bg-[#359293] text-white font-semibold text-xs hover:bg-[#2b7778] transition-colors"
-                >
-                  Ver detalhes
-                </button>
+                <div className="text-right">
+                  <p className="font-semibold">
+                    R$ {Number(p.total || 0).toFixed(2).replace(".", ",")}
+                  </p>
+                  <p className="text-sm text-gray-600">{p.forma_pagamento}</p>
+                </div>
               </div>
-            ))}
-          </div>
-        </>
+            </Link>
+          ))}
+        </div>
       )}
-
-      {/* Botão voltar no mobile */}
-      <button
-        type="button"
-        onClick={() => router.push("/")}
-        className="mt-6 w-full md:hidden px-4 py-3 rounded-lg bg-[#EC5B20] text-white text-sm font-semibold hover:bg-[#d44f1c] transition-colors"
-      >
-        Voltar
-      </button>
     </main>
   );
 }

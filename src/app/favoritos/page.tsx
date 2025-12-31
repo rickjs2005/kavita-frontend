@@ -21,7 +21,7 @@ export default function FavoritosPage() {
     if (authLoading) return;
 
     // se não tem usuário logado, não tenta buscar nada
-    if (!user || !user.token) {
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -29,8 +29,9 @@ export default function FavoritosPage() {
     async function fetchFavorites() {
       try {
         const res = await fetch(`${API_BASE}/api/favorites`, {
+          credentials: "include",
           headers: {
-            Authorization: `Bearer ${user!.token}`, // ✅ token correto
+            Authorization: `Bearer ${user!}`, 
           },
         });
 

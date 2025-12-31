@@ -1,5 +1,3 @@
-// src/app/servicos/[id]/page.tsx
-
 import { notFound } from "next/navigation";
 import type { Service } from "@/types/service";
 import ServicoContent from "./ServicoContent";
@@ -8,7 +6,7 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type PageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 // 🔍 Busca um serviço público pelo ID
@@ -17,7 +15,6 @@ async function fetchService(id: string): Promise<Service | null> {
 
   try {
     const res = await fetch(`${API_BASE}/api/public/servicos/${id}`, {
-      // sempre dado fresquinho
       cache: "no-store",
     });
 
@@ -29,7 +26,6 @@ async function fetchService(id: string): Promise<Service | null> {
 
     const data = await res.json();
 
-    // garante que images seja sempre array
     const normalizado: Service = {
       ...data,
       images: Array.isArray(data.images)
@@ -47,18 +43,17 @@ async function fetchService(id: string): Promise<Service | null> {
 }
 
 export default async function ServicoPage({ params }: PageProps) {
-  const id = params.id;
+  const { id } = await params;
+
   const servico = await fetchService(id);
 
   if (!servico) {
-    // 404 padrão do Next
     notFound();
   }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#041a24] via-[#053a3f] to-[#021117] text-white">
       <section className="container mx-auto px-4 pt-6 pb-10 lg:pt-8 lg:pb-16">
-        {/* link de voltar */}
         <div className="mb-4 lg:mb-6">
           <a
             href="/servicos"

@@ -40,11 +40,18 @@ function resolveCoverUrl(item: any): string | null {
   }
 }
 
-export default async function PostDetailPage({ params }: { params: { slug: string } }) {
+type PageProps = {
+  params: Promise<{ slug: string }>;
+};
+
+export default async function PostDetailPage({ params }: PageProps) {
+  const { slug } = await params;
+
+  const res = await newsPublicApi.postBySlug(slug);
   let post: any = null;
 
   try {
-    const res = await newsPublicApi.postBySlug(params.slug);
+    const res = await newsPublicApi.postBySlug((await params).slug);
     post = res.data;
   } catch {
     post = null;

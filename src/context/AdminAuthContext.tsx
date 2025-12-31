@@ -45,11 +45,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const markAsAdmin = useCallback(
-    (data?: {
-      role: AdminRole;
-      nome?: string;
-      permissions?: string[];
-    }) => {
+    (data?: { role: AdminRole; nome?: string; permissions?: string[] }) => {
       if (!data?.role) return;
 
       const { role, nome, permissions: perms } = data;
@@ -83,7 +79,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         });
       } catch (err) {
         // Mostra erro amigável, mas mantém lógica de limpar local e redirecionar
-        handleApiError(err, "Falha ao encerrar sessão de administrador.");
+        handleApiError(err, {
+          fallbackMessage: "Falha ao encerrar sessão de administrador.",
+        });
       }
     })();
 
@@ -179,7 +177,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             new Error(
               `Erro ao carregar dados do administrador. Código ${res.status}`
             ),
-            "Erro ao carregar dados do administrador."
+            { fallbackMessage: "Erro ao carregar dados do administrador." }
           );
           return;
         }
@@ -200,7 +198,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         });
         setIsAdmin(true);
       } catch (err) {
-        handleApiError(err, "Erro ao conectar com o servidor de admin.");
+        handleApiError(err, {
+          fallbackMessage: "Erro ao conectar com o servidor de admin.",
+        });
       }
     })();
   }, [markAsAdmin]);

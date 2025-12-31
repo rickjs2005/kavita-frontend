@@ -48,8 +48,7 @@ type PedidoDetalhe = {
   itens: PedidoItem[];
 };
 
-const money = (v: number) =>
-  `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
+const money = (v: number) => `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
 
 export default function PedidoPage() {
   const router = useRouter();
@@ -57,7 +56,10 @@ export default function PedidoPage() {
   const pedidoId = params?.id;
 
   const { user } = useAuth();
-  const token = user?.token;
+
+  // Ajuste mínimo: evita erro de tipo se AuthUser não tiver "token" tipado
+  const token = (user as any)?.token as string | undefined;
+
   const isLoggedIn = !!user?.id;
 
   const [pedido, setPedido] = useState<PedidoDetalhe | null>(null);
@@ -82,12 +84,12 @@ export default function PedidoPage() {
         setError(null);
 
         const headers: Record<string, string> = {};
+        // Ajuste: usa token real (quando existir)
         if (token) headers.Authorization = `Bearer ${token}`;
 
-        const { data } = await axios.get<PedidoDetalhe>(
-          `${API_BASE}/api/pedidos/${pedidoId}`,
-          { headers }
-        );
+        const { data } = await axios.get<PedidoDetalhe>(`${API_BASE}/api/pedidos/${pedidoId}`, {
+          headers,
+        });
 
         setPedido(data);
       } catch (err: any) {
@@ -95,15 +97,10 @@ export default function PedidoPage() {
         if (status === 404) {
           setError("Pedido não encontrado.");
         } else if (status === 401 || status === 403) {
-          setError(
-            "Você não tem permissão para ver este pedido. Faça login novamente."
-          );
+          setError("Você não tem permissão para ver este pedido. Faça login novamente.");
           router.push("/login");
         } else {
-          setError(
-            err?.response?.data?.message ||
-            "Não foi possível carregar esta compra."
-          );
+          setError(err?.response?.data?.message || "Não foi possível carregar esta compra.");
         }
       } finally {
         setLoading(false);
@@ -126,9 +123,7 @@ export default function PedidoPage() {
     return (
       <main className="max-w-4xl mx-auto px-4 py-10">
         <h1 className="text-2xl font-bold mb-4">Detalhe da compra</h1>
-        <p className="text-red-600">
-          {error || "Não foi possível carregar esta compra."}
-        </p>
+        <p className="text-red-600">{error || "Não foi possível carregar esta compra."}</p>
       </main>
     );
   }
@@ -170,8 +165,7 @@ export default function PedidoPage() {
           <span className="font-semibold">Status:</span> {pedido.status}
         </p>
         <p>
-          <span className="font-semibold">Forma de pagamento:</span>{" "}
-          {pedido.forma_pagamento}
+          <span className="font-semibold">Forma de pagamento:</span> {pedido.forma_pagamento}
         </p>
         <p>
           <span className="font-semibold">Data:</span>{" "}
@@ -202,14 +196,9 @@ export default function PedidoPage() {
         <div className="border rounded-lg divide-y bg-white">
           {pedido.itens.map((item) => {
             // tenta pegar o id do produto; se não tiver, cai pro id do item (fallback)
-            const productId =
-              item.produto_id ??
-              item.product_id ??
-              item.id_produto ??
-              item.id;
+            const productId = item.produto_id ?? item.product_id ?? item.id_produto ?? item.id;
 
-            const rawImage =
-              item.imagem ?? item.image ?? item.product_image ?? null;
+            const rawImage = item.imagem ?? item.image ?? item.product_image ?? null;
 
             return (
               <div
@@ -238,13 +227,11 @@ export default function PedidoPage() {
 
                 {/* Total + botão */}
                 <div className="flex flex-col items-end gap-2">
-                  <span className="font-semibold">
-                    {money(item.preco * item.quantidade)}
-                  </span>
+                  <span className="font-semibold">{money(item.preco * item.quantidade)}</span>
 
                   <button
                     type="button"
-                    onClick={() => router.push(`/produtos/${item.produto_id}`)}
+                    onClick={() => router.push(`/produtos/${productId}`)}
                     className="px-4 py-2 rounded-lg bg-[#359293] text-white font-semibold text-xs sm:text-sm hover:bg-[#2b7778] transition-colors"
                   >
                     Comprar novamente
