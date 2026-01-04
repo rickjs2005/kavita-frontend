@@ -14,20 +14,19 @@ export default defineConfig({
     restoreMocks: true,
     mockReset: true,
     coverage: {
-      provider: "v8",
-      reporter: ["text", "html", "lcov"],
-      reportsDirectory: "./coverage",
+      // Mantém a mesma intenção do seu arquivo: cobrir TS/TSX e excluir áreas não-testáveis/irrelevantes
       include: ["src/**/*.{ts,tsx}"],
-      exclude: [
-        "src/**/*.d.ts",
-        "src/app/**",
-        "src/**/__tests__/**",
-      ],
+      exclude: ["src/**/*.d.ts", "src/app/**", "src/**/__tests__/**"],
+      reporter: ["text", "html"],
     },
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+
+      // ESSENCIAL: Next "server-only" é um módulo virtual e o Vite não resolve sem alias.
+      // Isso evita quebrar qualquer teste que importe arquivos do /src/server.
+      "server-only": path.resolve(__dirname, "src/__tests__/mocks/server-only.ts"),
     },
   },
 });

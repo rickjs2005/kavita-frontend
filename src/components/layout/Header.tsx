@@ -14,6 +14,8 @@ import CartCar from "@/components/cart/CartCar";
 import UserMenu from "@/components/ui/UserMenu";
 import MainNavCategories from "@/components/layout/MainNavCategories";
 
+import type { PublicShopSettings } from "@/server/data/shopSettings"; // mantém seu tipo atual
+
 const SearchBar = dynamic(() => import("@/components/ui/SearchBar"), {
   ssr: false,
 });
@@ -27,6 +29,7 @@ export type PublicCategory = {
 
 type HeaderProps = {
   categories?: PublicCategory[]; // pode vir undefined em alguns SSR/ISR
+  shop?: PublicShopSettings;
 };
 
 // rotas em que o header some
@@ -61,12 +64,11 @@ const EXCLUDED_ROUTES = [
 ] as const;
 
 function isActiveCategory(c: PublicCategory) {
-  // se o campo vier undefined, tratamos como ativo (padrão antigo)
   if (typeof c.is_active === "undefined") return true;
   return c.is_active === true || c.is_active === 1;
 }
 
-export default function Header({ categories }: HeaderProps) {
+export default function Header({ categories, shop }: HeaderProps) {
   // Hooks SEMPRE no topo (nada de return antes deles)
   const pathname = usePathname();
   const { cartItems } = useCart();
@@ -79,6 +81,19 @@ export default function Header({ categories }: HeaderProps) {
 
   const isDronePage = pathname.startsWith("/drones");
   const isNewsPage = pathname.startsWith("/news");
+
+const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+const logoSrc = isDronePage
+  ? "/images/drone/kavita-drone.png"
+  : shop?.logo_url?.trim()
+    ? (shop.logo_url.startsWith("http")
+        ? shop.logo_url
+        : `${apiBase}${shop.logo_url}`)
+    : "/images/kavita2.png";
+
+
+  const logoAlt = shop?.store_name?.trim() ? shop.store_name : "Kavita";
 
   // Normaliza categories (evita crash/hydration estranho)
   const safeCategories = useMemo<PublicCategory[]>(
@@ -93,13 +108,14 @@ export default function Header({ categories }: HeaderProps) {
   );
 
   const hideHeader = useMemo(() => {
-    const isExcluded = EXCLUDED_ROUTES.includes(pathname as (typeof EXCLUDED_ROUTES)[number]);
+    const isExcluded = EXCLUDED_ROUTES.includes(
+      pathname as (typeof EXCLUDED_ROUTES)[number]
+    );
     const isAdminClientSubRoute = pathname.startsWith("/admin/clientes/");
     return isExcluded || isAdminClientSubRoute;
   }, [pathname]);
 
   const isAuthenticated = !!user;
-
   const cartCount = cartItems.length;
 
   // Fecha menu quando troca rota
@@ -157,7 +173,9 @@ export default function Header({ categories }: HeaderProps) {
       </a>
 
       {/* HEADER FIXO */}
-      <header className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300 ${topBarBg}`}>
+      <header
+        className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300 ${topBarBg}`}
+      >
         {/* TOP BAR */}
         <div className="w-full border-b border-black/10">
           <div className="max-w-6xl mx-auto h-[76px] md:h-[88px] flex items-center justify-between px-4 md:px-6 gap-3 md:gap-6">
@@ -169,16 +187,27 @@ export default function Header({ categories }: HeaderProps) {
               className="md:hidden mr-1 rounded-xl p-2 hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-[#359293]"
               onClick={() => setIsMenuOpen(true)}
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" className={brandColor}>
-                <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <svg
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                className={brandColor}
+              >
+                <path
+                  d="M3 6h18M3 12h18M3 18h18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
 
-            {/* logo */}
+            {/* logo (única info “da loja” no header) */}
             <Link href="/" className="flex items-center shrink-0">
               <Image
-                src={isDronePage ? "/images/drone/kavita-drone.png" : "/images/kavita2.png"}
-                alt="Kavita"
+                src={logoSrc}
+                alt={logoAlt}
                 width={360}
                 height={120}
                 priority
@@ -188,14 +217,17 @@ export default function Header({ categories }: HeaderProps) {
             </Link>
 
             {/* search desktop */}
-            <div className="hidden sm:flex flex-1 justify-center mx-3 md:mx-6" suppressHydrationWarning>
+            <div
+              className="hidden sm:flex flex-1 justify-center mx-3 md:mx-6"
+              suppressHydrationWarning
+            >
               <div className="w-full max-w-xl">
                 <SearchBar />
               </div>
             </div>
 
             {/* lado direito */}
-            <div className="flex items-center gap-4 md:gap-7">
+            <div className="flex items-center gap-3 md:gap-6">
               {/* Kavita News (desktop) */}
               <Link
                 href="/news"
@@ -283,7 +315,11 @@ export default function Header({ categories }: HeaderProps) {
         >
           <div className="flex items-center justify-between">
             <span className="text-lg font-semibold text-[#083E46]">Menu</span>
-            <button aria-label="Fechar menu" className="rounded-full p-2 hover:bg-gray-100" onClick={() => setIsMenuOpen(false)}>
+            <button
+              aria-label="Fechar menu"
+              className="rounded-full p-2 hover:bg-gray-100"
+              onClick={() => setIsMenuOpen(false)}
+            >
               ✕
             </button>
           </div>
@@ -297,16 +333,25 @@ export default function Header({ categories }: HeaderProps) {
           <div className="mt-1">
             {isAuthenticated ? (
               <p className="text-sm text-gray-600">
-                Olá, <span className="font-semibold text-[#083E46]">{user?.nome ?? "Usuário"}</span>.
-                {" "}
-                <button className="text-[#083E46] font-semibold underline" onClick={logout}>
+                Olá,{" "}
+                <span className="font-semibold text-[#083E46]">
+                  {user?.nome ?? "Usuário"}
+                </span>
+                .{" "}
+                <button
+                  className="text-[#083E46] font-semibold underline"
+                  onClick={logout}
+                >
                   Sair
                 </button>
               </p>
             ) : (
               <p className="text-sm text-gray-600">
                 Olá!{" "}
-                <Link className="text-[#083E46] font-semibold underline" href="/login">
+                <Link
+                  className="text-[#083E46] font-semibold underline"
+                  href="/login"
+                >
                   Faça login
                 </Link>{" "}
                 para acompanhar seus pedidos.
@@ -344,10 +389,12 @@ export default function Header({ categories }: HeaderProps) {
                 </Link>
               </li>
 
-              {/* categorias públicas ativas (IMPORTANTE para seu teste) */}
+              {/* categorias públicas ativas */}
               {publicActiveCategories.length > 0 && (
                 <li className="pt-2">
-                  <div className="text-xs font-semibold text-gray-500 px-3.5 pb-1">Categorias</div>
+                  <div className="text-xs font-semibold text-gray-500 px-3.5 pb-1">
+                    Categorias
+                  </div>
                   <ul className="space-y-1.5">
                     {publicActiveCategories.map((cat) => (
                       <li key={cat.id}>
@@ -368,7 +415,10 @@ export default function Header({ categories }: HeaderProps) {
           {/* login / meus pedidos */}
           {!isAuthenticated && (
             <div className="border-top border-t pt-3 mt-2">
-              <Link className="block text-sm text-[#083E46] hover:underline" href="/login">
+              <Link
+                className="block text-sm text-[#083E46] hover:underline"
+                href="/login"
+              >
                 Login / Meus Pedidos
               </Link>
             </div>
