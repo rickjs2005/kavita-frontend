@@ -1,98 +1,76 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ProductShippingSection from "./ProductShippingSection";
 
-// 🔹 Tipo de categoria (mantido, com slug + is_active)
-type Category = {
+type Msg = { type: "success" | "error"; text: string };
+
+type ProdutoEditado = {
   id: number;
   name: string;
-  slug?: string;
-  is_active?: 0 | 1 | boolean;
-};
-
-export type Product = {
-  id?: number;
-  name: string;
   description?: string | null;
-  price: number | string;
-  quantity: number | string;
-  category_id?: number | null;
+  price: number;
+  quantity: number;
+  category_id: number | string;
   image?: string | null;
   images?: string[];
+  shipping_free?: number | boolean | null;
+  shipping_free_from_qty?: number | null;
 };
 
-type Message =
-  | { type: "success"; text: string }
-  | { type: "error"; text: string }
-  | null;
-
-type ProdutoFormProps = {
-  produtoEditado?: Product | null;
+type Props = {
+  API_BASE?: string; // ✅ deixa opcional para evitar "undefined" caso esqueça de passar
+  produtoEditado?: ProdutoEditado | null;
   onProdutoAdicionado?: () => void;
   onLimparEdicao?: () => void;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-const toAbs = (p?: string | null) =>
-  !p ? null : p.startsWith("http") ? p : `${API_BASE}${p.startsWith("/") ? p : `/${p}`}`;
-
-const toRel = (u: string) => (u?.startsWith(API_BASE) ? u.slice(API_BASE.length) : u);
+function absUrl(API_BASE: string, p?: string | null) {
+  if (!p) return null;
+  if (p.startsWith("http://") || p.startsWith("https://")) return p;
+  return `${API_BASE}${p.startsWith("/") ? "" : "/"}${p}`;
+}
 
 export default function ProdutoForm({
+  API_BASE,
   produtoEditado,
   onProdutoAdicionado,
   onLimparEdicao,
-}: ProdutoFormProps) {
+}: Props) {
+  // ✅ fallback seguro: se esquecer de passar API_BASE, não cai no Next (3000)
+  const BASE = API_BASE || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  const isEditing = !!produtoEditado;
+
+  const [msg, setMsg] = useState<Msg | null>(null);
+  const [loading, setLoading] = useState(false);
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [priceStr, setPriceStr] = useState("");
   const [quantityStr, setQuantityStr] = useState("");
-  const [categoryId, setCategoryId] = useState<number | "">("");
+  const [categoryId, setCategoryId] = useState<string | number>("");
 
-  const [categories, setCategories] = useState<Category[]>([]);
-
+  // imagens
   const [existingImgs, setExistingImgs] = useState<string[]>([]);
   const [removeExisting, setRemoveExisting] = useState<Set<string>>(new Set());
-
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
-
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<Message>(null);
-
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const isEditing = !!produtoEditado?.id;
 
-  // 🔐 BUSCA DE CATEGORIAS — agora usando cookie HttpOnly (credentials: "include")
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/admin/categorias`, {
-          cache: "no-store",
-          credentials: "include", // ✅ envia o cookie HttpOnly
-        });
+  // frete por produto
+  const [shippingFree, setShippingFree] = useState<boolean>(false);
+  const [shippingFreeFromQtyStr, setShippingFreeFromQtyStr] = useState<string>("");
 
-        if (!res.ok) {
-          if (res.status === 401 || res.status === 403) {
-            throw new Error("Você não tem permissão para listar categorias. Faça login novamente.");
-          }
-          throw new Error(`Falha ao carregar categorias (${res.status})`);
-        }
-
-        const data: Category[] = await res.json();
-
-        // 🔹 Usa só categorias ativas (se API mandar is_active)
-        const onlyActive = (data || []).filter(
-          (c) => c.is_active === undefined || c.is_active === 1 || c.is_active === true
-        );
-
-        setCategories(onlyActive);
-      } catch (e: any) {
-        setMsg({ type: "error", text: e?.message || "Erro ao carregar categorias." });
-      }
-    })();
-  }, []);
+  function toRel(abs: string) {
+    if (!abs) return "";
+    try {
+      const u = new URL(abs);
+      return u.pathname || "";
+    } catch {
+      return abs;
+    }
+  }
 
   useEffect(() => {
     if (produtoEditado) {
@@ -105,13 +83,23 @@ export default function ProdutoForm({
       const extras = Array.isArray(produtoEditado.images) ? produtoEditado.images : [];
       const allRel = [produtoEditado.image, ...extras].filter(Boolean) as string[];
       const uniqueRel = Array.from(new Set(allRel));
-      const urlsAbs = uniqueRel.map((p) => toAbs(p)!).filter(Boolean);
+      const urlsAbs = uniqueRel.map((p) => absUrl(BASE, p)!).filter(Boolean);
 
       setExistingImgs(urlsAbs);
       setRemoveExisting(new Set());
       setNewFiles([]);
       setNewPreviews([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
+
+      const freeBool =
+        produtoEditado.shipping_free === true ||
+        produtoEditado.shipping_free === 1 ||
+        String(produtoEditado.shipping_free ?? "0") === "1";
+
+      setShippingFree(freeBool);
+      setShippingFreeFromQtyStr(
+        produtoEditado.shipping_free_from_qty ? String(produtoEditado.shipping_free_from_qty) : ""
+      );
     } else {
       resetForm();
     }
@@ -160,6 +148,9 @@ export default function ProdutoForm({
     setNewFiles([]);
     setNewPreviews([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+
+    setShippingFree(false);
+    setShippingFreeFromQtyStr("");
   }
 
   function validate(): string | null {
@@ -167,12 +158,21 @@ export default function ProdutoForm({
     if (!categoryId) return "Selecione uma categoria.";
     if (price <= 0) return "Informe um preço válido.";
     if (quantity < 0) return "A quantidade não pode ser negativa.";
+
+    if (shippingFree && shippingFreeFromQtyStr.trim()) {
+      const n = Number(shippingFreeFromQtyStr);
+      if (!Number.isFinite(n) || n <= 0) {
+        return "Frete grátis por quantidade: informe um número válido (ex: 10).";
+      }
+    }
+
     return null;
   }
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
+
     setNewFiles((prev) => {
       const next = [...prev, ...files];
       return next.slice(0, 8);
@@ -210,6 +210,10 @@ export default function ProdutoForm({
     fd.append("quantity", String(quantity));
     fd.append("category_id", String(categoryId));
 
+    // frete por produto (sempre enviar)
+    fd.append("shippingFree", shippingFree ? "1" : "0");
+    fd.append("shippingFreeFromQtyStr", shippingFreeFromQtyStr.trim());
+
     newFiles.forEach((file) => fd.append("images", file));
 
     if (isEditing) {
@@ -221,15 +225,15 @@ export default function ProdutoForm({
 
     const method = isEditing ? "PUT" : "POST";
     const url = isEditing
-      ? `${API_BASE}/api/admin/produtos/${produtoEditado!.id}`
-      : `${API_BASE}/api/admin/produtos`;
+      ? `${BASE}/api/admin/produtos/${produtoEditado!.id}`
+      : `${BASE}/api/admin/produtos`;
 
     setLoading(true);
     try {
       const res = await fetch(url, {
         method,
         body: fd,
-        credentials: "include", // ✅ cookie HttpOnly vai junto
+        credentials: "include",
       });
 
       if (!res.ok) {
@@ -279,7 +283,6 @@ export default function ProdutoForm({
       onSubmit={handleSubmit}
       className="flex w-full flex-col gap-5 rounded-2xl bg-white p-4 shadow-sm sm:p-6 md:p-8"
     >
-      {/* Cabeçalho */}
       <div className="flex flex-col gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-base font-semibold text-[#359293] sm:text-lg">
@@ -304,76 +307,58 @@ export default function ProdutoForm({
         )}
       </div>
 
-      {/* Campos principais */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        {/* Coluna esquerda */}
         <div className="flex flex-col gap-4">
-          {/* Nome */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
               Nome do produto
             </label>
             <input
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#359293]"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex.: Ração Premium 10kg"
-              required
             />
           </div>
 
-          {/* Categoria */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
               Categoria
             </label>
             <select
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20"
-              value={categoryId}
-              onChange={(e) => setCategoryId(Number(e.target.value))}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#359293]"
+              value={String(categoryId)}
+              onChange={(e) => setCategoryId(e.target.value)}
             >
-              <option value="">Selecione…</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              <option value="">Selecione...</option>
             </select>
           </div>
 
-          {/* Descrição */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
               Descrição
             </label>
             <textarea
-              className="min-h-[96px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20"
-              value={description || ""}
+              className="min-h-[120px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#359293]"
+              value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Detalhes do produto, recomendações de uso, etc."
             />
           </div>
         </div>
 
-        {/* Coluna direita */}
         <div className="flex flex-col gap-4">
-          {/* Preço e Quantidade */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
                 Preço
               </label>
               <input
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#359293]"
                 value={priceStr}
                 onChange={(e) => setPriceStr(e.target.value)}
                 placeholder="Ex.: 200,00"
-                inputMode="decimal"
               />
-              <span className="text-[11px] text-gray-500">
-                Interpretação:{" "}
-                <strong className="font-semibold">R$ {price.toFixed(2)}</strong>
-              </span>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -381,153 +366,118 @@ export default function ProdutoForm({
                 Quantidade em estoque
               </label>
               <input
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#359293]"
                 value={quantityStr}
                 onChange={(e) => setQuantityStr(e.target.value)}
                 placeholder="Ex.: 10"
-                inputMode="numeric"
               />
             </div>
           </div>
 
-          {/* Imagens existentes */}
-          {isEditing && existingImgs.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
-                Imagens atuais
-              </label>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {existingImgs.map((u) => {
-                  const rel = toRel(u);
-                  const marked = removeExisting.has(rel);
+          <div className="flex flex-col gap-2">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
+              Imagens do produto (opcional)
+            </label>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={onPickFiles}
+            />
+
+            {!!newPreviews.length && (
+              <div className="flex flex-wrap gap-2">
+                {newPreviews.map((src, i) => (
+                  <div key={src} className="relative">
+                    <img
+                      src={src}
+                      alt={`Nova imagem ${i + 1}`}
+                      className="h-16 w-16 rounded-lg object-cover ring-1 ring-black/10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute -right-2 -top-2 rounded-full bg-black/70 px-2 py-0.5 text-xs text-white"
+                      onClick={() => removeNewImage(i)}
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!!existingImgs.length && (
+              <div className="flex flex-wrap gap-2">
+                {existingImgs.map((abs) => {
+                  const rel = toRel(abs);
+                  const willRemove = removeExisting.has(rel);
                   return (
                     <button
-                      key={u}
+                      key={abs}
                       type="button"
-                      onClick={() => toggleRemoveExisting(u)}
-                      className={`relative overflow-hidden rounded-lg border text-left shadow-sm transition ${
-                        marked
-                          ? "ring-2 ring-red-500"
-                          : "ring-1 ring-black/5 hover:ring-[#359293]"
+                      onClick={() => toggleRemoveExisting(abs)}
+                      className={`relative rounded-lg ring-1 ring-black/10 transition ${
+                        willRemove ? "opacity-40" : "opacity-100"
                       }`}
-                      title={
-                        marked
-                          ? "Marcada para remover (clique p/ desfazer)"
-                          : "Clique para marcar remoção"
-                      }
+                      title={willRemove ? "Remover" : "Manter"}
                     >
                       <img
-                        src={u}
-                        alt="img existente"
-                        className="h-28 w-full object-cover"
+                        src={abs}
+                        alt="Imagem existente"
+                        className="h-16 w-16 rounded-lg object-cover"
                       />
-                      <span
-                        className={`absolute right-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                          marked ? "bg-red-600 text-white" : "bg-black/60 text-white"
-                        }`}
-                      >
-                        {marked ? "remover" : "manter"}
-                      </span>
+                      {willRemove && (
+                        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-red-600">
+                          Remover
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
-              {removeExisting.size > 0 && (
-                <p className="text-[11px] text-red-600">
-                  {removeExisting.size} imagem(ns) marcada(s) para remoção.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Novas imagens */}
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
-              {isEditing
-                ? "Adicionar novas imagens (opcional)"
-                : "Imagens do produto (opcional)"}
-            </label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={onPickFiles}
-              className="block w-full text-xs text-gray-700 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-[#359293] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-white hover:file:bg-[#287072]"
-            />
-
-            {newPreviews.length > 0 && (
-              <>
-                <p className="text-[11px] text-gray-500">
-                  Estas imagens serão{" "}
-                  <strong className="font-semibold">adicionadas</strong> ao produto.
-                </p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {newPreviews.map((src, i) => (
-                    <div
-                      key={`${src}-${i}`}
-                      className="relative overflow-hidden rounded-lg border border-gray-200 shadow-sm"
-                    >
-                      <img
-                        src={src}
-                        alt={`img-nova-${i}`}
-                        className="h-28 w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeNewImage(i)}
-                        className="absolute right-1 top-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] text-white"
-                        title="Remover esta nova imagem"
-                      >
-                        remover
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </>
             )}
           </div>
+
+          <ProductShippingSection
+            value={{ shippingFree, shippingFreeFromQtyStr }}
+            onChange={(next) => {
+              setShippingFree(!!next.shippingFree);
+              setShippingFreeFromQtyStr(next.shippingFreeFromQtyStr ?? "");
+            }}
+          />
         </div>
       </div>
 
-      {/* Mensagens */}
       {msg && (
         <div
           className={`rounded-lg px-3 py-2 text-sm ${
             msg.type === "success"
-              ? "bg-green-50 text-green-700"
-              : "bg-red-50 text-red-700"
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-rose-50 text-rose-700"
           }`}
         >
           {msg.text}
         </div>
       )}
 
-      {/* Ações */}
-      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
+      <div className="flex items-center justify-end gap-3">
         <button
           type="button"
-          onClick={() => {
-            resetForm();
-            onLimparEdicao?.();
-          }}
+          onClick={resetForm}
+          className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           disabled={loading}
-          className="w-full rounded-full border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
         >
           Limpar
         </button>
+
         <button
           type="submit"
+          className="rounded-full bg-[#2F7E7F] px-5 py-2 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
           disabled={loading}
-          className="w-full rounded-full bg-[#2F7E7F] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#266768] disabled:opacity-60 sm:w-auto"
         >
-          {loading
-            ? isEditing
-              ? "Atualizando..."
-              : "Salvando..."
-            : isEditing
-            ? "Atualizar Produto"
-            : "Adicionar Produto"}
+          {loading ? "Salvando..." : isEditing ? "Salvar alterações" : "Adicionar Produto"}
         </button>
       </div>
     </form>

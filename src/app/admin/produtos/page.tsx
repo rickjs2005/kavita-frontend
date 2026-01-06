@@ -10,6 +10,8 @@ import type { Product } from "@/components/admin/produtos/produtocard";
 
 const ProdutoFormAny = ProdutoForm as unknown as (props: any) => JSX.Element;
 
+// IMPORTANTE:
+// API_BASE = host do backend (sem /api), porque seus endpoints já usam `${API_BASE}/api/...`
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function ProdutosPage() {
@@ -19,10 +21,6 @@ export default function ProdutosPage() {
   const [produtoEditado, setProdutoEditado] = useState<Product | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
-  // =============================
-  //   NOVO PADRÃO SEGURO
-  //   -> usa cookie HttpOnly via credentials: "include"
-  // =============================
   async function carregarProdutos() {
     setLoading(true);
     setErro(null);
@@ -30,7 +28,7 @@ export default function ProdutosPage() {
     try {
       const res = await fetch(`${API_BASE}/api/admin/produtos`, {
         method: "GET",
-        credentials: "include", // >>> ESTE É O NOVO PADRÃO
+        credentials: "include",
         cache: "no-store",
       });
 
@@ -78,7 +76,7 @@ export default function ProdutosPage() {
     try {
       const res = await fetch(`${API_BASE}/api/admin/produtos/${id}`, {
         method: "DELETE",
-        credentials: "include", // >>> NOVO PADRÃO
+        credentials: "include",
       });
 
       if (res.status === 401) {
@@ -103,7 +101,7 @@ export default function ProdutosPage() {
       const ct = res.headers.get("content-type") || "";
       if (ct.includes("application/json")) {
         const j = await res.json();
-        return j?.message || JSON.stringify(j);
+        return (j as any)?.message || JSON.stringify(j);
       }
       return await res.text();
     } catch {
@@ -114,7 +112,6 @@ export default function ProdutosPage() {
   return (
     <div className="w-full px-3 py-5 sm:px-4 lg:px-6">
       <div className="mx-auto w-full max-w-6xl space-y-6 sm:space-y-8">
-        
         <header className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
@@ -123,6 +120,26 @@ export default function ProdutosPage() {
             <p className="mt-1 text-sm text-gray-300">
               Adicione, edite ou remova produtos do catálogo.
             </p>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <Link href="/admin/frete" className="w-full sm:w-auto">
+              <CustomButton
+                label="Editar frete (regiões)"
+                variant="secondary"
+                size="small"
+                isLoading={false}
+              />
+            </Link>
+
+            <Link href="/admin" className="hidden sm:block">
+              <CustomButton
+                label="Voltar"
+                variant="secondary"
+                size="small"
+                isLoading={false}
+              />
+            </Link>
           </div>
 
           <Link
@@ -140,6 +157,7 @@ export default function ProdutosPage() {
 
         <section ref={formRef} aria-label="Formulário de produto">
           <ProdutoFormAny
+            API_BASE={API_BASE} // ✅ ESSENCIAL: sem isso vira "undefined/api/..." e cai no Next (3000)
             produtoEditado={produtoEditado}
             onLimparEdicao={() => setProdutoEditado(null)}
             onProdutoAdicionado={carregarProdutos}

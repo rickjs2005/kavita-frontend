@@ -14,6 +14,8 @@ export type Product = {
   destaque?: "mais_vendido" | "super_oferta" | "promocao" | null;
   rating_avg?: number | null;
   rating_count?: number | null;
+  shipping_free?: number | boolean;          // 1 | 0
+  shipping_free_from_qty?: number | null;    // ex: 5
 };
 
 export interface ProductReview {

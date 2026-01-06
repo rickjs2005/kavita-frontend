@@ -27,11 +27,18 @@ interface PaymentResponse {
 }
 
 interface CartItem {
-  id: number;
-  name?: string; // nome no front
-  nome?: string; // nome vindo da API
-  price: number;
-  quantity: number;
+  id?: number | string;
+  productId?: number | string;
+  product_id?: number | string;
+
+  name?: string;
+  nome?: string;
+
+  price?: number | string;
+
+  quantity?: number | string;
+  quantidade?: number | string;
+  qtd?: number | string;
 }
 
 interface CouponPreviewResponse {
@@ -60,8 +67,19 @@ type ProductPromotion = {
   ends_at?: string | null;
 };
 
+type ShippingRuleApplied = "ZONE" | "CEP_RANGE" | "PRODUCT_FREE";
+
+type ShippingQuote = {
+  price: number;
+  prazo_dias: number;
+  cep: string;
+  ruleApplied?: ShippingRuleApplied;
+};
+
 const money = (v: number) =>
-  `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
+  `R$ ${Number(v || 0)
+    .toFixed(2)
+    .replace(".", ",")}`;
 
 const Icon = {
   user: () => (
@@ -90,10 +108,7 @@ const Icon = {
   ),
   shield: () => (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
-      <path
-        fill="currentColor"
-        d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5Z"
-      />
+      <path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5Z" />
     </svg>
   ),
   truck: () => (
@@ -106,13 +121,31 @@ const Icon = {
   ),
   ticket: () => (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
-      <path
-        fill="currentColor"
-        d="M3 6h18v4a2 2 0 0 1 0 4v4H3v-4a2 2 0 0 1 0-4Z"
-      />
+      <path fill="currentColor" d="M3 6h18v4a2 2 0 0 1 0 4v4H3v-4a2 2 0 0 1 0-4Z" />
     </svg>
   ),
 };
+
+function ruleLabel(rule?: ShippingRuleApplied) {
+  if (!rule) return null;
+  if (rule === "PRODUCT_FREE") return "Frete grátis por produto";
+  if (rule === "CEP_RANGE") return "Frete por faixa de CEP";
+  return "Frete por zona";
+}
+
+function toPositiveInt(value: any, fallback = 1) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  const i = Math.floor(n);
+  return i > 0 ? i : fallback;
+}
+
+function toId(value: any) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  const i = Math.floor(n);
+  return i > 0 ? i : null;
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -125,41 +158,66 @@ export default function CheckoutPage() {
   const { cartItems, clearCart } = useCart();
   const { formData, updateForm } = useCheckoutForm();
 
+  /**
+   * NORMALIZA ITENS DO CARRINHO (corrige “item some no checkout” por:
+   * - id vindo como productId/product_id
+   * - quantity vindo como quantidade/qtd
+   * - key undefined no React
+   */
+  const normalizedCartItems = useMemo(() => {
+    const raw = (cartItems || []) as CartItem[];
+
+    return raw
+      .map((it, index) => {
+        const resolvedId =
+          toId(it.id) ??
+          toId(it.productId) ??
+          toId(it.product_id);
+
+        const resolvedQty = toPositiveInt(
+          it.quantity ?? it.quantidade ?? it.qtd,
+          1
+        );
+
+        const resolvedPrice = Number(it.price ?? 0) || 0;
+        const resolvedName = String(it.nome || it.name || "").trim();
+
+        return {
+          __key: `${resolvedId ?? "noid"}-${index}`,
+          id: resolvedId,
+          name: resolvedName,
+          price: resolvedPrice,
+          quantity: resolvedQty,
+        };
+      })
+      // Mantém item mesmo sem nome; mas precisa de id e qty válidos
+      .filter((it) => it.id !== null && it.quantity > 0);
+  }, [cartItems]);
+
   // -----------------------------
   // PROMOÇÕES POR PRODUTO
   // -----------------------------
-  const [promotions, setPromotions] = useState<
-    Record<number, ProductPromotion | null>
-  >({});
+  const [promotions, setPromotions] = useState<Record<number, ProductPromotion | null>>({});
 
   useEffect(() => {
-    if (!cartItems?.length) {
+    if (!normalizedCartItems.length) {
       setPromotions({});
       return;
     }
 
-    const uniqueIds = Array.from(
-      new Set(cartItems.map((it: any) => Number(it.id)))
-    ).filter(Boolean);
+    const uniqueIds = Array.from(new Set(normalizedCartItems.map((it) => Number(it.id)))).filter(Boolean);
 
     (async () => {
       try {
         const results = await Promise.all(
           uniqueIds.map(async (id) => {
             try {
-              const res = await axios.get<ProductPromotion>(
-                `${API_BASE}/api/public/promocoes/${id}`
-              );
+              const res = await axios.get<ProductPromotion>(`${API_BASE}/api/public/promocoes/${id}`);
               return { id, promo: res.data };
             } catch (err: any) {
               if (err?.response?.status === 404) {
                 return { id, promo: null };
               }
-              console.error(
-                "[Checkout] erro ao buscar promoção do produto",
-                id,
-                err?.response?.data || err
-              );
               return { id, promo: null };
             }
           })
@@ -167,19 +225,17 @@ export default function CheckoutPage() {
 
         setPromotions((prev) => {
           const next: Record<number, ProductPromotion | null> = { ...prev };
-          for (const { id, promo } of results) {
-            next[id] = promo;
-          }
+          for (const { id, promo } of results) next[id] = promo;
           return next;
         });
-      } catch (err) {
-        console.error("[Checkout] erro geral ao carregar promoções:", err);
+      } catch {
+        // silencioso (UX via UI + toast em ações)
       }
     })();
-  }, [cartItems]);
+  }, [normalizedCartItems]);
 
   /** Calcula preço original/final e desconto com base na promoção */
-  const getPriceInfo = (item: CartItem) => {
+  const getPriceInfo = (item: { id: number; price: number }) => {
     const basePrice = Number(item.price ?? 0);
     const promo = promotions[item.id];
 
@@ -192,8 +248,7 @@ export default function CheckoutPage() {
       };
     }
 
-    const originalFromPromo =
-      promo.original_price != null ? Number(promo.original_price) : null;
+    const originalFromPromo = promo.original_price != null ? Number(promo.original_price) : null;
     const finalFromPromo =
       promo.final_price != null
         ? Number(promo.final_price)
@@ -201,48 +256,27 @@ export default function CheckoutPage() {
           ? Number(promo.promo_price)
           : null;
 
-    const originalPrice =
-      originalFromPromo !== null ? originalFromPromo : basePrice || 0;
-
-    let finalPrice =
-      finalFromPromo !== null ? finalFromPromo : originalPrice;
+    const originalPrice = originalFromPromo !== null ? originalFromPromo : basePrice || 0;
+    let finalPrice = finalFromPromo !== null ? finalFromPromo : originalPrice;
 
     let discountPercent: number | null = null;
 
-    const explicitDiscount =
-      promo.discount_percent != null
-        ? Number(promo.discount_percent)
-        : NaN;
+    const explicitDiscount = promo.discount_percent != null ? Number(promo.discount_percent) : NaN;
 
-    if (
-      finalFromPromo === null &&
-      !Number.isNaN(explicitDiscount) &&
-      explicitDiscount > 0 &&
-      originalPrice > 0
-    ) {
+    if (finalFromPromo === null && !Number.isNaN(explicitDiscount) && explicitDiscount > 0 && originalPrice > 0) {
       finalPrice = originalPrice * (1 - explicitDiscount / 100);
     }
 
     if (originalPrice > 0 && finalPrice < originalPrice) {
-      discountPercent =
-        ((originalPrice - finalPrice) / originalPrice) * 100;
+      discountPercent = ((originalPrice - finalPrice) / originalPrice) * 100;
     } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
       discountPercent = explicitDiscount;
     }
 
-    const hasDiscount =
-      discountPercent !== null &&
-      discountPercent > 0 &&
-      finalPrice < originalPrice;
-
+    const hasDiscount = discountPercent !== null && discountPercent > 0 && finalPrice < originalPrice;
     const discountValue = hasDiscount ? originalPrice - finalPrice : 0;
 
-    return {
-      originalPrice,
-      finalPrice,
-      discountValue,
-      hasDiscount,
-    };
+    return { originalPrice, finalPrice, discountValue, hasDiscount };
   };
 
   // -----------------------------
@@ -254,23 +288,32 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
 
-  const itemsCount = (cartItems || []).reduce(
-    (acc: number, it: any) => acc + Number(it?.quantity ?? 0),
-    0
+  const itemsCount = useMemo(
+    () => normalizedCartItems.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
+    [normalizedCartItems]
   );
 
   // Subtotal SEM cupom (apenas promoções)
-  const subtotal = useMemo(
-    () =>
-      (cartItems || []).reduce((acc: number, it: CartItem) => {
-        const info = getPriceInfo(it);
-        return acc + info.finalPrice * Number(it.quantity ?? 1);
-      }, 0),
-    [cartItems, promotions]
-  );
+  const subtotal = useMemo(() => {
+    return normalizedCartItems.reduce((acc, it) => {
+      const info = getPriceInfo({ id: it.id as number, price: it.price });
+      return acc + info.finalPrice * Number(it.quantity ?? 1);
+    }, 0);
+  }, [normalizedCartItems, promotions]);
 
-  const frete = 0;
-  const total = Math.max(subtotal + frete - discount, 0);
+  // -----------------------------
+  // FRETE (quote)
+  // -----------------------------
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState<string | null>(null);
+  const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null);
+
+  const cepDigits = String(formData?.endereco?.cep || "").replace(/\D/g, "").slice(0, 8);
+  const isCepValid = cepDigits.length === 8;
+
+  // Frete e total SEMPRE baseados no quote real (quando existe).
+  const frete = shippingQuote ? Number(shippingQuote.price || 0) : 0;
+  const total = Math.max(subtotal - discount + frete, 0);
 
   // reseta cupom quando subtotal muda (por promo ou quantidade)
   useEffect(() => {
@@ -279,6 +322,78 @@ export default function CheckoutPage() {
     setCouponMessage(null);
     setCouponError(null);
   }, [subtotal]);
+
+  // COTAR FRETE quando CEP tiver 8 dígitos e carrinho tiver itens
+  useEffect(() => {
+    setShippingError(null);
+
+    if (!normalizedCartItems.length) {
+      setShippingQuote(null);
+      return;
+    }
+
+    if (!isCepValid) {
+      setShippingQuote(null);
+      return;
+    }
+
+    let aborted = false;
+
+    (async () => {
+      try {
+        setShippingLoading(true);
+        setShippingError(null);
+
+        const itemsPayload = normalizedCartItems.map((i) => ({
+          id: Number(i.id),
+          quantidade: Number(i.quantity ?? 1),
+        }));
+
+        const params = new URLSearchParams({
+          cep: cepDigits,
+          items: JSON.stringify(itemsPayload),
+        });
+
+        const res = await fetch(`${API_BASE}/api/shipping/quote?${params.toString()}`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          const msg =
+            data?.message ||
+            (res.status === 404 ? "CEP sem cobertura." : "Não foi possível calcular o frete.");
+          if (!aborted) {
+            setShippingQuote(null);
+            setShippingError(msg);
+          }
+          return;
+        }
+
+        const data = await res.json();
+        if (aborted) return;
+
+        setShippingQuote({
+          cep: String(data?.cep || cepDigits),
+          price: Number(data?.price || 0),
+          prazo_dias: Number(data?.prazo_dias || 0),
+          ruleApplied: (data?.ruleApplied as ShippingRuleApplied) || undefined,
+        });
+      } catch {
+        if (!aborted) {
+          setShippingQuote(null);
+          setShippingError("Falha ao calcular frete. Tente novamente.");
+        }
+      } finally {
+        if (!aborted) setShippingLoading(false);
+      }
+    })();
+
+    return () => {
+      aborted = true;
+    };
+  }, [cepDigits, normalizedCartItems, isCepValid]);
 
   // -----------------------------
   // ENDEREÇO SALVO
@@ -296,16 +411,13 @@ export default function CheckoutPage() {
         const last = sessionStorage.getItem(key);
         if (last) {
           const parsed = JSON.parse(last);
-          if (parsed && parsed.endereco) {
-            lastOrderAddress = parsed.endereco;
-          }
+          if (parsed && parsed.endereco) lastOrderAddress = parsed.endereco;
         }
       } catch {
         // ignora
       }
     }
 
-    // se não estiver logado, só usa último endereço do sessionStorage
     if (!userId) {
       if (lastOrderAddress) {
         setEnderecoSalvo(lastOrderAddress);
@@ -317,7 +429,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // busca endereços do usuário autenticado (usa cookie HttpOnly)
     (async () => {
       try {
         const res = await axios.get(`${API_BASE}/api/users/addresses`, {
@@ -325,8 +436,7 @@ export default function CheckoutPage() {
         });
 
         const list: any[] = Array.isArray(res.data) ? res.data : [];
-        const preferred =
-          list.find((a: any) => a.is_default === 1) || list[0] || null;
+        const preferred = list.find((a: any) => a.is_default === 1) || list[0] || null;
 
         if (preferred) {
           const salvo = {
@@ -343,8 +453,8 @@ export default function CheckoutPage() {
           setUsarEnderecoSalvo(true);
           return;
         }
-      } catch (e) {
-        console.error("Erro ao carregar endereços do usuário:", e);
+      } catch {
+        // silencioso
       }
 
       if (lastOrderAddress) {
@@ -367,7 +477,7 @@ export default function CheckoutPage() {
   };
 
   // -----------------------------
-  // PAYLOAD (usa total com promo+cupom)
+  // PAYLOAD (usa total com promo+cupom+frete REAL)
   // -----------------------------
   const payload = useMemo(() => {
     const endereco = formData?.endereco || {};
@@ -379,18 +489,17 @@ export default function CheckoutPage() {
     const email = String(formData?.email || "").trim();
 
     return {
-      // usuario_id NÃO vai no body → backend usa req.user.id do JWT
       endereco: {
         cep: endereco?.cep || "",
-        rua: endereco?.logradouro || "",      // 👈 só logradouro
+        rua: endereco?.logradouro || "",
         numero: endereco?.numero || "",
         bairro: endereco?.bairro || "",
         cidade: endereco?.cidade || "",
         estado: endereco?.estado || "",
-        complemento: endereco?.referencia || null, // 👈 usa apenas referencia
+        complemento: endereco?.referencia || null,
       },
       formaPagamento,
-      produtos: (cartItems || []).map((i: CartItem) => ({
+      produtos: normalizedCartItems.map((i) => ({
         id: Number(i.id),
         quantidade: Number(i.quantity ?? 1),
       })),
@@ -401,10 +510,10 @@ export default function CheckoutPage() {
       email,
       cupom_codigo: couponCode ? couponCode.trim() : undefined,
     };
-  }, [formData, cartItems, total, couponCode]);
+  }, [formData, normalizedCartItems, total, couponCode]);
 
   // -----------------------------
-  // APLICAR CUPOM (usa subtotal com promo)
+  // APLICAR CUPOM
   // -----------------------------
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -435,14 +544,11 @@ export default function CheckoutPage() {
           codigo: couponCode.trim(),
           total: subtotalAtual,
         },
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
 
       if (!data?.success) {
-        const msg =
-          data?.message || "Não foi possível aplicar este cupom.";
+        const msg = data?.message || "Não foi possível aplicar este cupom.";
         setDiscount(0);
         setCouponError(msg);
         toast.error(msg);
@@ -470,6 +576,14 @@ export default function CheckoutPage() {
   // -----------------------------
   // FINALIZAR CHECKOUT
   // -----------------------------
+  const canFinalizeCheckout =
+    isLoggedIn &&
+    (payload.produtos?.length || 0) > 0 &&
+    isCepValid &&
+    shippingQuote !== null &&
+    !shippingError &&
+    !shippingLoading;
+
   const handleSubmit = async () => {
     if (submitting) return;
 
@@ -484,23 +598,31 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Bloqueios obrigatórios de frete
+    if (!isCepValid) {
+      toast.error("Informe um CEP válido (8 dígitos) para calcular o frete.");
+      return;
+    }
+
+    if (shippingError) {
+      toast.error(shippingError);
+      return;
+    }
+
+    if (shippingLoading || shippingQuote === null) {
+      toast.error("Aguarde o cálculo do frete para finalizar a compra.");
+      return;
+    }
+
     const errors: string[] = [];
 
-    if (!payload.nome) {
-      errors.push("Informe o nome do cliente.");
-    }
+    if (!payload.nome) errors.push("Informe o nome do cliente.");
 
-    if (!payload.cpf) {
-      errors.push("Informe o CPF.");
-    } else if (payload.cpf.length !== 11) {
-      errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
-    }
+    if (!payload.cpf) errors.push("Informe o CPF.");
+    else if (payload.cpf.length !== 11) errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
 
-    if (!payload.telefone) {
-      errors.push("Informe o WhatsApp.");
-    } else if (payload.telefone.length < 10) {
-      errors.push("WhatsApp deve ter pelo menos 10 dígitos.");
-    }
+    if (!payload.telefone) errors.push("Informe o WhatsApp.");
+    else if (payload.telefone.length < 10) errors.push("WhatsApp deve ter pelo menos 10 dígitos.");
 
     if (errors.length) {
       toast.error(errors[0]);
@@ -510,13 +632,10 @@ export default function CheckoutPage() {
     try {
       setSubmitting(true);
 
-      const { data } = await axios.post<CheckoutResponse>(
-        `${API_BASE}/api/checkout`,
-        payload,
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await axios.post<CheckoutResponse>(`${API_BASE}/api/checkout`, payload, {
+        withCredentials: true,
+      });
+
       const pedidoId = data.pedido_id;
 
       if (typeof window !== "undefined" && userId) {
@@ -538,9 +657,7 @@ export default function CheckoutPage() {
         );
       }
 
-      const isGatewayPayment = ["mercadopago", "pix", "boleto"].includes(
-        payload.formaPagamento
-      );
+      const isGatewayPayment = ["mercadopago", "pix", "boleto"].includes(payload.formaPagamento);
 
       if (isGatewayPayment) {
         const res = await axios.post<PaymentResponse>(
@@ -549,8 +666,7 @@ export default function CheckoutPage() {
           { withCredentials: true }
         );
 
-        const initPoint =
-          res.data?.init_point || res.data?.sandbox_init_point || null;
+        const initPoint = res.data?.init_point || res.data?.sandbox_init_point || null;
 
         clearCart?.();
 
@@ -559,9 +675,7 @@ export default function CheckoutPage() {
           return;
         }
 
-        toast.error(
-          "Não foi possível abrir a tela de pagamento. Tente novamente."
-        );
+        toast.error("Não foi possível abrir a tela de pagamento. Tente novamente.");
         return;
       }
 
@@ -572,15 +686,8 @@ export default function CheckoutPage() {
       const status = err?.response?.status;
       const msgBackend = err?.response?.data?.message as string | undefined;
 
-      if (
-        status === 401 ||
-        status === 403 ||
-        (msgBackend && msgBackend.toLowerCase().includes("token"))
-      ) {
-        toast.error(
-          msgBackend ||
-          "Sua sessão expirou. Faça login novamente para finalizar a compra."
-        );
+      if (status === 401 || status === 403 || (msgBackend && msgBackend.toLowerCase().includes("token"))) {
+        toast.error(msgBackend || "Sua sessão expirou. Faça login novamente para finalizar a compra.");
 
         try {
           await logout();
@@ -592,9 +699,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      const msg =
-        msgBackend ||
-        "Erro ao finalizar a compra. Verifique os dados e tente novamente.";
+      const msg = msgBackend || "Erro ao finalizar a compra. Verifique os dados e tente novamente.";
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -610,18 +715,14 @@ export default function CheckoutPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <CloseButton className="text-2xl sm:text-3xl text-gray-600 hover:text-[#EC5B20]" />
-            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">
-              Checkout
-            </h1>
+            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">Checkout</h1>
           </div>
 
           <div className="rounded-2xl border border-black/10 bg-white/95 p-6 sm:p-8 shadow-sm text-center">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">
-              Faça login para finalizar sua compra
-            </h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">Faça login para finalizar sua compra</h2>
             <p className="text-sm sm:text-base text-gray-600 mb-6">
-              Para garantir sua segurança e vincular o pedido à sua conta, é
-              necessário estar logado antes de concluir o checkout.
+              Para garantir sua segurança e vincular o pedido à sua conta, é necessário estar logado antes de concluir o
+              checkout.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -654,12 +755,8 @@ export default function CheckoutPage() {
         <div className="flex items-center justify-between gap-3">
           <CloseButton className="text-2xl sm:text-3xl text-gray-600 hover:text-[#EC5B20]" />
           <div className="flex-1 flex flex-col items-center sm:items-start">
-            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">
-              Finalizar compra
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-600">
-              Revise seus dados e confirme o pedido com segurança.
-            </p>
+            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">Finalizar compra</h1>
+            <p className="text-xs sm:text-sm text-gray-600">Revise seus dados e confirme o pedido com segurança.</p>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-xs sm:text-sm text-gray-500">
             <Icon.shield />
@@ -682,9 +779,7 @@ export default function CheckoutPage() {
                     <Icon.user />
                     Dados do cliente
                   </h2>
-                  <p className="text-xs text-gray-500">
-                    Nome, CPF, e contato para confirmação do pedido.
-                  </p>
+                  <p className="text-xs text-gray-500">Nome, CPF, e contato para confirmação do pedido.</p>
                 </div>
               </div>
 
@@ -703,9 +798,7 @@ export default function CheckoutPage() {
                       <Icon.pin />
                       Endereço de entrega
                     </h2>
-                    <p className="text-xs text-gray-500">
-                      Use um endereço salvo ou informe um novo.
-                    </p>
+                    <p className="text-xs text-gray-500">Use um endereço salvo ou informe um novo.</p>
                   </div>
                 </div>
 
@@ -718,18 +811,12 @@ export default function CheckoutPage() {
                         if (novo && enderecoSalvo) {
                           const e = enderecoSalvo;
                           updateForm("endereco.cep", e.cep || "");
-                          updateForm(
-                            "endereco.logradouro",
-                            e.logradouro || ""
-                          );
+                          updateForm("endereco.logradouro", e.logradouro || "");
                           updateForm("endereco.numero", e.numero || "");
                           updateForm("endereco.bairro", e.bairro || "");
                           updateForm("endereco.cidade", e.cidade || "");
                           updateForm("endereco.estado", e.estado || "");
-                          updateForm(
-                            "endereco.referencia",
-                            e.referencia || e.complemento || ""
-                          );
+                          updateForm("endereco.referencia", e.referencia || e.complemento || "");
                         }
                         return novo;
                       })
@@ -739,9 +826,7 @@ export default function CheckoutPage() {
                     <span
                       className={
                         "h-2 w-2 rounded-full border " +
-                        (usarEnderecoSalvo
-                          ? "bg-[#22C55E] border-[#22C55E]"
-                          : "bg-white border-gray-400")
+                        (usarEnderecoSalvo ? "bg-[#22C55E] border-[#22C55E]" : "bg-white border-gray-400")
                       }
                     />
                     {usarEnderecoSalvo ? "Usando endereço salvo" : "Usar endereço salvo"}
@@ -749,10 +834,7 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              <AddressForm
-                endereco={formData.endereco}
-                onChange={updateForm}
-              />
+              <AddressForm endereco={formData.endereco} onChange={updateForm} />
             </section>
 
             {/* Forma de pagamento */}
@@ -766,16 +848,11 @@ export default function CheckoutPage() {
                     <Icon.card />
                     Pagamento
                   </h2>
-                  <p className="text-xs text-gray-500">
-                    Escolha a melhor forma de pagamento para você.
-                  </p>
+                  <p className="text-xs text-gray-500">Escolha a melhor forma de pagamento para você.</p>
                 </div>
               </div>
 
-              <PaymentMethodForm
-                formaPagamento={formData.formaPagamento}
-                onChange={updateForm}
-              />
+              <PaymentMethodForm formaPagamento={formData.formaPagamento} onChange={updateForm} />
             </section>
           </div>
 
@@ -786,9 +863,7 @@ export default function CheckoutPage() {
               <header className="flex items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                   <Icon.truck />
-                  <h2 className="text-sm sm:text-base font-semibold text-gray-800">
-                    Resumo do pedido
-                  </h2>
+                  <h2 className="text-sm sm:text-base font-semibold text-gray-800">Resumo do pedido</h2>
                 </div>
                 <span className="text-xs text-gray-500">
                   {itemsCount} {itemsCount === 1 ? "item" : "itens"}
@@ -796,53 +871,37 @@ export default function CheckoutPage() {
               </header>
 
               <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
-                {(cartItems || []).map((item: CartItem) => {
-                  const info = getPriceInfo(item);
+                {normalizedCartItems.map((item) => {
+                  const info = getPriceInfo({ id: item.id as number, price: item.price });
 
                   return (
                     <div
-                      key={item.id}
+                      key={item.__key}
                       className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 last:border-none last:pb-0"
                     >
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800">
-                          {item.nome || item.name}
-                        </p>
-                        <p className="text-[11px] text-gray-500">
-                          Quantidade: {item.quantity}
-                        </p>
+                        <p className="text-sm font-medium text-gray-800">{item.name || `Produto #${item.id}`}</p>
+                        <p className="text-[11px] text-gray-500">Quantidade: {item.quantity}</p>
                         {info.hasDiscount && (
-                          <p className="mt-1 text-[11px] text-emerald-600">
-                            Promoção aplicada automaticamente
-                          </p>
+                          <p className="mt-1 text-[11px] text-emerald-600">Promoção aplicada automaticamente</p>
                         )}
                       </div>
 
                       <div className="text-right text-xs sm:text-sm">
                         {info.hasDiscount ? (
                           <>
-                            <div className="text-gray-400 line-through">
-                              {money(info.originalPrice * item.quantity)}
-                            </div>
-                            <div className="text-[#EC5B20] font-semibold">
-                              {money(info.finalPrice * item.quantity)}
-                            </div>
+                            <div className="text-gray-400 line-through">{money(info.originalPrice * item.quantity)}</div>
+                            <div className="text-[#EC5B20] font-semibold">{money(info.finalPrice * item.quantity)}</div>
                           </>
                         ) : (
-                          <div className="text-gray-800 font-medium">
-                            {money(info.finalPrice * item.quantity)}
-                          </div>
+                          <div className="text-gray-800 font-medium">{money(info.finalPrice * item.quantity)}</div>
                         )}
                       </div>
                     </div>
                   );
                 })}
 
-                {!(cartItems || []).length && (
-                  <p className="text-xs text-gray-500">
-                    Seu carrinho está vazio.
-                  </p>
-                )}
+                {!normalizedCartItems.length && <p className="text-xs text-gray-500">Seu carrinho está vazio.</p>}
               </div>
             </section>
 
@@ -852,18 +911,14 @@ export default function CheckoutPage() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Icon.ticket />
-                  <span className="text-sm font-semibold text-gray-800">
-                    Cupom de desconto
-                  </span>
+                  <span className="text-sm font-semibold text-gray-800">Cupom de desconto</span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={couponCode}
-                    onChange={(e) =>
-                      setCouponCode(e.target.value.toUpperCase())
-                    }
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="Digite o código do cupom"
                     className="flex-1 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#EC5B20]/70"
                   />
@@ -877,16 +932,8 @@ export default function CheckoutPage() {
                   </button>
                 </div>
 
-                {couponMessage && (
-                  <p className="mt-1 text-[11px] text-emerald-600">
-                    {couponMessage}
-                  </p>
-                )}
-                {couponError && (
-                  <p className="mt-1 text-[11px] text-red-500">
-                    {couponError}
-                  </p>
-                )}
+                {couponMessage && <p className="mt-1 text-[11px] text-emerald-600">{couponMessage}</p>}
+                {couponError && <p className="mt-1 text-[11px] text-red-500">{couponError}</p>}
               </div>
 
               {/* Totais */}
@@ -903,24 +950,52 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <div className="flex justify-between text-gray-700 text-sm">
-                  <span>Frete</span>
-                  <span>{frete > 0 ? money(frete) : "Grátis"}</span>
+                {/* FRETE (UI) */}
+                <div className="flex justify-between text-gray-700 text-sm items-center gap-3">
+                  <span className="flex items-center gap-2">
+                    <span>Frete</span>
+
+                    {shippingLoading && isCepValid && <span className="text-[11px] text-gray-500">Calculando...</span>}
+
+                    {!shippingLoading && shippingQuote?.prazo_dias ? (
+                      <span className="text-[11px] text-gray-500">
+                        ({shippingQuote.prazo_dias} {shippingQuote.prazo_dias === 1 ? "dia" : "dias"})
+                      </span>
+                    ) : null}
+                  </span>
+
+                  <span>
+                    {shippingError ? (
+                      <span className="text-[11px] text-red-500">{shippingError}</span>
+                    ) : !isCepValid ? (
+                      "Informe o CEP"
+                    ) : shippingLoading ? (
+                      <span className="text-[11px] text-gray-600">Calculando...</span>
+                    ) : shippingQuote === null ? (
+                      <span className="text-[11px] text-gray-600">Aguardando cotação</span>
+                    ) : shippingQuote.price === 0 ? (
+                      "Grátis"
+                    ) : (
+                      money(frete)
+                    )}
+                  </span>
                 </div>
 
+                {shippingQuote?.ruleApplied ? (
+                  <div className="flex justify-between text-gray-500 text-[11px]">
+                    <span>Regra do frete</span>
+                    <span>{ruleLabel(shippingQuote.ruleApplied)}</span>
+                  </div>
+                ) : null}
+
                 <div className="flex justify-between items-center border-t border-gray-100 pt-2 mt-1">
-                  <span className="text-sm font-semibold text-gray-900">
-                    Total
-                  </span>
-                  <span className="text-lg font-extrabold text-[#EC5B20]">
-                    {money(total)}
-                  </span>
+                  <span className="text-sm font-semibold text-gray-900">Total</span>
+                  <span className="text-lg font-extrabold text-[#EC5B20]">{money(total)}</span>
                 </div>
 
                 <p className="mt-1 text-[11px] text-gray-500 flex items-center gap-1">
                   <Icon.shield />
-                  Pagamento processado com segurança. Nenhum dado sensível fica
-                  salvo no navegador.
+                  Pagamento processado com segurança. Nenhum dado sensível fica salvo no navegador.
                 </p>
               </div>
             </section>
@@ -930,21 +1005,29 @@ export default function CheckoutPage() {
               <LoadingButton
                 onClick={handleSubmit}
                 isLoading={submitting}
-                className="w-full justify-center rounded-2xl bg-[#EC5B20] hover:bg-[#d84e1a] text-white font-semibold text-sm sm:text-base py-3 shadow-md shadow-[#EC5B20]/30"
+                disabled={!canFinalizeCheckout || submitting}
+                className="w-full justify-center rounded-2xl bg-[#EC5B20] hover:bg-[#d84e1a] text-white font-semibold text-sm sm:text-base py-3 shadow-md shadow-[#EC5B20]/30 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Confirmar pedido
               </LoadingButton>
 
+              {!canFinalizeCheckout && (
+                <p className="mt-2 text-[11px] text-center text-gray-500">
+                  {shippingError
+                    ? "Corrija o erro de frete para continuar."
+                    : !isCepValid
+                      ? "Informe um CEP válido (8 dígitos) para calcular o frete."
+                      : shippingLoading
+                        ? "Calculando frete…"
+                        : shippingQuote === null
+                          ? "Aguardando cotação do frete…"
+                          : "Preencha os dados para continuar."}
+                </p>
+              )}
+
               <p className="mt-2 text-[11px] text-center text-gray-500">
-                Ao continuar, você concorda com os{" "}
-                <span className="underline underline-offset-2">
-                  termos de uso
-                </span>{" "}
-                e{" "}
-                <span className="underline underline-offset-2">
-                  política de privacidade
-                </span>
-                .
+                Ao continuar, você concorda com os <span className="underline underline-offset-2">termos de uso</span> e{" "}
+                <span className="underline underline-offset-2">política de privacidade</span>.
               </p>
             </div>
           </div>

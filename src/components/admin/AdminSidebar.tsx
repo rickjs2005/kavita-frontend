@@ -75,7 +75,7 @@ const navItems: NavItem[] = [
     label: "Kavita News",
     href: "/admin/kavita-news",
     icon: "📰",
-    permission: "settings_manage",
+    permission: "news_view",
   },
   // Relatórios
   {
