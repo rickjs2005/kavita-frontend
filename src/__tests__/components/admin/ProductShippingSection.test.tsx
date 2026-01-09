@@ -1,193 +1,205 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen } from "@testing-library/react";
+import ProductShippingSection, { type ShippingRules } from "@/components/admin/produtos/ProductShippingSection";
 
-import ProductShippingSection, {
-  type ShippingRules,
-} from "@/components/admin/produtos/ProductShippingSection";
+type HarnessProps = {
+  initial: ShippingRules;
+  onChangeSpy?: (next: ShippingRules) => void;
+};
 
-function renderSut(opts?: { value?: ShippingRules; onChange?: (next: ShippingRules) => void }) {
-  const value: ShippingRules = opts?.value ?? {
-    shippingFree: false,
-    shippingFreeFromQtyStr: "",
-  };
+function Harness({ initial, onChangeSpy }: HarnessProps) {
+  const [value, setValue] = React.useState<ShippingRules>(initial);
 
-  const onChange = opts?.onChange ?? vi.fn();
-
-  render(<ProductShippingSection value={value} onChange={onChange} />);
-
-  return { value, onChange: onChange as unknown as ReturnType<typeof vi.fn> };
+  return (
+    <ProductShippingSection
+      value={value}
+      onChange={(next) => {
+        setValue(next);
+        onChangeSpy?.(next);
+      }}
+    />
+  );
 }
 
-describe("ProductShippingSection", () => {
+const baseValue: ShippingRules = {
+  shippingFree: false,
+  shippingFreeFromQtyStr: "",
+  shippingPrazoDiasStr: "",
+};
+
+describe("ProductShippingSection (src/components/ProductShippingSection.tsx)", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("renderiza título/descrição e checkbox acessível; por padrão não mostra detalhes quando shippingFree=false", () => {
-    // Arrange
-    const { onChange } = renderSut({
-      value: { shippingFree: false, shippingFreeFromQtyStr: "" },
-    });
+  it("renderiza título e texto introdutório (smoke) e exibe apenas o input de prazo quando shippingFree=false", () => {
+    const onChangeSpy = vi.fn();
+    render(<Harness initial={baseValue} onChangeSpy={onChangeSpy} />);
 
-    // Act
-    const checkbox = screen.getByRole("checkbox", { name: /frete grátis \(este produto\)/i });
-
-    // Assert
     expect(screen.getByText("Frete do produto")).toBeInTheDocument();
     expect(
-      screen.getByText(/configure regras simples de frete grátis por produto/i)
+      screen.getByText(
+        /Configure regras simples de frete grátis por produto e o prazo específico deste item\./i
+      )
     ).toBeInTheDocument();
 
+    // Quando shippingFree=false, só existe 1 input com placeholder "Ex.: 3" (prazo).
+    const inputs = screen.getAllByPlaceholderText("Ex.: 3");
+    expect(inputs).toHaveLength(1);
+
+    // Checkbox presente e desmarcado
+    const checkbox = screen.getByLabelText("Frete grátis (este produto)") as HTMLInputElement;
     expect(checkbox).toBeInTheDocument();
-    expect(checkbox).not.toBeChecked();
+    expect(checkbox.checked).toBe(false);
 
-    // detalhes não aparecem
-    expect(
-      screen.queryByText(/frete grátis a partir de \(unidades\)/i)
-    ).not.toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(/ex\.\:\s*3/i)).not.toBeInTheDocument();
-
-    // não dispara onChange sem interação
-    expect(onChange).not.toHaveBeenCalled();
+    // Não deve existir a área de "Frete grátis a partir de"
+    expect(screen.queryByText(/Frete grátis a partir de/i)).not.toBeInTheDocument();
   });
 
-  it("quando marca o checkbox (false -> true), chama onChange mantendo qty e garantindo shippingFree=true", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    const { onChange } = renderSut({
-      value: { shippingFree: false, shippingFreeFromQtyStr: "12" },
+  it("normaliza o prazo (dias): permite só dígitos, limita a 4 chars, e trata '0' como ''", () => {
+    const onChangeSpy = vi.fn();
+    render(<Harness initial={baseValue} onChangeSpy={onChangeSpy} />);
+
+    const prazoInput = screen.getByPlaceholderText("Ex.: 3") as HTMLInputElement;
+
+    // Digita com letras/símbolos => só números; limite 4
+    fireEvent.change(prazoInput, { target: { value: "12a3-45" } });
+    expect(onChangeSpy).toHaveBeenLastCalledWith({
+      ...baseValue,
+      shippingPrazoDiasStr: "1234", // digits: 12345 => slice(0,4) => 1234
     });
+    expect(prazoInput.value).toBe("1234");
 
-    const checkbox = screen.getByRole("checkbox", { name: /frete grátis \(este produto\)/i });
-
-    // Act
-    await user.click(checkbox);
-
-    // Assert
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith({
-      shippingFree: true,
-      shippingFreeFromQtyStr: "12", // mantém
+    // Digita "0" => normaliza para string vazia
+    fireEvent.change(prazoInput, { target: { value: "0" } });
+    expect(onChangeSpy).toHaveBeenLastCalledWith({
+      ...baseValue,
+      shippingPrazoDiasStr: "",
     });
+    expect(prazoInput.value).toBe("");
   });
 
-  it('quando desmarca o checkbox (true -> false), evita "estado zumbi": zera qty e envia shippingFree=false', async () => {
-    // Arrange
-    const user = userEvent.setup();
-    const { onChange } = renderSut({
-      value: { shippingFree: true, shippingFreeFromQtyStr: "5" },
-    });
+  it("ao marcar 'Frete grátis', mantém qty como está (ou vazio) e exibe o campo de quantidade", () => {
+    const onChangeSpy = vi.fn();
 
-    const checkbox = screen.getByRole("checkbox", { name: /frete grátis \(este produto\)/i });
-    expect(checkbox).toBeChecked();
+    render(
+      <Harness
+        initial={{
+          ...baseValue,
+          shippingFree: false,
+          shippingFreeFromQtyStr: "",
+          shippingPrazoDiasStr: "7",
+        }}
+        onChangeSpy={onChangeSpy}
+      />
+    );
 
-    // Act
-    await user.click(checkbox);
+    const checkbox = screen.getByLabelText("Frete grátis (este produto)") as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
 
-    // Assert
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith({
-      shippingFree: false,
-      shippingFreeFromQtyStr: "", // => NULL no backend (conforme comentário do componente)
-    });
-  });
+    fireEvent.click(checkbox);
 
-  it("quando shippingFree=true, mostra campo de quantidade e texto de ajuda", () => {
-    // Arrange
-    renderSut({
-      value: { shippingFree: true, shippingFreeFromQtyStr: "" },
-    });
-
-    // Act
-    const label = screen.getByText(/frete grátis a partir de \(unidades\)/i);
-    const input = screen.getByRole("textbox", { name: "" }); // input não tem aria-label; validamos pelo placeholder também
-    const placeholderInput = screen.getByPlaceholderText(/ex\.\:\s*3/i);
-
-    // Assert
-    expect(label).toBeInTheDocument();
-    expect(input).toBeInTheDocument();
-    expect(placeholderInput).toBeInTheDocument();
-    expect(
-      screen.getByText(/se vazio, o frete grátis vale para qualquer quantidade/i)
-    ).toBeInTheDocument();
-  });
-
-  it("normaliza o input: remove não-dígitos, limita a 6 dígitos e mantém merge com o state atual", () => {
-    // Arrange
-    const onChange = vi.fn();
-    renderSut({
-      value: { shippingFree: true, shippingFreeFromQtyStr: "" },
-      onChange,
-    });
-
-    const input = screen.getByPlaceholderText(/ex\.\:\s*3/i);
-
-    // Act
-    fireEvent.change(input, { target: { value: "ab12-34c56789" } });
-
-    // Assert
-    // onlyDigits => "123456789" ; slice(0,6) => "123456"
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith({
-      shippingFree: true,
-      shippingFreeFromQtyStr: "123456",
-    });
-  });
-
-  it('normaliza "0" como vazio (sempre grátis): digits==="0" => ""', () => {
-    // Arrange
-    const onChange = vi.fn();
-    renderSut({
-      value: { shippingFree: true, shippingFreeFromQtyStr: "9" },
-      onChange,
-    });
-
-    const input = screen.getByPlaceholderText(/ex\.\:\s*3/i);
-
-    // Act
-    fireEvent.change(input, { target: { value: "0" } });
-
-    // Assert
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith({
-      shippingFree: true,
-      shippingFreeFromQtyStr: "", // "0" vira "" conforme regra do componente
-    });
-  });
-
-  it("permite limpar o input: valor vazio permanece vazio (representa NULL no backend)", () => {
-    // Arrange
-    const onChange = vi.fn();
-    renderSut({
-      value: { shippingFree: true, shippingFreeFromQtyStr: "15" },
-      onChange,
-    });
-
-    const input = screen.getByPlaceholderText(/ex\.\:\s*3/i);
-
-    // Act
-    fireEvent.change(input, { target: { value: "" } });
-
-    // Assert
-    expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith({
+    // Quando marca, patch({ shippingFree: true }) => preserva demais campos
+    expect(onChangeSpy).toHaveBeenLastCalledWith({
       shippingFree: true,
       shippingFreeFromQtyStr: "",
+      shippingPrazoDiasStr: "7",
     });
+
+    // Como estamos usando Harness controlado, a UI deve refletir e mostrar o campo de qty
+    expect(screen.getByText(/Frete grátis a partir de/i)).toBeInTheDocument();
+
+    // Agora existem 2 inputs com placeholder "Ex.: 3": prazo (1º) e qty (2º)
+    const inputs = screen.getAllByPlaceholderText("Ex.: 3") as HTMLInputElement[];
+    expect(inputs).toHaveLength(2);
+
+    // Sanidade: o primeiro é prazo e deve estar com "7"
+    expect(inputs[0].value).toBe("7");
   });
 
-  it("não renderiza o input quando shippingFree=false (negação explícita)", () => {
-    // Arrange
-    renderSut({
-      value: { shippingFree: false, shippingFreeFromQtyStr: "999" },
+  it("ao desmarcar 'Frete grátis', zera qty e manda shippingFree=false (sem alterar prazo)", () => {
+    const onChangeSpy = vi.fn();
+
+    render(
+      <Harness
+        initial={{
+          shippingFree: true,
+          shippingFreeFromQtyStr: "10",
+          shippingPrazoDiasStr: "3",
+        }}
+        onChangeSpy={onChangeSpy}
+      />
+    );
+
+    // Campo de qty deve existir inicialmente
+    expect(screen.getByText(/Frete grátis a partir de/i)).toBeInTheDocument();
+
+    const checkbox = screen.getByLabelText("Frete grátis (este produto)") as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+
+    fireEvent.click(checkbox);
+
+    // Quando desmarca: onChange({ ...value, shippingFree:false, shippingFreeFromQtyStr:"" })
+    expect(onChangeSpy).toHaveBeenLastCalledWith({
+      shippingFree: false,
+      shippingFreeFromQtyStr: "",
+      shippingPrazoDiasStr: "3", // preserva prazo
     });
 
-    // Act / Assert
-    expect(screen.queryByPlaceholderText(/ex\.\:\s*3/i)).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(/se vazio, o frete grátis vale para qualquer quantidade/i)
-    ).not.toBeInTheDocument();
+    // UI deve esconder detalhes após state update do Harness
+    expect(screen.queryByText(/Frete grátis a partir de/i)).not.toBeInTheDocument();
+
+    // Volta a ter só 1 input "Ex.: 3" (prazo)
+    const inputs = screen.getAllByPlaceholderText("Ex.: 3");
+    expect(inputs).toHaveLength(1);
+    expect((inputs[0] as HTMLInputElement).value).toBe("3");
+  });
+
+  it("normaliza 'Frete grátis a partir de (unidades)': só dígitos, limita a 6 chars, trata '0' como ''", () => {
+    const onChangeSpy = vi.fn();
+
+    render(
+      <Harness
+        initial={{
+          ...baseValue,
+          shippingFree: true,
+          shippingFreeFromQtyStr: "",
+          shippingPrazoDiasStr: "",
+        }}
+        onChangeSpy={onChangeSpy}
+      />
+    );
+
+    // Com shippingFree=true, há 2 inputs com placeholder "Ex.: 3": [0]=prazo, [1]=qty
+    const inputs = screen.getAllByPlaceholderText("Ex.: 3") as HTMLInputElement[];
+    expect(inputs).toHaveLength(2);
+
+    const qtyInput = inputs[1];
+
+    // Mistura chars => só números; limite 6
+    fireEvent.change(qtyInput, { target: { value: "a1b2c3d4e5f6g7" } });
+    expect(onChangeSpy).toHaveBeenLastCalledWith({
+      shippingFree: true,
+      shippingFreeFromQtyStr: "123456", // digits: 1234567 => slice(0,6)
+      shippingPrazoDiasStr: "",
+    });
+    expect(qtyInput.value).toBe("123456");
+
+    // "0" => ""
+    fireEvent.change(qtyInput, { target: { value: "0" } });
+    expect(onChangeSpy).toHaveBeenLastCalledWith({
+      shippingFree: true,
+      shippingFreeFromQtyStr: "",
+      shippingPrazoDiasStr: "",
+    });
+    expect(qtyInput.value).toBe("");
+  });
+
+  it("caso negativo: não deve chamar onChangeSpy ao apenas renderizar (sem interação)", () => {
+    const onChangeSpy = vi.fn();
+    render(<Harness initial={baseValue} onChangeSpy={onChangeSpy} />);
+
+    expect(onChangeSpy).not.toHaveBeenCalled();
   });
 });

@@ -14,8 +14,13 @@ type ProdutoEditado = {
   category_id: number | string;
   image?: string | null;
   images?: string[];
+
+  // frete por produto
   shipping_free?: number | boolean | null;
   shipping_free_from_qty?: number | null;
+
+  // ✅ NOVO: prazo por produto (dias)
+  shipping_prazo_dias?: number | null;
 };
 
 type Props = {
@@ -62,6 +67,9 @@ export default function ProdutoForm({
   const [shippingFree, setShippingFree] = useState<boolean>(false);
   const [shippingFreeFromQtyStr, setShippingFreeFromQtyStr] = useState<string>("");
 
+  // ✅ NOVO: prazo do produto (dias)
+  const [shippingPrazoDiasStr, setShippingPrazoDiasStr] = useState<string>("");
+
   function toRel(abs: string) {
     if (!abs) return "";
     try {
@@ -99,6 +107,11 @@ export default function ProdutoForm({
       setShippingFree(freeBool);
       setShippingFreeFromQtyStr(
         produtoEditado.shipping_free_from_qty ? String(produtoEditado.shipping_free_from_qty) : ""
+      );
+
+      // ✅ NOVO: carrega prazo do produto (dias)
+      setShippingPrazoDiasStr(
+        produtoEditado.shipping_prazo_dias ? String(produtoEditado.shipping_prazo_dias) : ""
       );
     } else {
       resetForm();
@@ -151,6 +164,9 @@ export default function ProdutoForm({
 
     setShippingFree(false);
     setShippingFreeFromQtyStr("");
+
+    // ✅ NOVO
+    setShippingPrazoDiasStr("");
   }
 
   function validate(): string | null {
@@ -163,6 +179,14 @@ export default function ProdutoForm({
       const n = Number(shippingFreeFromQtyStr);
       if (!Number.isFinite(n) || n <= 0) {
         return "Frete grátis por quantidade: informe um número válido (ex: 10).";
+      }
+    }
+
+    // ✅ NOVO: prazo do produto (dias) opcional, mas se preenchido deve ser inteiro > 0
+    if (shippingPrazoDiasStr.trim()) {
+      const n = Number(shippingPrazoDiasStr);
+      if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
+        return "Prazo do produto (dias): informe um número inteiro válido (ex: 3).";
       }
     }
 
@@ -213,6 +237,9 @@ export default function ProdutoForm({
     // frete por produto (sempre enviar)
     fd.append("shippingFree", shippingFree ? "1" : "0");
     fd.append("shippingFreeFromQtyStr", shippingFreeFromQtyStr.trim());
+
+    // ✅ NOVO: prazo do produto (dias) — sempre enviar; "" => NULL no backend
+    fd.append("shippingPrazoDiasStr", shippingPrazoDiasStr.trim());
 
     newFiles.forEach((file) => fd.append("images", file));
 
@@ -441,10 +468,15 @@ export default function ProdutoForm({
           </div>
 
           <ProductShippingSection
-            value={{ shippingFree, shippingFreeFromQtyStr }}
+            value={{
+              shippingFree,
+              shippingFreeFromQtyStr,
+              shippingPrazoDiasStr,
+            }}
             onChange={(next) => {
               setShippingFree(!!next.shippingFree);
               setShippingFreeFromQtyStr(next.shippingFreeFromQtyStr ?? "");
+              setShippingPrazoDiasStr(next.shippingPrazoDiasStr ?? "");
             }}
           />
         </div>

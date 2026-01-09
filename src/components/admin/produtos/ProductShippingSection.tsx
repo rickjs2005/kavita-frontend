@@ -4,7 +4,10 @@ import React from "react";
 
 export type ShippingRules = {
   shippingFree: boolean;
-  shippingFreeFromQtyStr: string; 
+  shippingFreeFromQtyStr: string;
+
+  // ✅ NOVO: prazo do produto (dias) — string para permitir "" (NULL) e input controlado
+  shippingPrazoDiasStr: string;
 };
 
 type Props = {
@@ -28,11 +31,42 @@ export default function ProductShippingSection({ value, onChange }: Props) {
       <div>
         <h3 className="text-sm font-semibold text-gray-900">Frete do produto</h3>
         <p className="mt-0.5 text-[11px] text-gray-500">
-          Configure regras simples de frete grátis por produto.
+          Configure regras simples de frete grátis por produto e o prazo específico deste item.
         </p>
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
+      {/* ✅ NOVO: Prazo do produto (dias) */}
+      <div className="mt-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700">
+            Prazo do produto (dias) — opcional
+          </label>
+
+          <input
+            value={value.shippingPrazoDiasStr}
+            onChange={(e) => {
+              // Regras:
+              // - só números
+              // - "" => NULL no backend (usa zone.prazo_dias)
+              // - "0" => trata como "" (para evitar prazo inválido)
+              const digits = onlyDigits(e.target.value).slice(0, 4); // limite razoável (0-9999)
+              const normalized = digits === "0" ? "" : digits;
+
+              patch({ shippingPrazoDiasStr: normalized });
+            }}
+            placeholder="Ex.: 3"
+            inputMode="numeric"
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20"
+          />
+
+          <span className="text-[11px] text-gray-500">
+            Se vazio, o sistema usa o prazo da zona (UF/cidade). No checkout, o prazo final será o maior prazo
+            entre os produtos do carrinho.
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-2">
         <input
           id="shippingFree"
           type="checkbox"
@@ -43,6 +77,7 @@ export default function ProductShippingSection({ value, onChange }: Props) {
             if (!nextChecked) {
               // Evita estado zumbi: desmarcou => zera qty e manda false
               onChange({
+                ...value,
                 shippingFree: false,
                 shippingFreeFromQtyStr: "", // => NULL no backend
               });
