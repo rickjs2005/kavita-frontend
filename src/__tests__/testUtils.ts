@@ -56,11 +56,105 @@ export function installMockStorage() {
 
 export function mockGlobalFetch() {
   const mock = vi.fn();
-  global.fetch = mock;
+  // em jsdom, fetch pode estar em globalThis
+  (globalThis as any).fetch = mock;
   return mock;
 }
 
 export async function flushMicrotasks() {
   await Promise.resolve();
   await Promise.resolve();
+}
+
+/* -------------------------------------------------------------------------- */
+/* NOVOS HELPERS (adicionados sem quebrar exports existentes)                  */
+/* -------------------------------------------------------------------------- */
+
+type FormDataEntry = { name: string; value: any };
+
+/**
+ * FormData mockável para asserções de append/valores.
+ * Compatível com o padrão: body instanceof MockFormData
+ */
+export class MockFormData {
+  private _entries: FormDataEntry[] = [];
+
+  append(name: string, value: any) {
+    this._entries.push({ name, value });
+  }
+
+  // utilitários para assert
+  entries() {
+    return [...this._entries];
+  }
+
+  getAll(name: string) {
+    return this._entries.filter((e) => e.name === name).map((e) => e.value);
+  }
+
+  get(name: string) {
+    const found = this._entries.find((e) => e.name === name);
+    return found ? found.value : null;
+  }
+}
+
+/**
+ * Substitui globalThis.FormData por MockFormData durante o teste
+ * e devolve função para restore.
+ */
+export function mockGlobalFormData() {
+  const Original = (globalThis as any).FormData;
+  (globalThis as any).FormData = MockFormData;
+
+  return () => {
+    (globalThis as any).FormData = Original;
+  };
+}
+
+/**
+ * Mock de URL.createObjectURL / revokeObjectURL para testes com preview de imagem
+ */
+export function mockObjectUrl() {
+  const createSpy = vi
+    .spyOn(URL, "createObjectURL")
+    .mockImplementation(() => "blob:mock");
+
+  const revokeSpy = vi
+    .spyOn(URL, "revokeObjectURL")
+    .mockImplementation(() => {});
+
+  return () => {
+    createSpy.mockRestore();
+    revokeSpy.mockRestore();
+  };
+}
+
+type MockFetchOpts = {
+  ok: boolean;
+  status: number;
+  contentType?: string;
+  json?: any;
+  text?: string;
+};
+
+/**
+ * Helper para montar Response-like, suficiente para .ok/.status/.headers/.json()/.text()
+ */
+export function makeFetchResponse(opts: MockFetchOpts): Response {
+  const headers = new Headers();
+  if (opts.contentType) headers.set("content-type", opts.contentType);
+
+  const res = {
+    ok: opts.ok,
+    status: opts.status,
+    headers,
+    async json() {
+      return opts.json ?? {};
+    },
+    async text() {
+      return opts.text ?? "";
+    },
+  };
+
+  return res as unknown as Response;
 }

@@ -1,7 +1,11 @@
-// src/app/news/clima/[slug]/page.tsx
+
 import Link from "next/link";
 import { newsPublicApi } from "@/lib/newsPublicApi";
 import { EmptyState } from "@/components/news/EmptyState";
+
+type PageProps = {
+  params: Promise<{ slug: string }>;
+};
 
 function formatDateSafe(value?: string | null) {
   if (!value) return "";
@@ -13,11 +17,13 @@ function formatDateSafe(value?: string | null) {
   }).format(d);
 }
 
-export default async function ClimaDetailPage({ params }: { params: { slug: string } }) {
+export default async function ClimaDetailPage({ params }: PageProps) {
+  const { slug } = await params; // 🔴 ESSENCIAL
+
   let item: any = null;
 
   try {
-    const res = await newsPublicApi.climaBySlug(params.slug);
+    const res = await newsPublicApi.climaBySlug(slug);
     item = res.data;
   } catch {
     item = null;
@@ -33,17 +39,12 @@ export default async function ClimaDetailPage({ params }: { params: { slug: stri
               subtitle="Verifique o endereço ou volte para a lista de cidades monitoradas."
             />
             <div className="mt-6">
-              <Link
-                className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 rounded-md"
-                href="/news/clima"
-              >
-                <span aria-hidden>←</span> Voltar para cidades monitoradas
-              </Link>
+              <Link href="/news/clima">← Voltar para cidades monitoradas</Link>
             </div>
           </div>
         </div>
       </main>
-    );
+    );     
   }
 
   const updated = formatDateSafe(item.last_update_at);

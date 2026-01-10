@@ -16,8 +16,7 @@ type Props = {
   initialIsFavorite?: boolean;
 };
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const PLACEHOLDER = "/placeholder.png";
 
 /** normaliza URL de imagem */
@@ -85,6 +84,17 @@ export default function ProductCard({
   );
   const outOfStock = typeof stock === "number" ? stock <= 0 : false;
 
+  // === Frete grátis (badge) ===
+  // Regra de negócio:
+  // shipping_free = 1 => produto tem frete grátis
+  // shipping_free_from_qty null => sempre grátis
+  // shipping_free_from_qty número => grátis a partir daquela quantidade
+  const shippingFree = Boolean((product as any).shipping_free);
+  const shippingFreeFromQty =
+    (product as any).shipping_free_from_qty != null
+      ? Number((product as any).shipping_free_from_qty)
+      : null;
+
   // === Avaliação (⭐) ===
   const ratingAvgRaw = (product as any).rating_avg;
   const ratingCountRaw = (product as any).rating_count;
@@ -111,9 +121,7 @@ export default function ProductCard({
       try {
         if (!product?.id) return;
 
-        const res = await fetch(
-          `${API_BASE}/api/public/promocoes/${product.id}`
-        );
+        const res = await fetch(`${API_BASE}/api/public/promocoes/${product.id}`);
 
         if (!res.ok) {
           // 404 = não tem promo pra esse produto, só ignora
@@ -140,29 +148,23 @@ export default function ProductCard({
   const precoBase = Number(product.price ?? 0);
 
   const originalFromPromo =
-    promotion?.original_price != null
-      ? Number(promotion.original_price)
-      : null;
+    promotion?.original_price != null ? Number(promotion.original_price) : null;
   const finalFromPromo =
     promotion?.final_price != null
       ? Number(promotion.final_price)
       : promotion?.promo_price != null
-      ? Number(promotion.promo_price)
-      : null;
+        ? Number(promotion.promo_price)
+        : null;
 
-  const originalPrice =
-    originalFromPromo !== null ? originalFromPromo : precoBase || 0;
+  const originalPrice = originalFromPromo !== null ? originalFromPromo : precoBase || 0;
 
-  let finalPrice =
-    finalFromPromo !== null ? finalFromPromo : originalPrice;
+  let finalPrice = finalFromPromo !== null ? finalFromPromo : originalPrice;
 
   let discountPercent: number | null = null;
 
   if (promotion) {
     const explicitDiscount =
-      promotion.discount_percent != null
-        ? Number(promotion.discount_percent)
-        : NaN;
+      promotion.discount_percent != null ? Number(promotion.discount_percent) : NaN;
 
     // se veio só % de desconto sem final_price calculado
     if (
@@ -176,17 +178,14 @@ export default function ProductCard({
 
     // calcula % real
     if (originalPrice > 0 && finalPrice < originalPrice) {
-      discountPercent =
-        ((originalPrice - finalPrice) / originalPrice) * 100;
+      discountPercent = ((originalPrice - finalPrice) / originalPrice) * 100;
     } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
       discountPercent = explicitDiscount;
     }
   }
 
   const hasDiscount =
-    discountPercent !== null &&
-    discountPercent > 0 &&
-    finalPrice < originalPrice;
+    discountPercent !== null && discountPercent > 0 && finalPrice < originalPrice;
 
   // produto que vai para o carrinho com o PREÇO FINAL
   const productForCart: Product = {
@@ -281,10 +280,7 @@ export default function ProductCard({
           transition
         "
       >
-        <Heart
-          className="h-4 w-4"
-          fill={isFavorite ? "currentColor" : "none"}
-        />
+        <Heart className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
       </button>
 
       {/* Imagem */}
@@ -304,17 +300,28 @@ export default function ProductCard({
           />
         </div>
 
-        {outOfStock && (
-          <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
-            Esgotado
-          </span>
-        )}
+        {/* Badges */}
+        <div className="absolute left-2 top-2 z-10 flex flex-col gap-1">
+          {outOfStock && (
+            <span className="rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+              Esgotado
+            </span>
+          )}
 
-        {hasDiscount && !outOfStock && (
-          <span className="absolute left-2 top-2 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
-            -{discountPercent!.toFixed(0)}% OFF
-          </span>
-        )}
+          {hasDiscount && !outOfStock && (
+            <span className="rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+              -{discountPercent!.toFixed(0)}% OFF
+            </span>
+          )}
+
+          {shippingFree && !outOfStock && (
+            <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+              {shippingFreeFromQty
+                ? `Frete grátis a partir de ${shippingFreeFromQty} un.`
+                : "Frete grátis"}
+            </span>
+          )}
+        </div>
       </Link>
 
       {/* Conteúdo */}
@@ -357,10 +364,7 @@ export default function ProductCard({
 
         <div className="mt-auto pt-4 flex flex-col gap-2">
           <div className="w-full">
-            <AddToCartButton
-              product={productForCart}
-              disabled={outOfStock}
-            />
+            <AddToCartButton product={productForCart} disabled={outOfStock} />
           </div>
 
           <Link

@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { usePathname } from "next/navigation";
@@ -10,6 +17,23 @@ import { handleApiError } from "@/lib/handleApiError";
 
 /* Config API */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+/* ===== Tipos de resposta da API ===== */
+type CartApiItem = {
+  item_id?: number;
+  produto_id: number;
+  nome?: string;
+  valor_unitario?: number | string;
+  quantidade?: number | string;
+  image?: string | null;
+  stock?: number | string; // ✅ novo (retornado do backend)
+};
+
+type CartGetResponse = {
+  success?: boolean;
+  items?: CartApiItem[];
+  carrinho_id?: number | null;
+};
 
 /* Helpers */
 const toNum = (v: any, fallback = 0) => {
@@ -23,27 +47,16 @@ const knownStock = (item: Partial<CartItem>) =>
 const clampByStock = (item: Partial<CartItem>, desired: number) => {
   const s = knownStock(item);
   if (s !== undefined) {
-    if (s <= 0) return 0; // esgotado
+    if (s <= 0) return 0;
     return Math.max(1, Math.min(s, desired));
   }
   return Math.max(1, desired);
 };
 
-/** Type guard simples para erros que se parecem com AxiosError */
-type AxiosLikeError = {
-  isAxiosError?: boolean;
-  response?: {
-    status?: number;
-  };
-};
-
-const isAxiosError = (error: unknown): error is AxiosLikeError => {
-  return typeof error === "object" && error !== null && "isAxiosError" in error;
-};
-
 type AddResult =
   | { ok: true }
   | { ok: false; reason: "OUT_OF_STOCK" | "LIMIT_REACHED" };
+
 type AfterFn = () => void;
 
 interface CartContextProps {
@@ -61,9 +74,25 @@ interface CartContextProps {
 
 const CartContext = createContext<CartContextProps | undefined>(undefined);
 
-// chave de storage por usuário
 const makeCartKey = (userId: number | null | undefined) =>
   userId ? `cartItems_${userId}` : "cartItems_guest";
+
+function normalizeApiItems(itemsFromApi: CartApiItem[]): CartItem[] {
+  return itemsFromApi.map((it) => {
+    const stockNum = toNum((it as any).stock, NaN);
+    const stock =
+      Number.isFinite(stockNum) && stockNum >= 0 ? stockNum : undefined;
+
+    return {
+      id: Number(it.produto_id),
+      name: it.nome ?? `Produto #${it.produto_id}`,
+      price: toNum(it.valor_unitario, 0),
+      image: it.image ?? null,
+      quantity: Math.max(1, toNum(it.quantidade, 1)),
+      _stock: stock, // ✅ agora vem do backend
+    };
+  });
+}
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
@@ -75,132 +104,149 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartKey, setCartKey] = useState<string | null>(null);
 
+  // evita “vazar” itens para a chave nova quando troca user/guest
+  const lastCartKeyRef = useRef<string | null>(null);
+  const lastUserIdRef = useRef<number | null>(userId);
+
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
 
-  /* Define a chave sempre que o usuário mudar */
+  /**
+   * 1) Quando muda de usuário (login/logout/troca), zera o estado local imediatamente.
+   * Isso impede o carrinho do usuário logado aparecer no modo visitante.
+   */
   useEffect(() => {
-    const key = makeCartKey(userId);
-    setCartKey(key);
+    if (lastUserIdRef.current !== userId) {
+      lastUserIdRef.current = userId;
+      setCartItems([]);
+      setIsCartOpen(false);
+    }
   }, [userId]);
 
-  /* Carrega itens quando a chave mudar ou rota mudar */
+  /**
+   * 2) Atualiza chave do carrinho
+   */
+  useEffect(() => {
+    setCartKey(makeCartKey(userId));
+  }, [userId]);
+
+  const loadFromLocal = (key: string) => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(key);
+      setCartItems(raw ? JSON.parse(raw) : []);
+    } catch {
+      setCartItems([]);
+    }
+  };
+
+  /**
+   * 3) Carregamento:
+   * - /admin: não chama API
+   * - visitante: localStorage
+   * - logado: servidor é fonte da verdade (inclusive vazio)
+   */
   useEffect(() => {
     if (!cartKey || typeof window === "undefined") return;
 
-    const loadFromLocal = () => {
-      try {
-        const raw = localStorage.getItem(cartKey);
-        setCartItems(raw ? JSON.parse(raw) : []);
-      } catch {
-        setCartItems([]);
-      }
-    };
-
-    // 👉 Em qualquer rota de admin, não bate na API do carrinho
     if (pathname.startsWith("/admin")) {
-      loadFromLocal();
+      loadFromLocal(cartKey);
       return;
     }
 
-    // convidado → só localStorage
     if (!userId) {
-      loadFromLocal();
+      loadFromLocal(cartKey);
       return;
     }
 
-    // se o carrinho foi limpo nesta sessão, não recarrega itens antigos do backend
-    const clearedKey = `${cartKey}_cleared`;
-    let wasCleared = false;
-    try {
-      wasCleared = sessionStorage.getItem(clearedKey) === "1";
-    } catch {
-      wasCleared = false;
-    }
-    if (wasCleared) {
-      loadFromLocal();
-      return;
-    }
-
-    // usuário logado → tenta sincronizar com backend usando cookie HttpOnly
     (async () => {
       try {
-        const res = await axios.get(`${API_BASE}/api/cart`, {
+        const res = await axios.get<CartGetResponse>(`${API_BASE}/api/cart`, {
           withCredentials: true,
         });
 
-        const data: any = res.data || {};
+        const data = res.data;
         const itemsFromApi = Array.isArray(data.items) ? data.items : [];
+        const normalized = normalizeApiItems(itemsFromApi);
 
-        if (itemsFromApi.length > 0) {
-          const normalized: CartItem[] = itemsFromApi.map((it: any) => ({
-            id: Number(it.produto_id),
-            name: it.nome ?? `Produto #${it.produto_id}`,
-            price: toNum(it.valor_unitario, 0),
-            image: it.image ?? null,
-            quantity: toNum(it.quantidade, 1),
-            _stock: undefined,
-          }));
+        // logado: reflete servidor sempre (mesmo vazio)
+        setCartItems(normalized);
 
-          setCartItems(normalized);
-        } else {
-          loadFromLocal();
+        // cache local (opcional)
+        try {
+          localStorage.setItem(cartKey, JSON.stringify(normalized));
+        } catch {
+          // ignore
         }
       } catch (e: unknown) {
-        if (isAxiosError(e)) {
-          const status = e.response?.status;
-          if (status === 401 || status === 403) {
-            // sessão expirada / não autenticado → só log leve, sem toast
-            console.warn(
-              "Usuário não autenticado em /api/cart, usando localStorage."
-            );
-          } else {
-            handleApiError(e, "Erro ao sincronizar o carrinho com o servidor.");
-          }
-        } else {
-          handleApiError(e, "Erro inesperado ao sincronizar o carrinho.");
-        }
-
-        loadFromLocal();
+        handleApiError(e, {
+          fallbackMessage: "Erro ao sincronizar o carrinho com o servidor.",
+        });
+        // fallback de UX: tenta cache local
+        loadFromLocal(cartKey);
       }
     })();
   }, [cartKey, userId, pathname]);
 
-  /* Persiste itens no storage da chave atual */
+  /**
+   * 4) Persistência local:
+   * Se o cartKey mudou agora, não persiste ainda (evita gravar estado antigo na chave nova).
+   */
   useEffect(() => {
     if (!cartKey || typeof window === "undefined") return;
+
+    if (lastCartKeyRef.current !== cartKey) {
+      lastCartKeyRef.current = cartKey;
+      return;
+    }
+
     try {
       localStorage.setItem(cartKey, JSON.stringify(cartItems));
     } catch {
-      // ignora erros de storage
+      // ignore
     }
   }, [cartItems, cartKey]);
+
+  /**
+   * 5) Fechar automaticamente quando carrinho ficar vazio
+   */
+  useEffect(() => {
+    if (isCartOpen && cartItems.length === 0) {
+      setIsCartOpen(false);
+    }
+  }, [isCartOpen, cartItems.length]);
+
+  /* ========== Helpers de re-sync ========== */
+  const refetchServerCart = async () => {
+    if (!userId) return;
+    try {
+      const res = await axios.get<CartGetResponse>(`${API_BASE}/api/cart`, {
+        withCredentials: true,
+      });
+      const itemsFromApi = Array.isArray(res.data.items) ? res.data.items : [];
+      setCartItems(normalizeApiItems(itemsFromApi));
+    } catch {
+      // ignore
+    }
+  };
 
   /* ========== Ações ========== */
 
   const addToCart = (product: Product, qty = 1): AddResult => {
-    // ao adicionar qualquer item, removemos o flag de "carrinho limpo"
-    if (typeof window !== "undefined" && cartKey) {
-      try {
-        sessionStorage.removeItem(`${cartKey}_cleared`);
-      } catch {
-        // ignore
-      }
-    }
-
-    const price = toNum(product.price, 0);
     const stockFromApi =
-      typeof product.quantity === "number"
-        ? product.quantity
+      typeof (product as any).quantity === "number"
+        ? (product as any).quantity
         : typeof (product as any).estoque === "number"
-        ? (product as any).estoque
-        : undefined;
+          ? (product as any).estoque
+          : typeof (product as any).stock === "number"
+            ? (product as any).stock
+            : undefined;
 
     let result: AddResult = { ok: true };
     const after: AfterFn[] = [];
+    const increment = Math.max(1, toNum(qty, 1));
 
-    const increment = toNum(qty, 1);
-
+    // otimista no estado local
     setCartItems((prev) => {
       const found = prev.find((i) => i.id === product.id);
 
@@ -214,6 +260,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           after.push(() => toast.error("Produto esgotado."));
           return prev;
         }
+
         if (clamped <= found.quantity) {
           result = { ok: false, reason: "LIMIT_REACHED" };
           after.push(() =>
@@ -231,8 +278,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const stock = stockFromApi;
-      const desired = increment;
-      const firstQty = clampByStock({ _stock: stock }, desired);
+      const firstQty = clampByStock({ _stock: stock }, increment);
 
       if (firstQty === 0) {
         result = { ok: false, reason: "OUT_OF_STOCK" };
@@ -245,37 +291,43 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         toast.success("Adicionado ao carrinho!");
       });
 
-      return [
-        ...prev,
-        {
-          id: product.id,
-          name: product.name,
-          price,
-          image: (product as any).image,
-          quantity: firstQty,
-          _stock: stock,
-        },
-      ];
+      const newItem: CartItem = {
+        id: product.id,
+        name: product.name,
+        price: toNum((product as any).price, 0),
+        image: (product as any).image ?? null,
+        quantity: firstQty,
+        _stock: stock,
+      };
+
+      return [...prev, newItem];
     });
 
-    // sincroniza com backend se estiver logado (identificado via cookie/jwt)
+    // logado: sincroniza no servidor
     if (userId) {
       axios
         .post(
           `${API_BASE}/api/cart/items`,
-          {
-            produto_id: product.id,
-            quantidade: increment,
-          },
-          {
-            withCredentials: true,
-          }
+          { produto_id: product.id, quantidade: increment },
+          { withCredentials: true }
         )
         .catch((err) => {
-          handleApiError(
-            err,
-            "Falha ao sincronizar item com o carrinho do servidor."
-          );
+          // Tratamento específico para STOCK_LIMIT (409)
+          const status = err?.response?.status;
+          const code = err?.response?.data?.code || err?.response?.data?.error?.code;
+
+          if (status === 409 && code === "STOCK_LIMIT") {
+            toast.error("Limite de estoque atingido.");
+            refetchServerCart();
+            return;
+          }
+
+          handleApiError(err, {
+            fallbackMessage: "Erro ao salvar item no carrinho no servidor.",
+          });
+
+          // reconciliar com servidor (fallback)
+          refetchServerCart();
         });
     }
 
@@ -284,76 +336,59 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateQuantity = (id: number, quantity: number) => {
-    const after: AfterFn[] = [];
     let finalQty: number | null = null;
+    const after: AfterFn[] = [];
 
     setCartItems((prev) => {
-      const updated = prev
-        .map((it) => {
-          if (it.id !== id) return it;
-          const clamped = clampByStock(it, toNum(quantity, 1));
-          finalQty = clamped;
+      const found = prev.find((i) => i.id === id);
+      if (!found) return prev;
 
-          if (clamped === 0) {
-            after.push(() =>
-              toast.error("Este item esgotou e foi removido do carrinho.")
-            );
-            return null;
-          }
-          if (clamped !== quantity && clamped < quantity) {
-            const s = knownStock(it);
-            after.push(() =>
-              toast.error(
-                `Ajustamos para ${clamped}${
-                  s !== undefined ? ` (máx. ${s})` : ""
-                } por limite de estoque.`
-              )
-            );
-          }
-          return { ...it, quantity: clamped };
-        })
-        .filter(Boolean) as CartItem[];
+      const desired = toNum(quantity, 1);
+      const clamped = clampByStock(found, desired);
+      finalQty = clamped;
 
-      // se o carrinho ficou vazio com essa atualização, marca como "limpo"
-      if (updated.length === 0 && typeof window !== "undefined" && cartKey) {
-        try {
-          sessionStorage.setItem(`${cartKey}_cleared`, "1");
-        } catch {
-          // ignore
-        }
+      if (clamped === 0) {
+        after.push(() => toast.error("Produto esgotado. Removemos do carrinho."));
+        return prev.filter((i) => i.id !== id);
       }
 
-      return updated;
+      if (clamped !== desired) {
+        after.push(() => toast.error(`Ajustamos para ${clamped} por limite de estoque.`));
+      }
+
+      return prev.map((i) => (i.id === id ? { ...i, quantity: clamped } : i));
     });
 
-    // sincroniza com backend
     if (userId && finalQty !== null) {
       if (finalQty <= 0) {
         axios
-          .delete(`${API_BASE}/api/cart/items/${id}`, {
-            withCredentials: true,
-          })
+          .delete(`${API_BASE}/api/cart/items/${id}`, { withCredentials: true })
           .catch((err) =>
-            handleApiError(
-              err,
-              "Erro ao remover item do carrinho no servidor."
-            )
+            handleApiError(err, {
+              fallbackMessage: "Erro ao remover item do carrinho no servidor.",
+            })
           );
       } else {
         axios
           .patch(
             `${API_BASE}/api/cart/items`,
             { produto_id: id, quantidade: finalQty },
-            {
-              withCredentials: true,
-            }
+            { withCredentials: true }
           )
-          .catch((err) =>
-            handleApiError(
-              err,
-              "Erro ao atualizar quantidade do item no servidor."
-            )
-          );
+          .catch((err) => {
+            const status = err?.response?.status;
+            const code = err?.response?.data?.code || err?.response?.data?.error?.code;
+
+            if (status === 409 && code === "STOCK_LIMIT") {
+              toast.error("Limite de estoque atingido.");
+              refetchServerCart();
+              return;
+            }
+
+            handleApiError(err, {
+              fallbackMessage: "Erro ao atualizar quantidade no servidor.",
+            });
+          });
       }
     }
 
@@ -361,31 +396,15 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const removeFromCart = (id: number) => {
-    setCartItems((prev) => {
-      const updated = prev.filter((i) => i.id !== id);
-
-      // se removendo esse item o carrinho ficou vazio, marca como "limpo"
-      if (updated.length === 0 && typeof window !== "undefined" && cartKey) {
-        try {
-          sessionStorage.setItem(`${cartKey}_cleared`, "1");
-        } catch {
-          // ignore
-        }
-      }
-
-      return updated;
-    });
+    setCartItems((prev) => prev.filter((i) => i.id !== id));
 
     if (userId) {
       axios
-        .delete(`${API_BASE}/api/cart/items/${id}`, {
-          withCredentials: true,
-        })
+        .delete(`${API_BASE}/api/cart/items/${id}`, { withCredentials: true })
         .catch((err) =>
-          handleApiError(
-            err,
-            "Erro ao remover item do carrinho no servidor."
-          )
+          handleApiError(err, {
+            fallbackMessage: "Erro ao remover item do carrinho no servidor.",
+          })
         );
     }
 
@@ -403,16 +422,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           const clamped = clampByStock({ ...it, _stock: stock }, it.quantity);
 
           if (stock === 0) {
-            after.push(() =>
-              toast.error("Um item esgotou e foi removido do carrinho.")
-            );
+            after.push(() => toast.error("Um item esgotou e foi removido do carrinho."));
             return null;
           }
+
           if (clamped !== it.quantity) {
-            after.push(() =>
-              toast.error(`Estoque atualizado. Ajustamos para ${clamped}.`)
-            );
+            after.push(() => toast.error(`Estoque atualizado. Ajustamos para ${clamped}.`));
           }
+
           return { ...it, _stock: stock, quantity: clamped };
         })
         .filter(Boolean) as CartItem[]
@@ -421,14 +438,13 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     after.forEach((fn) => fn());
   };
 
-  /** Limpa o carrinho completamente (estado + localStorage + backend) */
   const clearCart = () => {
     setCartItems([]);
+    closeCart();
 
     if (typeof window !== "undefined" && cartKey) {
       try {
         localStorage.removeItem(cartKey);
-        sessionStorage.setItem(`${cartKey}_cleared`, "1");
       } catch {
         // ignore
       }
@@ -436,11 +452,11 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (userId) {
       axios
-        .delete(`${API_BASE}/api/cart`, {
-          withCredentials: true,
-        })
+        .delete(`${API_BASE}/api/cart`, { withCredentials: true })
         .catch((err) =>
-          handleApiError(err, "Erro ao limpar o carrinho no servidor.")
+          handleApiError(err, {
+            fallbackMessage: "Erro ao limpar o carrinho no servidor.",
+          })
         );
     }
 

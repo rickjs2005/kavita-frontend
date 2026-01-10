@@ -19,13 +19,26 @@ export type AuthUser = {
   email: string;
 };
 
+export type RegisterPayload = {
+  nome: string;
+  email: string;
+  senha: string;
+  cpf?: string; // <-- para não quebrar o /register
+};
+
 type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
+
   login: (
     email: string,
     senha: string
   ) => Promise<{ ok: boolean; message?: string }>;
+
+  register: (
+    payload: RegisterPayload
+  ) => Promise<{ ok: boolean; message?: string }>;
+
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
@@ -68,14 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const rawUser = data?.user ?? data;
 
-      // Se backend não retornou user válido, trata como inválido
       if (!rawUser?.id) {
         setUser(null);
         return { ok: false, message: invalidMsg };
       }
 
       const finalUser: AuthUser = {
-        id: rawUser.id,
+        id: Number(rawUser.id),
         nome: rawUser.nome ?? "",
         email: rawUser.email ?? email,
       };
@@ -83,9 +95,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(finalUser);
       return { ok: true };
     } catch {
-      // Regra de UX: qualquer falha no login = credenciais inválidas (sem overlay)
       setUser(null);
       return { ok: false, message: invalidMsg };
+    }
+  };
+
+  // -----------------------------
+  // REGISTER
+  // -----------------------------
+  const register = async (payload: RegisterPayload) => {
+    const fallbackMsg = "Não foi possível criar sua conta.";
+
+    try {
+      await api<any>("/api/users/register", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      // Se sua API já loga e seta cookie ao registrar, descomente:
+      // await refreshUser();
+
+      return { ok: true };
+    } catch (err: any) {
+      const msg =
+        err?.message ||
+        err?.response?.data?.message ||
+        err?.data?.message ||
+        fallbackMsg;
+
+      return { ok: false, message: msg };
     }
   };
 
@@ -96,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await api("/api/logout", { method: "POST" });
     } catch {
-      // silencioso por padrão (evita overlay e mantém UX limpa)
+      // silencioso
     }
     setUser(null);
   };
@@ -106,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       login,
+      register,
       logout,
       refreshUser,
     }),

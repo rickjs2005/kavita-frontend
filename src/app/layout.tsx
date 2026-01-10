@@ -7,19 +7,41 @@ import { CartProvider } from "../context/CartContext";
 import Header from "../components/layout/Header";
 
 import { fetchPublicCategories } from "@/server/data/categories";
+import { fetchPublicShopSettings } from "@/server/data/shopSettings";
 
-export const metadata: Metadata = {
-  title: "Kavita",
-  description: "Loja de agropecuária",
-};
+// ✅ Metadata dinâmico (App Router) baseado no backend
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const shop = await fetchPublicShopSettings();
+
+    const storeName =
+      typeof shop?.store_name === "string" && shop.store_name.trim()
+        ? shop.store_name.trim()
+        : "Kavita";
+
+    return {
+      title: storeName,
+      description: "Loja de agropecuária",
+    };
+  } catch {
+    return {
+      title: "Kavita",
+      description: "Loja de agropecuária",
+    };
+  }
+}
 
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // SSR/ISR das categorias (revalidate: 60 definido no fetchPublicCategories)
-  const categories = await fetchPublicCategories();
+  // SSR/ISR das categorias (revalidate definido no fetchPublicCategories)
+  // Shop settings vem com no-store no fetchPublicShopSettings
+  const [categories, shop] = await Promise.all([
+    fetchPublicCategories(),
+    fetchPublicShopSettings(),
+  ]);
 
   return (
     <html lang="pt-BR" suppressHydrationWarning>
@@ -39,10 +61,11 @@ export default async function RootLayout({
       <body className="min-h-screen bg-white text-gray-900 antialiased">
         <AuthProvider>
           <CartProvider>
-            {/* Header global como era antes */}
-            <Header categories={categories} />
+            {/* Header global */}
+            <Header categories={categories} shop={shop} />
 
             <main id="conteudo">{children}</main>
+
             <Toaster position="top-right" />
           </CartProvider>
         </AuthProvider>

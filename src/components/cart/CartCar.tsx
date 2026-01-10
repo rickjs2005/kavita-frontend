@@ -59,18 +59,24 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
   // 🔐 Verifica se está logado
   // ============================
   useEffect(() => {
-    const authenticated =
-      Boolean(auth?.user?.id) || Boolean(auth?.isAuthenticated);
-
+    const authenticated = Boolean(auth?.user?.id) || Boolean(auth?.isAuthenticated);
     setLogged(authenticated);
   }, [auth?.user?.id, auth?.isAuthenticated]);
 
   // ============================
+  // ✅ FECHAR AUTOMATICAMENTE
+  // quando o carrinho ficar vazio
+  // ============================
+  useEffect(() => {
+    if (isCartOpen && isEmpty) {
+      closeCart();
+    }
+  }, [isCartOpen, isEmpty, closeCart]);
+
+  // ============================
   // 🔥 Promoções por produto
   // ============================
-  const [promotions, setPromotions] = useState<
-    Record<number, Promotion | null>
-  >({});
+  const [promotions, setPromotions] = useState<Record<number, Promotion | null>>({});
 
   useEffect(() => {
     if (!cartItems.length) {
@@ -78,40 +84,26 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
       return;
     }
 
-    const uniqueIds = Array.from(
-      new Set(cartItems.map((it) => Number(it.id)))
-    ).filter(Boolean);
+    const uniqueIds = Array.from(new Set(cartItems.map((it) => Number(it.id)))).filter(Boolean);
 
     (async () => {
       try {
         const results = await Promise.all(
           uniqueIds.map(async (id) => {
             try {
-              const res = await fetch(
-                `${API_BASE}/api/public/promocoes/${id}`
-              );
+              const res = await fetch(`${API_BASE}/api/public/promocoes/${id}`);
 
               if (!res.ok) {
-                // 404 = sem promoção para esse produto
                 return { id, promo: null };
               }
 
               const data = await res.json();
 
-              const original = Number(
-                data.original_price ?? data.price ?? 0
-              );
-              const final = Number(
-                data.final_price ??
-                  data.promo_price ??
-                  data.price ??
-                  original
-              );
+              const original = Number(data.original_price ?? data.price ?? 0);
+              const final = Number(data.final_price ?? data.promo_price ?? data.price ?? original);
 
               const discountPercent =
-                data.discount_percent != null
-                  ? Number(data.discount_percent)
-                  : undefined;
+                data.discount_percent != null ? Number(data.discount_percent) : undefined;
 
               return {
                 id,
@@ -121,12 +113,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
                   discountPercent,
                 } as Promotion,
               };
-            } catch (err) {
-              console.warn(
-                "[CartCar] erro ao buscar promoção do produto",
-                id,
-                err
-              );
+            } catch {
               return { id, promo: null };
             }
           })
@@ -139,8 +126,8 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
           }
           return next;
         });
-      } catch (err) {
-        console.error("[CartCar] erro geral ao carregar promoções:", err);
+      } catch {
+        // Sem log no console para manter padrão profissional
       }
     })();
   }, [cartItems]);
@@ -150,12 +137,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
   // ============================
   const warnings = useMemo(() => {
     return (cartItems as any[])
-      .filter(
-        (i) =>
-          typeof i._stock === "number" &&
-          i._stock > 0 &&
-          i.quantity >= i._stock
-      )
+      .filter((i) => typeof i._stock === "number" && i._stock > 0 && i.quantity >= i._stock)
       .map((i) => `“${i.name}” atingiu o limite de estoque (${i._stock}).`);
   }, [cartItems]);
 
@@ -176,10 +158,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
     [cartItems, promotions]
   );
 
-  const total = useMemo(
-    () => Math.max(subtotal - discount, 0),
-    [subtotal, discount]
-  );
+  const total = useMemo(() => Math.max(subtotal - discount, 0), [subtotal, discount]);
 
   // sempre que carrinho mudar (itens ou promoções), limpa estado de cupom
   useEffect(() => {
@@ -217,18 +196,12 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
 
       const { data } = await axios.post<CouponPreviewResponse>(
         `${API_BASE}/api/checkout/preview-cupom`,
-        {
-          codigo: code,
-          total: subtotal,
-        },
-        {
-          withCredentials: true,
-        }
+        { codigo: code, total: subtotal },
+        { withCredentials: true }
       );
 
       if (!data?.success) {
-        const msg =
-          data?.message || "Não foi possível aplicar este cupom.";
+        const msg = data?.message || "Não foi possível aplicar este cupom.";
         setDiscount(0);
         setCouponError(msg);
         toast.error(msg);
@@ -286,9 +259,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b px-4 sm:px-5 py-3">
         <div className="relative flex items-center justify-center">
-          <h2 className="text-base sm:text-lg font-semibold">
-            Carrinho de compras
-          </h2>
+          <h2 className="text-base sm:text-lg font-semibold">Carrinho de compras</h2>
           <CloseButton
             onClose={closeCart}
             className="absolute right-0 top-1/2 -translate-y-1/2"
@@ -322,7 +293,6 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
             </div>
           )}
 
-          {/* Resumo financeiro */}
           <div className="space-y-1 text-sm">
             <div className="flex items-center justify-between text-gray-700">
               <span>Subtotal</span>
@@ -344,14 +314,9 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
             </div>
           </div>
 
-          {couponMessage && (
-            <p className="mt-1 text-xs text-emerald-600">{couponMessage}</p>
-          )}
-          {couponError && (
-            <p className="mt-1 text-xs text-red-600">{couponError}</p>
-          )}
+          {couponMessage && <p className="mt-1 text-xs text-emerald-600">{couponMessage}</p>}
+          {couponError && <p className="mt-1 text-xs text-red-600">{couponError}</p>}
 
-          {/* Campo de cupom */}
           <div className="mt-3 flex gap-2">
             <input
               type="text"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 interface CheckoutResponse {
   pedido_id: number;
+  nota_fiscal_aviso?: string;
 }
 
 interface PaymentResponse {
@@ -27,11 +28,18 @@ interface PaymentResponse {
 }
 
 interface CartItem {
-  id: number;
-  name?: string; // nome no front
-  nome?: string; // nome vindo da API
-  price: number;
-  quantity: number;
+  id?: number | string;
+  productId?: number | string;
+  product_id?: number | string;
+
+  name?: string;
+  nome?: string;
+
+  price?: number | string;
+
+  quantity?: number | string;
+  quantidade?: number | string;
+  qtd?: number | string;
 }
 
 interface CouponPreviewResponse {
@@ -60,8 +68,44 @@ type ProductPromotion = {
   ends_at?: string | null;
 };
 
+type ShippingRuleApplied = "ZONE" | "CEP_RANGE" | "PRODUCT_FREE";
+
+type ShippingQuote = {
+  price: number;
+  prazo_dias: number;
+  cep: string;
+  ruleApplied?: ShippingRuleApplied;
+};
+
+/** Endereço salvo vindo do backend /api/users/addresses */
+type SavedAddress = {
+  id: number;
+  apelido?: string | null;
+
+  cep?: string | null;
+  endereco?: string | null; // rua/logradouro no backend
+  numero?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+
+  complemento?: string | null; // complemento
+  ponto_referencia?: string | null; // referência
+
+  is_default?: number | 0 | 1;
+
+  // novo: urbano/rural
+  tipo_localidade?: "URBANA" | "RURAL" | string | null;
+  comunidade?: string | null;
+  observacoes_acesso?: string | null;
+};
+
+type EntregaTipo = "ENTREGA" | "RETIRADA";
+
 const money = (v: number) =>
-  `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
+  `R$ ${Number(v || 0)
+    .toFixed(2)
+    .replace(".", ",")}`;
 
 const Icon = {
   user: () => (
@@ -90,10 +134,7 @@ const Icon = {
   ),
   shield: () => (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
-      <path
-        fill="currentColor"
-        d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5Z"
-      />
+      <path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5Z" />
     </svg>
   ),
   truck: () => (
@@ -106,13 +147,50 @@ const Icon = {
   ),
   ticket: () => (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
+      <path fill="currentColor" d="M3 6h18v4a2 2 0 0 1 0 4v4H3v-4a2 2 0 0 1 0-4Z" />
+    </svg>
+  ),
+  store: () => (
+    <svg viewBox="0 0 24 24" className="h-5 w-5">
       <path
         fill="currentColor"
-        d="M3 6h18v4a2 2 0 0 1 0 4v4H3v-4a2 2 0 0 1 0-4Z"
+        d="M4 4h16l1 5a3 3 0 0 1-3 3h-1v8a1 1 0 0 1-1 1h-3v-7H11v7H8a1 1 0 0 1-1-1v-8H6A3 3 0 0 1 3 9Zm2 2-1 3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1l-1-3Z"
       />
     </svg>
   ),
 };
+
+function ruleLabel(rule?: ShippingRuleApplied) {
+  if (!rule) return null;
+  if (rule === "PRODUCT_FREE") return "Frete grátis por produto";
+  if (rule === "CEP_RANGE") return "Frete por faixa de CEP";
+  return "Frete por zona";
+}
+
+function toPositiveInt(value: any, fallback = 1) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  const i = Math.floor(n);
+  return i > 0 ? i : fallback;
+}
+
+function toId(value: any) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  const i = Math.floor(n);
+  return i > 0 ? i : null;
+}
+
+function normalizeTipoLocalidade(v: any): "URBANA" | "RURAL" {
+  const t = String(v || "URBANA").trim().toUpperCase();
+  return t === "RURAL" ? "RURAL" : "URBANA";
+}
+
+function formatCepLabel(cep?: string | null) {
+  const d = String(cep || "").replace(/\D/g, "").slice(0, 8);
+  if (d.length !== 8) return String(cep || "");
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -126,40 +204,57 @@ export default function CheckoutPage() {
   const { formData, updateForm } = useCheckoutForm();
 
   // -----------------------------
+  // ENTREGA vs RETIRADA
+  // -----------------------------
+  const [entregaTipo, setEntregaTipo] = useState<EntregaTipo>("ENTREGA");
+  const isPickup = entregaTipo === "RETIRADA";
+
+  /**
+   * NORMALIZA ITENS DO CARRINHO
+   */
+  const normalizedCartItems = useMemo(() => {
+    const raw = (cartItems || []) as CartItem[];
+
+    return raw
+      .map((it, index) => {
+        const resolvedId = toId(it.id) ?? toId(it.productId) ?? toId(it.product_id);
+        const resolvedQty = toPositiveInt(it.quantity ?? it.quantidade ?? it.qtd, 1);
+        const resolvedPrice = Number(it.price ?? 0) || 0;
+        const resolvedName = String(it.nome || it.name || "").trim();
+
+        return {
+          __key: `${resolvedId ?? "noid"}-${index}`,
+          id: resolvedId,
+          name: resolvedName,
+          price: resolvedPrice,
+          quantity: resolvedQty,
+        };
+      })
+      .filter((it) => it.id !== null && it.quantity > 0);
+  }, [cartItems]);
+
+  // -----------------------------
   // PROMOÇÕES POR PRODUTO
   // -----------------------------
-  const [promotions, setPromotions] = useState<
-    Record<number, ProductPromotion | null>
-  >({});
+  const [promotions, setPromotions] = useState<Record<number, ProductPromotion | null>>({});
 
   useEffect(() => {
-    if (!cartItems?.length) {
+    if (!normalizedCartItems.length) {
       setPromotions({});
       return;
     }
 
-    const uniqueIds = Array.from(
-      new Set(cartItems.map((it: any) => Number(it.id)))
-    ).filter(Boolean);
+    const uniqueIds = Array.from(new Set(normalizedCartItems.map((it) => Number(it.id)))).filter(Boolean);
 
     (async () => {
       try {
         const results = await Promise.all(
           uniqueIds.map(async (id) => {
             try {
-              const res = await axios.get<ProductPromotion>(
-                `${API_BASE}/api/public/promocoes/${id}`
-              );
+              const res = await axios.get<ProductPromotion>(`${API_BASE}/api/public/promocoes/${id}`);
               return { id, promo: res.data };
             } catch (err: any) {
-              if (err?.response?.status === 404) {
-                return { id, promo: null };
-              }
-              console.error(
-                "[Checkout] erro ao buscar promoção do produto",
-                id,
-                err?.response?.data || err
-              );
+              if (err?.response?.status === 404) return { id, promo: null };
               return { id, promo: null };
             }
           })
@@ -167,19 +262,17 @@ export default function CheckoutPage() {
 
         setPromotions((prev) => {
           const next: Record<number, ProductPromotion | null> = { ...prev };
-          for (const { id, promo } of results) {
-            next[id] = promo;
-          }
+          for (const { id, promo } of results) next[id] = promo;
           return next;
         });
-      } catch (err) {
-        console.error("[Checkout] erro geral ao carregar promoções:", err);
+      } catch {
+        // silencioso
       }
     })();
-  }, [cartItems]);
+  }, [normalizedCartItems]);
 
   /** Calcula preço original/final e desconto com base na promoção */
-  const getPriceInfo = (item: CartItem) => {
+  const getPriceInfo = (item: { id: number; price: number }) => {
     const basePrice = Number(item.price ?? 0);
     const promo = promotions[item.id];
 
@@ -192,8 +285,7 @@ export default function CheckoutPage() {
       };
     }
 
-    const originalFromPromo =
-      promo.original_price != null ? Number(promo.original_price) : null;
+    const originalFromPromo = promo.original_price != null ? Number(promo.original_price) : null;
     const finalFromPromo =
       promo.final_price != null
         ? Number(promo.final_price)
@@ -201,48 +293,27 @@ export default function CheckoutPage() {
           ? Number(promo.promo_price)
           : null;
 
-    const originalPrice =
-      originalFromPromo !== null ? originalFromPromo : basePrice || 0;
-
-    let finalPrice =
-      finalFromPromo !== null ? finalFromPromo : originalPrice;
+    const originalPrice = originalFromPromo !== null ? originalFromPromo : basePrice || 0;
+    let finalPrice = finalFromPromo !== null ? finalFromPromo : originalPrice;
 
     let discountPercent: number | null = null;
 
-    const explicitDiscount =
-      promo.discount_percent != null
-        ? Number(promo.discount_percent)
-        : NaN;
+    const explicitDiscount = promo.discount_percent != null ? Number(promo.discount_percent) : NaN;
 
-    if (
-      finalFromPromo === null &&
-      !Number.isNaN(explicitDiscount) &&
-      explicitDiscount > 0 &&
-      originalPrice > 0
-    ) {
+    if (finalFromPromo === null && !Number.isNaN(explicitDiscount) && explicitDiscount > 0 && originalPrice > 0) {
       finalPrice = originalPrice * (1 - explicitDiscount / 100);
     }
 
     if (originalPrice > 0 && finalPrice < originalPrice) {
-      discountPercent =
-        ((originalPrice - finalPrice) / originalPrice) * 100;
+      discountPercent = ((originalPrice - finalPrice) / originalPrice) * 100;
     } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
       discountPercent = explicitDiscount;
     }
 
-    const hasDiscount =
-      discountPercent !== null &&
-      discountPercent > 0 &&
-      finalPrice < originalPrice;
-
+    const hasDiscount = discountPercent !== null && discountPercent > 0 && finalPrice < originalPrice;
     const discountValue = hasDiscount ? originalPrice - finalPrice : 0;
 
-    return {
-      originalPrice,
-      finalPrice,
-      discountValue,
-      hasDiscount,
-    };
+    return { originalPrice, finalPrice, discountValue, hasDiscount };
   };
 
   // -----------------------------
@@ -254,23 +325,147 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
 
-  const itemsCount = (cartItems || []).reduce(
-    (acc: number, it: any) => acc + Number(it?.quantity ?? 0),
-    0
+  const itemsCount = useMemo(
+    () => normalizedCartItems.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
+    [normalizedCartItems]
   );
 
   // Subtotal SEM cupom (apenas promoções)
-  const subtotal = useMemo(
-    () =>
-      (cartItems || []).reduce((acc: number, it: CartItem) => {
-        const info = getPriceInfo(it);
-        return acc + info.finalPrice * Number(it.quantity ?? 1);
-      }, 0),
-    [cartItems, promotions]
+  const subtotal = useMemo(() => {
+    return normalizedCartItems.reduce((acc, it) => {
+      const info = getPriceInfo({ id: it.id as number, price: it.price });
+      return acc + info.finalPrice * Number(it.quantity ?? 1);
+    }, 0);
+  }, [normalizedCartItems, promotions]);
+
+  // -----------------------------
+  // ENDEREÇOS SALVOS
+  // -----------------------------
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(false);
+  const [addressesError, setAddressesError] = useState<string | null>(null);
+
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+
+  const applyAddressToForm = useCallback(
+    (addr: Partial<SavedAddress> | any) => {
+      const tipo = normalizeTipoLocalidade(addr?.tipo_localidade);
+
+      updateForm("endereco.cep", String(addr?.cep || ""));
+      updateForm("endereco.estado", String(addr?.estado || ""));
+      updateForm("endereco.cidade", String(addr?.cidade || ""));
+
+      updateForm("endereco.tipo_localidade" as any, tipo);
+
+      if (tipo === "RURAL") {
+        updateForm("endereco.comunidade" as any, String(addr?.comunidade || ""));
+        updateForm("endereco.observacoes_acesso" as any, String(addr?.observacoes_acesso || ""));
+
+        updateForm("endereco.logradouro", String(addr?.endereco || addr?.logradouro || ""));
+        updateForm("endereco.bairro", String(addr?.bairro || ""));
+      } else {
+        updateForm("endereco.logradouro", String(addr?.endereco || addr?.logradouro || ""));
+        updateForm("endereco.bairro", String(addr?.bairro || ""));
+      }
+
+      updateForm("endereco.numero", String(addr?.numero || ""));
+
+      updateForm("endereco.complemento" as any, String(addr?.complemento || ""));
+      updateForm("endereco.referencia", String(addr?.ponto_referencia || addr?.referencia || ""));
+    },
+    [updateForm]
   );
 
-  const frete = 0;
-  const total = Math.max(subtotal + frete - discount, 0);
+  // Busca endereços salvos (logado) e fallback para lastOrder
+  useEffect(() => {
+    if (!isLoggedIn || !userId) return;
+
+    let lastOrderAddress: any = null;
+    const key = `lastOrder_${userId}`;
+    try {
+      const last = sessionStorage.getItem(key);
+      if (last) {
+        const parsed = JSON.parse(last);
+        if (parsed && parsed.endereco) lastOrderAddress = parsed.endereco;
+      }
+    } catch {
+      //
+    }
+
+    (async () => {
+      try {
+        setAddressesLoading(true);
+        setAddressesError(null);
+
+        const res = await axios.get(`${API_BASE}/api/users/addresses`, {
+          withCredentials: true,
+        });
+
+        const list: SavedAddress[] = Array.isArray(res.data) ? res.data : [];
+        setSavedAddresses(list);
+
+        if (list.length > 0) {
+          const preferred = list.find((a: any) => Number(a.is_default) === 1) || list[0];
+          setSelectedAddressId(Number(preferred.id));
+          setShowNewAddressForm(false);
+
+          applyAddressToForm(preferred);
+        } else {
+          setSelectedAddressId(null);
+          setShowNewAddressForm(true);
+
+          if (lastOrderAddress) {
+            applyAddressToForm(lastOrderAddress);
+          }
+        }
+      } catch (err: any) {
+        setAddressesError("Não foi possível carregar seus endereços.");
+        if (lastOrderAddress) {
+          setSavedAddresses([]);
+          setSelectedAddressId(null);
+          setShowNewAddressForm(true);
+          applyAddressToForm(lastOrderAddress);
+        } else {
+          setSavedAddresses([]);
+          setSelectedAddressId(null);
+          setShowNewAddressForm(true);
+        }
+      } finally {
+        setAddressesLoading(false);
+      }
+    })();
+  }, [isLoggedIn, userId, applyAddressToForm]);
+
+  const selectedSavedAddress = useMemo(() => {
+    if (!selectedAddressId) return null;
+    return savedAddresses.find((a) => Number(a.id) === Number(selectedAddressId)) || null;
+  }, [savedAddresses, selectedAddressId]);
+
+  const handleSelectAddress = (addr: SavedAddress) => {
+    setSelectedAddressId(Number(addr.id));
+    setShowNewAddressForm(false);
+    applyAddressToForm(addr);
+  };
+
+  // -----------------------------
+  // FRETE (quote) - apenas ENTREGA
+  // -----------------------------
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState<string | null>(null);
+  const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null);
+
+  const cepDigits = String(formData?.endereco?.cep || "")
+    .replace(/\D/g, "")
+    .slice(0, 8);
+
+  const isCepValid = cepDigits.length === 8;
+
+  // Total depende do tipo:
+  // - RETIRADA: sem frete e sem prazo
+  // - ENTREGA: frete vindo do quote
+  const frete = !isPickup && shippingQuote ? Number(shippingQuote.price || 0) : 0;
+  const total = Math.max(subtotal - discount + frete, 0);
 
   // reseta cupom quando subtotal muda (por promo ou quantidade)
   useEffect(() => {
@@ -280,82 +475,90 @@ export default function CheckoutPage() {
     setCouponError(null);
   }, [subtotal]);
 
-  // -----------------------------
-  // ENDEREÇO SALVO
-  // -----------------------------
-  const [usarEnderecoSalvo, setUsarEnderecoSalvo] = useState<boolean>(false);
-  const [enderecoSalvo, setEnderecoSalvo] = useState<any>(null);
-
+  // Se mudar para RETIRADA, zera quote/erros de frete e não exige CEP.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    let lastOrderAddress: any = null;
-    if (userId) {
-      const key = `lastOrder_${userId}`;
-      try {
-        const last = sessionStorage.getItem(key);
-        if (last) {
-          const parsed = JSON.parse(last);
-          if (parsed && parsed.endereco) {
-            lastOrderAddress = parsed.endereco;
-          }
-        }
-      } catch {
-        // ignora
-      }
+    if (isPickup) {
+      setShippingLoading(false);
+      setShippingError(null);
+      setShippingQuote(null);
     }
+  }, [isPickup]);
 
-    // se não estiver logado, só usa último endereço do sessionStorage
-    if (!userId) {
-      if (lastOrderAddress) {
-        setEnderecoSalvo(lastOrderAddress);
-        setUsarEnderecoSalvo(true);
-      } else {
-        setEnderecoSalvo(null);
-        setUsarEnderecoSalvo(false);
-      }
+  // COTAR FRETE quando CEP tiver 8 dígitos, carrinho tiver itens e tipo for ENTREGA
+  useEffect(() => {
+    setShippingError(null);
+
+    if (isPickup) {
+      setShippingQuote(null);
       return;
     }
 
-    // busca endereços do usuário autenticado (usa cookie HttpOnly)
+    if (!normalizedCartItems.length) {
+      setShippingQuote(null);
+      return;
+    }
+
+    if (!isCepValid) {
+      setShippingQuote(null);
+      return;
+    }
+
+    let aborted = false;
+
     (async () => {
       try {
-        const res = await axios.get(`${API_BASE}/api/users/addresses`, {
-          withCredentials: true,
+        setShippingLoading(true);
+        setShippingError(null);
+
+        const itemsPayload = normalizedCartItems.map((i) => ({
+          id: Number(i.id),
+          quantidade: Number(i.quantity ?? 1),
+        }));
+
+        const params = new URLSearchParams({
+          cep: cepDigits,
+          items: JSON.stringify(itemsPayload),
         });
 
-        const list: any[] = Array.isArray(res.data) ? res.data : [];
-        const preferred =
-          list.find((a: any) => a.is_default === 1) || list[0] || null;
+        const res = await fetch(`${API_BASE}/api/shipping/quote?${params.toString()}`, {
+          method: "GET",
+          credentials: "include",
+        });
 
-        if (preferred) {
-          const salvo = {
-            cep: preferred.cep,
-            logradouro: preferred.endereco,
-            numero: preferred.numero,
-            bairro: preferred.bairro,
-            cidade: preferred.cidade,
-            estado: preferred.estado,
-            complemento: preferred.complemento,
-            referencia: preferred.ponto_referencia,
-          };
-          setEnderecoSalvo(salvo);
-          setUsarEnderecoSalvo(true);
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          const msg =
+            data?.message || (res.status === 404 ? "CEP sem cobertura." : "Não foi possível calcular o frete.");
+          if (!aborted) {
+            setShippingQuote(null);
+            setShippingError(msg);
+          }
           return;
         }
-      } catch (e) {
-        console.error("Erro ao carregar endereços do usuário:", e);
-      }
 
-      if (lastOrderAddress) {
-        setEnderecoSalvo(lastOrderAddress);
-        setUsarEnderecoSalvo(true);
-      } else {
-        setEnderecoSalvo(null);
-        setUsarEnderecoSalvo(false);
+        const data = await res.json();
+        if (aborted) return;
+
+        setShippingQuote({
+          cep: String(data?.cep || cepDigits),
+          price: Number(data?.price || 0),
+          prazo_dias: Number(data?.prazo_dias || 0),
+          ruleApplied: (data?.ruleApplied as ShippingRuleApplied) || undefined,
+        });
+      } catch {
+        if (!aborted) {
+          setShippingQuote(null);
+          setShippingError("Falha ao calcular frete. Tente novamente.");
+        }
+      } finally {
+        if (!aborted) setShippingLoading(false);
       }
     })();
-  }, [userId]);
+
+    return () => {
+      aborted = true;
+    };
+  }, [cepDigits, normalizedCartItems, isCepValid, isPickup]);
 
   const normalizeFormaPagamento = (value?: string) => {
     const v = String(value || "").toLowerCase();
@@ -367,10 +570,12 @@ export default function CheckoutPage() {
   };
 
   // -----------------------------
-  // PAYLOAD (usa total com promo+cupom)
+  // PAYLOAD (alinhado com backend)
+  // - ENTREGA: envia entrega_tipo=ENTREGA e endereco normalizado
+  // - RETIRADA: envia entrega_tipo=RETIRADA e NÃO envia endereco
   // -----------------------------
   const payload = useMemo(() => {
-    const endereco = formData?.endereco || {};
+    const endereco = formData?.endereco || ({} as any);
     const formaPagamento = normalizeFormaPagamento(formData?.formaPagamento);
 
     const nome = String(formData?.nome || "").trim();
@@ -378,19 +583,12 @@ export default function CheckoutPage() {
     const telefoneDigits = String(formData?.telefone || "").replace(/\D/g, "");
     const email = String(formData?.email || "").trim();
 
-    return {
-      // usuario_id NÃO vai no body → backend usa req.user.id do JWT
-      endereco: {
-        cep: endereco?.cep || "",
-        rua: endereco?.logradouro || "",      // 👈 só logradouro
-        numero: endereco?.numero || "",
-        bairro: endereco?.bairro || "",
-        cidade: endereco?.cidade || "",
-        estado: endereco?.estado || "",
-        complemento: endereco?.referencia || null, // 👈 usa apenas referencia
-      },
+    const tipoLocalidade = normalizeTipoLocalidade((endereco as any)?.tipo_localidade);
+
+    const base = {
+      entrega_tipo: entregaTipo,
       formaPagamento,
-      produtos: (cartItems || []).map((i: CartItem) => ({
+      produtos: normalizedCartItems.map((i) => ({
         id: Number(i.id),
         quantidade: Number(i.quantity ?? 1),
       })),
@@ -400,11 +598,44 @@ export default function CheckoutPage() {
       telefone: telefoneDigits,
       email,
       cupom_codigo: couponCode ? couponCode.trim() : undefined,
+    } as any;
+
+    if (entregaTipo === "RETIRADA") {
+      // Em retirada, o backend NÃO exige endereço e ignora frete/prazo
+      return base;
+    }
+
+    // ENTREGA: envia endereço com nomes que o backend aceita
+    return {
+      ...base,
+      endereco: {
+        cep: endereco?.cep || "",
+        // Backend aceita rua/endereco/logradouro. Vamos mandar "rua" como fonte principal.
+        rua: endereco?.logradouro || "",
+        // opcional: se você quiser redundância segura (não faz mal se backend ignorar)
+        // endereco: endereco?.logradouro || "",
+        numero: endereco?.numero || "",
+        bairro: endereco?.bairro || "",
+        cidade: endereco?.cidade || "",
+        estado: endereco?.estado || "",
+
+        // ✅ campos distintos
+        complemento: (endereco as any)?.complemento ? String((endereco as any).complemento) : null,
+        ponto_referencia: endereco?.referencia ? String(endereco.referencia) : null,
+
+        // ✅ Rural/urbano alinhado com backend
+        tipo_localidade: tipoLocalidade,
+        comunidade: (endereco as any)?.comunidade ? String((endereco as any).comunidade) : null,
+        observacoes_acesso: (endereco as any)?.observacoes_acesso ? String((endereco as any).observacoes_acesso) : null,
+
+        // ✅ (opcional) futura opção "sem número" (quando você adicionar no form)
+        // sem_numero: Boolean((endereco as any)?.sem_numero),
+      },
     };
-  }, [formData, cartItems, total, couponCode]);
+  }, [formData, normalizedCartItems, total, couponCode, entregaTipo, isPickup]);
 
   // -----------------------------
-  // APLICAR CUPOM (usa subtotal com promo)
+  // APLICAR CUPOM
   // -----------------------------
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -435,14 +666,11 @@ export default function CheckoutPage() {
           codigo: couponCode.trim(),
           total: subtotalAtual,
         },
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
 
       if (!data?.success) {
-        const msg =
-          data?.message || "Não foi possível aplicar este cupom.";
+        const msg = data?.message || "Não foi possível aplicar este cupom.";
         setDiscount(0);
         setCouponError(msg);
         toast.error(msg);
@@ -470,6 +698,11 @@ export default function CheckoutPage() {
   // -----------------------------
   // FINALIZAR CHECKOUT
   // -----------------------------
+  const canFinalizeCheckout =
+    isLoggedIn &&
+    (payload.produtos?.length || 0) > 0 &&
+    (isPickup || (isCepValid && shippingQuote !== null && !shippingError && !shippingLoading));
+
   const handleSubmit = async () => {
     if (submitting) return;
 
@@ -484,22 +717,45 @@ export default function CheckoutPage() {
       return;
     }
 
+    // ENTREGA: bloqueios obrigatórios de frete
+    if (!isPickup) {
+      if (!isCepValid) {
+        toast.error("Informe um CEP válido (8 dígitos) para calcular o frete.");
+        return;
+      }
+
+      if (shippingError) {
+        toast.error(shippingError);
+        return;
+      }
+
+      if (shippingLoading || shippingQuote === null) {
+        toast.error("Aguarde o cálculo do frete para finalizar a compra.");
+        return;
+      }
+    }
+
     const errors: string[] = [];
 
-    if (!payload.nome) {
-      errors.push("Informe o nome do cliente.");
-    }
+    if (!payload.nome) errors.push("Informe o nome do cliente.");
 
-    if (!payload.cpf) {
-      errors.push("Informe o CPF.");
-    } else if (payload.cpf.length !== 11) {
-      errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
-    }
+    if (!payload.cpf) errors.push("Informe o CPF.");
+    else if (payload.cpf.length !== 11) errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
 
-    if (!payload.telefone) {
-      errors.push("Informe o WhatsApp.");
-    } else if (payload.telefone.length < 10) {
-      errors.push("WhatsApp deve ter pelo menos 10 dígitos.");
+    if (!payload.telefone) errors.push("Informe o WhatsApp.");
+    else if (payload.telefone.length < 10) errors.push("WhatsApp deve ter pelo menos 10 dígitos.");
+
+    // ENTREGA: validação inteligente (frontend) para rural
+    if (!isPickup) {
+      const tipo = normalizeTipoLocalidade(payload.endereco?.tipo_localidade);
+      if (tipo === "RURAL") {
+        if (!String(payload.endereco?.comunidade || "").trim()) {
+          errors.push("Informe o Córrego/Comunidade para zona rural.");
+        }
+        if (!String(payload.endereco?.observacoes_acesso || "").trim()) {
+          errors.push("Informe a descrição de acesso para zona rural.");
+        }
+      }
     }
 
     if (errors.length) {
@@ -510,13 +766,10 @@ export default function CheckoutPage() {
     try {
       setSubmitting(true);
 
-      const { data } = await axios.post<CheckoutResponse>(
-        `${API_BASE}/api/checkout`,
-        payload,
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await axios.post<CheckoutResponse>(`${API_BASE}/api/checkout`, payload, {
+        withCredentials: true,
+      });
+
       const pedidoId = data.pedido_id;
 
       if (typeof window !== "undefined" && userId) {
@@ -533,14 +786,13 @@ export default function CheckoutPage() {
             produtos: payload.produtos,
             total: payload.total,
             formaPagamento: payload.formaPagamento,
+            entrega_tipo: payload.entrega_tipo,
             criadoEm: new Date().toISOString(),
           })
         );
       }
 
-      const isGatewayPayment = ["mercadopago", "pix", "boleto"].includes(
-        payload.formaPagamento
-      );
+      const isGatewayPayment = ["mercadopago", "pix", "boleto"].includes(payload.formaPagamento);
 
       if (isGatewayPayment) {
         const res = await axios.post<PaymentResponse>(
@@ -549,8 +801,7 @@ export default function CheckoutPage() {
           { withCredentials: true }
         );
 
-        const initPoint =
-          res.data?.init_point || res.data?.sandbox_init_point || null;
+        const initPoint = res.data?.init_point || res.data?.sandbox_init_point || null;
 
         clearCart?.();
 
@@ -559,9 +810,7 @@ export default function CheckoutPage() {
           return;
         }
 
-        toast.error(
-          "Não foi possível abrir a tela de pagamento. Tente novamente."
-        );
+        toast.error("Não foi possível abrir a tela de pagamento. Tente novamente.");
         return;
       }
 
@@ -572,15 +821,8 @@ export default function CheckoutPage() {
       const status = err?.response?.status;
       const msgBackend = err?.response?.data?.message as string | undefined;
 
-      if (
-        status === 401 ||
-        status === 403 ||
-        (msgBackend && msgBackend.toLowerCase().includes("token"))
-      ) {
-        toast.error(
-          msgBackend ||
-          "Sua sessão expirou. Faça login novamente para finalizar a compra."
-        );
+      if (status === 401 || status === 403 || (msgBackend && msgBackend.toLowerCase().includes("token"))) {
+        toast.error(msgBackend || "Sua sessão expirou. Faça login novamente para finalizar a compra.");
 
         try {
           await logout();
@@ -592,9 +834,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      const msg =
-        msgBackend ||
-        "Erro ao finalizar a compra. Verifique os dados e tente novamente.";
+      const msg = msgBackend || "Erro ao finalizar a compra. Verifique os dados e tente novamente.";
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -610,18 +850,14 @@ export default function CheckoutPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <CloseButton className="text-2xl sm:text-3xl text-gray-600 hover:text-[#EC5B20]" />
-            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">
-              Checkout
-            </h1>
+            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">Checkout</h1>
           </div>
 
           <div className="rounded-2xl border border-black/10 bg-white/95 p-6 sm:p-8 shadow-sm text-center">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">
-              Faça login para finalizar sua compra
-            </h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">Faça login para finalizar sua compra</h2>
             <p className="text-sm sm:text-base text-gray-600 mb-6">
-              Para garantir sua segurança e vincular o pedido à sua conta, é
-              necessário estar logado antes de concluir o checkout.
+              Para garantir sua segurança e vincular o pedido à sua conta, é necessário estar logado antes de concluir o
+              checkout.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -654,12 +890,8 @@ export default function CheckoutPage() {
         <div className="flex items-center justify-between gap-3">
           <CloseButton className="text-2xl sm:text-3xl text-gray-600 hover:text-[#EC5B20]" />
           <div className="flex-1 flex flex-col items-center sm:items-start">
-            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">
-              Finalizar compra
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-600">
-              Revise seus dados e confirme o pedido com segurança.
-            </p>
+            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">Finalizar compra</h1>
+            <p className="text-xs sm:text-sm text-gray-600">Revise seus dados e confirme o pedido com segurança.</p>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-xs sm:text-sm text-gray-500">
             <Icon.shield />
@@ -682,16 +914,14 @@ export default function CheckoutPage() {
                     <Icon.user />
                     Dados do cliente
                   </h2>
-                  <p className="text-xs text-gray-500">
-                    Nome, CPF, e contato para confirmação do pedido.
-                  </p>
+                  <p className="text-xs text-gray-500">Nome, CPF, e contato para confirmação do pedido.</p>
                 </div>
               </div>
 
               <PersonalInfoForm formData={formData} onChange={updateForm} />
             </section>
 
-            {/* Endereço */}
+            {/* Entrega / Retirada */}
             <section className="rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-6 shadow-sm">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
@@ -700,59 +930,211 @@ export default function CheckoutPage() {
                   </div>
                   <div>
                     <h2 className="text-sm sm:text-base font-semibold text-gray-800 flex items-center gap-2">
-                      <Icon.pin />
-                      Endereço de entrega
+                      {isPickup ? <Icon.store /> : <Icon.pin />}
+                      {isPickup ? "Retirada no estabelecimento" : "Endereço de entrega"}
                     </h2>
                     <p className="text-xs text-gray-500">
-                      Use um endereço salvo ou informe um novo.
+                      {isPickup
+                        ? "Escolha retirar no local. Sem frete e sem prazo de entrega."
+                        : "Selecione um endereço salvo ou adicione um novo."}
                     </p>
                   </div>
                 </div>
-
-                {enderecoSalvo && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setUsarEnderecoSalvo((prev) => {
-                        const novo = !prev;
-                        if (novo && enderecoSalvo) {
-                          const e = enderecoSalvo;
-                          updateForm("endereco.cep", e.cep || "");
-                          updateForm(
-                            "endereco.logradouro",
-                            e.logradouro || ""
-                          );
-                          updateForm("endereco.numero", e.numero || "");
-                          updateForm("endereco.bairro", e.bairro || "");
-                          updateForm("endereco.cidade", e.cidade || "");
-                          updateForm("endereco.estado", e.estado || "");
-                          updateForm(
-                            "endereco.referencia",
-                            e.referencia || e.complemento || ""
-                          );
-                        }
-                        return novo;
-                      })
-                    }
-                    className="inline-flex items-center gap-1 rounded-full border border-black/10 px-3 py-1 text-[11px] font-medium text-gray-700 hover:bg-black/5 transition"
-                  >
-                    <span
-                      className={
-                        "h-2 w-2 rounded-full border " +
-                        (usarEnderecoSalvo
-                          ? "bg-[#22C55E] border-[#22C55E]"
-                          : "bg-white border-gray-400")
-                      }
-                    />
-                    {usarEnderecoSalvo ? "Usando endereço salvo" : "Usar endereço salvo"}
-                  </button>
-                )}
               </div>
 
-              <AddressForm
-                endereco={formData.endereco}
-                onChange={updateForm}
-              />
+              {/* Seletor ENTREGA vs RETIRADA */}
+              <div className="mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEntregaTipo("ENTREGA")}
+                    className={[
+                      "rounded-2xl border p-3 text-left transition shadow-sm",
+                      entregaTipo === "ENTREGA"
+                        ? "border-[#EC5B20] ring-2 ring-[#EC5B20]/20 bg-[#FFF7F2]"
+                        : "border-black/10 bg-white hover:bg-black/[0.03]",
+                    ].join(" ")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon.truck />
+                      <span className="text-sm font-semibold text-gray-800">Entrega</span>
+                    </div>
+                    <p className="mt-1 text-[12px] text-gray-600">Calcular frete e prazo pelo CEP.</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEntregaTipo("RETIRADA")}
+                    className={[
+                      "rounded-2xl border p-3 text-left transition shadow-sm",
+                      entregaTipo === "RETIRADA"
+                        ? "border-[#EC5B20] ring-2 ring-[#EC5B20]/20 bg-[#FFF7F2]"
+                        : "border-black/10 bg-white hover:bg-black/[0.03]",
+                    ].join(" ")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon.store />
+                      <span className="text-sm font-semibold text-gray-800">Retirar no local</span>
+                    </div>
+                    <p className="mt-1 text-[12px] text-gray-600">Sem frete e sem prazo de entrega.</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Conteúdo de endereço apenas se ENTREGA */}
+              {!isPickup ? (
+                <>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    {savedAddresses.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNewAddressForm(true);
+                          setSelectedAddressId(null);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-full border border-black/10 px-3 py-1 text-[11px] font-medium text-gray-700 hover:bg-black/5 transition"
+                      >
+                        + Adicionar novo endereço
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Lista de endereços salvos (cards) */}
+                  {addressesLoading ? (
+                    <div className="rounded-xl border border-gray-100 bg-white p-4 text-sm text-gray-600">
+                      Carregando endereços...
+                    </div>
+                  ) : addressesError ? (
+                    <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">{addressesError}</div>
+                  ) : savedAddresses.length > 0 && !showNewAddressForm ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {savedAddresses.map((addr) => {
+                          const isSelected = Number(addr.id) === Number(selectedAddressId);
+                          const isDefault = Number(addr.is_default) === 1;
+                          const tipo = normalizeTipoLocalidade(addr.tipo_localidade);
+
+                          return (
+                            <button
+                              key={addr.id}
+                              type="button"
+                              onClick={() => handleSelectAddress(addr)}
+                              className={[
+                                "text-left rounded-2xl border p-4 transition shadow-sm",
+                                isSelected
+                                  ? "border-[#EC5B20] ring-2 ring-[#EC5B20]/20 bg-[#FFF7F2]"
+                                  : "border-black/10 hover:bg-black/[0.03] bg-white",
+                              ].join(" ")}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-semibold text-gray-800 truncate">
+                                      {addr.apelido?.trim() ? addr.apelido : "Endereço"}
+                                    </span>
+
+                                    {isDefault ? (
+                                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                        Padrão
+                                      </span>
+                                    ) : null}
+
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-600 border border-gray-100">
+                                      {tipo === "RURAL" ? "Zona rural" : "Zona urbana"}
+                                    </span>
+                                  </div>
+
+                                  <p className="mt-1 text-[12px] text-gray-600">
+                                    {tipo === "RURAL" ? (
+                                      <>
+                                        <span className="font-medium">Comunidade:</span>{" "}
+                                        {addr.comunidade?.trim() ? addr.comunidade : "—"}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {String(addr.endereco || "").trim() || "—"}, {String(addr.numero || "").trim() || "S/N"}
+                                        {String(addr.bairro || "").trim() ? ` • ${addr.bairro}` : ""}
+                                      </>
+                                    )}
+                                  </p>
+
+                                  <p className="mt-1 text-[12px] text-gray-500">
+                                    {String(addr.cidade || "").trim() || "—"} / {String(addr.estado || "").trim() || "—"} •{" "}
+                                    {formatCepLabel(addr.cep)}
+                                  </p>
+
+                                  {tipo === "RURAL" && String(addr.observacoes_acesso || "").trim() ? (
+                                    <p className="mt-2 text-[11px] text-gray-600 line-clamp-2">
+                                      <span className="font-medium">Acesso:</span> {addr.observacoes_acesso}
+                                    </p>
+                                  ) : null}
+                                </div>
+
+                                <span
+                                  className={[
+                                    "mt-1 h-4 w-4 rounded-full border flex-none",
+                                    isSelected ? "bg-[#EC5B20] border-[#EC5B20]" : "bg-white border-gray-300",
+                                  ].join(" ")}
+                                  aria-hidden="true"
+                                />
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white p-3">
+                        <div className="text-xs text-gray-600">Selecione um endereço acima. Quer entregar em outro local?</div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowNewAddressForm(true);
+                            setSelectedAddressId(null);
+                          }}
+                          className="text-xs font-semibold text-[#EC5B20] hover:underline underline-offset-2"
+                        >
+                          Adicionar novo
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {savedAddresses.length > 0 ? (
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white p-3">
+                          <div className="text-xs text-gray-600">Preencha um novo endereço para esta entrega.</div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const preferred =
+                                savedAddresses.find((a: any) => Number(a.is_default) === 1) || savedAddresses[0] || null;
+
+                              if (preferred) {
+                                setSelectedAddressId(Number(preferred.id));
+                                setShowNewAddressForm(false);
+                                applyAddressToForm(preferred);
+                              } else {
+                                setShowNewAddressForm(false);
+                              }
+                            }}
+                            className="text-xs font-semibold text-gray-700 hover:underline underline-offset-2"
+                          >
+                            Voltar para endereços salvos
+                          </button>
+                        </div>
+                      ) : null}
+
+                      <AddressForm endereco={formData.endereco} onChange={updateForm} />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="rounded-xl border border-gray-100 bg-white p-4 text-sm text-gray-700">
+                  <p className="font-semibold text-gray-800">Retirada no estabelecimento</p>
+                  <p className="mt-1 text-[12px] text-gray-600">
+                    Ao selecionar retirada, não há cobrança de frete e não há prazo de entrega.
+                  </p>
+                </div>
+              )}
             </section>
 
             {/* Forma de pagamento */}
@@ -766,16 +1148,11 @@ export default function CheckoutPage() {
                     <Icon.card />
                     Pagamento
                   </h2>
-                  <p className="text-xs text-gray-500">
-                    Escolha a melhor forma de pagamento para você.
-                  </p>
+                  <p className="text-xs text-gray-500">Escolha a melhor forma de pagamento para você.</p>
                 </div>
               </div>
 
-              <PaymentMethodForm
-                formaPagamento={formData.formaPagamento}
-                onChange={updateForm}
-              />
+              <PaymentMethodForm formaPagamento={formData.formaPagamento} onChange={updateForm} />
             </section>
           </div>
 
@@ -786,9 +1163,7 @@ export default function CheckoutPage() {
               <header className="flex items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                   <Icon.truck />
-                  <h2 className="text-sm sm:text-base font-semibold text-gray-800">
-                    Resumo do pedido
-                  </h2>
+                  <h2 className="text-sm sm:text-base font-semibold text-gray-800">Resumo do pedido</h2>
                 </div>
                 <span className="text-xs text-gray-500">
                   {itemsCount} {itemsCount === 1 ? "item" : "itens"}
@@ -796,53 +1171,35 @@ export default function CheckoutPage() {
               </header>
 
               <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
-                {(cartItems || []).map((item: CartItem) => {
-                  const info = getPriceInfo(item);
+                {normalizedCartItems.map((item) => {
+                  const info = getPriceInfo({ id: item.id as number, price: item.price });
 
                   return (
                     <div
-                      key={item.id}
+                      key={item.__key}
                       className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 last:border-none last:pb-0"
                     >
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800">
-                          {item.nome || item.name}
-                        </p>
-                        <p className="text-[11px] text-gray-500">
-                          Quantidade: {item.quantity}
-                        </p>
-                        {info.hasDiscount && (
-                          <p className="mt-1 text-[11px] text-emerald-600">
-                            Promoção aplicada automaticamente
-                          </p>
-                        )}
+                        <p className="text-sm font-medium text-gray-800">{item.name || `Produto #${item.id}`}</p>
+                        <p className="text-[11px] text-gray-500">Quantidade: {item.quantity}</p>
+                        {info.hasDiscount && <p className="mt-1 text-[11px] text-emerald-600">Promoção aplicada automaticamente</p>}
                       </div>
 
                       <div className="text-right text-xs sm:text-sm">
                         {info.hasDiscount ? (
                           <>
-                            <div className="text-gray-400 line-through">
-                              {money(info.originalPrice * item.quantity)}
-                            </div>
-                            <div className="text-[#EC5B20] font-semibold">
-                              {money(info.finalPrice * item.quantity)}
-                            </div>
+                            <div className="text-gray-400 line-through">{money(info.originalPrice * item.quantity)}</div>
+                            <div className="text-[#EC5B20] font-semibold">{money(info.finalPrice * item.quantity)}</div>
                           </>
                         ) : (
-                          <div className="text-gray-800 font-medium">
-                            {money(info.finalPrice * item.quantity)}
-                          </div>
+                          <div className="text-gray-800 font-medium">{money(info.finalPrice * item.quantity)}</div>
                         )}
                       </div>
                     </div>
                   );
                 })}
 
-                {!(cartItems || []).length && (
-                  <p className="text-xs text-gray-500">
-                    Seu carrinho está vazio.
-                  </p>
-                )}
+                {!normalizedCartItems.length && <p className="text-xs text-gray-500">Seu carrinho está vazio.</p>}
               </div>
             </section>
 
@@ -852,18 +1209,14 @@ export default function CheckoutPage() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Icon.ticket />
-                  <span className="text-sm font-semibold text-gray-800">
-                    Cupom de desconto
-                  </span>
+                  <span className="text-sm font-semibold text-gray-800">Cupom de desconto</span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={couponCode}
-                    onChange={(e) =>
-                      setCouponCode(e.target.value.toUpperCase())
-                    }
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="Digite o código do cupom"
                     className="flex-1 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#EC5B20]/70"
                   />
@@ -877,16 +1230,8 @@ export default function CheckoutPage() {
                   </button>
                 </div>
 
-                {couponMessage && (
-                  <p className="mt-1 text-[11px] text-emerald-600">
-                    {couponMessage}
-                  </p>
-                )}
-                {couponError && (
-                  <p className="mt-1 text-[11px] text-red-500">
-                    {couponError}
-                  </p>
-                )}
+                {couponMessage && <p className="mt-1 text-[11px] text-emerald-600">{couponMessage}</p>}
+                {couponError && <p className="mt-1 text-[11px] text-red-500">{couponError}</p>}
               </div>
 
               {/* Totais */}
@@ -903,24 +1248,61 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <div className="flex justify-between text-gray-700 text-sm">
-                  <span>Frete</span>
-                  <span>{frete > 0 ? money(frete) : "Grátis"}</span>
+                {/* FRETE / RETIRADA */}
+                <div className="flex justify-between text-gray-700 text-sm items-center gap-3">
+                  <span className="flex items-center gap-2">
+                    <span>{isPickup ? "Retirada" : "Frete"}</span>
+
+                    {!isPickup && shippingLoading && isCepValid && (
+                      <span className="text-[11px] text-gray-500">Calculando...</span>
+                    )}
+
+                    {!isPickup && !shippingLoading && shippingQuote?.prazo_dias ? (
+                      <span className="text-[11px] text-gray-500">
+                        ({shippingQuote.prazo_dias} {shippingQuote.prazo_dias === 1 ? "dia" : "dias"})
+                      </span>
+                    ) : null}
+                  </span>
+
+                  <span>
+                    {isPickup ? (
+                      <span className="text-[11px] text-emerald-700">Sem frete</span>
+                    ) : shippingError ? (
+                      <span className="text-[11px] text-red-500">{shippingError}</span>
+                    ) : !isCepValid ? (
+                      "Informe o CEP"
+                    ) : shippingLoading ? (
+                      <span className="text-[11px] text-gray-600">Calculando...</span>
+                    ) : shippingQuote === null ? (
+                      <span className="text-[11px] text-gray-600">Aguardando cotação</span>
+                    ) : shippingQuote.price === 0 ? (
+                      "Grátis"
+                    ) : (
+                      money(frete)
+                    )}
+                  </span>
                 </div>
 
+                {!isPickup && shippingQuote?.ruleApplied ? (
+                  <div className="flex justify-between text-gray-500 text-[11px]">
+                    <span>Regra do frete</span>
+                    <span>{ruleLabel(shippingQuote.ruleApplied)}</span>
+                  </div>
+                ) : null}
+
                 <div className="flex justify-between items-center border-t border-gray-100 pt-2 mt-1">
-                  <span className="text-sm font-semibold text-gray-900">
-                    Total
-                  </span>
-                  <span className="text-lg font-extrabold text-[#EC5B20]">
-                    {money(total)}
-                  </span>
+                  <span className="text-sm font-semibold text-gray-900">Total</span>
+                  <span className="text-lg font-extrabold text-[#EC5B20]">{money(total)}</span>
                 </div>
+
+                {/* Aviso de Nota Fiscal (sempre) */}
+                <p className="mt-2 text-[11px] text-gray-600">
+                  Nota fiscal será entregue junto com o produto.
+                </p>
 
                 <p className="mt-1 text-[11px] text-gray-500 flex items-center gap-1">
                   <Icon.shield />
-                  Pagamento processado com segurança. Nenhum dado sensível fica
-                  salvo no navegador.
+                  Pagamento processado com segurança. Nenhum dado sensível fica salvo no navegador.
                 </p>
               </div>
             </section>
@@ -930,21 +1312,31 @@ export default function CheckoutPage() {
               <LoadingButton
                 onClick={handleSubmit}
                 isLoading={submitting}
-                className="w-full justify-center rounded-2xl bg-[#EC5B20] hover:bg-[#d84e1a] text-white font-semibold text-sm sm:text-base py-3 shadow-md shadow-[#EC5B20]/30"
+                disabled={!canFinalizeCheckout || submitting}
+                className="w-full justify-center rounded-2xl bg-[#EC5B20] hover:bg-[#d84e1a] text-white font-semibold text-sm sm:text-base py-3 shadow-md shadow-[#EC5B20]/30 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Confirmar pedido
               </LoadingButton>
 
+              {!canFinalizeCheckout && (
+                <p className="mt-2 text-[11px] text-center text-gray-500">
+                  {isPickup
+                    ? "Preencha os dados do cliente para continuar."
+                    : shippingError
+                      ? "Corrija o erro de frete para continuar."
+                      : !isCepValid
+                        ? "Informe um CEP válido (8 dígitos) para calcular o frete."
+                        : shippingLoading
+                          ? "Calculando frete…"
+                          : shippingQuote === null
+                            ? "Aguardando cotação do frete…"
+                            : "Preencha os dados para continuar."}
+                </p>
+              )}
+
               <p className="mt-2 text-[11px] text-center text-gray-500">
-                Ao continuar, você concorda com os{" "}
-                <span className="underline underline-offset-2">
-                  termos de uso
-                </span>{" "}
-                e{" "}
-                <span className="underline underline-offset-2">
-                  política de privacidade
-                </span>
-                .
+                Ao continuar, você concorda com os <span className="underline underline-offset-2">termos de uso</span> e{" "}
+                <span className="underline underline-offset-2">política de privacidade</span>.
               </p>
             </div>
           </div>

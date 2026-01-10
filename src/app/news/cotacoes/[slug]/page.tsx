@@ -49,11 +49,17 @@ function getMarketEmoji(item: any): string {
   return "🏷";
 }
 
-export default async function CotacaoDetailPage({ params }: { params: { slug: string } }) {
+type PageProps = {
+  params: Promise<{ slug: string }>;
+};
+
+export default async function CotacaoDetailPage({ params }: PageProps) {
+  const { slug } = await params;
+
   let item: any = null;
 
   try {
-    const res = await newsPublicApi.cotacaoBySlug(params.slug);
+    const res = await newsPublicApi.cotacaoBySlug((await params).slug);
     item = res.data;
   } catch {
     item = null;

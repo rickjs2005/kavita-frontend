@@ -1,148 +1,193 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { render, screen, within, cleanup } from "@testing-library/react";
 
-// Ajuste este import caso seu Footer esteja em outro caminho.
 import Footer from "@/components/layout/Footer";
+import type { PublicShopSettings } from "@/server/data/shopSettings";
 
-// next/link -> <a>
-vi.mock("next/link", () => {
+// next/link mock
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: any) => (
+    <a href={String(href)} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
+/**
+ * Factory tipada para evitar erro de props obrigatórias
+ */
+function makeShop(
+  overrides: Partial<PublicShopSettings> = {}
+): PublicShopSettings {
   return {
-    default: ({
-      href,
-      children,
-      ...props
-    }: {
-      href: string;
-      children: React.ReactNode;
-      [key: string]: unknown;
-    }) => (
-      <a href={String(href)} {...props}>
-        {children}
-      </a>
-    ),
+    store_name: "Kavita",
+    logo_url: "/logo.png", // obrigatório
+    footer_tagline: "",
+    footer_links: [],
+    contact_whatsapp: "",
+    contact_email: "",
+    social_whatsapp_url: "",
+    cnpj: "",
+    address_street: "",
+    address_neighborhood: "",
+    address_city: "",
+    address_state: "",
+    address_zip: "",
+    ...overrides,
   };
-});
+}
 
-describe("Footer (src/components/Footer.tsx)", () => {
+describe("Footer (src/components/layout/Footer.tsx)", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-04T12:00:00.000Z"));
   });
 
   afterEach(() => {
-    if (vi.isFakeTimers()) vi.useRealTimers();
+    cleanup();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
-  it("renderiza marca, copy e CTA 'trabalhe conosco' no card do campo (positivo)", () => {
-    // Arrange
+  it("renderiza nome padrão e links default quando shop não é informado", () => {
     render(<Footer />);
 
-    // Act
-    const brand = screen.getByRole("heading", { name: "Kavita" });
+    vi.runAllTimers();
 
-    // Assert
-    expect(brand).toBeInTheDocument();
     expect(
-      screen.getByText(
-        /Conectando você ao melhor da agropecuária com qualidade e tradição\./i
-      )
+      screen.getByRole("heading", { name: "Kavita" })
     ).toBeInTheDocument();
 
-    // Desambiguar: CTA dentro do bloco "É profissional do campo?"
-    const cardTitle = screen.getByText(/É profissional do campo\?/i);
-    const card = cardTitle.closest("div");
-    expect(card).toBeTruthy();
-
-    const cta = within(card as HTMLElement).getByRole("link", {
-      name: /trabalhe conosco/i,
-    });
-
-    expect(cta).toHaveAttribute("href", "/trabalhe-conosco");
+    expect(screen.getByRole("link", { name: /Home/i })).toHaveAttribute(
+      "href",
+      "/"
+    );
+    expect(screen.getByRole("link", { name: /Serviços/i })).toHaveAttribute(
+      "href",
+      "/servicos"
+    );
+    expect(screen.getByRole("link", { name: /Contato/i })).toHaveAttribute(
+      "href",
+      "/contato"
+    );
   });
 
-  it("renderiza navegação com links esperados (positivo)", () => {
-    // Arrange
-    render(<Footer />);
+  it("formata CNPJ quando fornecido e não exibe valor quando vazio (positivo + negativo)", () => {
+    const { rerender } = render(
+      <Footer shop={makeShop({ cnpj: "12.345.678/0001-99" })} />
+    );
 
-    // Act
-    const navTitle = screen.getByRole("heading", { name: /Navegação/i });
+    vi.runAllTimers();
 
-    // Assert
-    expect(navTitle).toBeInTheDocument();
-
-    // Escopa no bloco de navegação para evitar colisão com o link do card
-    const navBlock = navTitle.closest("div");
-    expect(navBlock).toBeTruthy();
-
+    // positivo
+    expect(screen.getByText(/CNPJ:/i)).toBeInTheDocument();
     expect(
-      within(navBlock as HTMLElement).getByRole("link", { name: "Home" })
-    ).toHaveAttribute("href", "/");
-
-    expect(
-      within(navBlock as HTMLElement).getByRole("link", { name: "Serviços" })
-    ).toHaveAttribute("href", "/servicos");
-
-    expect(
-      within(navBlock as HTMLElement).getByRole("link", { name: "Contato" })
-    ).toHaveAttribute("href", "/contato");
-
-    expect(
-      within(navBlock as HTMLElement).getByRole("link", {
-        name: /Prestação de serviços/i,
-      })
-    ).toHaveAttribute("href", "/servicos");
-
-    // CTA da navegação (o texto tem capitalização "Trabalhe conosco")
-    expect(
-      within(navBlock as HTMLElement).getByRole("link", {
-        name: /^Trabalhe conosco$/i,
-      })
-    ).toHaveAttribute("href", "/trabalhe-conosco");
-  });
-
-  it("renderiza informações de contato (positivo)", () => {
-    // Arrange
-    render(<Footer />);
-
-    // Act
-    const contatoTitle = screen.getByRole("heading", { name: /Contato/i });
-
-    // Assert
-    expect(contatoTitle).toBeInTheDocument();
-    expect(screen.getByText(/\(31\)\s*99999-9999/)).toBeInTheDocument();
-    expect(screen.getByText(/contato@kavita\.com\.br/i)).toBeInTheDocument();
-  });
-
-  it("renderiza links de redes sociais com a11y e hardening (positivo)", () => {
-    // Arrange
-    render(<Footer />);
-
-    // Act
-    const instagram = screen.getByRole("link", { name: "Instagram" });
-    const whatsapp = screen.getByRole("link", { name: "WhatsApp" });
-
-    // Assert
-    expect(instagram).toHaveAttribute("href", "https://instagram.com");
-    expect(instagram).toHaveAttribute("target", "_blank");
-    expect(instagram).toHaveAttribute("rel", "noopener noreferrer");
-
-    expect(whatsapp).toHaveAttribute("href", "https://wa.me/5531999999999");
-    expect(whatsapp).toHaveAttribute("target", "_blank");
-    expect(whatsapp).toHaveAttribute("rel", "noopener noreferrer");
-  });
-
-  it("exibe o ano conforme o relógio do sistema (positivo) e mantém texto de copyright (controle)", () => {
-    // Arrange
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2031-06-10T12:00:00.000Z"));
-
-    // Act
-    render(<Footer />);
-
-    // Assert
-    // Teste determinístico: o footer deve refletir o ano do sistema
-    expect(
-      screen.getByText(/©\s*2031\s*Kavita\s*-\s*Todos os direitos reservados\./i)
+      screen.getByText("12.345.678/0001-99")
     ).toBeInTheDocument();
+
+    // negativo (rerender limpo)
+    rerender(<Footer shop={makeShop({ cnpj: "" })} />);
+    vi.runAllTimers();
+
+    // label pode existir, valor não
+    expect(
+      screen.queryByText(/\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/)
+    ).not.toBeInTheDocument();
+  });
+
+  it("renderiza endereço completo quando todos os campos existem", () => {
+    render(
+      <Footer
+        shop={makeShop({
+          address_street: "Rua A, 123",
+          address_neighborhood: "Centro",
+          address_city: "Belo Horizonte",
+          address_state: "MG",
+          address_zip: "30100-000",
+        })}
+      />
+    );
+
+    vi.runAllTimers();
+
+    expect(screen.getByText("Sede")).toBeInTheDocument();
+    expect(screen.getByText("Rua A, 123 • Centro")).toBeInTheDocument();
+    expect(screen.getByText("Belo Horizonte - MG")).toBeInTheDocument();
+    expect(screen.getByText("30100-000")).toBeInTheDocument();
+  });
+
+  it("renderiza apenas cidade/estado quando endereço é parcial", () => {
+    render(
+      <Footer
+        shop={makeShop({
+          address_city: "São Paulo",
+          address_state: "SP",
+        })}
+      />
+    );
+
+    vi.runAllTimers();
+
+    expect(screen.getByText("Sede")).toBeInTheDocument();
+    expect(screen.getByText("São Paulo - SP")).toBeInTheDocument();
+    expect(screen.queryByText(/•/)).not.toBeInTheDocument();
+  });
+
+  it("gera link wa.me quando há WhatsApp e não há social_whatsapp_url", () => {
+    render(
+      <Footer
+        shop={makeShop({
+          contact_whatsapp: "(31) 9 9999-8888",
+        })}
+      />
+    );
+
+    vi.runAllTimers();
+
+    const wa = screen.getByRole("link", { name: "WhatsApp" });
+    expect(wa).toHaveAttribute("href", "https://wa.me/5531999998888");
+  });
+
+  it("prioriza social_whatsapp_url quando fornecido", () => {
+    render(
+      <Footer
+        shop={makeShop({
+          contact_whatsapp: "31999998888",
+          social_whatsapp_url: "https://wa.me/5511999999999?text=Oi",
+        })}
+      />
+    );
+
+    vi.runAllTimers();
+
+    const wa = screen.getByRole("link", { name: "WhatsApp" });
+    expect(wa).toHaveAttribute(
+      "href",
+      "https://wa.me/5511999999999?text=Oi"
+    );
+  });
+
+  it("não renderiza botão de WhatsApp quando não há dados", () => {
+    render(<Footer shop={makeShop()} />);
+
+    vi.runAllTimers();
+
+    expect(
+      screen.queryByRole("link", { name: "WhatsApp" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("renderiza navegação com lista semântica", () => {
+    render(<Footer shop={makeShop()} />);
+
+    vi.runAllTimers();
+
+    const heading = screen.getByText("Navegação");
+    const container = heading.closest("div")!;
+    const list = container.querySelector("ul");
+
+    expect(list).toBeTruthy();
+    expect(within(list!).getAllByRole("link").length).toBeGreaterThan(0);
   });
 });
