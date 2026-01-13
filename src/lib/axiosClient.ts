@@ -1,40 +1,19 @@
-// src/lib/api/axiosClient.ts
-import axios from "axios";
-import { ApiError, type ApiErrorPayload } from "./errors";
+// src/lib/axiosClient.ts
+// DEPRECADO: não usar em código novo.
+// Mantido temporariamente para migração gradual. Internamente, delega ao apiClient (fetch).
+// Quando terminar a migração, remova este arquivo e o axios do bundle.
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:5000";
+import apiClient, { type ApiRequestOptions } from "./apiClient";
 
-export const api = axios.create({
-  baseURL,
-  withCredentials: true,
-});
+// Interface mínima compatível com uso mais comum (api.get/post/put/delete).
+// Se você estava usando recursos avançados do axios (interceptors/cancel token),
+// migre para apiClient.request com AbortController.
+export const api = {
+  get: <T = any>(url: string, config?: ApiRequestOptions) => apiClient.get<T>(url, config),
+  post: <T = any>(url: string, data?: any, config?: ApiRequestOptions) => apiClient.post<T>(url, data, config),
+  put: <T = any>(url: string, data?: any, config?: ApiRequestOptions) => apiClient.put<T>(url, data, config),
+  patch: <T = any>(url: string, data?: any, config?: ApiRequestOptions) => apiClient.patch<T>(url, data, config),
+  delete: <T = any>(url: string, config?: ApiRequestOptions) => apiClient.del<T>(url, config),
+};
 
-// Converte qualquer erro do axios para ApiError
-api.interceptors.response.use(
-  (res) => res,
-  (error) => {
-    const status = error?.response?.status ?? 0;
-    const data = (error?.response?.data || {}) as ApiErrorPayload;
-
-    const requestId =
-      data.requestId ||
-      error?.response?.headers?.["x-request-id"] ||
-      error?.response?.headers?.["request-id"] ||
-      undefined;
-
-    const message =
-      data.message ||
-      (status ? `HTTP ${status}` : "Falha de conexão. Verifique sua internet e tente novamente.");
-
-    throw new ApiError({
-      status,
-      code: data.code,
-      message,
-      details: data.details,
-      requestId,
-    });
-  }
-);
+export default api;

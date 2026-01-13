@@ -7,6 +7,11 @@ export type { Product } from "@/types/product";
 import { getProducts, type GetProductsParams } from "@/services/products";
 import { handleApiError } from "@/lib/handleApiError";
 
+/**
+ * Opções do hook.
+ * - Mantém compatibilidade com a versão antiga via `categorySlug`.
+ * - `enabled` permite pausar o fetch (útil para páginas que ainda não têm categoria definida).
+ */
 type Opts = GetProductsParams & {
   categorySlug?: string; // compatível com versão antiga
   enabled?: boolean;
@@ -15,24 +20,26 @@ type Opts = GetProductsParams & {
 
 export function useFetchProducts(opts: Opts = {}) {
   const {
+    // compatibilidade: alguns lugares ainda passam categorySlug
     category,
     categorySlug,
     subcategory,
     search,
-    page = 1,
-    limit = 12,
-    sort = "id",
-    order = "desc",
+    page,
+    limit,
+    sort,
+    order,
     enabled = true,
   } = opts;
 
-  const [data, setData] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const trigger = useRef(0);
+  const effectiveCategory = category ?? categorySlug;
 
-  // prioridade: categorySlug (antigo) > category (novo)
-  const effectiveCategory = categorySlug ?? category;
+  const [data, setData] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Mantém a lógica atual de refetch via incremento em ref + rerender por setLoading(true)
+  const trigger = useRef<number>(0);
 
   useEffect(() => {
     if (!enabled) return;
@@ -43,7 +50,7 @@ export function useFetchProducts(opts: Opts = {}) {
 
     async function run() {
       try {
-        const res: any = await getProducts({
+        const res = await getProducts({
           category: effectiveCategory,
           subcategory,
           search,
@@ -51,17 +58,32 @@ export function useFetchProducts(opts: Opts = {}) {
           limit,
           sort,
           order,
-        } as any);
+        } as GetProductsParams);
 
-        // compatibilidade: backend pode retornar { data: [...] } ou [...]
-        const list = Array.isArray(res) ? res : res?.data;
+        // getProducts pode retornar:
+        // - array direto
+        // - { products: [...] }
+        // - { data: [...] }
+        const list: unknown = (res as any)?.products ?? (res as any)?.data ?? res;
 
-        if (alive) setData(Array.isArray(list) ? (list as Product[]) : []);
+        if (alive) {
+          setData(Array.isArray(list) ? (list as Product[]) : []);
+        }
       } catch (e) {
-        const msg = handleApiError(e, {
+        const ui = handleApiError(e, {
           silent: true,
           fallback: "Não foi possível carregar os produtos.",
         });
+
+        // handleApiError pode retornar objeto (UiError) ou string.
+        // Normalizamos para string para manter error: string | null
+        const msg =
+          typeof ui === "string"
+            ? ui
+            : (ui as any)?.message ??
+              (ui as any)?.fallback ??
+              "Não foi possível carregar os produtos.";
+
         if (alive) setError(msg);
       } finally {
         if (alive) setLoading(false);
@@ -91,5 +113,6 @@ export function useFetchProducts(opts: Opts = {}) {
     setLoading(true);
   };
 
-  return { data, loading, error, refetch };
+  // `products` é alias para não quebrar código antigo
+  return { data, products: data, loading, error, refetch };
 }

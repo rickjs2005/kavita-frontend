@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"; // React hooks para lidar com estad
 import Image from "next/image"; // Componente otimizado de imagem do Next.js
 import { motion } from "framer-motion"; // Biblioteca para animações
 
+
 const DronePage = () => {
   // Armazena os dados do formulário de contato
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
