@@ -25,6 +25,8 @@ export type PublicCategory = {
   name: string;
   slug: string;
   is_active?: boolean | 0 | 1;
+  // pode existir vindo da API; mantemos opcional para não quebrar contrato
+  sort_order?: number;
 };
 
 type HeaderProps = {
@@ -83,16 +85,15 @@ export default function Header({ categories, shop }: HeaderProps) {
   const isDronePage = pathname.startsWith("/drones");
   const isNewsPage = pathname.startsWith("/news");
 
-const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const logoSrc = isDronePage
-  ? "/images/drone/kavita-drone.png"
-  : shop?.logo_url?.trim()
-    ? (shop.logo_url.startsWith("http")
-        ? shop.logo_url
-        : `${apiBase}${shop.logo_url}`)
+  const logoSrc = isDronePage
+    ? "/images/drone/kavita-drone.png"
+    : shop?.logo_url?.trim()
+    ? shop.logo_url.startsWith("http")
+      ? shop.logo_url
+      : `${apiBase}${shop.logo_url}`
     : "/images/kavita2.png";
-
 
   const logoAlt = shop?.store_name?.trim() ? shop.store_name : "Kavita";
 
@@ -102,11 +103,16 @@ const logoSrc = isDronePage
     [categories]
   );
 
-  // Apenas categorias públicas ativas (fonte única)
-  const publicActiveCategories = useMemo<PublicCategory[]>(
-    () => safeCategories.filter(isActiveCategory),
-    [safeCategories]
-  );
+  // Apenas categorias públicas ativas + ORDENADAS por sort_order (fallback 0)
+  const publicActiveCategories = useMemo<PublicCategory[]>(() => {
+    return safeCategories
+      .filter(isActiveCategory)
+      .sort((a, b) => {
+        const ao = (a.sort_order ?? 0) as number;
+        const bo = (b.sort_order ?? 0) as number;
+        return ao - bo;
+      });
+  }, [safeCategories]);
 
   const hideHeader = useMemo(() => {
     const isExcluded = EXCLUDED_ROUTES.includes(
@@ -390,7 +396,17 @@ const logoSrc = isDronePage
                 </Link>
               </li>
 
-              {/* categorias públicas ativas */}
+              {/* Kavita Drone (página independente) - AGORA NO MOBILE */}
+              <li>
+                <Link
+                  className="block rounded-xl px-3.5 py-2.5 text-sm font-semibold text-[#083E46] hover:bg-gray-100"
+                  href="/drones"
+                >
+                  Kavita Drone
+                </Link>
+              </li>
+
+              {/* categorias públicas ativas (ordenadas) */}
               {publicActiveCategories.length > 0 && (
                 <li className="pt-2">
                   <div className="text-xs font-semibold text-gray-500 px-3.5 pb-1">
