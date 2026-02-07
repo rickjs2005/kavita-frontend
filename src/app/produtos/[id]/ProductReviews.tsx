@@ -13,12 +13,17 @@ type ProductReviewsProps = {
   ratingCount?: number | null;
 };
 
+// ✅ Tipo local só para leitura (não quebra seu types/)
+type ProductReviewWithUser = ProductReview & {
+  usuario_nome?: string | null;
+};
+
 export default function ProductReviews({
   produtoId,
   ratingAvg,
   ratingCount,
 }: ProductReviewsProps) {
-  const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [reviews, setReviews] = useState<ProductReviewWithUser[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [nota, setNota] = useState<number>(0);
   const [comentario, setComentario] = useState("");
@@ -28,15 +33,23 @@ export default function ProductReviews({
     async function carregarAvaliacoes() {
       try {
         setLoadingReviews(true);
+
         const res = await fetch(
-          `${API_BASE}/api/public/produtos/${produtoId}/avaliacoes`
+          `${API_BASE}/api/public/produtos/${produtoId}/avaliacoes`,
+          {
+            // ✅ ESSENCIAL p/ cookie HttpOnly ir junto
+            credentials: "include",
+            cache: "no-store",
+          }
         );
+
         if (!res.ok) {
           console.error("Erro ao buscar avaliações:", res.status);
           return;
         }
+
         const data = await res.json();
-        setReviews(Array.isArray(data) ? data : []);
+        setReviews(Array.isArray(data) ? (data as ProductReviewWithUser[]) : []);
       } catch (err) {
         console.error("Erro ao carregar avaliações:", err);
       } finally {
@@ -60,6 +73,10 @@ export default function ProductReviews({
       const res = await fetch(`${API_BASE}/api/public/produtos/avaliacoes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+
+        // ✅ ESSENCIAL p/ cookie HttpOnly ir junto
+        credentials: "include",
+
         body: JSON.stringify({
           produto_id: produtoId,
           nota,
@@ -70,7 +87,15 @@ export default function ProductReviews({
       if (!res.ok) {
         const txt = await res.text();
         console.error("Erro ao enviar avaliação:", txt);
-        toast.error("Erro ao enviar sua avaliação.");
+
+        // tenta mostrar a msg real quando vier JSON
+        try {
+          const j = JSON.parse(txt);
+          toast.error(j?.message || "Erro ao enviar sua avaliação.");
+        } catch {
+          toast.error("Erro ao enviar sua avaliação.");
+        }
+
         return;
       }
 
@@ -80,10 +105,15 @@ export default function ProductReviews({
 
       // Recarrega lista
       const resList = await fetch(
-        `${API_BASE}/api/public/produtos/${produtoId}/avaliacoes`
+        `${API_BASE}/api/public/produtos/${produtoId}/avaliacoes`,
+        {
+          credentials: "include",
+          cache: "no-store",
+        }
       );
+
       const data = await resList.json();
-      setReviews(Array.isArray(data) ? data : []);
+      setReviews(Array.isArray(data) ? (data as ProductReviewWithUser[]) : []);
     } catch (err) {
       console.error("Erro ao enviar avaliação:", err);
       toast.error("Erro ao enviar sua avaliação.");
@@ -119,7 +149,7 @@ export default function ProductReviews({
       <div className="rounded-2xl border border-gray-200 bg-white/90 p-4 sm:p-6 space-y-6">
         {/* ===== RESUMO GERAL ===== */}
         <div className="grid gap-6 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-center">
-          {/* Esquerda: nota grande + contadores */}
+          {/* Esquerda: nota grande + contadores */ }
           <div className="flex flex-col items-start md:items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
               Avaliações dos clientes
@@ -154,7 +184,7 @@ export default function ProductReviews({
             </p>
           </div>
 
-          {/* Direita: barras 5★ → 1★ */}
+          {/* Direita: barras 5★ → 1★ */ }
           <div className="space-y-2">
             {dist.map(({ star, count, percent }) => (
               <div
@@ -177,7 +207,7 @@ export default function ProductReviews({
           </div>
         </div>
 
-        {/* Filtros visuais simples (dá pra ligar depois em estados) */}
+        {/* Filtros visuais simples */ }
         <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3 text-xs sm:text-sm">
           <span className="text-gray-600 font-medium">Filtrar:</span>
           <button className="rounded-full border border-emerald-500/60 bg-emerald-50 px-3 py-1 text-emerald-700 text-xs font-medium">
@@ -188,9 +218,9 @@ export default function ProductReviews({
           </button>
         </div>
 
-        {/* Form + lista */}
+        {/* Form + lista */ }
         <div className="mt-2 grid gap-4 border-t border-gray-100 pt-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-          {/* Formulário */}
+          {/* Formulário */ }
           <div className="space-y-2">
             <p className="text-xs font-medium text-gray-700">
               Deixe sua avaliação:
@@ -225,9 +255,12 @@ export default function ProductReviews({
                 onClick={enviarAvaliacao}
               />
             </div>
+            <p className="text-xs text-gray-500">
+              * Para avaliar, você precisa estar logado.
+            </p>
           </div>
 
-          {/* Lista de avaliações */}
+          {/* Lista de avaliações */ }
           <div className="space-y-3">
             {loadingReviews ? (
               <p className="text-sm text-gray-500">Carregando avaliações...</p>
@@ -250,10 +283,16 @@ export default function ProductReviews({
                         {new Date(rev.created_at).toLocaleDateString("pt-BR")}
                       </span>
                     </div>
-                    {rev.comentario ? (
-                      <p className="text-sm text-gray-700">
-                        {rev.comentario}
+
+                    {/* ✅ Nome do usuário (vindo do backend como usuario_nome) */}
+                    {"usuario_nome" in rev && (rev as ProductReviewWithUser).usuario_nome ? (
+                      <p className="text-xs font-medium text-gray-700">
+                        {(rev as ProductReviewWithUser).usuario_nome}
                       </p>
+                    ) : null}
+
+                    {rev.comentario ? (
+                      <p className="text-sm text-gray-700">{rev.comentario}</p>
                     ) : (
                       <p className="text-xs text-gray-400">
                         Cliente avaliou sem comentário.

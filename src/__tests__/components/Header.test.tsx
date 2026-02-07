@@ -168,9 +168,9 @@ describe("Header (src/components/layout/Header.tsx)", () => {
     expect(logo).toHaveAttribute("src", "/images/kavita2.png");
   });
 
-  it("usa logo de drone quando rota começa com /drones (positivo)", () => {
+  it("usa logo de drone quando rota começa com /kavita-drones (positivo)", () => {
     // Arrange
-    setPathname("/drones/qualquer");
+    setPathname("/kavita-drones/qualquer");
 
     // Act
     renderHeader({
