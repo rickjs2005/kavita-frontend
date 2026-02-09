@@ -36,10 +36,6 @@ function extractArray(v: any): any[] {
   return [];
 }
 
-/**
- * Pega o caminho/url de mídia em múltiplos formatos (compatível com seu backend).
- * IMPORTANT: inclui media_path (drone_gallery_items).
- */
 function pickMediaUrl(item: any): string {
   if (!item) return "";
   return (
@@ -47,7 +43,7 @@ function pickMediaUrl(item: any): string {
     item.media_url ||
     item.file_url ||
     item.src ||
-    item.media_path || // ✅ drone_gallery_items
+    item.media_path ||
     item.mediaPath ||
     item.path ||
     item.image_url ||
@@ -61,7 +57,6 @@ function pickMediaUrl(item: any): string {
   );
 }
 
-/** Converte caminho relativo (/uploads/...) em URL absoluta usando API_BASE. */
 function absUrl(path?: string | null) {
   if (!path) return "";
   const p = String(path);
@@ -76,9 +71,6 @@ function detectMediaTypeByUrl(url: string) {
   return "";
 }
 
-/**
- * Resolve um item específico da galeria por ID (usado para HERO/CARD selecionados no admin).
- */
 function resolveById(gallery: any[], id?: number | null) {
   const items = Array.isArray(gallery) ? gallery : [];
   if (!id) return null;
@@ -108,10 +100,6 @@ function resolveById(gallery: any[], id?: number | null) {
   return { url, type: type as "video" | "image" | "", caption };
 }
 
-/**
- * Fallback: escolhe o primeiro vídeo, senão a primeira imagem, senão o primeiro item.
- * IMPORTANTE: usa absUrl + pickMediaUrl (inclui media_path).
- */
 function resolveGalleryHero(gallery: any[]) {
   const items = Array.isArray(gallery) ? gallery : [];
 
@@ -130,12 +118,7 @@ function resolveGalleryHero(gallery: any[]) {
   const picked = firstVideo || firstImage || items[0];
 
   const url = absUrl(pickMediaUrl(picked));
-  const typeRaw =
-    picked?.type ||
-    picked?.media_type ||
-    picked?.kind ||
-    picked?.file_type ||
-    detectMediaTypeByUrl(url);
+  const typeRaw = picked?.type || picked?.media_type || picked?.kind || picked?.file_type || detectMediaTypeByUrl(url);
 
   const type = String(typeRaw).toLowerCase().includes("video")
     ? "video"
@@ -201,11 +184,7 @@ export default function DroneModelPage() {
         const mediaType =
           m.card_media_type ||
           m.media_type ||
-          (String(mediaUrl).match(/\.(mp4|webm|ogg)(\?.*)?$/i)
-            ? "video"
-            : mediaUrl
-              ? "image"
-              : undefined);
+          (String(mediaUrl).match(/\.(mp4|webm|ogg)(\?.*)?$/i) ? "video" : mediaUrl ? "image" : undefined);
 
         return {
           key,
@@ -235,11 +214,7 @@ export default function DroneModelPage() {
     (async () => {
       setLoading(true);
 
-      const [root, reps, modelsDb] = await Promise.all([
-        fetchPage(),
-        fetchRepresentatives(),
-        fetchModels(),
-      ]);
+      const [root, reps, modelsDb] = await Promise.all([fetchPage(), fetchRepresentatives(), fetchModels()]);
 
       setLanding(root?.landing || null);
       setModelData(root?.model_data || null);
@@ -263,46 +238,37 @@ export default function DroneModelPage() {
     modelFromList?.label ||
     (modelKey ? modelKey.toUpperCase() : "Modelo");
 
-  // ✅ Fallback da galeria (primeiro vídeo/imagem)
   const heroFromGallery = useMemo(() => resolveGalleryHero(gallery), [gallery]);
 
-  // ✅ Preferência: mídia selecionada no admin (HERO) -> galeria -> seleção CARD -> fallback models endpoint
   const selectedHero = useMemo(() => {
-    const heroId =
-      Number(mergedPage?.current_hero_media_id || modelData?.current_hero_media_id || 0) || null;
+    const heroId = Number(mergedPage?.current_hero_media_id || modelData?.current_hero_media_id || 0) || null;
     return resolveById(gallery, heroId);
   }, [gallery, mergedPage, modelData]);
 
   const selectedCard = useMemo(() => {
-    const cardId =
-      Number(mergedPage?.current_card_media_id || modelData?.current_card_media_id || 0) || null;
+    const cardId = Number(mergedPage?.current_card_media_id || modelData?.current_card_media_id || 0) || null;
     return resolveById(gallery, cardId);
   }, [gallery, mergedPage, modelData]);
 
   const hero = useMemo(() => {
-    // 1) selecionado no admin (HERO)
     if (selectedHero?.url) return selectedHero;
-
-    // 2) fallback: primeiro vídeo/imagem da galeria
     if (heroFromGallery?.url) return heroFromGallery;
-
-    // 3) fallback: se tiver seleção do CARD, usa como hero
     if (selectedCard?.url) return selectedCard;
 
-    // 4) fallback final: mídia do endpoint /models (se existir)
     const fallbackUrl = absUrl(modelFromList?.card_media_url || "");
-    const fallbackType =
-      (modelFromList?.card_media_type as any) || detectMediaTypeByUrl(fallbackUrl) || "";
+    const fallbackType = (modelFromList?.card_media_type as any) || detectMediaTypeByUrl(fallbackUrl) || "";
 
     return {
       url: fallbackUrl,
-      type: (fallbackType === "video" ? "video" : fallbackType === "image" ? "image" : "") as
-        | "video"
-        | "image"
-        | "",
+      type: (fallbackType === "video" ? "video" : fallbackType === "image" ? "image" : "") as "video" | "image" | "",
       caption: "",
     };
   }, [selectedHero, heroFromGallery, selectedCard, modelFromList]);
+
+  const heroCaption = useMemo(() => {
+    // ✅ legenda preferida: hero selecionado -> fallback da galeria
+    return (selectedHero?.caption || heroFromGallery?.caption || "").trim();
+  }, [selectedHero, heroFromGallery]);
 
   if (loading && !landing) {
     return (
@@ -329,19 +295,12 @@ export default function DroneModelPage() {
           animation: scan 3.6s ease-in-out infinite;
         }
         @keyframes scan {
-          0% {
-            transform: translateX(-30%) rotate(12deg);
-          }
-          50% {
-            transform: translateX(160%) rotate(12deg);
-          }
-          100% {
-            transform: translateX(-30%) rotate(12deg);
-          }
+          0% { transform: translateX(-30%) rotate(12deg); }
+          50% { transform: translateX(160%) rotate(12deg); }
+          100% { transform: translateX(-30%) rotate(12deg); }
         }
       `}</style>
 
-      {/* Top bar */}
       <div className="sticky top-0 z-40 bg-black/60 backdrop-blur border-b border-white/10">
         <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between gap-3">
           <button
@@ -356,7 +315,6 @@ export default function DroneModelPage() {
             <div className="text-sm sm:text-base font-extrabold truncate">{modelLabel}</div>
           </div>
 
-          {/* ✅ Opção 1: âncora para #representantes */}
           <a
             href="#representantes"
             className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-sm font-extrabold text-emerald-200 hover:bg-emerald-500/15"
@@ -366,7 +324,6 @@ export default function DroneModelPage() {
         </div>
       </div>
 
-      {/* HERO */}
       <section className="pt-8 sm:pt-10 pb-8">
         <div className="max-w-6xl mx-auto px-5">
           <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#0A0F14]/80 shadow-[0_30px_90px_-50px_rgba(0,0,0,0.95)] backdrop-blur-xl">
@@ -374,40 +331,28 @@ export default function DroneModelPage() {
 
             <div className="relative aspect-[16/9] bg-gradient-to-br from-white/10 via-white/5 to-transparent">
               {hero.url && hero.type === "video" ? (
-                <video
-                  className="h-full w-full object-cover"
-                  src={hero.url}
-                  muted
-                  playsInline
-                  autoPlay
-                  loop
-                />
+                <video className="h-full w-full object-cover" src={hero.url} muted playsInline autoPlay loop />
               ) : hero.url && hero.type === "image" ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img className="h-full w-full object-cover" src={hero.url} alt={modelLabel} />
               ) : (
                 <div className="h-full w-full flex items-center justify-center">
                   <div className="text-center px-6">
-                    <div className="text-sm text-slate-200 font-extrabold">
-                      Sem mídia destacada
-                    </div>
+                    <div className="text-sm text-slate-200 font-extrabold">Sem mídia destacada</div>
                     <div className="text-xs text-slate-400 mt-1">
-                      Adicione mídia na galeria do modelo ou no card do modelo no admin.
+                      Selecione o Destaque (Hero) no admin para este modelo.
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* overlays */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(16,185,129,0.20),transparent_45%),radial-gradient(circle_at_80%_60%,rgba(59,130,246,0.16),transparent_55%)]" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-              {/* scan line */}
               <div className="pointer-events-none absolute inset-0 opacity-70">
                 <div className="absolute -left-1/3 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent rotate-12 translate-x-[-30%] animate-scan" />
               </div>
 
-              {/* badges topo */}
               <div className="absolute left-5 top-5 right-5 flex items-start justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge>🚀 Inovação</Badge>
@@ -420,7 +365,6 @@ export default function DroneModelPage() {
                 </span>
               </div>
 
-              {/* TÍTULO */}
               <div className="absolute left-5 right-5 bottom-5">
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                   <div className="min-w-0">
@@ -429,15 +373,12 @@ export default function DroneModelPage() {
                         {modelLabel}
                       </h1>
                       <p className="text-sm text-slate-200/90">
-                        {heroFromGallery.caption
-                          ? heroFromGallery.caption
-                          : "Especificações, funcionalidades, benefícios e galeria completa."}
+                        {heroCaption || "Especificações, funcionalidades, benefícios e galeria completa."}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex gap-2 sm:justify-end">
-                    {/* ✅ Opção 1: âncora para #representantes */}
                     <a
                       href="#representantes"
                       className="inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 shadow-[0_18px_60px_-25px_rgba(16,185,129,0.95)] hover:brightness-[1.05] active:scale-[0.99]"
@@ -472,7 +413,6 @@ export default function DroneModelPage() {
         </div>
       </section>
 
-      {/* Seções */}
       <SpecsSection page={mergedPage} />
       <div className="max-w-6xl mx-auto px-5">
         <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
@@ -492,7 +432,6 @@ export default function DroneModelPage() {
         <GallerySection items={gallery} />
       </div>
 
-      {/* ✅ Representantes (opção 1: âncora #representantes) + (opção 3: WhatsApp dentro dos cards) */}
       <RepresentativesSection page={mergedPage} representatives={representatives} />
     </div>
   );

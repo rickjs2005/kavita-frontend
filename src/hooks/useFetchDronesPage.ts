@@ -9,8 +9,18 @@ import type {
   DroneComment,
 } from "@/types/drones";
 
+/**
+ * =========================================================
+ * CONFIG
+ * =========================================================
+ */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+/**
+ * =========================================================
+ * TYPES / ERRORS
+ * =========================================================
+ */
 export type ApiErrorPayload = {
   status?: number;
   code?: string;
@@ -40,27 +50,33 @@ export type DroneModel = {
   is_active?: boolean | number;
   sort_order?: number;
 
-  // ✅ NOVO: ids escolhidos no admin (para card/destaque)
+  // ids escolhidos no admin (para card/destaque)
   current_hero_media_id?: number | null;
   current_card_media_id?: number | null;
 };
 
+type AnyJson = Record<string, any> | any[] | string | number | boolean | null;
+
 /**
- * ✅ Resposta REAL do seu backend (controllers/dronesPublicController.js):
+ * Resposta REAL do backend:
  * - getRoot: { landing, model, model_data, gallery, comments }
  * - getModelAggregate: { landing, model, model_data, gallery, comments }
  */
 export type PublicDronesRootResponse = {
   landing?: DronePageSettings | null;
-  model?: any; // row do drone_models (key/label)
-  model_data?: any; // dados por modelo (models_json[modelKey])
+  model?: any;
+  model_data?: any;
   gallery?: { items?: DroneGalleryItem[] } | DroneGalleryItem[];
   comments?: { items?: DroneComment[] } | DroneComment[] | any;
 };
 
 export type PublicDronesModelAggregateResponse = PublicDronesRootResponse;
 
-type AnyJson = Record<string, any> | any[] | string | number | boolean | null;
+/**
+ * =========================================================
+ * UTILS
+ * =========================================================
+ */
 
 function isValidModelKey(modelKey: string) {
   return /^[a-z0-9_]{2,20}$/.test(String(modelKey || "").trim().toLowerCase());
@@ -93,8 +109,18 @@ function pickErrorMessage(json: AnyJson, fallback: string) {
   return fallback;
 }
 
-async function fetchJsonOrThrow<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const res = await fetch(input, init);
+/**
+ * fetchJsonOrThrow:
+ * - suporta AbortController via init.signal
+ * - aplica cache: "no-store" por padrão (você pode sobrescrever)
+ * - captura payload padrão do backend (status/code/message/details)
+ */
+async function fetchJsonOrThrow<T>(url: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(url, {
+    cache: "no-store",
+    ...init,
+  });
+
   const { json } = await readJsonSafely(res);
 
   if (!res.ok) {
@@ -106,10 +132,15 @@ async function fetchJsonOrThrow<T>(input: RequestInfo, init?: RequestInit): Prom
       payload.details
     );
   }
+
   return json as T;
 }
 
-// ✅ normaliza modelos para o formato do front (key/label + ids)
+/**
+ * ✅ Normaliza modelos para o formato do front (key/label + ids)
+ * Observação: os ids current_* normalmente ficam em models_json[modelKey],
+ * mas deixo suporte aqui caso você devolva isso diretamente no endpoint /models.
+ */
 function normalizeModels(raw: any): DroneModel[] {
   const arr = extractItemsArray<any>(raw);
   return arr
@@ -131,14 +162,18 @@ function normalizeModels(raw: any): DroneModel[] {
     .filter((m) => m.key && m.label);
 }
 
-// ✅ resolve "page" para manter compat com o resto do app
 function resolvePageFromRoot(root: any): DronePageSettings | null {
   if (!root || typeof root !== "object") return null;
   if ("landing" in root) return (root.landing ?? null) as any;
-  if ("page" in root) return (root.page ?? null) as any; // compat (se algum dia mudar)
+  if ("page" in root) return (root.page ?? null) as any;
   return null;
 }
 
+/**
+ * =========================================================
+ * HOOK
+ * =========================================================
+ */
 export function useFetchDronesPage(modelKey?: ModelKey) {
   const normalizedModelKey = useMemo(() => {
     const mk = String(modelKey || "").trim().toLowerCase();
@@ -152,16 +187,19 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
   const [gallery, setGallery] = useState<DroneGalleryItem[]>([]);
   const [representatives, setRepresentatives] = useState<DroneRepresentative[]>([]);
   const [comments, setComments] = useState<DroneComment[]>([]);
-
-  /**
-   * ✅ aqui você quer os dados do modelo (models_json[modelKey]) para conseguir:
-   * - current_hero_media_id / current_card_media_id
-   * - specs/features/benefits etc.
-   */
-  const [model, setModel] = useState<any | null>(null);
+  const [model, setModel] = useState<any | null>(null); // model_data (models_json[modelKey])
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const hardResetState = useCallback(() => {
+    setPage(null);
+    setModels([]);
+    setGallery([]);
+    setRepresentatives([]);
+    setComments([]);
+    setModel(null);
+  }, []);
 
   const reload = useCallback(async () => {
     abortRef.current?.abort();
@@ -177,54 +215,54 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
     };
 
     try {
-      // ✅ sempre buscamos lista de modelos (pro carrossel/abas e IDs do card/destaque)
-      const modelsResPromise = fetchJsonOrThrow<any>(
-        `${API_BASE}/api/public/drones/models`,
+      /**
+       * Sempre buscamos:
+       * - modelos (abas/carrossel)
+       * - representantes (legado)
+       *
+       * E buscamos em paralelo com:
+       * - root agregado (sem modelKey) OU aggregate do modelo (com modelKey)
+       */
+      const modelsPromise = fetchJsonOrThrow<any>(`${API_BASE}/api/public/drones/models`, fetchInit);
+
+      const repsPromise = fetchJsonOrThrow<any>(
+        `${API_BASE}/api/public/drones/representantes?page=1&limit=12`,
         fetchInit
       );
 
       if (normalizedModelKey) {
-        const agg = await fetchJsonOrThrow<PublicDronesModelAggregateResponse>(
+        const aggPromise = fetchJsonOrThrow<PublicDronesModelAggregateResponse>(
           `${API_BASE}/api/public/drones/models/${normalizedModelKey}`,
           fetchInit
         );
 
-        // ✅ page vem em "landing"
-        setPage(resolvePageFromRoot(agg));
+        const [modelsRes, repsRes, agg] = await Promise.all([modelsPromise, repsPromise, aggPromise]);
 
-        // ✅ model_data é o que interessa para o front (inclui current_*_media_id)
-        setModel((agg as any)?.model_data ?? null);
-
-        // ✅ gallery vem como array ou {items}
-        setGallery(extractItemsArray<DroneGalleryItem>((agg as any)?.gallery));
-
-        // ✅ comments geralmente paginado {items}
-        setComments(extractItemsArray<DroneComment>((agg as any)?.comments));
-
-        // reps continuam via endpoint separado (legado)
-        const reps = await fetchJsonOrThrow<any>(
-          `${API_BASE}/api/public/drones/representantes?page=1&limit=12`,
-          fetchInit
-        );
-        setRepresentatives(extractItemsArray<DroneRepresentative>(reps));
-
-        // models (com IDs de card/destaque)
-        const modelsRes = await modelsResPromise;
         setModels(normalizeModels(modelsRes));
+        setRepresentatives(extractItemsArray<DroneRepresentative>(repsRes));
+
+        setPage(resolvePageFromRoot(agg));
+        setModel((agg as any)?.model_data ?? null);
+        setGallery(extractItemsArray<DroneGalleryItem>((agg as any)?.gallery));
+        setComments(extractItemsArray<DroneComment>((agg as any)?.comments));
 
         return;
       }
 
       // sem modelKey: root agregado
-      const root = await fetchJsonOrThrow<PublicDronesRootResponse>(
+      const rootPromise = fetchJsonOrThrow<PublicDronesRootResponse>(
         `${API_BASE}/api/public/drones`,
         fetchInit
       );
 
+      const [modelsRes, repsRes, root] = await Promise.all([modelsPromise, repsPromise, rootPromise]);
+
+      setModels(normalizeModels(modelsRes));
+      setRepresentatives(extractItemsArray<DroneRepresentative>(repsRes));
+
       const pageResolved = resolvePageFromRoot(root);
       const modelResolved = (root as any)?.model_data ?? null;
 
-      // ✅ EXTRAÇÃO LOCAL (pra decidir fallback corretamente)
       const galleryResolved = extractItemsArray<DroneGalleryItem>((root as any)?.gallery);
       const commentsResolved = extractItemsArray<DroneComment>((root as any)?.comments);
 
@@ -233,18 +271,11 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
       setGallery(galleryResolved);
       setComments(commentsResolved);
 
-      // reps: endpoint separado
-      const reps = await fetchJsonOrThrow<any>(
-        `${API_BASE}/api/public/drones/representantes?page=1&limit=12`,
-        fetchInit
-      );
-      setRepresentatives(extractItemsArray<DroneRepresentative>(reps));
-
-      // models (com IDs de card/destaque)
-      const modelsRes = await modelsResPromise;
-      setModels(normalizeModels(modelsRes));
-
-      // ✅ fallback legado da galeria/comentários se vier vazio (AGORA CORRETO)
+      /**
+       * Fallback legado:
+       * - só chama se o root veio vazio
+       * - mantém compatibilidade com backend antigo
+       */
       const needLegacyGallery = galleryResolved.length === 0;
       const needLegacyComments = commentsResolved.length === 0;
 
@@ -279,16 +310,11 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
       if (e?.name === "AbortError") return;
 
       setError(e?.message || "Erro ao carregar Kavita Drones.");
-      setPage(null);
-      setModels([]);
-      setGallery([]);
-      setRepresentatives([]);
-      setComments([]);
-      setModel(null);
+      hardResetState();
     } finally {
       setLoading(false);
     }
-  }, [normalizedModelKey]);
+  }, [normalizedModelKey, hardResetState]);
 
   useEffect(() => {
     reload();
@@ -298,7 +324,7 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
   return {
     page,
     models,
-    model, // ✅ agora é model_data (onde vem current_*_media_id)
+    model, // model_data (models_json[modelKey])
     gallery,
     representatives,
     comments,

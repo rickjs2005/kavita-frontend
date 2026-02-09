@@ -9,13 +9,24 @@ import CommentsSection from "@/components/drones/CommentsSection";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+type MediaTypeLower = "image" | "video";
+type MediaTypeUpper = "IMAGE" | "VIDEO";
+
 type DroneModel = {
   key: string;
   label: string;
   is_active?: number;
   sort_order?: number;
-  card_media_url?: string;
-  card_media_type?: "image" | "video";
+
+  // ✅ vindo do backend (já resolvido pela seleção do admin)
+  card_media_url?: string; // pode vir absoluto ou relativo
+  card_media_path?: string; // se vier como /uploads/...
+  card_media_type?: MediaTypeLower | MediaTypeUpper;
+
+  // ✅ opcional: ids da seleção (se você quiser usar no client depois)
+  current_card_media_id?: number | null;
+  current_hero_media_id?: number | null;
+
   _raw?: any;
 };
 
@@ -80,24 +91,41 @@ function absUrl(path?: string | null) {
 }
 
 /** ✅ Detecta tipo pela URL */
-function detectMediaTypeByUrl(url: string) {
+function detectMediaTypeByUrl(url: string): MediaTypeLower | "" {
   const u = String(url || "");
   if (u.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) return "video";
   if (u.match(/\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i)) return "image";
   return "";
 }
 
-/** ✅ Resolve a mídia do card do modelo (agora compatível com media_path/media_type do backend) */
+function normalizeMediaTypeToLower(v: any, url?: string): MediaTypeLower | "" {
+  const s = String(v || "").toLowerCase().trim();
+  if (s.includes("video")) return "video";
+  if (s.includes("image")) return "image";
+  const byUrl = detectMediaTypeByUrl(String(url || ""));
+  return byUrl || "";
+}
+
+/**
+ * ✅ Resolve a mídia do card do modelo
+ * Prioridade:
+ * 1) card_media_url
+ * 2) card_media_path
+ * 3) campos alternativos do _raw (compat)
+ */
 function resolveCardMedia(model: DroneModel) {
   const raw = model._raw || {};
 
   const candidates = [
     model.card_media_url,
+    model.card_media_path,
+
     raw.card_media_url,
+    raw.card_media_path,
     raw.media_url,
     raw.file_url,
     raw.src,
-    raw.media_path, // ✅ drone_gallery_items / retorno novo
+    raw.media_path,
     raw.mediaPath,
     raw.path,
     raw.video_url,
@@ -111,23 +139,12 @@ function resolveCardMedia(model: DroneModel) {
 
   const url = absUrl(candidates[0] || "");
 
-  const typeFromRaw =
-    (model.card_media_type as any) ||
-    raw.card_media_type ||
-    raw.media_type ||
-    raw.type ||
-    raw.kind ||
-    raw.file_type ||
-    detectMediaTypeByUrl(url) ||
-    (url ? "image" : "");
+  const type = normalizeMediaTypeToLower(
+    model.card_media_type ?? raw.card_media_type ?? raw.media_type ?? raw.type ?? raw.kind ?? raw.file_type,
+    url
+  );
 
-  const type = String(typeFromRaw).toLowerCase().includes("video")
-    ? "video"
-    : String(typeFromRaw).toLowerCase().includes("image")
-      ? "image"
-      : "";
-
-  return { url, type: type as "image" | "video" | "" };
+  return { url, type: type as MediaTypeLower | "" };
 }
 
 function Badge({ children }: { children: React.ReactNode }) {
@@ -172,7 +189,7 @@ function ModelCard({ model, onOpen }: { model: DroneModel; onOpen: (key: string)
                 <div className="text-center px-6">
                   <div className="text-sm text-slate-200 font-extrabold">Mídia do modelo</div>
                   <div className="text-xs text-slate-400 mt-1">
-                    Adicione uma imagem/vídeo no admin para ficar perfeito.
+                    Selecione uma imagem/vídeo no admin (Card) para aparecer aqui.
                   </div>
                 </div>
               </div>
@@ -210,9 +227,7 @@ function ModelCard({ model, onOpen }: { model: DroneModel; onOpen: (key: string)
         <div className="relative p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
-                {model.label}
-              </h3>
+              <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-white">{model.label}</h3>
               <p className="mt-1 text-xs sm:text-sm text-slate-300">
                 Especificações • Funcionalidades • Benefícios • Galeria
               </p>
@@ -280,23 +295,20 @@ function ModelsCarouselSection({
 
   return (
     <section className="py-10 sm:py-14">
-      {/* CSS local pra esconder scrollbar (sem mexer no global) */}
       <style jsx global>{`
         .no-scrollbar {
-          -ms-overflow-style: none; /* IE and Edge */
-          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
         .no-scrollbar::-webkit-scrollbar {
-          display: none; /* Chrome, Safari */
+          display: none;
         }
       `}</style>
 
       <div className="max-w-6xl mx-auto px-5">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight">
-              Modelos disponíveis
-            </h2>
+            <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight">Modelos disponíveis</h2>
             <p className="mt-2 text-sm text-slate-300 max-w-2xl">
               Escolha um modelo para ver <b>especificações</b>, <b>funcionalidades</b>,{" "}
               <b>benefícios</b> e a <b>galeria</b> completa.
@@ -327,11 +339,9 @@ function ModelsCarouselSection({
             <div className="absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
           </div>
 
-          {/* Fades laterais (pra não parecer “scroll”) */}
           <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#070A0E] to-transparent opacity-80" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-[#070A0E] to-transparent opacity-80" />
 
-          {/* ✅ FIX: className em UMA linha (sem erro e sem “string quebrada”) */}
           <div
             ref={scrollerRef}
             className="relative flex gap-4 overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-smooth no-scrollbar"
@@ -342,9 +352,7 @@ function ModelsCarouselSection({
           </div>
 
           <div className="relative mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-            <div className="text-xs text-slate-400">
-              No celular, arraste para o lado. No desktop, use as setas.
-            </div>
+            <div className="text-xs text-slate-400">No celular, arraste para o lado. No desktop, use as setas.</div>
 
             <button
               onClick={onTalkToRep}
@@ -382,15 +390,20 @@ export default function DronesPublicPage() {
 
     const normalized = raw
       .map((m: any) => {
-        const key = String(m.key || m.model_key || "").toLowerCase();
+        const key = String(m.key || m.model_key || "").trim().toLowerCase();
         const label = String(m.label || m.name || "").trim();
 
-        const mediaUrl =
-          m.card_media_url ||
+        // ✅ backend ideal: já manda a mídia do card resolvida pela seleção (models_json)
+        const cardMediaUrl = m.card_media_url || "";
+        const cardMediaPath = m.card_media_path || m.card_media || ""; // tolerante
+        const cardMediaType = m.card_media_type || m.card_media_kind || m.media_type || undefined;
+
+        // fallback compat antigo (se ainda existir)
+        const legacyUrl =
           m.media_url ||
           m.file_url ||
           m.src ||
-          m.media_path || // ✅ compat
+          m.media_path ||
           m.mediaPath ||
           m.path ||
           m.video_url ||
@@ -401,18 +414,25 @@ export default function DronesPublicPage() {
           m.thumb_url ||
           "";
 
-        const mediaType =
-          m.card_media_type ||
-          m.media_type ||
-          (String(mediaUrl).match(/\.(mp4|webm|ogg)(\?.*)?$/i) ? "video" : mediaUrl ? "image" : undefined);
+        const chosenUrl = cardMediaUrl || cardMediaPath || legacyUrl;
 
         return {
           key,
           label,
           is_active: Number(m.is_active ?? 1),
           sort_order: Number(m.sort_order ?? 0),
-          card_media_url: mediaUrl ? absUrl(mediaUrl) : undefined,
-          card_media_type: mediaType,
+
+          // ✅ preferir os campos novos de card
+          card_media_url: chosenUrl ? absUrl(chosenUrl) : undefined,
+          card_media_path: cardMediaPath ? String(cardMediaPath) : undefined,
+          card_media_type: cardMediaType,
+
+          // ✅ ids (opcionais)
+          current_card_media_id:
+            m.current_card_media_id != null ? Number(m.current_card_media_id) : null,
+          current_hero_media_id:
+            m.current_hero_media_id != null ? Number(m.current_hero_media_id) : null,
+
           _raw: m,
         } as DroneModel;
       })

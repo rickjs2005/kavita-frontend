@@ -58,7 +58,6 @@ function absUrl(path?: string | null) {
 }
 
 function toBool(v: any) {
-  // IMPORTANT: se vier null/undefined, consideramos "ativo" por padrão pra não sumir tudo
   if (v === null || v === undefined) return true;
   if (typeof v === "boolean") return v;
   if (typeof v === "number") return v === 1;
@@ -84,7 +83,6 @@ function clampCaption(s: string) {
   return (s || "").slice(0, 160);
 }
 
-/** Card estilo “cliente” */
 function GalleryLikeCard({
   item,
   selected,
@@ -146,7 +144,6 @@ function GalleryLikeCard({
   );
 }
 
-/** ✅ Prévia “Destaque/Card” (igual ao cliente) */
 function PreviewBlock({ item, title }: { item: DroneGalleryItem; title: string }) {
   const src = absUrl(item.media_path);
 
@@ -204,21 +201,11 @@ export default function GalleryForm({
   const [tab, setTab] = useState<"PICK" | "MANAGE">("PICK");
   const [pickTarget, setPickTarget] = useState<PickTarget>("HERO");
 
-  const [pickedCardId, setPickedCardId] = useState<number | null>(
-    currentCardMediaId ?? null
-  );
-  const [pickedHeroId, setPickedHeroId] = useState<number | null>(
-    currentHeroMediaId ?? null
-  );
+  const [pickedCardId, setPickedCardId] = useState<number | null>(currentCardMediaId ?? null);
+  const [pickedHeroId, setPickedHeroId] = useState<number | null>(currentHeroMediaId ?? null);
 
-  // sync picked ids with props (quando o pai atualiza)
-  useEffect(() => {
-    setPickedCardId(currentCardMediaId ?? null);
-  }, [currentCardMediaId]);
-
-  useEffect(() => {
-    setPickedHeroId(currentHeroMediaId ?? null);
-  }, [currentHeroMediaId]);
+  useEffect(() => setPickedCardId(currentCardMediaId ?? null), [currentCardMediaId]);
+  useEffect(() => setPickedHeroId(currentHeroMediaId ?? null), [currentHeroMediaId]);
 
   const [items, setItems] = useState<DroneGalleryItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -245,10 +232,9 @@ export default function GalleryForm({
 
   const activeItems = useMemo(() => {
     const actives = sortedItems.filter((it) => toBool(it.is_active));
-    return actives.length ? actives : sortedItems; // fallback: se nenhum ativo, mostra tudo
+    return actives.length ? actives : sortedItems;
   }, [sortedItems]);
 
-  // ✅ itens selecionados para prévia (mostra na hora no admin)
   const heroPickedItem = useMemo(() => {
     if (!pickedHeroId) return undefined;
     return items.find((x) => Number(x.id) === Number(pickedHeroId));
@@ -266,12 +252,9 @@ export default function GalleryForm({
     setMsg(null);
 
     try {
-      const res = await fetch(
-        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery`,
-        {
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery`, {
+        credentials: "include",
+      });
 
       if (isAuthError(res)) return redirectToLogin();
 
@@ -281,7 +264,6 @@ export default function GalleryForm({
         throw new Error(data?.message || "Erro ao listar galeria.");
       }
 
-      // ✅ aceita vários shapes
       const raw = Array.isArray(data)
         ? data
         : Array.isArray(data?.items)
@@ -292,15 +274,18 @@ export default function GalleryForm({
               ? data.rows
               : [];
 
-      const normalized: DroneGalleryItem[] = raw.map((it: any) => ({
-        id: Number(it.id),
-        model_key: it.model_key ?? null,
-        media_type: normalizeMediaType(it.media_type ?? it.type),
-        media_path: String(it.media_path || ""),
-        caption: it.caption ?? null,
-        sort_order: Number(it.sort_order) || 0,
-        is_active: it.is_active ?? it.active ?? 1,
-      }));
+      const normalized: DroneGalleryItem[] = raw
+        .map((it: any) => ({
+          id: Number(it.id),
+          model_key: it.model_key ?? null,
+          media_type: normalizeMediaType(it.media_type ?? it.type),
+          media_path: String(it.media_path || ""),
+          // ✅ tolerante: backend às vezes manda `title`
+          caption: it.caption ?? it.title ?? null,
+          sort_order: Number(it.sort_order) || 0,
+          is_active: it.is_active ?? it.active ?? 1,
+        }))
+        .filter((x: { id: any; media_path: any; }) => x.id && x.media_path);
 
       setItems(normalized);
     } catch (e: any) {
@@ -317,21 +302,27 @@ export default function GalleryForm({
   }, [modelKey]);
 
   useEffect(() => {
-    // cleanup previews
     return () => {
       pending.forEach((p) => URL.revokeObjectURL(p.previewUrl));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ se o item selecionado não existir mais (ex: deletou), limpa local
+  useEffect(() => {
+    if (pickedHeroId && !items.some((x) => Number(x.id) === Number(pickedHeroId))) {
+      setPickedHeroId(null);
+    }
+    if (pickedCardId && !items.some((x) => Number(x.id) === Number(pickedCardId))) {
+      setPickedCardId(null);
+    }
+  }, [items, pickedHeroId, pickedCardId]);
+
   function addFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
 
     const baseSort = (() => {
-      const maxSort = sortedItems.reduce(
-        (acc, it) => Math.max(acc, Number(it.sort_order) || 0),
-        0
-      );
+      const maxSort = sortedItems.reduce((acc, it) => Math.max(acc, Number(it.sort_order) || 0), 0);
       return (maxSort || 0) + 10;
     })();
 
@@ -359,9 +350,7 @@ export default function GalleryForm({
   }
 
   function updatePending(id: string, patch: Partial<PendingUpload>) {
-    setPending((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...patch } : p))
-    );
+    setPending((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   }
 
   async function uploadAllPending() {
@@ -378,16 +367,14 @@ export default function GalleryForm({
         fd.append("sort_order", String(Number(p.sort_order) || 0));
         fd.append("is_active", p.is_active ? "1" : "0");
 
-        const res = await fetch(
-          `${API_BASE}/api/admin/drones/models/${modelKey}/gallery`,
-          {
-            method: "POST",
-            credentials: "include",
-            body: fd,
-          }
-        );
+        const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery`, {
+          method: "POST",
+          credentials: "include",
+          body: fd,
+        });
 
         if (isAuthError(res)) return redirectToLogin();
+
         const { data } = await readSafe(res);
 
         if (!res.ok) {
@@ -397,12 +384,9 @@ export default function GalleryForm({
         }
       }
 
-      // mantém só os que deram erro
       setPending((prev) => {
         const keep = prev.filter((p) => p.error);
-        prev
-          .filter((p) => !p.error)
-          .forEach((p) => URL.revokeObjectURL(p.previewUrl));
+        prev.filter((p) => !p.error).forEach((p) => URL.revokeObjectURL(p.previewUrl));
         return keep;
       });
 
@@ -428,16 +412,14 @@ export default function GalleryForm({
       fd.append("sort_order", String(Number(it.sort_order) || 0));
       fd.append("is_active", toBool(it.is_active) ? "1" : "0");
 
-      const res = await fetch(
-        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${it.id}`,
-        {
-          method: "PUT",
-          credentials: "include",
-          body: fd,
-        }
-      );
+      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${it.id}`, {
+        method: "PUT",
+        credentials: "include",
+        body: fd,
+      });
 
       if (isAuthError(res)) return redirectToLogin();
+
       const { data } = await readSafe(res);
       if (!res.ok) throw new Error(data?.message || "Erro ao salvar item.");
 
@@ -463,36 +445,22 @@ export default function GalleryForm({
       fd.append("sort_order", String(Number(current.sort_order) || 0));
       fd.append("is_active", toBool(current.is_active) ? "1" : "0");
 
-      async function savePick(modelKey: string, target: "HERO" | "CARD", mediaId: number) {
-        const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/media-selection`, {
-          method: "PUT",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ target, media_id: mediaId }),
-        });
-
-        const data = await res.json().catch(() => null);
-        if (!res.ok) throw new Error(data?.message || "Falha ao salvar seleção.");
-      }
-
-
-      // upload the new media for this item
-      const res = await fetch(
-        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`,
-        {
-          method: "PUT",
-          credentials: "include",
-          body: fd,
-        }
-      );
+      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        body: fd,
+      });
 
       if (isAuthError(res)) return redirectToLogin();
+
       const { data } = await readSafe(res);
       if (!res.ok) throw new Error(data?.message || "Erro ao trocar mídia.");
 
+      toast.success("Mídia trocada com sucesso.");
       await fetchList();
     } catch (e: any) {
       setMsg(e?.message || "Falha ao trocar mídia.");
+      toast.error(e?.message || "Falha ao trocar mídia.");
     } finally {
       setReplacingIds((m) => ({ ...m, [id]: false }));
     }
@@ -503,19 +471,17 @@ export default function GalleryForm({
     setMsg(null);
 
     try {
-      const res = await fetch(
-        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
       if (isAuthError(res)) return redirectToLogin();
+
       const { data } = await readSafe(res);
       if (!res.ok) throw new Error(data?.message || "Erro ao remover item.");
 
-      toast.success("Imagem removida com sucesso.");
+      toast.success("Mídia removida com sucesso.");
 
       setPickedCardId((prev) => (prev === id ? null : prev));
       setPickedHeroId((prev) => (prev === id ? null : prev));
@@ -556,28 +522,26 @@ export default function GalleryForm({
       if (target === "CARD") {
         setPickedCardId(item.id);
         await onPickForCard?.(item);
-        toast.success("Imagem selecionada para o Card.");
+        toast.success("Mídia selecionada para o Card.");
         return;
       }
 
       setPickedHeroId(item.id);
       await onPickForHero?.(item);
-      toast.success("Imagem selecionada para Destaque.");
+      toast.success("Mídia selecionada para Destaque.");
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao selecionar imagem.");
+      toast.error(e?.message || "Falha ao selecionar mídia.");
     }
   }
 
   return (
     <div className="space-y-5">
-      {/* Header + Tabs */}
       <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="text-sm font-semibold text-white">Galeria</div>
             <div className="mt-0.5 text-xs text-white/60">
-              Selecione a mídia do <b>Card</b> ou do <b>Destaque</b>. E gerencie
-              uploads/edições.
+              Selecione a mídia do <b>Card</b> ou do <b>Destaque</b>. E gerencie uploads/edições.
             </div>
           </div>
 
@@ -626,8 +590,7 @@ export default function GalleryForm({
         {tab === "PICK" ? (
           <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="text-xs text-white/60">
-              Clique em uma mídia para definir como{" "}
-              <b className="text-white">Card</b> ou{" "}
+              Clique em uma mídia para definir como <b className="text-white">Card</b> ou{" "}
               <b className="text-white">Destaque</b>.
             </div>
 
@@ -670,28 +633,17 @@ export default function GalleryForm({
         </div>
       ) : null}
 
-      {/* ✅ Prévia do cliente (Destaque + Card) — atualiza na hora */}
       {(heroPickedItem || cardPickedItem) ? (
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <div className="text-sm font-semibold text-white">
-                Prévia do cliente (Destaque + Card)
-              </div>
-              <div className="text-xs text-white/60">
-                Atualiza na hora quando você seleciona.
-              </div>
+              <div className="text-sm font-semibold text-white">Prévia do cliente (Destaque + Card)</div>
+              <div className="text-xs text-white/60">Atualiza na hora quando você seleciona.</div>
             </div>
 
             <div className="hidden sm:block text-xs text-white/50">
-              Card:{" "}
-              <b className="text-white/80">
-                {pickedCardId ? `#${pickedCardId}` : "—"}
-              </b>{" "}
-              • Destaque:{" "}
-              <b className="text-white/80">
-                {pickedHeroId ? `#${pickedHeroId}` : "—"}
-              </b>
+              Card: <b className="text-white/80">{pickedCardId ? `#${pickedCardId}` : "—"}</b> •
+              Destaque: <b className="text-white/80">{pickedHeroId ? `#${pickedHeroId}` : "—"}</b>
             </div>
           </div>
 
@@ -715,29 +667,19 @@ export default function GalleryForm({
         </div>
       ) : null}
 
-      {/* PICK TAB */}
       {tab === "PICK" ? (
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <div className="text-sm font-semibold text-white">
-                Prévia igual ao cliente
-              </div>
+              <div className="text-sm font-semibold text-white">Prévia igual ao cliente</div>
               <div className="text-xs text-white/60">
-                Mostrando itens ativos (se nenhum estiver ativo, mostramos
-                todos).
+                Mostrando itens ativos (se nenhum estiver ativo, mostramos todos).
               </div>
             </div>
 
             <div className="hidden sm:block text-xs text-white/50">
-              Card:{" "}
-              <b className="text-white/80">
-                {pickedCardId ? `#${pickedCardId}` : "—"}
-              </b>{" "}
-              • Destaque:{" "}
-              <b className="text-white/80">
-                {pickedHeroId ? `#${pickedHeroId}` : "—"}
-              </b>
+              Card: <b className="text-white/80">{pickedCardId ? `#${pickedCardId}` : "—"}</b> •
+              Destaque: <b className="text-white/80">{pickedHeroId ? `#${pickedHeroId}` : "—"}</b>
             </div>
           </div>
 
@@ -749,9 +691,7 @@ export default function GalleryForm({
             <div className="mt-6 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {activeItems.map((it) => {
                 const selected =
-                  pickTarget === "CARD"
-                    ? it.id === pickedCardId
-                    : it.id === pickedHeroId;
+                  pickTarget === "CARD" ? it.id === pickedCardId : it.id === pickedHeroId;
                 return (
                   <GalleryLikeCard
                     key={it.id}
@@ -770,16 +710,12 @@ export default function GalleryForm({
         </div>
       ) : null}
 
-      {/* MANAGE TAB */}
       {tab === "MANAGE" ? (
         <>
-          {/* Uploader */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <div className="text-sm font-semibold text-white">
-                  Adicionar mídias
-                </div>
+                <div className="text-sm font-semibold text-white">Adicionar mídias</div>
                 <div className="mt-0.5 text-xs text-white/60">
                   Aceita <b>jpg/png/webp</b> e <b>mp4</b>.
                 </div>
@@ -827,17 +763,9 @@ export default function GalleryForm({
                   >
                     <div className="aspect-video w-full overflow-hidden bg-black/40">
                       {p.inferredType === "VIDEO" ? (
-                        <video
-                          className="h-full w-full object-cover"
-                          src={p.previewUrl}
-                          controls
-                        />
+                        <video className="h-full w-full object-cover" src={p.previewUrl} controls />
                       ) : (
-                        <img
-                          className="h-full w-full object-cover"
-                          src={p.previewUrl}
-                          alt="preview"
-                        />
+                        <img className="h-full w-full object-cover" src={p.previewUrl} alt="preview" />
                       )}
                     </div>
 
@@ -858,11 +786,7 @@ export default function GalleryForm({
 
                       <input
                         value={p.caption}
-                        onChange={(e) =>
-                          updatePending(p.id, {
-                            caption: clampCaption(e.target.value),
-                          })
-                        }
+                        onChange={(e) => updatePending(p.id, { caption: clampCaption(e.target.value) })}
                         placeholder="Legenda (opcional)"
                         className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-white/20"
                       />
@@ -870,11 +794,7 @@ export default function GalleryForm({
                       <div className="flex items-center gap-2">
                         <input
                           value={p.sort_order}
-                          onChange={(e) =>
-                            updatePending(p.id, {
-                              sort_order: Number(e.target.value) || 0,
-                            })
-                          }
+                          onChange={(e) => updatePending(p.id, { sort_order: Number(e.target.value) || 0 })}
                           type="number"
                           className="w-28 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-white/20"
                           title="Ordem"
@@ -884,11 +804,7 @@ export default function GalleryForm({
                           <input
                             type="checkbox"
                             checked={p.is_active}
-                            onChange={(e) =>
-                              updatePending(p.id, {
-                                is_active: e.target.checked,
-                              })
-                            }
+                            onChange={(e) => updatePending(p.id, { is_active: e.target.checked })}
                             className="h-4 w-4"
                           />
                           Ativo
@@ -911,13 +827,10 @@ export default function GalleryForm({
             )}
           </div>
 
-          {/* Existing items */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-sm font-semibold text-white">
-                  Itens cadastrados
-                </div>
+                <div className="text-sm font-semibold text-white">Itens cadastrados</div>
                 <div className="text-xs text-white/60">
                   Total: <b className="text-white">{sortedItems.length}</b>
                 </div>
@@ -929,16 +842,12 @@ export default function GalleryForm({
                 Carregando...
               </div>
             ) : sortedItems.length === 0 ? (
-              <div className="mt-3 text-sm text-white/60">
-                Ainda não há mídias para este modelo.
-              </div>
+              <div className="mt-3 text-sm text-white/60">Ainda não há mídias para este modelo.</div>
             ) : (
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {sortedItems.map((it) => {
                   const active = toBool(it.is_active);
-                  const busy = Boolean(
-                    savingIds[it.id] || deletingIds[it.id] || replacingIds[it.id]
-                  );
+                  const busy = Boolean(savingIds[it.id] || deletingIds[it.id] || replacingIds[it.id]);
 
                   return (
                     <div
@@ -947,30 +856,17 @@ export default function GalleryForm({
                     >
                       <div className="aspect-video w-full overflow-hidden bg-black/40">
                         {it.media_type === "VIDEO" ? (
-                          <video
-                            className="h-full w-full object-cover"
-                            src={absUrl(it.media_path)}
-                            controls
-                          />
+                          <video className="h-full w-full object-cover" src={absUrl(it.media_path)} controls />
                         ) : (
-                          <img
-                            className="h-full w-full object-cover"
-                            src={absUrl(it.media_path)}
-                            alt={it.caption || "mídia"}
-                          />
+                          <img className="h-full w-full object-cover" src={absUrl(it.media_path)} alt={it.caption || "mídia"} />
                         )}
                       </div>
 
                       <div className="space-y-2 p-3">
                         <div className="flex items-center justify-between gap-2">
                           <div className="text-xs text-white/70">
-                            #{it.id} •{" "}
-                            {it.media_type === "VIDEO" ? "Vídeo" : "Imagem"} •{" "}
-                            <span
-                              className={
-                                active ? "text-emerald-300" : "text-zinc-300"
-                              }
-                            >
+                            #{it.id} • {it.media_type === "VIDEO" ? "Vídeo" : "Imagem"} •{" "}
+                            <span className={active ? "text-emerald-300" : "text-zinc-300"}>
                               {active ? "Ativo" : "Inativo"}
                             </span>
                           </div>
@@ -999,11 +895,7 @@ export default function GalleryForm({
 
                         <input
                           value={it.caption || ""}
-                          onChange={(e) =>
-                            setItemLocal(it.id, {
-                              caption: clampCaption(e.target.value),
-                            })
-                          }
+                          onChange={(e) => setItemLocal(it.id, { caption: clampCaption(e.target.value) })}
                           placeholder="Legenda (opcional)"
                           className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-white/20"
                           disabled={busy}
@@ -1012,11 +904,7 @@ export default function GalleryForm({
                         <div className="flex flex-wrap items-center gap-2">
                           <input
                             value={Number(it.sort_order) || 0}
-                            onChange={(e) =>
-                              setItemLocal(it.id, {
-                                sort_order: Number(e.target.value) || 0,
-                              })
-                            }
+                            onChange={(e) => setItemLocal(it.id, { sort_order: Number(e.target.value) || 0 })}
                             type="number"
                             className="w-28 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-white/20"
                             disabled={busy}
@@ -1027,9 +915,7 @@ export default function GalleryForm({
                             <input
                               type="checkbox"
                               checked={active}
-                              onChange={(e) =>
-                                setItemLocal(it.id, { is_active: e.target.checked })
-                              }
+                              onChange={(e) => setItemLocal(it.id, { is_active: e.target.checked })}
                               className="h-4 w-4"
                               disabled={busy}
                             />
@@ -1050,9 +936,7 @@ export default function GalleryForm({
                               )}
                               title="Selecionar para Destaque (Hero)"
                             >
-                              {it.id === pickedHeroId
-                                ? "Destaque ✓"
-                                : "Selecionar p/ Destaque"}
+                              {it.id === pickedHeroId ? "Destaque ✓" : "Selecionar p/ Destaque"}
                             </button>
 
                             <button
@@ -1068,9 +952,7 @@ export default function GalleryForm({
                               )}
                               title="Selecionar para Card (Lista)"
                             >
-                              {it.id === pickedCardId
-                                ? "Card ✓"
-                                : "Selecionar p/ Card"}
+                              {it.id === pickedCardId ? "Card ✓" : "Selecionar p/ Card"}
                             </button>
 
                             <label
@@ -1120,10 +1002,7 @@ export default function GalleryForm({
                         </div>
 
                         <div className="text-[11px] text-white/45">
-                          model_key:{" "}
-                          <b className="text-white/70">
-                            {String(it.model_key || "")}
-                          </b>
+                          model_key: <b className="text-white/70">{String(it.model_key || "")}</b>
                         </div>
                       </div>
 
