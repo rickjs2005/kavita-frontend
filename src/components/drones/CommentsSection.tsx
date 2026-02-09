@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { DroneComment } from "@/types/drones";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -42,6 +42,24 @@ export default function CommentsSection({ comments, modelKey, onCreated }: Props
   const [files, setFiles] = useState<FileList | null>(null);
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // ✅ garante que o React sempre tenha keys estáveis mesmo se id vier null/duplicado
+  const normalizedComments = useMemo(() => {
+    return (comments ?? []).map((c, cIdx) => {
+      const commentKey =
+        (c as any).id ?? `${(c as any).created_at ?? "no-date"}-${cIdx}`;
+
+      const media = ((c as any).media ?? []).map((m: any, mIdx: number) => {
+        const mediaKey =
+          m?.id ??
+          `${commentKey}-${m?.media_path ?? "no-path"}-${mIdx}`;
+
+        return { ...m, __key: mediaKey };
+      });
+
+      return { ...c, __key: commentKey, media };
+    });
+  }, [comments]);
 
   async function submit() {
     setMsg(null);
@@ -168,9 +186,9 @@ export default function CommentsSection({ comments, modelKey, onCreated }: Props
           <h3 className="text-sm font-extrabold text-white">Publicados</h3>
 
           <div className="mt-4 grid gap-4">
-            {comments.length ? (
-              comments.map((c) => (
-                <div key={c.id} className="rounded-2xl border border-white/10 bg-black/25 p-4">
+            {normalizedComments.length ? (
+              normalizedComments.map((c: any) => (
+                <div key={c.__key} className="rounded-2xl border border-white/10 bg-black/25 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-white truncate">{c.display_name}</p>
                     <p className="text-xs text-slate-400 shrink-0">
@@ -182,11 +200,11 @@ export default function CommentsSection({ comments, modelKey, onCreated }: Props
 
                   {c.media?.length ? (
                     <div className="mt-4 grid gap-2 grid-cols-2 sm:grid-cols-3">
-                      {c.media.map((m) => {
+                      {c.media.map((m: any) => {
                         const src = `${API_BASE}${m.media_path}`;
                         return m.media_type === "VIDEO" ? (
                           <video
-                            key={m.id}
+                            key={m.__key}
                             className="w-full rounded-xl aspect-video object-cover bg-black/40 border border-white/10"
                             src={src}
                             controls
@@ -194,7 +212,7 @@ export default function CommentsSection({ comments, modelKey, onCreated }: Props
                           />
                         ) : (
                           <img
-                            key={m.id}
+                            key={m.__key}
                             className="w-full rounded-xl aspect-video object-cover bg-black/40 border border-white/10"
                             src={src}
                             alt="mídia do comentário"
