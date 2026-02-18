@@ -63,6 +63,7 @@ const EXCLUDED_ROUTES = [
   "/admin/kavita-news",
   "/admin/frete",
   "/admin/drones",
+  "/admin/destaques/site-hero",
 ] as const;
 
 function isActiveCategory(c: PublicCategory) {
