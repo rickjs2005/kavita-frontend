@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import DeleteButton from "@/components/buttons/DeleteButton";
 import SearchInputProdutos from "@/components/products/SearchInput";
@@ -53,12 +54,13 @@ function toArray(json: any): any[] {
 
 function toInputDateTime(value?: string | null) {
   if (!value) return "";
-  // espera algo tipo "2025-12-05T10:00:00.000Z" ou "2025-12-05 10:00:00"
   const s = value.replace(" ", "T");
   return s.slice(0, 16);
 }
 
 export default function MarketingPromocoesPage() {
+  const router = useRouter();
+
   const [promocoes, setPromocoes] = useState<Promocao[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -89,7 +91,7 @@ export default function MarketingPromocoesPage() {
       setErr(null);
 
       const res = await fetch(`${API_ADMIN}/marketing/promocoes`, {
-        credentials: "include", // 🔐 usa cookie HttpOnly
+        credentials: "include",
         cache: "no-store",
       });
 
@@ -104,6 +106,7 @@ export default function MarketingPromocoesPage() {
 
       const json = await res.json();
       const list = toArray(json) as Promocao[];
+
       setPromocoes(
         list.map((d) => ({
           ...d,
@@ -169,9 +172,7 @@ export default function MarketingPromocoesPage() {
     setFormDiscountPercent(
       promo.discount_percent != null ? String(promo.discount_percent) : ""
     );
-    setFormPromoPrice(
-      promo.promo_price != null ? String(promo.promo_price) : ""
-    );
+    setFormPromoPrice(promo.promo_price != null ? String(promo.promo_price) : "");
     setFormStartAt(toInputDateTime((promo as any).start_at));
     setFormEndAt(toInputDateTime((promo as any).end_at));
     setFormActive(promo.is_active === 1 || promo.status === "ATIVA");
@@ -236,14 +237,9 @@ export default function MarketingPromocoesPage() {
       if (mode === "create") {
         const res = await fetch(`${API_ADMIN}/marketing/promocoes`, {
           method: "POST",
-          credentials: "include", // 🔐 cookie HttpOnly
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            product_id: formProductId,
-            ...payload,
-          }),
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id: formProductId, ...payload }),
         });
 
         if (res.status === 401 || res.status === 403) {
@@ -263,17 +259,12 @@ export default function MarketingPromocoesPage() {
 
         toast.success("Promoção criada com sucesso.");
       } else if (mode === "edit" && formPromoId != null) {
-        const res = await fetch(
-          `${API_ADMIN}/marketing/promocoes/${formPromoId}`,
-          {
-            method: "PUT",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          }
-        );
+        const res = await fetch(`${API_ADMIN}/marketing/promocoes/${formPromoId}`, {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
         if (res.status === 401 || res.status === 403) {
           toast.error("Sessão expirada. Faça login novamente no admin.");
@@ -302,7 +293,7 @@ export default function MarketingPromocoesPage() {
     try {
       const res = await fetch(`${API_ADMIN}/marketing/promocoes/${id}`, {
         method: "DELETE",
-        credentials: "include", // 🔐 cookie HttpOnly
+        credentials: "include",
       });
 
       if (res.status === 401 || res.status === 403) {
@@ -337,10 +328,10 @@ export default function MarketingPromocoesPage() {
             <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
               Marketing & Promoções
             </h1>
+
             <p className="text-xs text-gray-300 sm:text-sm">
-              Busque um produto e transforme em promoção. Use descontos em
-              porcentagem ou preços especiais para criar campanhas como os
-              grandes ecommerces.
+              Busque um produto e transforme em promoção. Use descontos em porcentagem ou preços
+              especiais para criar campanhas como os grandes ecommerces.
             </p>
 
             <div className="mt-3 w-full sm:w-80 md:w-96">
@@ -349,6 +340,17 @@ export default function MarketingPromocoesPage() {
                 placeholder="Buscar produto para criar promoção..."
                 onPick={(produto: any) => abrirCriarPromocao(produto)}
               />
+            </div>
+
+            {/* ✅ Botão do Hero (agora aparece SEMPRE, logo abaixo da busca) */}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => router.push("/admin/destaques/site-hero")}
+                className="inline-flex items-center justify-center rounded-xl border border-[#359293] bg-transparent px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#359293]"
+              >
+                Configurar Hero Section
+              </button>
             </div>
           </div>
         </div>
@@ -404,9 +406,7 @@ export default function MarketingPromocoesPage() {
                 <select
                   value={formType}
                   onChange={(e) =>
-                    setFormType(
-                      e.target.value === "FLASH" ? "FLASH" : "PROMOCAO"
-                    )
+                    setFormType(e.target.value === "FLASH" ? "FLASH" : "PROMOCAO")
                   }
                   className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 >
@@ -486,12 +486,9 @@ export default function MarketingPromocoesPage() {
                   onChange={(e) => setFormActive(e.target.checked)}
                   className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-500 focus:ring-emerald-500"
                 />
-                <label
-                  htmlFor="promo-active"
-                  className="text-xs text-slate-200"
-                >
-                  Promoção ativa (aparece para os clientes enquanto estiver
-                  dentro do período configurado)
+                <label htmlFor="promo-active" className="text-xs text-slate-200">
+                  Promoção ativa (aparece para os clientes enquanto estiver dentro do período
+                  configurado)
                 </label>
               </div>
 
@@ -533,8 +530,7 @@ export default function MarketingPromocoesPage() {
         )}
         {!loading && !err && !temItens && (
           <div className="mt-6 rounded-2xl bg-white p-4 text-sm text-gray-600 shadow-sm sm:p-5">
-            Nenhuma promoção cadastrada ainda. Use a busca acima para criar a
-            primeira oferta.
+            Nenhuma promoção cadastrada ainda. Use a busca acima para criar a primeira oferta.
           </div>
         )}
 
@@ -563,9 +559,7 @@ export default function MarketingPromocoesPage() {
                       fill
                       className="object-cover"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      onError={(e) =>
-                        ((e.currentTarget as any).src = PLACEHOLDER)
-                      }
+                      onError={(e) => ((e.currentTarget as any).src = PLACEHOLDER)}
                     />
 
                     <div className="absolute left-2 top-2 flex items-center gap-2">

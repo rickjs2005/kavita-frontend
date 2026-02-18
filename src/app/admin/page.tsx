@@ -9,19 +9,8 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  CartesianGrid,
-} from "recharts";
-import {
-  useAdminAuth,
-  AdminRole,
-} from "@/context/AdminAuthContext";
+import {ResponsiveContainer,BarChart,Bar,XAxis,YAxis,Tooltip as RechartsTooltip,CartesianGrid,} from "recharts";
+import {useAdminAuth,AdminRole,} from "@/context/AdminAuthContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
@@ -617,7 +606,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-   return (
+  return (
     <div className="relative min-h-screen w-full bg-slate-950 text-slate-50">
       {/* HEADER */}
       <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">

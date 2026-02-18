@@ -3,6 +3,7 @@ import CategoryPage from "@/components/products/CategoryPage";
 import { redirect, notFound } from "next/navigation";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+export const revalidate = 300; // 5 minutos
 
 type PageProps = {
   params: Promise<{ category: string }>;

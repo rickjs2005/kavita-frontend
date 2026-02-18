@@ -62,6 +62,8 @@ const EXCLUDED_ROUTES = [
   "/admin/configuracoes/categorias",
   "/admin/kavita-news",
   "/admin/frete",
+  "/admin/drones",
+  "/admin/destaques/site-hero",
 ] as const;
 
 function isActiveCategory(c: PublicCategory) {
@@ -86,7 +88,7 @@ export default function Header({ categories, shop }: HeaderProps) {
 const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 const logoSrc = isDronePage
-  ? "/images/drone/kavita-drone.png"
+  ? "/kavita-drone.png"
   : shop?.logo_url?.trim()
     ? (shop.logo_url.startsWith("http")
         ? shop.logo_url

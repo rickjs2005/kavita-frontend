@@ -77,6 +77,12 @@ const navItems: NavItem[] = [
     icon: "📰",
     permission: "news_view",
   },
+  {
+    label: "kavita-drones",
+    href: "/admin/drones",
+    icon: "🚁",
+    permission: "drones_manage",
+  },
   // Relatórios
   {
     label: "Relatórios",

@@ -2,15 +2,16 @@
 
 import React, {
   createContext,
-  useContext,
-  useEffect,
-  useState,
   useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import apiClient from "@/lib/apiClient";
 import { handleApiError } from "@/lib/handleApiError";
+import { isApiError } from "@/lib/errors";
 
-// permite roles fixos + futuros slugs (marketing, financeiro, etc.)
 export type AdminRole =
   | "master"
   | "gerente"
@@ -18,89 +19,60 @@ export type AdminRole =
   | "leitura"
   | (string & {});
 
-type AdminAuth = {
+export type AdminUser = {
+  id: number;
+  nome: string;
+  email: string;
+  role: AdminRole;
+  role_id: number | null;
+};
+
+type AdminAuthContextValue = {
+  // Server-truth (novo padrão)
+  adminUser: AdminUser | null;
+  permissions: string[];
+  loading: boolean;
+  loadSession: (opts?: { silent?: boolean }) => Promise<AdminUser | null>;
+
+  // Compat (não quebrar nada)
   isAdmin: boolean;
   role: AdminRole | null;
   nome: string | null;
-  permissions: string[];
-  markAsAdmin: (data?: {
-    role: AdminRole;
-    nome?: string;
-    permissions?: string[];
-  }) => void;
+
+  // Helpers
   hasPermission: (perm: string) => boolean;
   hasRole: (roles: AdminRole | AdminRole[]) => boolean;
-  logout: () => void;
+
+  /**
+   * Mantido por compatibilidade com fluxos antigos (ex.: login page marcando admin).
+   * Recomendação: usar loadSession() após login (server-truth).
+   */
+  markAsAdmin: (data?: {
+    user: AdminUser;
+    permissions?: string[];
+  }) => void;
+
+  logout: (opts?: { redirectTo?: string }) => Promise<void>;
 };
 
-const AdminAuthContext = createContext<AdminAuth | null>(null);
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
 
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [role, setRole] = useState<AdminRole | null>(null);
-  const [nome, setNome] = useState<string | null>(null);
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
-  const router = useRouter();
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const markAsAdmin = useCallback(
-    (data?: { role: AdminRole; nome?: string; permissions?: string[] }) => {
-      if (!data?.role) return;
+  // evita race condition em múltiplos loadSession simultâneos
+  const inflightRef = useRef<Promise<AdminUser | null> | null>(null);
 
-      const { role, nome, permissions: perms } = data;
-
-      setIsAdmin(true);
-      setRole(role);
-      if (nome) setNome(nome);
-      if (Array.isArray(perms)) setPermissions(perms);
-
-      // Persistência leve apenas para UX (não é segurança)
-      try {
-        localStorage.setItem("adminRole", role);
-        if (nome) localStorage.setItem("adminNome", nome);
-        if (Array.isArray(perms)) {
-          localStorage.setItem("adminPermissions", JSON.stringify(perms));
-        }
-      } catch {
-        // ignorar erro de localStorage
-      }
-    },
-    []
-  );
-
-  const logout = useCallback(() => {
-    // 1) tenta limpar sessão no backend (cookie HttpOnly)
-    (async () => {
-      try {
-        await fetch(`${API_BASE}/api/admin/logout`, {
-          method: "POST",
-          credentials: "include",
-        });
-      } catch (err) {
-        // Mostra erro amigável, mas mantém lógica de limpar local e redirecionar
-        handleApiError(err, {
-          fallbackMessage: "Falha ao encerrar sessão de administrador.",
-        });
-      }
-    })();
-
-    // 2) limpa apenas dados locais (não mexe em cookie diretamente)
-    try {
-      localStorage.removeItem("adminRole");
-      localStorage.removeItem("adminNome");
-      localStorage.removeItem("adminPermissions");
-    } catch {
-      // ignorar erro de localStorage
-    }
-
-    setIsAdmin(false);
-    setRole(null);
-    setNome(null);
+  const clearState = useCallback(() => {
+    setAdminUser(null);
     setPermissions([]);
+  }, []);
 
-    router.replace("/admin/login");
-  }, [router]);
+  const isAdmin = !!adminUser;
+  const role = adminUser?.role ?? null;
+  const nome = adminUser?.nome ?? null;
 
   const hasPermission = useCallback(
     (perm: string) => {
@@ -108,125 +80,153 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       if (role === "master") return true;
       return permissions.includes(perm);
     },
-    [role, permissions]
+    [permissions, role]
   );
 
   const hasRole = useCallback(
     (rolesToCheck: AdminRole | AdminRole[]) => {
       if (!role) return false;
-      if (Array.isArray(rolesToCheck)) {
-        return rolesToCheck.includes(role);
-      }
+      if (Array.isArray(rolesToCheck)) return rolesToCheck.includes(role);
       return role === rolesToCheck;
     },
     [role]
   );
 
-  // Carrega estado inicial (somente cache visual) + sincroniza com /api/admin/me via cookie HttpOnly
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // 1) Carrega cache leve do localStorage (não é segurança)
-    try {
-      const storedRole = localStorage.getItem("adminRole") as AdminRole | null;
-      const storedNome = localStorage.getItem("adminNome");
-      const storedPermsRaw = localStorage.getItem("adminPermissions");
-
-      if (storedRole) setRole(storedRole);
-      if (storedNome) setNome(storedNome || null);
-
-      if (storedPermsRaw) {
-        try {
-          const parsed = JSON.parse(storedPermsRaw);
-          if (Array.isArray(parsed)) setPermissions(parsed);
-        } catch {
-          // erro no parse -> ignora
-        }
-      }
-    } catch {
-      // erro de localStorage -> ignora
-    }
-
-    // 2) Faz chamada real para /api/admin/me
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/admin/me`, {
-          method: "GET",
-          credentials: "include", // importante para enviar cookie HttpOnly
-        });
-
-        if (res.status === 401) {
-          // não autenticado: limpa só estado local
-          setIsAdmin(false);
-          setRole(null);
-          setNome(null);
-          setPermissions([]);
-          try {
-            localStorage.removeItem("adminRole");
-            localStorage.removeItem("adminNome");
-            localStorage.removeItem("adminPermissions");
-          } catch {
-            // ignore
-          }
-          return;
-        }
-
-        if (!res.ok) {
-          // erro de servidor, mostra mensagem genérica
-          handleApiError(
-            new Error(
-              `Erro ao carregar dados do administrador. Código ${res.status}`
-            ),
-            { fallbackMessage: "Erro ao carregar dados do administrador." }
-          );
-          return;
-        }
-
-        const data: {
-          id: number;
-          nome: string;
-          email: string;
-          role: AdminRole;
-          role_id: number | null;
-          permissions: string[];
-        } = await res.json();
-
-        markAsAdmin({
-          role: data.role,
-          nome: data.nome,
-          permissions: data.permissions || [],
-        });
-        setIsAdmin(true);
-      } catch (err) {
-        handleApiError(err, {
-          fallbackMessage: "Erro ao conectar com o servidor de admin.",
-        });
-      }
-    })();
-  }, [markAsAdmin]);
-
-  return (
-    <AdminAuthContext.Provider
-      value={{
-        isAdmin,
-        role,
-        nome,
-        permissions,
-        markAsAdmin,
-        hasPermission,
-        hasRole,
-        logout,
-      }}
-    >
-      {children}
-    </AdminAuthContext.Provider>
+  const markAsAdmin = useCallback(
+    (data?: { user: AdminUser; permissions?: string[] }) => {
+      if (!data?.user) return;
+      setAdminUser(data.user);
+      setPermissions(Array.isArray(data.permissions) ? data.permissions : []);
+    },
+    []
   );
+
+  const loadSession = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      // dedupe: se já tem um load em andamento, reutiliza
+      if (inflightRef.current) return inflightRef.current;
+
+      const silent = opts?.silent ?? true;
+
+      const p = (async () => {
+        setLoading(true);
+
+        try {
+          const data = await apiClient.get<{
+            id: number;
+            nome: string;
+            email: string;
+            role: AdminRole;
+            role_id: number | null;
+            permissions: string[];
+          }>("/api/admin/me");
+
+          const user: AdminUser = {
+            id: data.id,
+            nome: data.nome,
+            email: data.email,
+            role: data.role,
+            role_id: data.role_id ?? null,
+          };
+
+          setAdminUser(user);
+          setPermissions(Array.isArray(data.permissions) ? data.permissions : []);
+          return user;
+        } catch (err) {
+          // 401/403 é esperado quando não logado
+          if (isApiError(err) && (err.status === 401 || err.status === 403)) {
+            clearState();
+            return null;
+          }
+
+          clearState();
+
+          // Falhas inesperadas (rede/500): não “abre” admin; mantém estado limpo
+          if (!silent) {
+            handleApiError(err, {
+              fallback: "Erro ao validar sessão do administrador.",
+              // debug: true,
+            });
+          }
+
+          return null;
+        } finally {
+          setLoading(false);
+          inflightRef.current = null;
+        }
+      })();
+
+      inflightRef.current = p;
+      return p;
+    },
+    [clearState]
+  );
+
+  const logout = useCallback(
+    async (opts?: { redirectTo?: string }) => {
+      // Sempre tenta invalidar sessão no backend, mas não depende disso para limpar state.
+      try {
+        await apiClient.post("/api/admin/logout");
+      } catch (err) {
+        // não bloqueia UX; garante limpeza local
+        handleApiError(err, {
+          fallback: "Falha ao encerrar sessão de administrador.",
+          // debug: true,
+        });
+      } finally {
+        clearState();
+      }
+
+      // Não faz router aqui para não acoplar provider a layout;
+      // quem chama decide se redireciona.
+      // Ainda assim, damos opção de retorno (compat).
+      if (opts?.redirectTo) {
+        // Se você realmente quiser manter redirect aqui, faça pelo caller (layout/page)
+        // Este bloco existe para compatibilidade de quem já chama logout({redirectTo})
+        // mas sem importar router neste provider.
+        window.location.assign(opts.redirectTo);
+      }
+    },
+    [clearState]
+  );
+
+  const value = useMemo<AdminAuthContextValue>(
+    () => ({
+      adminUser,
+      permissions,
+      loading,
+      loadSession,
+
+      // compat
+      isAdmin,
+      role,
+      nome,
+
+      hasPermission,
+      hasRole,
+      markAsAdmin,
+      logout,
+    }),
+    [
+      adminUser,
+      permissions,
+      loading,
+      loadSession,
+      isAdmin,
+      role,
+      nome,
+      hasPermission,
+      hasRole,
+      markAsAdmin,
+      logout,
+    ]
+  );
+
+  return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
 }
 
-export const useAdminAuth = () => {
+export function useAdminAuth() {
   const ctx = useContext(AdminAuthContext);
-  if (!ctx) {
-    throw new Error("useAdminAuth deve ser usado dentro de AdminAuthProvider");
-  }
+  if (!ctx) throw new Error("useAdminAuth deve ser usado dentro de AdminAuthProvider");
   return ctx;
-};
+}
