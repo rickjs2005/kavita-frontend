@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+      NEXT_TELEMETRY_DISABLED: "1"
+      CI: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps (clean)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test (non-watch)
+        run: npm run test:run
+
+      - name: Build
+        run: npm run build
+
+      - name: npm audit (high/critical)
+        run: npm audit --audit-level=high
