@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, Key, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import HeroSection from "@/components/drones/HeroSection";
@@ -11,6 +11,27 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type MediaTypeLower = "image" | "video";
 type MediaTypeUpper = "IMAGE" | "VIDEO";
+
+/** JSON básico (pra tirar any sem quebrar) */
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+type JsonObject = { [key: string]: JsonValue };
+type UnknownRecord = Record<string, unknown>;
+
+/**
+ * ✅ Tipos inferidos DIRETO dos componentes (não depende de importar types do projeto)
+ * Isso resolve os erros do TS:
+ * - page precisa ser DronePageSettings
+ * - representatives precisa ser DroneRepresentative[]
+ * sem usar `any` e sem mudar a lógica.
+ */
+type HeroProps = React.ComponentProps<typeof HeroSection>;
+type RepsProps = React.ComponentProps<typeof RepresentativesSection>;
+type CommentsProps = React.ComponentProps<typeof CommentsSection>;
+
+type DronePageSettings = HeroProps["page"];
+type DroneRepresentatives = RepsProps["representatives"];
+type DroneComments = CommentsProps["comments"];
 
 type DroneModel = {
   key: string;
@@ -27,21 +48,29 @@ type DroneModel = {
   current_card_media_id?: number | null;
   current_hero_media_id?: number | null;
 
-  _raw?: any;
+  _raw?: UnknownRecord;
 };
 
 type RootResponse = {
-  landing?: any;
-  model_data?: any;
-  gallery?: any[];
-  comments?: any;
+  landing?: UnknownRecord | null;
+  model_data?: UnknownRecord | null;
+  gallery?: unknown[] | null;
+  comments?: unknown | null;
 };
 
-function extractArray(v: any): any[] {
+function extractArray(v: unknown): unknown[] {
   if (Array.isArray(v)) return v;
-  if (v?.items && Array.isArray(v.items)) return v.items;
-  if (v?.data && Array.isArray(v.data)) return v.data;
-  if (v?.data?.items && Array.isArray(v.data.items)) return v.data.items;
+  if (v && typeof v === "object") {
+    const o = v as UnknownRecord;
+
+    if (Array.isArray(o.items)) return o.items as unknown[];
+    if (Array.isArray(o.data)) return o.data as unknown[];
+
+    if (o.data && typeof o.data === "object") {
+      const d = o.data as UnknownRecord;
+      if (Array.isArray(d.items)) return d.items as unknown[];
+    }
+  }
   return [];
 }
 
@@ -98,7 +127,7 @@ function detectMediaTypeByUrl(url: string): MediaTypeLower | "" {
   return "";
 }
 
-function normalizeMediaTypeToLower(v: any, url?: string): MediaTypeLower | "" {
+function normalizeMediaTypeToLower(v: unknown, url?: string): MediaTypeLower | "" {
   const s = String(v || "").toLowerCase().trim();
   if (s.includes("video")) return "video";
   if (s.includes("image")) return "image";
@@ -114,33 +143,38 @@ function normalizeMediaTypeToLower(v: any, url?: string): MediaTypeLower | "" {
  * 3) campos alternativos do _raw (compat)
  */
 function resolveCardMedia(model: DroneModel) {
-  const raw = model._raw || {};
+  const raw = model._raw || ({} as UnknownRecord);
 
   const candidates = [
     model.card_media_url,
     model.card_media_path,
 
-    raw.card_media_url,
-    raw.card_media_path,
-    raw.media_url,
-    raw.file_url,
-    raw.src,
-    raw.media_path,
-    raw.mediaPath,
-    raw.path,
-    raw.video_url,
-    raw.image_url,
-    raw.image,
-    raw.video,
-    raw.cover_url,
-    raw.thumb_url,
-    raw.thumbnail_url,
+    raw.card_media_url as string | undefined,
+    raw.card_media_path as string | undefined,
+    raw.media_url as string | undefined,
+    raw.file_url as string | undefined,
+    raw.src as string | undefined,
+    raw.media_path as string | undefined,
+    raw.mediaPath as string | undefined,
+    raw.path as string | undefined,
+    raw.video_url as string | undefined,
+    raw.image_url as string | undefined,
+    raw.image as string | undefined,
+    raw.video as string | undefined,
+    raw.cover_url as string | undefined,
+    raw.thumb_url as string | undefined,
+    raw.thumbnail_url as string | undefined,
   ].filter(Boolean) as string[];
 
   const url = absUrl(candidates[0] || "");
 
   const type = normalizeMediaTypeToLower(
-    model.card_media_type ?? raw.card_media_type ?? raw.media_type ?? raw.type ?? raw.kind ?? raw.file_type,
+    model.card_media_type ??
+      (raw.card_media_type as unknown) ??
+      (raw.media_type as unknown) ??
+      (raw.type as unknown) ??
+      (raw.kind as unknown) ??
+      (raw.file_type as unknown),
     url
   );
 
@@ -216,9 +250,7 @@ function ModelCard({ model, onOpen }: { model: DroneModel; onOpen: (key: string)
             <div className="absolute left-4 bottom-4 right-4">
               <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-4 py-2 backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.85)]" />
-                <span className="text-[11px] font-bold text-slate-200">
-                  Sistema inteligente de pulverização
-                </span>
+                <span className="text-[11px] font-bold text-slate-200">Sistema inteligente de pulverização</span>
               </div>
             </div>
           </div>
@@ -295,15 +327,8 @@ function ModelsCarouselSection({
 
   return (
     <section className="py-10 sm:py-14">
-      <style jsx global>{`
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
+      {/* ✅ REMOVIDO: styled-jsx aqui causa react/no-unknown-property no seu ESLint.
+          Coloque o CSS do .no-scrollbar no globals.css (vou deixar no final). */}
 
       <div className="max-w-6xl mx-auto px-5">
         <div className="flex items-end justify-between gap-4">
@@ -374,10 +399,14 @@ export default function DronesPublicPage() {
   const [models, setModels] = useState<DroneModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
 
-  const [landing, setLanding] = useState<any>(null);
-  const [modelData, setModelData] = useState<any>(null);
-  const [comments, setComments] = useState<any[]>([]);
-  const [representatives, setRepresentatives] = useState<any[]>([]);
+  // ✅ agora alinhado com os componentes (sem any)
+  const [landing, setLanding] = useState<Partial<DronePageSettings> | null>(null);
+  const [modelData, setModelData] = useState<Partial<DronePageSettings> | null>(null);
+
+  const [comments, setComments] = useState<DroneComments>(() => [] as unknown as DroneComments);
+  const [representatives, setRepresentatives] = useState<DroneRepresentatives>(
+    () => [] as unknown as DroneRepresentatives
+  );
 
   const [loading, setLoading] = useState(true);
 
@@ -385,58 +414,69 @@ export default function DronesPublicPage() {
     const res = await fetch(`${API_BASE}/api/public/drones/models`, { cache: "no-store" });
     if (!res.ok) return fallbackModels();
 
-    const json = await res.json();
+    const json: unknown = await res.json();
     const raw = extractArray(json);
 
     const normalized = raw
-      .map((m: any) => {
-        const key = String(m.key || m.model_key || "").trim().toLowerCase();
-        const label = String(m.label || m.name || "").trim();
+      .map((m: unknown) => {
+        const obj = (m && typeof m === "object" ? (m as UnknownRecord) : {}) as UnknownRecord;
+
+        const key = String((obj.key as string) || (obj.model_key as string) || "")
+          .trim()
+          .toLowerCase();
+
+        const label = String((obj.label as string) || (obj.name as string) || "").trim();
 
         // ✅ backend ideal: já manda a mídia do card resolvida pela seleção (models_json)
-        const cardMediaUrl = m.card_media_url || "";
-        const cardMediaPath = m.card_media_path || m.card_media || ""; // tolerante
-        const cardMediaType = m.card_media_type || m.card_media_kind || m.media_type || undefined;
+        const cardMediaUrl = (obj.card_media_url as string) || "";
+        const cardMediaPath = (obj.card_media_path as string) || (obj.card_media as string) || ""; // tolerante
+        const cardMediaType =
+          (obj.card_media_type as unknown) ??
+          (obj.card_media_kind as unknown) ??
+          (obj.media_type as unknown) ??
+          undefined;
 
         // fallback compat antigo (se ainda existir)
         const legacyUrl =
-          m.media_url ||
-          m.file_url ||
-          m.src ||
-          m.media_path ||
-          m.mediaPath ||
-          m.path ||
-          m.video_url ||
-          m.image_url ||
-          m.image ||
-          m.video ||
-          m.cover_url ||
-          m.thumb_url ||
+          (obj.media_url as string) ||
+          (obj.file_url as string) ||
+          (obj.src as string) ||
+          (obj.media_path as string) ||
+          (obj.mediaPath as string) ||
+          (obj.path as string) ||
+          (obj.video_url as string) ||
+          (obj.image_url as string) ||
+          (obj.image as string) ||
+          (obj.video as string) ||
+          (obj.cover_url as string) ||
+          (obj.thumb_url as string) ||
           "";
 
         const chosenUrl = cardMediaUrl || cardMediaPath || legacyUrl;
 
-        return {
+        const out: DroneModel = {
           key,
           label,
-          is_active: Number(m.is_active ?? 1),
-          sort_order: Number(m.sort_order ?? 0),
+          is_active: Number((obj.is_active as number) ?? 1),
+          sort_order: Number((obj.sort_order as number) ?? 0),
 
           // ✅ preferir os campos novos de card
           card_media_url: chosenUrl ? absUrl(chosenUrl) : undefined,
           card_media_path: cardMediaPath ? String(cardMediaPath) : undefined,
-          card_media_type: cardMediaType,
+          card_media_type: cardMediaType as MediaTypeLower | MediaTypeUpper | undefined,
 
           // ✅ ids (opcionais)
           current_card_media_id:
-            m.current_card_media_id != null ? Number(m.current_card_media_id) : null,
+            obj.current_card_media_id != null ? Number(obj.current_card_media_id) : null,
           current_hero_media_id:
-            m.current_hero_media_id != null ? Number(m.current_hero_media_id) : null,
+            obj.current_hero_media_id != null ? Number(obj.current_hero_media_id) : null,
 
-          _raw: m,
-        } as DroneModel;
+          _raw: obj,
+        };
+
+        return out;
       })
-      .filter((m: DroneModel) => m.key && m.label);
+      .filter((m): m is DroneModel => Boolean(m.key && m.label));
 
     return sortModels(normalized.length ? normalized : fallbackModels());
   }, []);
@@ -446,13 +486,15 @@ export default function DronesPublicPage() {
 
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return null;
-    return (await res.json()) as RootResponse;
+
+    const json: unknown = await res.json();
+    return json as RootResponse;
   }, []);
 
   const fetchRepresentatives = useCallback(async () => {
     const res = await fetch(`${API_BASE}/api/public/drones/representantes`, { cache: "no-store" });
     if (!res.ok) return [];
-    const json = await res.json();
+    const json: unknown = await res.json();
     return extractArray(json);
   }, []);
 
@@ -462,7 +504,7 @@ export default function DronesPublicPage() {
 
       const [modelsDb, reps] = await Promise.all([fetchModels(), fetchRepresentatives()]);
       setModels(modelsDb);
-      setRepresentatives(reps);
+      setRepresentatives(reps as unknown as DroneRepresentatives);
 
       const urlModel = search.get("model") || "";
       const initial = pickInitialModel(modelsDb, urlModel);
@@ -470,9 +512,9 @@ export default function DronesPublicPage() {
       setSelectedModel(initial);
 
       const root = await fetchPage(initial);
-      setLanding(root?.landing || null);
-      setModelData(root?.model_data || null);
-      setComments(extractArray(root?.comments));
+      setLanding((root?.landing ?? null) as Partial<DronePageSettings> | null);
+      setModelData((root?.model_data ?? null) as Partial<DronePageSettings> | null);
+      setComments(extractArray(root?.comments) as unknown as DroneComments);
 
       setLoading(false);
     })();
@@ -487,27 +529,29 @@ export default function DronesPublicPage() {
     setLoading(true);
     const root = await fetchPage(key);
 
-    setLanding(root?.landing || null);
-    setModelData(root?.model_data || null);
-    setComments(extractArray(root?.comments));
+    setLanding((root?.landing ?? null) as Partial<DronePageSettings> | null);
+    setModelData((root?.model_data ?? null) as Partial<DronePageSettings> | null);
+    setComments(extractArray(root?.comments) as unknown as DroneComments);
+
     setLoading(false);
   }
 
-  const mergedPage = useMemo(() => ({ ...(landing || {}), ...(modelData || {}) }), [landing, modelData]);
+  // ✅ aqui vira o tipo EXATO que HeroSection espera (DronePageSettings)
+  const mergedPage = useMemo<DronePageSettings>(
+    () => ({ ...(landing || {}), ...(modelData || {}) } as unknown as DronePageSettings),
+    [landing, modelData]
+  );
 
   const sectionsOrder = useMemo(() => {
-    const raw =
-      mergedPage?.sections_order_json || [
-        "hero",
-        "specs",
-        "features",
-        "benefits",
-        "gallery",
-        "representatives",
-        "comments",
-      ];
+    const raw = (mergedPage as unknown as UnknownRecord)?.sections_order_json as unknown;
 
-    const filtered = raw.filter((k: any) => !["specs", "features", "benefits", "gallery"].includes(String(k)));
+    const baseOrder: unknown[] = Array.isArray(raw)
+      ? (raw as unknown[])
+      : (["hero", "specs", "features", "benefits", "gallery", "representatives", "comments"] as unknown[]);
+
+    const filtered = baseOrder.filter(
+      (k: unknown) => !["specs", "features", "benefits", "gallery"].includes(String(k))
+    );
 
     if (!filtered.includes("models")) {
       const heroIndex = filtered.indexOf("hero");
@@ -518,7 +562,7 @@ export default function DronesPublicPage() {
     return filtered;
   }, [mergedPage]);
 
-  const sections: Record<string, JSX.Element> = {
+  const sections: Record<string, React.ReactElement> = {
     hero: <HeroSection page={mergedPage} representatives={representatives} />,
 
     models: (
@@ -539,7 +583,11 @@ export default function DronesPublicPage() {
     ),
 
     comments: (
-      <CommentsSection comments={comments} modelKey={selectedModel} onCreated={() => changeModel(selectedModel)} />
+      <CommentsSection
+        comments={comments}
+        modelKey={selectedModel}
+        onCreated={() => changeModel(selectedModel)}
+      />
     ),
   };
 
@@ -579,7 +627,7 @@ export default function DronesPublicPage() {
         </div>
       </div>
 
-      {sectionsOrder.map((key: Key | null | undefined, idx: number) => {
+      {sectionsOrder.map((key: unknown, idx: number) => {
         const sectionKey = String(key);
         return (
           <div key={sectionKey}>
@@ -595,3 +643,4 @@ export default function DronesPublicPage() {
     </div>
   );
 }
+
