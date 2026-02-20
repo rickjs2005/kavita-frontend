@@ -1,13 +1,28 @@
 "use client";
 
+import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  useUserAddresses,
-  UserAddress,
-  UserAddressPayload,
-} from "@/hooks/useUserAddresses";
+import { useUserAddresses, UserAddress, UserAddressPayload } from "@/hooks/useUserAddresses";
 import { ESTADOS_BR } from "@/utils/brasil";
+
+type ViaCepResponse = {
+  erro?: boolean;
+  logradouro?: string;
+  bairro?: string;
+  localidade?: string;
+  uf?: string;
+};
+
+type IbgeMunicipio = { nome: string };
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
+function isIbgeMunicipio(v: unknown): v is IbgeMunicipio {
+  return isRecord(v) && typeof v.nome === "string";
+}
 
 export default function EditarEnderecoPage() {
   const params = useParams();
@@ -28,6 +43,7 @@ export default function EditarEnderecoPage() {
 
   useEffect(() => {
     if (loading || id == null) return;
+
     const found = addresses.find((a) => a.id === id);
     if (!found) {
       const timer = setTimeout(() => {
@@ -39,21 +55,22 @@ export default function EditarEnderecoPage() {
     setForm(addressToPayload(found));
   }, [loading, addresses, id, router]);
 
-  const set =
+  const setField =
     (field: keyof UserAddressPayload) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
-      form && setForm({ ...form, [field]: e.target.value });
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setForm((prev) => (prev ? { ...prev, [field]: value } : prev));
+    };
 
   const handleCepChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
-    const masked =
-      digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    const masked = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
     setForm((prev) => (prev ? { ...prev, cep: masked } : prev));
   };
 
   useEffect(() => {
-    if (!form) return;
-    const digits = (form.cep || "").replace(/\D/g, "");
+    const cepValue = form?.cep ?? "";
+    const digits = cepValue.replace(/\D/g, "");
     if (digits.length !== 8) return;
 
     let aborted = false;
@@ -63,7 +80,11 @@ export default function EditarEnderecoPage() {
         setCepLoading(true);
         const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
         if (!res.ok) return;
-        const data = await res.json();
+
+        const raw = (await res.json()) as unknown;
+        if (!isRecord(raw)) return;
+
+        const data = raw as ViaCepResponse;
         if (aborted || data.erro) return;
 
         setForm((prev) =>
@@ -78,6 +99,7 @@ export default function EditarEnderecoPage() {
             : prev
         );
       } catch {
+        // silêncio: não quebra UX em falhas momentâneas
       } finally {
         if (!aborted) setCepLoading(false);
       }
@@ -89,8 +111,7 @@ export default function EditarEnderecoPage() {
   }, [form?.cep]);
 
   useEffect(() => {
-    if (!form) return;
-    const uf = (form.estado || "").toUpperCase();
+    const uf = (form?.estado ?? "").toUpperCase();
     if (!uf) {
       setCities([]);
       return;
@@ -104,11 +125,14 @@ export default function EditarEnderecoPage() {
           `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`
         );
         if (!res.ok) return;
-        const data = await res.json();
-        if (aborted || !Array.isArray(data)) return;
-        const names = data.map((m: any) => m.nome).sort();
+
+        const raw = (await res.json()) as unknown;
+        if (aborted || !Array.isArray(raw)) return;
+
+        const names = raw.filter(isIbgeMunicipio).map((m) => m.nome).sort();
         setCities(names);
       } catch {
+        // silêncio
       }
     })();
 
@@ -117,18 +141,14 @@ export default function EditarEnderecoPage() {
     };
   }, [form?.estado]);
 
-  const handleEstadoChange: React.ChangeEventHandler<HTMLSelectElement> = (
-    e
-  ) => {
+  const handleEstadoChange: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
     const uf = e.target.value;
-    form && setForm({ ...form, estado: uf, cidade: "" });
+    setForm((prev) => (prev ? { ...prev, estado: uf, cidade: "" } : prev));
   };
 
-  const handleCidadeChange: React.ChangeEventHandler<HTMLInputElement> = (
-    e
-  ) => {
+  const handleCidadeChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const value = e.target.value;
-    form && setForm({ ...form, cidade: value });
+    setForm((prev) => (prev ? { ...prev, cidade: value } : prev));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,26 +181,17 @@ export default function EditarEnderecoPage() {
     <div className="pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 lg:px-10">
       <div className="mx-auto w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl">
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">
-            Editar endereço
-          </h1>
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Editar endereço</h1>
           <p className="mt-1 text-xs sm:text-sm text-gray-500">
             Altere as informações de entrega deste endereço.
           </p>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          <form
-            onSubmit={handleSubmit}
-            className="p-5 sm:p-6 lg:p-8 space-y-4 sm:space-y-5"
-          >
+          <form onSubmit={handleSubmit} className="p-5 sm:p-6 lg:p-8 space-y-4 sm:space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
               <Field label="Apelido (Casa, Trabalho...)" full>
-                <input
-                  className="input-kavita"
-                  value={form.apelido || ""}
-                  onChange={set("apelido")}
-                />
+                <input className="input-kavita" value={form.apelido || ""} onChange={setField("apelido")} />
               </Field>
 
               <Field label="CEP">
@@ -191,11 +202,7 @@ export default function EditarEnderecoPage() {
                     onChange={handleCepChange}
                     inputMode="numeric"
                   />
-                  {cepLoading && (
-                    <span className="text-[11px] text-gray-500">
-                      Buscando...
-                    </span>
-                  )}
+                  {cepLoading && <span className="text-[11px] text-gray-500">Buscando...</span>}
                 </div>
               </Field>
 
@@ -203,25 +210,17 @@ export default function EditarEnderecoPage() {
                 <input
                   className="input-kavita"
                   value={form.endereco || ""}
-                  onChange={set("endereco")}
+                  onChange={setField("endereco")}
                   autoComplete="street-address"
                 />
               </Field>
 
               <Field label="Número">
-                <input
-                  className="input-kavita"
-                  value={form.numero || ""}
-                  onChange={set("numero")}
-                />
+                <input className="input-kavita" value={form.numero || ""} onChange={setField("numero")} />
               </Field>
 
               <Field label="Bairro">
-                <input
-                  className="input-kavita"
-                  value={form.bairro || ""}
-                  onChange={set("bairro")}
-                />
+                <input className="input-kavita" value={form.bairro || ""} onChange={setField("bairro")} />
               </Field>
 
               <Field label="Cidade">
@@ -257,7 +256,7 @@ export default function EditarEnderecoPage() {
                 <input
                   className="input-kavita"
                   value={form.complemento || ""}
-                  onChange={set("complemento")}
+                  onChange={setField("complemento")}
                 />
               </Field>
 
@@ -265,7 +264,7 @@ export default function EditarEnderecoPage() {
                 <input
                   className="input-kavita"
                   value={form.ponto_referencia || ""}
-                  onChange={set("ponto_referencia")}
+                  onChange={setField("ponto_referencia")}
                 />
               </Field>
 
@@ -273,7 +272,7 @@ export default function EditarEnderecoPage() {
                 <input
                   className="input-kavita"
                   value={form.telefone || ""}
-                  onChange={set("telefone")}
+                  onChange={setField("telefone")}
                   inputMode="tel"
                 />
               </Field>
@@ -284,14 +283,9 @@ export default function EditarEnderecoPage() {
                 id="addr-default-edit"
                 type="checkbox"
                 checked={!!form.is_default}
-                onChange={(e) =>
-                  setForm({ ...form, is_default: e.target.checked })
-                }
+                onChange={(e) => setForm((prev) => (prev ? { ...prev, is_default: e.target.checked } : prev))}
               />
-              <label
-                htmlFor="addr-default-edit"
-                className="text-sm text-gray-700"
-              >
+              <label htmlFor="addr-default-edit" className="text-sm text-gray-700">
                 Definir como endereço padrão
               </label>
             </div>
