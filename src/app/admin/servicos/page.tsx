@@ -12,6 +12,12 @@ const API_BASE =
     ? `${process.env.NEXT_PUBLIC_API_URL}`
     : "http://localhost:5000") + "/api/admin/servicos";
 
+// Tipos mínimos para parsear o retorno da API sem usar `any`
+type ServiceApiItem = Service & {
+  images?: unknown;
+  verificado?: unknown;
+};
+
 export default function ServicosPage() {
   const [servicos, setServicos] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +31,7 @@ export default function ServicosPage() {
   const carregarServicos = async () => {
     setLoading(true);
     setErro(null);
+
     try {
       const res = await fetch(API_BASE, {
         cache: "no-store",
@@ -41,23 +48,24 @@ export default function ServicosPage() {
         throw new Error(`Falha ao buscar serviços (${res.status}). ${txt}`);
       }
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
       const lista: Service[] = Array.isArray(data)
-        ? data.map((s: any) => ({
-            ...s,
-            images: Array.isArray(s.images) ? s.images : [],
+        ? (data as ServiceApiItem[]).map((s) => ({
+            ...(s as Service),
+            images: Array.isArray(s.images) ? (s.images as Service["images"]) : [],
             verificado:
               s.verificado === true ||
-              s.verificado === 1 ||
-              s.verificado === "1",
+              s.verificado === 1,
           }))
         : [];
 
       setServicos(lista);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erro ao carregar serviços:", err);
-      setErro(err?.message || "Erro ao carregar serviços.");
+      const msg =
+        err instanceof Error ? err.message : "Erro ao carregar serviços.";
+      setErro(msg);
       setServicos([]);
     } finally {
       setLoading(false);
@@ -66,7 +74,7 @@ export default function ServicosPage() {
 
   useEffect(() => {
     carregarServicos();
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ==========================
@@ -74,24 +82,31 @@ export default function ServicosPage() {
   ========================== */
   const removerServico = async (id: number) => {
     if (!confirm("Tem certeza que deseja remover este serviço?")) return;
+
     try {
       const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         credentials: "include", // ✅ cookie HttpOnly
       });
+
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
+        const j: unknown = await res.json().catch(() => ({}));
+        const maybe = j as { message?: string };
+
         const msg =
-          j?.message ||
+          maybe?.message ||
           (res.status === 401 || res.status === 403
             ? "Você não tem permissão para remover serviços. Faça login novamente."
             : "Erro ao remover serviço.");
+
         throw new Error(msg);
       }
+
       setServicos((prev) => prev.filter((s) => s.id !== id));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erro ao remover:", err);
-      alert(err?.message || "Erro ao remover serviço.");
+      const msg = err instanceof Error ? err.message : "Erro ao remover serviço.";
+      alert(msg);
     }
   };
 
@@ -120,21 +135,28 @@ export default function ServicosPage() {
       });
 
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
+        const j: unknown = await res.json().catch(() => ({}));
+        const maybe = j as { message?: string };
+
         const msg =
-          j?.message ||
+          maybe?.message ||
           (res.status === 401 || res.status === 403
             ? "Você não tem permissão para atualizar verificação. Faça login novamente."
             : "Erro ao atualizar verificação.");
+
         throw new Error(msg);
       }
 
       setServicos((prev) =>
         prev.map((s) => (s.id === id ? { ...s, verificado: novoValor } : s))
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erro ao atualizar verificação:", err);
-      alert(err?.message || "Erro ao atualizar verificação do serviço.");
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Erro ao atualizar verificação do serviço.";
+      alert(msg);
     }
   };
 
@@ -156,6 +178,7 @@ export default function ServicosPage() {
               <span className="font-semibold">verifique</span> colaboradores.
               Somente profissionais verificados aparecem abaixo.
             </p>
+
             {servicosPendentes.length > 0 && (
               <p className="mt-1 text-xs text-amber-300">
                 {servicosPendentes.length} profissional
@@ -188,10 +211,7 @@ export default function ServicosPage() {
           </div>
 
           {/* Botão Voltar – mobile */}
-          <Link
-            href="/admin"
-            className="absolute -right-1 -top-3 z-10 block sm:hidden"
-          >
+          <Link href="/admin" className="absolute -right-1 -top-3 z-10 block sm:hidden">
             <CustomButton
               label="Voltar"
               variant="secondary"
@@ -217,9 +237,7 @@ export default function ServicosPage() {
           className="mb-6 rounded-2xl bg-white p-4 shadow sm:mb-8 sm:p-6 md:p-8"
         >
           <h2 className="mb-4 text-lg font-semibold text-gray-900 sm:text-xl">
-            {servicoEditado
-              ? "Editar Serviço"
-              : "Adicionar Serviço e Colaborador"}
+            {servicoEditado ? "Editar Serviço" : "Adicionar Serviço e Colaborador"}
           </h2>
 
           <ServiceFormUnificado
@@ -248,9 +266,7 @@ export default function ServicosPage() {
         ) : (
           <section className="mt-4">
             <div className="mb-3 flex items-center justify-between sm:mb-4">
-              <h3 className="text-lg font-semibold text-gray-50">
-                Lista de serviços
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-50">Lista de serviços</h3>
               <span className="text-sm text-gray-300">
                 {servicosAprovados.length}{" "}
                 {servicosAprovados.length === 1 ? "item" : "itens"}
@@ -265,10 +281,7 @@ export default function ServicosPage() {
                   servico={servico}
                   onRemover={removerServico}
                   onEditar={editarServico}
-                  // @ts-ignore enquanto o tipo do ServiceCard não tiver essa prop
-                  onToggleVerificado={(id, novo) =>
-                    toggleVerificado(id, novo)
-                  }
+                  onToggleVerificado={toggleVerificado}
                 />
               ))}
             </div>

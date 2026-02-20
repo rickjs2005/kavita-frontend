@@ -7,6 +7,10 @@ type Props = {
   servico?: Service | null;
   onEditar?: (p: Service) => void;
   onRemover?: (id: number) => Promise<void> | void;
+
+  /** ✅ NOVO: permite verificar/desverificar (sem quebrar quem não usa) */
+  onToggleVerificado?: (id: number, novoValor: boolean) => Promise<void> | void;
+
   confirmText?: string;
   readOnly?: boolean;
   className?: string;
@@ -19,6 +23,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 function absUrl(p?: string | null) {
   if (!p) return null;
   const v = String(p).trim();
+  if (!v) return null;
   if (v.startsWith("http://") || v.startsWith("https://")) return v;
   return `${API_BASE}${v.startsWith("/") ? v : `/${v}`}`;
 }
@@ -26,36 +31,43 @@ function absUrl(p?: string | null) {
 /** 📱 Formata telefone BR para exibição */
 function formatWhatsApp(raw: string) {
   const digits = raw.replace(/\D/g, "");
-  if (digits.length === 11) {
-    // (DD) 9 0000-0000
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-  }
-  if (digits.length === 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  }
+  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
   return digits || raw;
+}
+
+/** ✅ Normaliza "verificado" vindo do backend (boolean/number/string/etc) */
+function normalizeVerificado(v: unknown): boolean {
+  return v === true || v === 1 || v === "1" || v === "true";
+}
+
+/** ✅ Extrai imagens válidas (string[]) de qualquer formato */
+function normalizeImages(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter((x): x is string => typeof x === "string" && x.trim().length > 0);
 }
 
 export default function ServiceCard({
   servico,
   onEditar,
   onRemover,
+  onToggleVerificado,
   confirmText = "Tem certeza que deseja remover este serviço?",
   readOnly = false,
   className = "",
 }: Props) {
   // ✅ Hooks SEMPRE no topo (não pode ter return antes)
   const [removing, setRemoving] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
   // ✅ Cria lista de imagens (capa + extras) sem duplicadas
   const images = useMemo(() => {
     if (!servico) return [];
 
-    const extras: string[] = Array.isArray(servico.images)
-      ? (servico.images as unknown as string[])
-      : [];
+    const extras = normalizeImages((servico as unknown as { images?: unknown }).images);
+    const capa = typeof servico.imagem === "string" ? servico.imagem : "";
 
-    const all = [servico.imagem, ...extras].filter(Boolean) as string[];
+    const all = [capa, ...extras].filter(Boolean) as string[];
     const unique = Array.from(new Set(all));
     return unique.map(absUrl).filter(Boolean) as string[];
   }, [servico?.imagem, servico?.images]);
@@ -74,8 +86,11 @@ export default function ServiceCard({
   const waDigits = (servico.whatsapp || "").replace(/\D/g, "");
   const waLabel = formatWhatsApp(servico.whatsapp || "");
 
+  const verificadoRaw: unknown = (servico as unknown as { verificado?: unknown }).verificado;
+  const isVerified = normalizeVerificado(verificadoRaw);
+
   async function handleRemove() {
-    if (!onRemover || readOnly || !servico) return;
+    if (!servico || !onRemover || readOnly) return;
     if (!window.confirm(confirmText)) return;
 
     try {
@@ -83,6 +98,20 @@ export default function ServiceCard({
       await onRemover(servico.id);
     } finally {
       setRemoving(false);
+    }
+  }
+
+  async function handleToggleVerificado() {
+    if (!servico || !onToggleVerificado || readOnly) return;
+
+    const novoValor = !isVerified;
+
+    try {
+      setToggling(true);
+      await onToggleVerificado(servico.id, novoValor);
+      // Observação: o estado visual final vem do "servico.verificado" atualizado no parent.
+    } finally {
+      setToggling(false);
     }
   }
 
@@ -101,13 +130,17 @@ export default function ServiceCard({
           loading="lazy"
         />
 
-        {/* Gradiente no rodapé para dar leitura se tiver texto em cima no futuro */}
+        {/* Gradiente */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent" />
 
-        {/* Selo de verificado */}
-        <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-emerald-500/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
-          <span>✓</span>
-          <span>Profissional verificado</span>
+        {/* Selo de verificado / pendente */}
+        <div
+          className={`absolute left-3 top-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm ${
+            isVerified ? "bg-emerald-500/95" : "bg-amber-500/95"
+          }`}
+        >
+          <span>{isVerified ? "✓" : "⏳"}</span>
+          <span>{isVerified ? "Profissional verificado" : "Pendente de verificação"}</span>
         </div>
 
         {/* Contador de fotos */}
@@ -164,8 +197,11 @@ export default function ServiceCard({
                 type="button"
                 onClick={() => setActiveImg(src)}
                 className={`flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
-                  activeImg === src ? "border-[#2F7E7F] shadow-sm" : "border-transparent hover:border-gray-300"
+                  activeImg === src
+                    ? "border-[#2F7E7F] shadow-sm"
+                    : "border-transparent hover:border-gray-300"
                 }`}
+                aria-label={`Selecionar imagem ${i + 1}`}
               >
                 <img
                   src={src}
@@ -195,18 +231,34 @@ export default function ServiceCard({
         {/* ===== AÇÕES ===== */}
         {!readOnly && (
           <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+            {/* ✅ Verificar / Desverificar (só aparece se o parent passar a prop) */}
+            {onToggleVerificado && (
+              <button
+                type="button"
+                onClick={handleToggleVerificado}
+                disabled={toggling}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold shadow-sm transition disabled:opacity-50 ${
+                  isVerified
+                    ? "bg-amber-500 text-white hover:bg-amber-600"
+                    : "bg-emerald-600 text-white hover:bg-emerald-700"
+                }`}
+              >
+                {toggling ? "Salvando..." : isVerified ? "Desverificar" : "Verificar"}
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => onEditar?.(servico)}
-              disabled={readOnly}
               className="rounded-full bg-gray-100 px-3.5 py-1.5 text-xs font-medium text-gray-900 transition hover:bg-gray-200 disabled:opacity-50"
             >
               Editar
             </button>
+
             <button
               type="button"
               onClick={handleRemove}
-              disabled={readOnly || removing}
+              disabled={removing}
               className="rounded-full bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
             >
               {removing ? "Removendo..." : "Remover"}
