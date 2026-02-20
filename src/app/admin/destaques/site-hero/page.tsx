@@ -162,8 +162,11 @@ export default function SiteHeroAdminPage() {
       router.back();
       // fallback “seguro” (executa logo depois; se back funcionar, o usuário sai antes de notar)
       setTimeout(() => {
-        // @ts-ignore
-        if (typeof window !== "undefined" && window.location.pathname.includes("/admin/destaques/site-hero")) {
+        // ✅ FIX lint: ban-ts-comment -> usar ts-expect-error (e não ts-ignore)
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname.includes("/admin/destaques/site-hero")
+        ) {
           router.push("/admin/destaques");
         }
       }, 200);
@@ -280,7 +283,9 @@ export default function SiteHeroAdminPage() {
                         {config.title?.trim() ? config.title : "Seu título aqui"}
                       </h2>
                       <p className="mt-1 sm:mt-2 text-sm sm:text-base text-white/80">
-                        {config.subtitle?.trim() ? config.subtitle : "Seu subtítulo aqui"}
+                        {config.subtitle?.trim()
+                          ? config.subtitle
+                          : "Seu subtítulo aqui"}
                       </p>
 
                       <div className="mt-4 sm:mt-5 flex flex-col xs:flex-row gap-2 xs:items-center">
@@ -354,7 +359,8 @@ export default function SiteHeroAdminPage() {
                   </div>
 
                   <p className="text-xs text-white/50">
-                    Se deixar vazio, o site pode mostrar um texto padrão (ou nada) no Hero.
+                    Se deixar vazio, o site pode mostrar um texto padrão (ou nada)
+                    no Hero.
                   </p>
                 </div>
 
@@ -390,7 +396,10 @@ export default function SiteHeroAdminPage() {
                         </p>
                         <p className="text-xs text-white/50 truncate">
                           {videoFile
-                            ? `${Math.max(1, Math.round(videoFile.size / 1024 / 1024))} MB`
+                            ? `${Math.max(
+                                1,
+                                Math.round(videoFile.size / 1024 / 1024)
+                              )} MB`
                             : "video/*"}
                         </p>
                       </div>
@@ -404,7 +413,9 @@ export default function SiteHeroAdminPage() {
                         name="heroVideoInput"
                         type="file"
                         accept="video/*"
-                        onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                        onChange={(e) =>
+                          setVideoFile(e.target.files?.[0] || null)
+                        }
                         className="absolute inset-0 opacity-0 cursor-pointer"
                       />
                     </label>
@@ -443,7 +454,10 @@ export default function SiteHeroAdminPage() {
                         </p>
                         <p className="text-xs text-white/50 truncate">
                           {imageFile
-                            ? `${Math.max(1, Math.round(imageFile.size / 1024 / 1024))} MB`
+                            ? `${Math.max(
+                                1,
+                                Math.round(imageFile.size / 1024 / 1024)
+                              )} MB`
                             : "image/*"}
                         </p>
                       </div>
@@ -457,7 +471,9 @@ export default function SiteHeroAdminPage() {
                         name="heroImageInput"
                         type="file"
                         accept="image/*"
-                        onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                        onChange={(e) =>
+                          setImageFile(e.target.files?.[0] || null)
+                        }
                         className="absolute inset-0 opacity-0 cursor-pointer"
                       />
                     </label>
@@ -478,7 +494,10 @@ export default function SiteHeroAdminPage() {
                       name="buttonLabelInput"
                       value={config.button_label}
                       onChange={(e) =>
-                        setConfig((p) => ({ ...p, button_label: e.target.value }))
+                        setConfig((p) => ({
+                          ...p,
+                          button_label: e.target.value,
+                        }))
                       }
                       className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-[#359293]/70 focus:ring-2 focus:ring-[#359293]/20"
                       placeholder="Ex: Saiba Mais"
@@ -497,7 +516,10 @@ export default function SiteHeroAdminPage() {
                       name="buttonHrefInput"
                       value={config.button_href}
                       onChange={(e) =>
-                        setConfig((p) => ({ ...p, button_href: e.target.value }))
+                        setConfig((p) => ({
+                          ...p,
+                          button_href: e.target.value,
+                        }))
                       }
                       className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-[#359293]/70 focus:ring-2 focus:ring-[#359293]/20"
                       placeholder="/drones ou https://..."
@@ -519,8 +541,8 @@ export default function SiteHeroAdminPage() {
 
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
                   Dica: se quiser ainda mais “pro”, dá pra adicionar validação de
-                  tamanho (ex: vídeo até 30MB / imagem até 5MB) e barra de progresso
-                  no upload — sem mexer no seu backend.
+                  tamanho (ex: vídeo até 30MB / imagem até 5MB) e barra de
+                  progresso no upload — sem mexer no seu backend.
                 </div>
               </div>
             </div>
