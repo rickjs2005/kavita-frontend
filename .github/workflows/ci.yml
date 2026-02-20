@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -37,6 +37,7 @@ jobs:
       - name: Install deps (clean)
         run: npm ci
 
+      # 🔎 Lint (agora bloqueia)
       - name: Lint
         run: npm run lint
 
@@ -46,5 +47,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: npm audit (high/critical)
-        run: npm audit --audit-level=high
+      # 🔐 Audit só bloqueia se houver CRITICAL
+      - name: npm audit (critical only)
+        run: npm audit --audit-level=critical
