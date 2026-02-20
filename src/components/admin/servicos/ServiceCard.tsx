@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Service } from "@/types/service";
 
 type Props = {
@@ -27,7 +27,7 @@ function absUrl(p?: string | null) {
 function formatWhatsApp(raw: string) {
   const digits = raw.replace(/\D/g, "");
   if (digits.length === 11) {
-    // (DD) 9 0000-000
+    // (DD) 9 0000-0000
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   }
   if (digits.length === 10) {
@@ -44,32 +44,40 @@ export default function ServiceCard({
   readOnly = false,
   className = "",
 }: Props) {
-  if (!servico) return null;
-
+  // ✅ Hooks SEMPRE no topo (não pode ter return antes)
   const [removing, setRemoving] = useState(false);
 
   // ✅ Cria lista de imagens (capa + extras) sem duplicadas
   const images = useMemo(() => {
+    if (!servico) return [];
+
     const extras: string[] = Array.isArray(servico.images)
       ? (servico.images as unknown as string[])
       : [];
+
     const all = [servico.imagem, ...extras].filter(Boolean) as string[];
     const unique = Array.from(new Set(all));
     return unique.map(absUrl).filter(Boolean) as string[];
-  }, [servico.imagem, servico.images]);
+  }, [servico?.imagem, servico?.images]);
 
   // 👁️ Estado para imagem principal exibida
-  const [activeImg, setActiveImg] = useState<string>(
-    images[0] || PLACEHOLDER
-  );
+  const [activeImg, setActiveImg] = useState<string>(PLACEHOLDER);
+
+  // ✅ Mantém a imagem ativa sincronizada quando mudar o serviço/imagens
+  useEffect(() => {
+    setActiveImg(images[0] || PLACEHOLDER);
+  }, [images]);
+
+  // ✅ Só agora pode retornar (depois dos hooks)
+  if (!servico) return null;
 
   const waDigits = (servico.whatsapp || "").replace(/\D/g, "");
   const waLabel = formatWhatsApp(servico.whatsapp || "");
 
   async function handleRemove() {
-    if (!onRemover || readOnly) return;
-    if (!servico) return;
+    if (!onRemover || readOnly || !servico) return;
     if (!window.confirm(confirmText)) return;
+
     try {
       setRemoving(true);
       await onRemover(servico.id);
@@ -89,9 +97,7 @@ export default function ServiceCard({
           src={activeImg}
           alt={servico.nome || "Imagem do serviço"}
           className="absolute inset-0 h-full w-full object-cover transition-all duration-300"
-          onError={(e) =>
-            ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
-          }
+          onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
           loading="lazy"
         />
 
@@ -158,18 +164,14 @@ export default function ServiceCard({
                 type="button"
                 onClick={() => setActiveImg(src)}
                 className={`flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
-                  activeImg === src
-                    ? "border-[#2F7E7F] shadow-sm"
-                    : "border-transparent hover:border-gray-300"
+                  activeImg === src ? "border-[#2F7E7F] shadow-sm" : "border-transparent hover:border-gray-300"
                 }`}
               >
                 <img
                   src={src}
                   alt={`Miniatura ${i + 1}`}
                   className="h-12 w-12 object-cover sm:h-14 sm:w-14"
-                  onError={(e) =>
-                    ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
-                  }
+                  onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
                   loading="lazy"
                 />
               </button>

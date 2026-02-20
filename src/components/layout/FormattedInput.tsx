@@ -11,7 +11,7 @@ function onlyDigits(value: string) {
 
 /** CPF: 000.000.000-00 */
 function maskCPF(value: string): string {
-  let v = onlyDigits(value).slice(0, 11);
+  const v = onlyDigits(value).slice(0, 11);
 
   if (v.length <= 3) return v;
   if (v.length <= 6) return v.replace(/(\d{3})(\d+)/, "$1.$2");
@@ -22,7 +22,7 @@ function maskCPF(value: string): string {
 
 /** CNPJ: 00.000.000/0000-00 */
 function maskCNPJ(value: string): string {
-  let v = onlyDigits(value).slice(0, 14);
+  const v = onlyDigits(value).slice(0, 14);
 
   if (v.length <= 2) return v;
   if (v.length <= 5) return v.replace(/(\d{2})(\d+)/, "$1.$2");
@@ -38,7 +38,7 @@ function maskCNPJ(value: string): string {
 
 /** Telefone/WhatsApp: (00) 00000-0000 */
 function maskTelefone(value: string): string {
-  let v = onlyDigits(value).slice(0, 11);
+  const v = onlyDigits(value).slice(0, 11);
 
   if (v.length === 0) return "";
   if (v.length <= 2) return `(${v}`;
