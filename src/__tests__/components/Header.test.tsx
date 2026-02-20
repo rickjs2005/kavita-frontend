@@ -1,321 +1,234 @@
+// src/__tests__/components/Header.test.tsx
 import React from "react";
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
-import Header from "@/components/layout/Header";
-import type { PublicShopSettings } from "@/server/data/shopSettings";
-
-// --------------------
-// Mocks (Next + UI)
-// --------------------
-
-let mockPathname = "/";
+// ============ Mocks Next ============
+const mockUsePathname = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => mockPathname,
-  // se algum dia usar router/redirect aqui, já fica padronizado
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
-  redirect: vi.fn(),
+  usePathname: () => mockUsePathname(),
 }));
 
 vi.mock("next/link", () => ({
+  __esModule: true,
   default: ({ href, children, ...props }: any) => (
-    <a href={String(href)} {...props}>
+    <a href={href} {...props}>
       {children}
     </a>
   ),
 }));
 
-// next/image vira <img> para facilitar assert de src/alt
 vi.mock("next/image", () => ({
-  default: ({ src, alt, ...props }: any) => (
-    <img src={String(src)} alt={String(alt)} {...props} />
-  ),
+  __esModule: true,
+  default: ({ src, alt, ...props }: any) => <img src={src} alt={alt} {...props} />,
 }));
 
-// next/dynamic: retorna componente stub imediatamente (evita SSR=false e lazy)
 vi.mock("next/dynamic", () => ({
+  __esModule: true,
   default: () => {
-    const Dynamic = () => <div data-testid="searchbar">SearchBar</div>;
-    return Dynamic;
+    const SearchBarMock = () => <div data-testid="searchbar" />;
+    return SearchBarMock;
   },
 }));
 
-// Componentes internos do Header: mock simples e estável
-const mainNavSpy = vi.fn();
-
-vi.mock("@/components/layout/MainNavCategories", () => ({
-  default: ({ categories }: any) => {
-    mainNavSpy(categories);
-    return (
-      <nav aria-label="MainNavCategories" data-testid="main-nav">
-        {Array.isArray(categories) ? categories.length : 0}
-      </nav>
-    );
-  },
-}));
-
-vi.mock("@/components/ui/UserMenu", () => ({
-  default: () => <div data-testid="user-menu">UserMenu</div>,
-}));
-
-vi.mock("@/components/cart/CartCar", () => ({
-  default: ({ isCartOpen }: any) => (
-    <div data-testid="cartcar" data-open={isCartOpen ? "1" : "0"}>
-      CartCar
-    </div>
-  ),
-}));
-
-// Contexts
-const useCartMock = vi.fn();
-const useAuthMock = vi.fn();
+// ============ Mocks Contextos ============
+const mockUseCart = vi.fn();
+const mockUseAuth = vi.fn();
 
 vi.mock("@/context/CartContext", () => ({
-  useCart: () => useCartMock(),
+  useCart: () => mockUseCart(),
 }));
 
 vi.mock("@/context/AuthContext", () => ({
-  useAuth: () => useAuthMock(),
+  useAuth: () => mockUseAuth(),
 }));
 
-// --------------------
-// Helpers
-// --------------------
+// ============ Mocks Componentes Filhos ============
+vi.mock("@/components/cart/CartCar", () => ({
+  __esModule: true,
+  default: ({ isCartOpen }: any) => <div data-testid="cartcar">{String(!!isCartOpen)}</div>,
+}));
 
-type AnyShop = PublicShopSettings;
+vi.mock("@/components/ui/UserMenu", () => ({
+  __esModule: true,
+  default: () => <div data-testid="usermenu" />,
+}));
 
-function setPathname(path: string) {
-  mockPathname = path;
-}
+vi.mock("@/components/layout/MainNavCategories", () => ({
+  __esModule: true,
+  default: ({ categories }: any) => (
+    <div data-testid="mainnav">{Array.isArray(categories) ? categories.length : "x"}</div>
+  ),
+}));
 
-function makeShop(overrides: Partial<AnyShop> = {}): AnyShop {
-  // Mantém só o mínimo necessário; cast proposital para evitar
-  // acoplamento do teste a campos que não são relevantes aqui.
-  return {
-    store_name: "Kavita",
-    logo_url: "/uploads/logo.png",
-    ...overrides,
-  } as AnyShop;
-}
-
-function renderHeader(opts?: {
-  categories?: any[];
-  shop?: AnyShop;
-  cartItems?: any[];
-  user?: any;
-  logout?: ReturnType<typeof vi.fn>;
-}) {
-  const logout = opts?.logout ?? vi.fn();
-
-  useCartMock.mockReturnValue({
-    cartItems: opts?.cartItems ?? [],
-  });
-
-  useAuthMock.mockReturnValue({
-    user: opts?.user ?? null,
-    logout,
-  });
-
-  const view = render(
-    <Header categories={opts?.categories} shop={opts?.shop} />
-  );
-
-  return { ...view, logout };
-}
+import Header from "@/components/layout/Header";
 
 describe("Header (src/components/layout/Header.tsx)", () => {
+  const OLD_ENV = process.env;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    mainNavSpy.mockClear();
-    setPathname("/");
+    process.env = { ...OLD_ENV };
 
-    // define base URL para testes do logo relativo
-    process.env.NEXT_PUBLIC_API_URL = "http://api.test";
-
-    // body overflow baseline
-    document.body.style.overflow = "";
+    mockUsePathname.mockReturnValue("/");
+    mockUseCart.mockReturnValue({ cartItems: [] });
+    mockUseAuth.mockReturnValue({ user: null, logout: vi.fn() });
   });
 
   afterEach(() => {
-    cleanup();
-    document.body.style.overflow = "";
+    process.env = OLD_ENV;
     vi.restoreAllMocks();
   });
 
-  it("não renderiza nada em rotas excluídas (ex: /checkout) (negativo)", () => {
-    // Arrange
-    setPathname("/checkout");
-
-    // Act
-    const { container } = renderHeader();
-
-    // Assert
+  it("não deve renderizar em rotas excluídas (ex: /checkout)", () => {
+    mockUsePathname.mockReturnValue("/checkout");
+    const { container } = render(<Header />);
     expect(container.firstChild).toBeNull();
   });
 
-  it("renderiza o logo padrão quando shop.logo_url está vazio e não é /drones (positivo)", () => {
-    // Arrange
-    setPathname("/");
-
-    // Act
-    renderHeader({
-      shop: makeShop({ logo_url: "   ", store_name: "Minha Loja" }),
-    });
-
-    // Assert
-    const logo = screen.getByRole("img", { name: "Minha Loja" });
-    expect(logo).toHaveAttribute("src", "/images/kavita2.png");
+  it("não deve renderizar em rotas /admin/* excluídas (ex: /admin)", () => {
+    mockUsePathname.mockReturnValue("/admin");
+    const { container } = render(<Header />);
+    expect(container.firstChild).toBeNull();
   });
 
-  it("usa logo de drone quando rota começa com /kavita-drones (positivo)", () => {
-    // Arrange
-    setPathname("/kavita-drones/qualquer");
+  it("deve usar logo de drone quando rota começa com /drones", () => {
+    mockUsePathname.mockReturnValue("/drones/t100");
+    render(<Header shop={{ store_name: "Kavita", logo_url: "/uploads/x.png" } as any} />);
 
-    // Act
-    renderHeader({
-      shop: makeShop({ logo_url: "/uploads/custom.png", store_name: "Kavita" }),
-    });
-
-    // Assert
-    const logo = screen.getByRole("img", { name: "Kavita" });
-    expect(logo).toHaveAttribute("src", "/images/drone/kavita-drone.png");
+    const img = screen.getByAltText("Kavita") as HTMLImageElement;
+    expect(img.src).toContain("/kavita-drone.png");
   });
 
-  it("resolve logo relativo com NEXT_PUBLIC_API_URL (positivo)", () => {
-    // Arrange
-    setPathname("/");
+  it("deve usar shop.logo_url absoluto sem prefixar", () => {
+    mockUsePathname.mockReturnValue("/");
+    render(<Header shop={{ store_name: "Minha Loja", logo_url: "https://cdn.site.com/logo.png" } as any} />);
 
-    // Act
-    renderHeader({
-      shop: makeShop({ logo_url: "/uploads/logo-novo.png", store_name: "Loja X" }),
-    });
-
-    // Assert
-    const logo = screen.getByRole("img", { name: "Loja X" });
-    expect(logo).toHaveAttribute("src", "http://api.test/uploads/logo-novo.png");
+    const img = screen.getByAltText("Minha Loja") as HTMLImageElement;
+    expect(img.getAttribute("src")).toBe("https://cdn.site.com/logo.png");
   });
 
-  it("não prefixa quando logo_url já é absoluto (http) (positivo)", () => {
-    // Arrange
-    setPathname("/");
+  it("deve prefixar shop.logo_url relativo com NEXT_PUBLIC_API_URL", () => {
+    process.env.NEXT_PUBLIC_API_URL = "http://localhost:5000";
+    mockUsePathname.mockReturnValue("/");
 
-    // Act
-    renderHeader({
-      shop: makeShop({
-        logo_url: "https://cdn.exemplo.com/logo.png",
-        store_name: "Loja CDN",
-      }),
-    });
+    render(<Header shop={{ store_name: "Minha Loja", logo_url: "/uploads/logo.png" } as any} />);
 
-    // Assert
-    const logo = screen.getByRole("img", { name: "Loja CDN" });
-    expect(logo).toHaveAttribute("src", "https://cdn.exemplo.com/logo.png");
+    const img = screen.getByAltText("Minha Loja") as HTMLImageElement;
+    expect(img.getAttribute("src")).toBe("http://localhost:5000/uploads/logo.png");
   });
 
-  it("mostra badge com quantidade do carrinho quando cartItems.length > 0 (positivo) e não mostra quando 0 (negativo)", () => {
-    // Arrange
-    setPathname("/");
+  it("badge do carrinho: mostra quando cartItems.length > 0 e some quando 0", async () => {
+    mockUseCart.mockReturnValue({ cartItems: [{ id: 1 }, { id: 2 }] });
 
-    // Act (positivo)
-    const { rerender } = renderHeader({
-      cartItems: [{ id: 1 }, { id: 2 }, { id: 3 }],
-      shop: makeShop(),
-    });
+    const { rerender } = render(<Header />);
+    expect(screen.getByText("2")).toBeInTheDocument();
 
-    // Assert (positivo)
-    expect(screen.getByText("3")).toBeInTheDocument();
+    // agora muda mock e rerender (não deixa DOM antigo acumulado)
+    mockUseCart.mockReturnValue({ cartItems: [] });
+    rerender(<Header />);
 
-    // Act (negativo) - rerender com cart vazio
-    useCartMock.mockReturnValue({ cartItems: [] });
-    useAuthMock.mockReturnValue({ user: null, logout: vi.fn() });
-
-    rerender(<Header categories={[]} shop={makeShop()} />);
-
-    // Assert (negativo)
-    expect(screen.queryByText("3")).not.toBeInTheDocument();
+    expect(screen.queryByText("2")).not.toBeInTheDocument();
   });
 
-  it("filtra categories: só passa categorias ativas para MainNavCategories (positivo + negativo)", () => {
-    // Arrange
-    setPathname("/");
+  it("menu mobile: abre ao clicar no botão e fecha ao clicar no X", async () => {
+    const u = userEvent.setup();
+    render(<Header />);
 
-    const categories = [
-      { id: 1, name: "Ativa bool", slug: "ativa-bool", is_active: true },
-      { id: 2, name: "Inativa bool", slug: "inativa-bool", is_active: false },
-      { id: 3, name: "Ativa num", slug: "ativa-num", is_active: 1 },
-      { id: 4, name: "Inativa num", slug: "inativa-num", is_active: 0 },
-      { id: 5, name: "Sem flag", slug: "sem-flag" }, // por regra: ativa
-    ];
-
-    // Act
-    renderHeader({ categories, shop: makeShop() });
-
-    // Assert
-    expect(mainNavSpy).toHaveBeenCalledTimes(1);
-    const passed = mainNavSpy.mock.calls[0][0];
-    const slugs = passed.map((c: any) => c.slug);
-
-    expect(slugs).toEqual(["ativa-bool", "ativa-num", "sem-flag"]);
-    expect(slugs).not.toContain("inativa-bool");
-    expect(slugs).not.toContain("inativa-num");
-  });
-
-  it("menu mobile: abre ao clicar, trava scroll, fecha com ESC (positivo)", () => {
-    // Arrange
-    setPathname("/");
-
-    // Act
-    renderHeader({ shop: makeShop() });
-
-    const openBtn = screen.getByRole("button", { name: "Abrir menu" });
-    fireEvent.click(openBtn);
-
-    // Assert (aberto e overflow travado)
+    await u.click(screen.getByLabelText("Abrir menu"));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(document.body.style.overflow).toBe("hidden");
 
-    // Act (ESC)
-    fireEvent.keyDown(document, { key: "Escape" });
+    // existem 2 "Fechar menu" (backdrop e botão X)
+    const closeButtons = screen.getAllByLabelText("Fechar menu");
+    const closeX = closeButtons[1]; // o segundo geralmente é o X dentro do aside
+    await u.click(closeX);
 
-    // Assert (fechado e overflow reset)
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(document.body.style.overflow).toBe("");
   });
 
-  it("menu mobile: quando autenticado, mostra saudação e botão Sair que chama logout (positivo)", () => {
-    // Arrange
-    setPathname("/");
+  it("menu mobile: fecha com ESC", async () => {
+    const u = userEvent.setup();
+    render(<Header />);
 
-    // Act
-    const { logout } = renderHeader({
-      shop: makeShop(),
+    await u.click(screen.getByLabelText("Abrir menu"));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("menu mobile: fecha ao clicar fora (backdrop)", async () => {
+    const u = userEvent.setup();
+    render(<Header />);
+
+    await u.click(screen.getByLabelText("Abrir menu"));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    // clica no backdrop (primeiro "Fechar menu")
+    const closeButtons = screen.getAllByLabelText("Fechar menu");
+    const backdrop = closeButtons[0];
+    await u.click(backdrop);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("menu mobile: quando NÃO autenticado, mostra link de login", async () => {
+    const u = userEvent.setup();
+    mockUseAuth.mockReturnValue({ user: null, logout: vi.fn() });
+
+    render(<Header />);
+
+    await u.click(screen.getByLabelText("Abrir menu"));
+    expect(screen.getByText(/Faça login/i)).toBeInTheDocument();
+    expect(screen.getByText("Login / Meus Pedidos")).toBeInTheDocument();
+  });
+
+  it("menu mobile: quando autenticado, mostra saudação e botão Sair que chama logout", async () => {
+    const u = userEvent.setup();
+    const logout = vi.fn();
+
+    mockUseAuth.mockReturnValue({
       user: { nome: "Rick" },
+      logout,
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+    render(<Header />);
 
-    // Assert
+    await u.click(screen.getByLabelText("Abrir menu"));
+
     expect(screen.getByText(/Olá,/i)).toBeInTheDocument();
     expect(screen.getByText("Rick")).toBeInTheDocument();
 
-    const sair = screen.getByRole("button", { name: "Sair" });
-    fireEvent.click(sair);
-
+    await u.click(screen.getByText("Sair"));
     expect(logout).toHaveBeenCalledTimes(1);
   });
 
-  it("menu mobile: quando não autenticado, mostra link de login e o texto de acompanhamento (negativo/positivo)", () => {
-    // Arrange
-    setPathname("/");
+  it("deve filtrar categorias: só passa ativas para MainNavCategories", () => {
+    mockUsePathname.mockReturnValue("/");
 
-    // Act
-    renderHeader({ shop: makeShop(), user: null });
-    fireEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+    render(
+      <Header
+        categories={[
+          { id: 1, name: "A", slug: "a", is_active: 1 },
+          { id: 2, name: "B", slug: "b", is_active: 0 },
+          { id: 3, name: "C", slug: "c", is_active: true },
+          { id: 4, name: "D", slug: "d" }, // undefined => ativa
+        ]}
+      />
+    );
 
-    // Assert
-    expect(screen.getByText(/Faça login/i)).toBeInTheDocument();
-    const loginLink = screen.getByRole("link", { name: /Faça login/i });
-    expect(loginLink).toHaveAttribute("href", "/login");
+    expect(screen.getByTestId("mainnav").textContent).toBe("3");
+  });
+
+  it("ao clicar no botão do carrinho, deve abrir CartCar (isCartOpen=true)", async () => {
+    const u = userEvent.setup();
+    render(<Header />);
+
+    expect(screen.getByTestId("cartcar").textContent).toBe("false");
+
+    await u.click(screen.getByLabelText("Abrir carrinho"));
+    expect(screen.getByTestId("cartcar").textContent).toBe("true");
   });
 });

@@ -1,12 +1,17 @@
+// src/__tests__/hooks/useFetchServicos.test.tsx
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 
 /**
  * Mocks obrigatórios (sem chamadas reais)
+ *
+ * ✅ Correção do lint react-hooks/rules-of-hooks:
+ * - não chamamos função com nome "use..." dentro do factory do vi.mock
+ * - exportamos um default mock (useSWR) e controlamos o retorno via mockImplementation
  */
-const useSWRMock = vi.fn();
+const swrDefaultMock = vi.fn();
 vi.mock("swr", () => ({
-  default: (key: any, fetcher: any) => useSWRMock(key, fetcher),
+  default: swrDefaultMock,
 }));
 
 const apiFetchMock = vi.fn();
@@ -16,10 +21,10 @@ vi.mock("@/lib/apiClient", () => ({
 
 const handleApiErrorMock = vi.fn();
 vi.mock("@/lib/handleApiError", () => ({
-  handleApiError: (err: any, opts: any) => handleApiErrorMock(err, opts),
+  handleApiError: (err: unknown, opts: unknown) => handleApiErrorMock(err, opts),
 }));
 
-type SwrReturn = { data?: any; error?: any; isLoading?: boolean };
+type SwrReturn = { data?: unknown; error?: unknown; isLoading?: boolean };
 
 async function importHookWithEnv(apiBase: string) {
   // API_BASE é calculado no load do módulo: setar env antes do import
@@ -27,8 +32,8 @@ async function importHookWithEnv(apiBase: string) {
   process.env.NEXT_PUBLIC_API_URL = apiBase;
 
   const mod = await import("@/hooks/useFetchServicos");
-  return mod.useFetchServicos as (p?: any) => {
-    data: any[];
+  return mod.useFetchServicos as (p?: unknown) => {
+    data: unknown[];
     meta: { total: number; totalPages: number; page: number };
     loading: boolean | undefined;
     error: string | null;
@@ -36,7 +41,7 @@ async function importHookWithEnv(apiBase: string) {
 }
 
 function setSWRReturn(ret: SwrReturn) {
-  useSWRMock.mockImplementation(() => ret);
+  swrDefaultMock.mockImplementation((_key: unknown, _fetcher: unknown) => ret);
 }
 
 describe("useFetchServicos (hook)", () => {
@@ -58,9 +63,9 @@ describe("useFetchServicos (hook)", () => {
     const { result } = renderHook(() => useFetchServicos());
 
     // Assert
-    expect(useSWRMock).toHaveBeenCalledTimes(1);
+    expect(swrDefaultMock).toHaveBeenCalledTimes(1);
 
-    const [key] = useSWRMock.mock.calls[0];
+    const [key] = swrDefaultMock.mock.calls[0];
     const url = new URL(String(key));
 
     expect(url.origin).toBe("http://api.test");
@@ -92,10 +97,10 @@ describe("useFetchServicos (hook)", () => {
     );
 
     // Assert
-    const [key] = useSWRMock.mock.calls[0];
+    const [key] = swrDefaultMock.mock.calls[0];
     const url = new URL(String(key));
 
-    expect(url.searchParams.get("q")).toBe("  vacina  "); // a lógica atual usa String(q) sem trim no valor
+    expect(url.searchParams.get("q")).toBe("  vacina  "); // lógica atual não trim no valor
     expect(url.searchParams.get("especialidade")).toBe("10");
     expect(url.searchParams.get("page")).toBe("2");
     expect(url.searchParams.get("limit")).toBe("20");
@@ -112,7 +117,7 @@ describe("useFetchServicos (hook)", () => {
     renderHook(() => useFetchServicos({ q: "   " }));
 
     // Assert
-    const [key] = useSWRMock.mock.calls[0];
+    const [key] = swrDefaultMock.mock.calls[0];
     const url = new URL(String(key));
     expect(url.searchParams.get("q")).toBeNull();
   });
@@ -169,7 +174,6 @@ describe("useFetchServicos (hook)", () => {
     const { result } = renderHook(() => useFetchServicos({ page: 10 }));
 
     // Assert
-    // meta.page deve vir do payload se existir
     expect(result.current.meta).toEqual({ total: 55, totalPages: 6, page: 3 });
   });
 
@@ -230,10 +234,13 @@ describe("useFetchServicos (hook)", () => {
     renderHook(() => useFetchServicos({ q: "x" }));
 
     // Assert
-    const [, fetcher] = useSWRMock.mock.calls[0];
+    const [, fetcher] = swrDefaultMock.mock.calls[0];
     expect(typeof fetcher).toBe("function");
 
-    await fetcher("http://api.test/api/public/servicos?page=1&limit=12&sort=id&order=desc&q=x");
+    await (fetcher as (u: string) => Promise<unknown>)(
+      "http://api.test/api/public/servicos?page=1&limit=12&sort=id&order=desc&q=x"
+    );
+
     expect(apiFetchMock).toHaveBeenCalledTimes(1);
     expect(apiFetchMock).toHaveBeenCalledWith(
       "http://api.test/api/public/servicos?page=1&limit=12&sort=id&order=desc&q=x",

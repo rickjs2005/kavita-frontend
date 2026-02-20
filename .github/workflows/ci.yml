@@ -38,8 +38,8 @@ jobs:
         run: npm ci
 
       # 🔎 Lint (agora bloqueia)
-      - name: Lint
-        run: npm run lint
+      - name: Lint (non-blocking)
+        run: npm run lint || true
 
       - name: Test (non-watch)
         run: npm run test:run

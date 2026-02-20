@@ -384,7 +384,7 @@ export default function ClimaForm({
   useEffect(() => {
     if (!showIbgeUi) return;
     ensureIbgeAllLoaded();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [showIbgeUi]);
 
   useEffect(() => {

@@ -1,234 +1,133 @@
+// src/__tests__/lib/handleApiError.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+// Mock do formatApiError (é ele que faz a “inteligência”)
+vi.mock("../../lib/formatApiError", () => ({
+  formatApiError: vi.fn(),
+}));
+
 import { handleApiError } from "../../lib/handleApiError";
+import { formatApiError } from "../../lib/formatApiError";
 
-describe("lib/handleApiError.ts -> handleApiError()", () => {
-  const originalWindow = (globalThis as any).window;
+type FormatMock = ReturnType<typeof vi.fn>;
 
+describe("src/lib/handleApiError.ts -> handleApiError()", () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    // restaura window para não “vazar” entre testes
-    (globalThis as any).window = originalWindow;
+    vi.restoreAllMocks();
   });
 
-  it("deve retornar a mensagem do err.message quando existir", () => {
+  it("deve chamar formatApiError(err, fallback default) e retornar o ui", () => {
     // Arrange
-    const err = { message: "Falhou aqui" };
+    const err = new Error("boom");
+    const ui = { message: "Ocorreu um erro.", code: "X", status: 500, requestId: "r1" };
+
+    (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
     // Act
-    const msg = handleApiError(err);
+    const result = handleApiError(err);
 
     // Assert
-    expect(msg).toBe("Falhou aqui");
+    expect(formatApiError).toHaveBeenCalledTimes(1);
+    expect(formatApiError).toHaveBeenCalledWith(err, "Ocorreu um erro.");
+    expect(result).toBe(ui);
   });
 
-  it("deve retornar err.response.data.message quando não houver err.message", () => {
+  it("deve usar opts.fallback quando fornecido", () => {
     // Arrange
-    const err = {
-      response: {
-        status: 400,
-        data: { message: "Mensagem do backend" },
-      },
-    };
+    const err = { any: true };
+    const ui = { message: "Falhou", code: undefined, status: undefined, requestId: undefined };
+
+    (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
     // Act
-    const msg = handleApiError(err);
+    const result = handleApiError(err, { fallback: "Falhou" });
 
     // Assert
-    expect(msg).toBe("Mensagem do backend");
+    expect(formatApiError).toHaveBeenCalledWith(err, "Falhou");
+    expect(result).toBe(ui);
   });
 
-  it("deve retornar err.response.data.mensagem quando não houver message", () => {
+  it("deve usar opts.fallbackMessage quando fallback não existir (compat)", () => {
     // Arrange
-    const err = {
-      response: {
-        status: 400,
-        data: { mensagem: "Credenciais inválidas" },
-      },
-    };
+    const err = "x";
+    const ui = { message: "Compat", code: undefined, status: undefined, requestId: undefined };
+
+    (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
     // Act
-    const msg = handleApiError(err);
+    const result = handleApiError(err, { fallbackMessage: "Compat" });
 
     // Assert
-    expect(msg).toBe("Credenciais inválidas");
+    expect(formatApiError).toHaveBeenCalledWith(err, "Compat");
+    expect(result).toBe(ui);
   });
 
-  it("deve retornar err.response.data.error quando não houver message/mensagem", () => {
+  it("fallback deve priorizar opts.fallback sobre opts.fallbackMessage", () => {
     // Arrange
-    const err = {
-      response: {
-        status: 500,
-        data: { error: "Erro interno" },
-      },
-    };
+    const err = "x";
+    const ui = { message: "A", code: undefined, status: undefined, requestId: undefined };
+
+    (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
     // Act
-    const msg = handleApiError(err);
+    const result = handleApiError(err, { fallback: "A", fallbackMessage: "B" });
 
     // Assert
-    expect(msg).toBe("Erro interno");
+    expect(formatApiError).toHaveBeenCalledWith(err, "A");
+    expect(result).toBe(ui);
   });
 
-  it("deve retornar fallback quando não houver mensagem útil", () => {
+  it("quando opts.debug=true, deve logar no console.error e ainda retornar ui", () => {
     // Arrange
-    const err = { response: { status: 500, data: {} } };
+    const err = new Error("boom");
+    const ui = { message: "Ocorreu um erro.", code: "X", status: 500, requestId: "r1" };
+
+    (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
+
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     // Act
-    const msg = handleApiError(err, { fallback: "Fallback custom" });
+    const result = handleApiError(err, { debug: true });
 
     // Assert
-    expect(msg).toBe("Fallback custom");
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith("[handleApiError]", { ui, err });
+    expect(result).toBe(ui);
   });
 
-  it("deve retornar fallback padrão quando não houver mensagem e não passar fallback", () => {
+  it("quando opts.debug=false/undefined, NÃO deve logar no console.error", () => {
     // Arrange
-    const err = {};
+    const err = new Error("boom");
+    const ui = { message: "Ocorreu um erro.", code: "X", status: 500, requestId: "r1" };
+
+    (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
+
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     // Act
-    const msg = handleApiError(err);
+    const result = handleApiError(err, { debug: false });
 
     // Assert
-    expect(msg).toBe("Ocorreu um erro. Tente novamente.");
+    expect(spy).not.toHaveBeenCalled();
+    expect(result).toBe(ui);
   });
 
-  it("deve aceitar err como string e retornar a própria string", () => {
+  it("opts.silent não deve afetar o resultado (apenas compat), continua chamando formatApiError", () => {
     // Arrange
-    const err = "Erro em texto";
+    const err = new Error("boom");
+    const ui = { message: "ok", code: undefined, status: undefined, requestId: undefined };
+
+    (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
     // Act
-    const msg = handleApiError(err);
+    const result = handleApiError(err, { silent: true });
 
     // Assert
-    expect(msg).toBe("Erro em texto");
-  });
-
-  it("deve usar String(trim) e cair no fallback se message for vazia/espacos", () => {
-    // Arrange
-    const err = { message: "   " };
-
-    // Act
-    const msg = handleApiError(err, { fallback: "Sem mensagem" });
-
-    // Assert
-    expect(msg).toBe("Sem mensagem");
-  });
-
-  it("quando silent=true, não deve logar nada (nem warn no browser, nem error no server)", () => {
-    // Arrange
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const err = { message: "Falhou" };
-
-    // Browser (jsdom)
-    (globalThis as any).window = originalWindow;
-
-    // Act
-    const msg = handleApiError(err, { silent: true, debug: true });
-
-    // Assert
-    expect(msg).toBe("Falhou");
-    expect(warnSpy).not.toHaveBeenCalled();
-    expect(errorSpy).not.toHaveBeenCalled();
-  });
-
-  it("no browser: não deve usar console.error (evitar overlay), e só deve warn se debug=true", () => {
-    // Arrange
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    (globalThis as any).window = originalWindow;
-
-    const err = {
-      status: 401,
-      code: "AUTH_ERROR",
-      message: "Sessão expirada",
-      url: "/api/users/me",
-      details: { any: true },
-    };
-
-    // Act (debug=false)
-    const msg1 = handleApiError(err, { debug: false });
-
-    // Assert
-    expect(msg1).toBe("Sessão expirada");
-    expect(errorSpy).not.toHaveBeenCalled();
-    expect(warnSpy).not.toHaveBeenCalled();
-
-    // Act (debug=true)
-    const msg2 = handleApiError(err, { debug: true });
-
-    // Assert
-    expect(msg2).toBe("Sessão expirada");
-    expect(errorSpy).not.toHaveBeenCalled();
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-
-    const [label, payload] = warnSpy.mock.calls[0];
-    expect(label).toBe("API warning:");
-    expect(payload).toMatchObject({
-      status: 401,
-      code: "AUTH_ERROR",
-      message: "Sessão expirada",
-      url: "/api/users/me",
-      details: { any: true },
-    });
-  });
-
-  it("no server (sem window): deve logar console.error quando silent=false", () => {
-    // Arrange
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    (globalThis as any).window = undefined; // simula server
-
-    const err = {
-      response: {
-        status: 500,
-        data: { message: "Erro do servidor", code: "SERVER_ERROR" },
-      },
-      config: { url: "/api/test" },
-    };
-
-    // Act
-    const msg = handleApiError(err, { silent: false });
-
-    // Assert
-    expect(msg).toBe("Erro do servidor");
-    expect(warnSpy).not.toHaveBeenCalled();
-    expect(errorSpy).toHaveBeenCalledTimes(1);
-
-    const [label, payload] = errorSpy.mock.calls[0];
-    expect(label).toBe("API error:");
-    expect(payload).toMatchObject({
-      status: 500,
-      code: "SERVER_ERROR",
-      message: "Erro do servidor",
-      url: "/api/test",
-    });
-
-    // details deve existir (err.response.data)
-    expect(payload.details).toEqual({ message: "Erro do servidor", code: "SERVER_ERROR" });
-  });
-
-  it("deve normalizar url via err.url ou err.config.url", () => {
-    // Arrange
-    (globalThis as any).window = undefined; // server para forçar console.error
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    const errA = { message: "x", url: "/a" };
-    const errB = { message: "y", config: { url: "/b" } };
-
-    // Act
-    handleApiError(errA, { silent: false });
-    handleApiError(errB, { silent: false });
-
-    // Assert
-    expect(errorSpy).toHaveBeenCalledTimes(2);
-
-    const payloadA = errorSpy.mock.calls[0][1];
-    const payloadB = errorSpy.mock.calls[1][1];
-
-    expect(payloadA.url).toBe("/a");
-    expect(payloadB.url).toBe("/b");
+    expect(formatApiError).toHaveBeenCalledWith(err, "Ocorreu um erro.");
+    expect(result).toBe(ui);
   });
 });

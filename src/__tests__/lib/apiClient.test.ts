@@ -1,282 +1,405 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock do módulo de erros usado pelo apiClient (SEM dependências novas)
-vi.mock("../../lib/api/errors", () => {
+/**
+ * Mock do módulo de erros usado pelo apiClient (SEM dependências novas)
+ * (mantém ApiError compatível com o construtor usado em apiClient.ts)
+ */
+vi.mock("../../lib/errors", () => {
   class ApiError extends Error {
     status?: number;
     code?: string;
     details?: unknown;
     requestId?: string;
+    url?: string;
 
-    constructor(args: { status: number; code?: string; message: string; details?: unknown; requestId?: string }) {
+    constructor(args: {
+      status: number;
+      code?: string;
+      message: string;
+      details?: unknown;
+      requestId?: string;
+      url?: string;
+    }) {
       super(args.message);
       this.name = "ApiError";
       this.status = args.status;
       this.code = args.code;
       this.details = args.details;
       this.requestId = args.requestId;
+      this.url = args.url;
     }
   }
 
   return { ApiError };
 });
 
-import { apiFetch } from "../../lib/apiClient";
-
 type FetchMock = ReturnType<typeof vi.fn>;
 
 function makeHeaders(map: Record<string, string>) {
+  const lower = Object.fromEntries(Object.entries(map).map(([k, v]) => [k.toLowerCase(), v]));
   return {
-    get: (key: string) => map[key.toLowerCase()] ?? null,
+    get: (key: string) => lower[String(key).toLowerCase()] ?? null,
   } as unknown as Headers;
 }
 
-function mockFetchOnce(params: {
+function makeResponse(params: {
   ok: boolean;
   status: number;
   headers?: Record<string, string>;
   json?: () => Promise<any>;
+  text?: () => Promise<string>;
 }) {
-  const fetchMock = global.fetch as unknown as FetchMock;
-
-  fetchMock.mockResolvedValueOnce({
+  return {
     ok: params.ok,
     status: params.status,
-    headers: makeHeaders(
-      Object.fromEntries(Object.entries(params.headers ?? {}).map(([k, v]) => [k.toLowerCase(), v]))
-    ),
-    json: params.json ?? (async () => ({})),
-  } as unknown as Response);
+    headers: makeHeaders(params.headers ?? {}),
+    json:
+      params.json ??
+      (async () => {
+        throw new Error("json() não mockado");
+      }),
+    text:
+      params.text ??
+      (async () => {
+        return "";
+      }),
+  } as unknown as Response;
 }
 
-describe("lib/api/apiClient.ts -> apiFetch()", () => {
-  const OLD_ENV = process.env;
+function getFirstFetchCall() {
+  const calls = (globalThis.fetch as any)?.mock?.calls ?? [];
+  if (!calls.length) throw new Error("fetch não foi chamado");
+  const [url, init] = calls[0] as [string, RequestInit];
+  return { url, init };
+}
+
+function headerGet(headers: HeadersInit | undefined, key: string) {
+  if (!headers) return null;
+
+  const k = key.toLowerCase();
+
+  // Headers instance
+  if (typeof (headers as any).get === "function") {
+    return (headers as any).get(key) ?? (headers as any).get(k) ?? null;
+  }
+
+  // Array of tuples
+  if (Array.isArray(headers)) {
+    const found = headers.find(([hk]) => String(hk).toLowerCase() === k);
+    return found ? String(found[1]) : null;
+  }
+
+  // Plain object
+  const obj = headers as Record<string, any>;
+  for (const [hk, hv] of Object.entries(obj)) {
+    if (hk.toLowerCase() === k) return String(hv);
+  }
+  return null;
+}
+
+async function importClient() {
+  // IMPORTANT: reimporta pra recalcular DEFAULT_BASE_URL com env atual
+  const mod = await import("../../lib/apiClient");
+  return mod;
+}
+
+describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
+  const ORIGINAL_ENV = process.env;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
-    process.env = { ...OLD_ENV };
-    global.fetch = vi.fn() as any;
+    process.env = { ...ORIGINAL_ENV };
+    vi.stubGlobal("fetch", vi.fn());
   });
 
   afterEach(() => {
-    process.env = OLD_ENV;
+    process.env = ORIGINAL_ENV;
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("deve usar base default (http://localhost:5000) quando não houver env e retornar JSON em 200", async () => {
-    // Arrange
     delete process.env.NEXT_PUBLIC_API_URL;
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
 
-    const payload = { ok: true, items: [1, 2, 3] };
+    vi.resetModules();
+    const { apiFetch } = await importClient();
 
-    mockFetchOnce({
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      json: async () => payload,
-    });
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true, items: [1, 2, 3] }),
+      })
+    );
 
-    // Act
     const result = await apiFetch("/api/ping");
 
-    // Assert
-    expect(result).toEqual(payload);
+    expect(result).toEqual({ ok: true, items: [1, 2, 3] });
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    const [url, init] = (global.fetch as any).mock.calls[0];
-
+    const { url, init } = getFirstFetchCall();
     expect(url).toBe("http://localhost:5000/api/ping");
     expect(init.credentials).toBe("include");
-    expect(init.headers).toMatchObject({ "Content-Type": "application/json" });
+
+    // headers são Headers(), em lowercase:
+    expect(headerGet(init.headers, "accept")).toBe("application/json");
+    // GET sem body => não força content-type
+    expect(headerGet(init.headers, "content-type")).toBeNull();
   });
 
   it("deve priorizar NEXT_PUBLIC_API_URL sobre NEXT_PUBLIC_API_BASE_URL", async () => {
-    // Arrange
     process.env.NEXT_PUBLIC_API_URL = "https://api.kavita.com";
     process.env.NEXT_PUBLIC_API_BASE_URL = "https://base.kavita.com";
 
-    mockFetchOnce({
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      json: async () => ({ ok: true }),
-    });
+    vi.resetModules();
+    const { apiFetch } = await importClient();
 
-    // Act
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true }),
+      })
+    );
+
     await apiFetch("/v1/health");
 
-    // Assert
-    const [url] = (global.fetch as any).mock.calls[0];
+    const { url } = getFirstFetchCall();
     expect(url).toBe("https://api.kavita.com/v1/health");
   });
 
   it("deve montar URL corretamente removendo/evitando barras duplicadas", async () => {
-    // Arrange
     process.env.NEXT_PUBLIC_API_URL = "https://api.kavita.com/";
 
-    mockFetchOnce({
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      json: async () => ({ ok: true }),
-    });
+    vi.resetModules();
+    const { apiFetch } = await importClient();
 
-    // Act
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true }),
+      })
+    );
+
     await apiFetch("/api/produtos");
 
-    // Assert
-    const [url] = (global.fetch as any).mock.calls[0];
+    const { url } = getFirstFetchCall();
     expect(url).toBe("https://api.kavita.com/api/produtos");
   });
 
   it("se path já for http(s), deve usar o path diretamente (sem prefixar base)", async () => {
-    // Arrange
     process.env.NEXT_PUBLIC_API_URL = "https://api.kavita.com";
 
-    mockFetchOnce({
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      json: async () => ({ ok: true }),
-    });
+    vi.resetModules();
+    const { apiFetch } = await importClient();
 
-    // Act
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true }),
+      })
+    );
+
     await apiFetch("https://external.service.com/echo");
 
-    // Assert
-    const [url] = (global.fetch as any).mock.calls[0];
+    const { url } = getFirstFetchCall();
     expect(url).toBe("https://external.service.com/echo");
   });
 
-  it("deve mesclar headers default com options.headers (mantendo Content-Type padrão)", async () => {
-    // Arrange
-    mockFetchOnce({
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      json: async () => ({ ok: true }),
-    });
+  it("deve setar accept=application/json por padrão", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
 
-    // Act
-    await apiFetch("/api/test", {
-      headers: { "X-Test": "1" },
-    });
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true }),
+      })
+    );
 
-    // Assert
-    const [, init] = (global.fetch as any).mock.calls[0];
-    expect(init.headers).toEqual({
-      "Content-Type": "application/json",
-      "X-Test": "1",
-    });
+    await apiFetch("/api/test");
+
+    const { init } = getFirstFetchCall();
+    expect(headerGet(init.headers, "accept")).toBe("application/json");
   });
 
-  it("deve permitir sobrescrever Content-Type via options.headers", async () => {
-    // Arrange
-    mockFetchOnce({
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      json: async () => ({ ok: true }),
-    });
+  it("quando body for objeto/array, deve JSON.stringify e setar content-type application/json", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
 
-    // Act
-    await apiFetch("/api/test", {
-      headers: { "Content-Type": "text/plain" },
-    });
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ created: true }),
+      })
+    );
 
-    // Assert
-    const [, init] = (global.fetch as any).mock.calls[0];
-    expect(init.headers).toEqual({
-      "Content-Type": "text/plain",
-    });
+    const result = await apiFetch("/api/produtos", { method: "POST", body: JSON.stringify({ name: "Produto" }) });
+
+    expect(result).toEqual({ created: true });
+
+    const { init } = getFirstFetchCall();
+    expect(init.method).toBe("POST");
+    expect(init.body).toBe(JSON.stringify({ name: "Produto" }));
+    expect(headerGet(init.headers, "content-type")).toBe("application/json");
+  });
+
+  it("deve mesclar headers do caller e manter accept default", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
+
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true }),
+      })
+    );
+
+    await apiFetch("/api/test", { headers: { "X-Test": "1" } });
+
+    const { init } = getFirstFetchCall();
+    expect(headerGet(init.headers, "x-test")).toBe("1");
+    expect(headerGet(init.headers, "accept")).toBe("application/json");
+  });
+
+  it("deve permitir sobrescrever content-type via headers do caller", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
+
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true }),
+      })
+    );
+
+    await apiFetch("/api/test", { headers: { "content-type": "text/plain" } });
+
+    const { init } = getFirstFetchCall();
+    expect(headerGet(init.headers, "content-type")).toBe("text/plain");
   });
 
   it("deve manter credentials include por padrão, mas permitir sobrescrever via options.credentials", async () => {
-    // Arrange
-    mockFetchOnce({
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      json: async () => ({ ok: true }),
-    });
+    vi.resetModules();
+    const { apiFetch } = await importClient();
 
-    // Act
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true }),
+      })
+    );
+
     await apiFetch("/api/test", { credentials: "omit" });
 
-    // Assert
-    const [, init] = (global.fetch as any).mock.calls[0];
+    const { init } = getFirstFetchCall();
     expect(init.credentials).toBe("omit");
   });
 
-  it("quando content-type não for application/json, deve retornar null (parse seguro)", async () => {
-    // Arrange
-    mockFetchOnce({
-      ok: true,
-      status: 200,
-      headers: { "content-type": "text/html" },
-      json: async () => {
-        throw new Error("não deveria chamar json em ct != json");
-      },
-    });
-
-    // Act
-    const result = await apiFetch("/api/html");
-
-    // Assert
-    expect(result).toBeNull();
-  });
-
-  it("quando content-type for JSON mas json() falhar, deve retornar null (parse seguro)", async () => {
-    // Arrange
-    mockFetchOnce({
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json; charset=utf-8" },
-      json: async () => {
-        throw new Error("invalid json");
-      },
-    });
-
-    // Act
-    const result = await apiFetch("/api/bad-json");
-
-    // Assert
-    expect(result).toBeNull();
-  });
-
   it("quando options.raw=true, deve retornar o Response (sem tentar parse)", async () => {
-    // Arrange
-    const responseLike = {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
+
+    const responseLike = makeResponse({
       ok: true,
       status: 200,
-      headers: makeHeaders({ "content-type": "application/json" }),
+      headers: { "content-type": "application/json" },
       json: async () => ({ shouldNot: "be used" }),
-    } as unknown as Response;
+    });
 
-    (global.fetch as unknown as FetchMock).mockResolvedValueOnce(responseLike);
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(responseLike);
 
-    // Act
     const res = await apiFetch<Response>("/api/download", { raw: true });
-
-    // Assert
     expect(res).toBe(responseLike);
   });
 
-  it("quando res.ok=false e payload tiver message, deve lançar ApiError com status/code/message/details e requestId do payload", async () => {
-    // Arrange
-    mockFetchOnce({
-      ok: false,
-      status: 400,
-      headers: { "content-type": "application/json" },
-      json: async () => ({
-        code: "VALIDATION_ERROR",
-        message: "Dados inválidos",
-        details: { field: "name" },
-        requestId: "req-123",
-      }),
-    });
+  it("parse seguro: ct json + json() ok => retorna objeto", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
 
-    // Act + Assert
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" },
+        json: async () => ({ ok: true }),
+      })
+    );
+
+    const data = await apiFetch("/api/json");
+    expect(data).toEqual({ ok: true });
+  });
+
+  it("parse seguro: ct json mas json() falha => cai pra text()", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
+
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => {
+          throw new Error("invalid json");
+        },
+        text: async () => "ok-text",
+      })
+    );
+
+    const data = await apiFetch("/api/bad-json");
+    expect(data).toBe("ok-text");
+  });
+
+  it("parse seguro: ct não-json => retorna texto", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
+
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "text/html" },
+        text: async () => "<h1>ok</h1>",
+      })
+    );
+
+    const data = await apiFetch("/api/html");
+    expect(data).toBe("<h1>ok</h1>");
+  });
+
+  it("quando res.ok=false e payload tiver message/code/details/requestId, deve lançar ApiError completo", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
+
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: false,
+        status: 400,
+        headers: { "content-type": "application/json" },
+        json: async () => ({
+          code: "VALIDATION_ERROR",
+          message: "Dados inválidos",
+          details: { field: "name" },
+          requestId: "req-123",
+        }),
+      })
+    );
+
     await expect(apiFetch("/api/fail")).rejects.toMatchObject({
       name: "ApiError",
       status: 400,
@@ -287,36 +410,22 @@ describe("lib/api/apiClient.ts -> apiFetch()", () => {
     });
   });
 
-  it("quando res.ok=false e payload NÃO tiver message, deve usar fallback `HTTP <status>`", async () => {
-    // Arrange
-    mockFetchOnce({
-      ok: false,
-      status: 500,
-      headers: { "content-type": "application/json" },
-      json: async () => ({ code: "SERVER_ERROR" }),
-    });
+  it("quando res.ok=false e JSON não parsear, deve usar requestId de header (x-request-id)", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
 
-    // Act + Assert
-    await expect(apiFetch("/api/fail")).rejects.toMatchObject({
-      name: "ApiError",
-      status: 500,
-      code: "SERVER_ERROR",
-      message: "HTTP 500",
-    });
-  });
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: false,
+        status: 401,
+        headers: { "content-type": "application/json", "x-request-id": "hdr-req-9" },
+        json: async () => {
+          throw new Error("invalid json");
+        },
+        text: async () => "",
+      })
+    );
 
-  it("quando res.ok=false e não conseguir parsear JSON, deve lançar ApiError com fallback e requestId vindo do header x-request-id", async () => {
-    // Arrange
-    mockFetchOnce({
-      ok: false,
-      status: 401,
-      headers: { "content-type": "application/json", "x-request-id": "hdr-req-9" },
-      json: async () => {
-        throw new Error("invalid json");
-      },
-    });
-
-    // Act + Assert
     await expect(apiFetch("/api/unauthorized")).rejects.toMatchObject({
       name: "ApiError",
       status: 401,
@@ -325,45 +434,26 @@ describe("lib/api/apiClient.ts -> apiFetch()", () => {
     });
   });
 
-  it("quando res.ok=false e não houver x-request-id, deve tentar request-id", async () => {
-    // Arrange
-    mockFetchOnce({
-      ok: false,
-      status: 403,
-      headers: { "content-type": "application/json", "request-id": "hdr-req-77" },
-      json: async () => {
-        throw new Error("invalid json");
-      },
-    });
+  it("deve respeitar skipContentType=true (não setar content-type automaticamente)", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
 
-    // Act + Assert
-    await expect(apiFetch("/api/forbidden")).rejects.toMatchObject({
-      name: "ApiError",
-      status: 403,
-      message: "HTTP 403",
-      requestId: "hdr-req-77",
-    });
-  });
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true }),
+      })
+    );
 
-  it("deve repassar options (ex: method/body) para o fetch", async () => {
-    // Arrange
-    mockFetchOnce({
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      json: async () => ({ created: true }),
-    });
+    const body = JSON.stringify({ a: 1 });
 
-    const body = JSON.stringify({ name: "Produto" });
+    await apiFetch("/api/test", { method: "POST", body, skipContentType: true });
 
-    // Act
-    const result = await apiFetch("/api/produtos", { method: "POST", body });
-
-    // Assert
-    expect(result).toEqual({ created: true });
-
-    const [, init] = (global.fetch as any).mock.calls[0];
-    expect(init.method).toBe("POST");
+    const { init } = getFirstFetchCall();
     expect(init.body).toBe(body);
+    expect(headerGet(init.headers, "content-type")).toBeNull();
+    expect(headerGet(init.headers, "accept")).toBe("application/json");
   });
 });

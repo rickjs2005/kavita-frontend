@@ -82,7 +82,7 @@ export default function MarketingPromocoesPage() {
 
   useEffect(() => {
     buscarPromocoes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   async function buscarPromocoes() {

@@ -66,7 +66,7 @@ export default function ServicosPage() {
 
   useEffect(() => {
     carregarServicos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   /* ==========================

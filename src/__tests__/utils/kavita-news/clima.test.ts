@@ -1,3 +1,4 @@
+// src/__tests__/utils/kavita-news/clima.test.ts
 import { describe, it, expect } from "vitest";
 
 import {
@@ -25,9 +26,9 @@ describe("utils/kavita-news/clima", () => {
 
     it("lida com string vazia", () => {
       expect(normalizeSlug("")).toBe("");
-      // @ts-expect-error - teste defensivo
+      // @ts-expect-error teste defensivo: função não aceita null no tipo
       expect(normalizeSlug(null)).toBe("");
-      // @ts-expect-error - teste defensivo
+      // @ts-expect-error teste defensivo: função não aceita undefined no tipo
       expect(normalizeSlug(undefined)).toBe("");
     });
 
@@ -60,9 +61,9 @@ describe("utils/kavita-news/clima", () => {
     });
 
     it("lida com null/undefined defensivamente", () => {
-      // @ts-expect-error
+      // @ts-expect-error teste defensivo: função tipada para string
       expect(toNumberOrNull(null)).toBeNull();
-      // @ts-expect-error
+      // @ts-expect-error teste defensivo: função tipada para string
       expect(toNumberOrNull(undefined)).toBeNull();
     });
   });
@@ -102,9 +103,9 @@ describe("utils/kavita-news/clima", () => {
     });
 
     it("lida com null/undefined defensivamente", () => {
-      // @ts-expect-error
+      // @ts-expect-error teste defensivo: função tipada para string
       expect(parseIbgeId(null)).toBeNull();
-      // @ts-expect-error
+      // @ts-expect-error teste defensivo: função tipada para string
       expect(parseIbgeId(undefined)).toBeNull();
     });
   });
@@ -126,9 +127,9 @@ describe("utils/kavita-news/clima", () => {
     });
 
     it("lida com null/undefined defensivamente", () => {
-      // @ts-expect-error
+      // @ts-expect-error teste defensivo: função tipada para string
       expect(parseStationCode(null)).toBeNull();
-      // @ts-expect-error
+      // @ts-expect-error teste defensivo: função tipada para string
       expect(parseStationCode(undefined)).toBeNull();
     });
   });
