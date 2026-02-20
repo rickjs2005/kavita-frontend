@@ -11,7 +11,6 @@ import ClimaSection from "@/components/admin/kavita-news/clima/ClimaSection";
 import CotacoesSection from "@/components/admin/kavita-news/cotacoes/CotacoesSection";
 import PostsTab from "@/components/admin/kavita-news/posts/PostsTab";
 
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function AdminKavitaNewsPage() {
@@ -61,8 +60,9 @@ export default function AdminKavitaNewsPage() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className={`md:hidden flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-900/40 ${isMobileMenuOpen ? "hidden" : "flex"
-                }`}
+              className={`md:hidden ${
+                isMobileMenuOpen ? "hidden" : "flex"
+              } h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-900/40`}
               aria-label="Abrir menu do painel"
             >
               <span className="sr-only">Abrir menu</span>
@@ -89,10 +89,15 @@ export default function AdminKavitaNewsPage() {
       {/* MENU MOBILE FULLSCREEN */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
-          <div
+          {/* ✅ FIX a11y: overlay não pode ser div clicável sem teclado.
+              Trocar por <button> fullscreen (nativo, focável, acessível). */}
+          <button
+            type="button"
+            aria-label="Fechar menu"
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
+
           <div className="relative ml-0 flex h-full w-4/5 max-w-xs flex-col bg-slate-950/95 shadow-xl shadow-black/60">
             <div className="flex items-center justify-between border-b border-slate-800 px-3 py-2">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
@@ -102,6 +107,7 @@ export default function AdminKavitaNewsPage() {
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="ml-auto"
+                aria-label="Fechar menu lateral"
               >
                 <CloseButton />
               </button>
@@ -135,7 +141,6 @@ export default function AdminKavitaNewsPage() {
             )}
 
             {activeTab === "posts" && <PostsTab />}
-
           </div>
         </div>
       </main>
