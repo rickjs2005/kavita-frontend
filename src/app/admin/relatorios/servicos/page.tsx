@@ -312,10 +312,10 @@ export default function RelatorioServicosPage() {
                         axisLine={{ stroke: "#1f2937" }}
                       />
                       <Tooltip
-                        formatter={(value: number) =>
-                          `${value} serviço${value === 1 ? "" : "s"}`
+                        formatter={(value: number | undefined) =>
+                          `${value ?? 0} serviço${value === 1 ? "" : "s"}`
                         }
-                        labelFormatter={(label: string) =>
+                        labelFormatter={(label) =>
                           `Especialidade: ${label}`
                         }
                         contentStyle={{

@@ -189,9 +189,9 @@ export default function RelatorioVendasPage() {
                           axisLine={{ stroke: "#1f2937" }}
                         />
                         <Tooltip
-                          formatter={(value: number) => formatCurrency(value)}
-                          labelFormatter={(label: string) =>
-                            `Dia ${label}`
+                          formatter={(value: number | undefined) => value !== undefined ? formatCurrency(value) : "-"}
+                          labelFormatter={(label) =>
+                            label ? `Dia ${label}` : "-"
                           }
                           contentStyle={{
                             backgroundColor: "#ffffff",
