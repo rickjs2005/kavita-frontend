@@ -25,7 +25,7 @@ describe("fetchPublicCategories (src/server/data/categories.ts)", () => {
   });
 
   afterEach(() => {
-    // @ts-expect-error
+    // @ts-expect-error teste: delete fetch global no cleanup
     delete global.fetch;
     Object.defineProperty(process, "env", {
       value: ORIGINAL_ENV,

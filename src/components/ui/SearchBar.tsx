@@ -46,7 +46,7 @@ function resolveImage(raw?: unknown): string {
     return candidate ? resolveImage(candidate) : PLACEHOLDER;
   }
 
-  let src = String(raw).trim().replace(/\\/g, "/");
+  const src = String(raw).trim().replace(/\\/g, "/");
   if (!src) return PLACEHOLDER;
 
   if (/^https?:\/\//i.test(src)) return src;

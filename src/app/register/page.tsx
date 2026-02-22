@@ -13,7 +13,7 @@ import LoadingButton from "@/components/buttons/LoadingButton";
 
 // helper: formata CPF enquanto o usuário digita
 function formatCpfMask(value: string): string {
-  let digits = value.replace(/\D/g, "").slice(0, 11);
+  const digits = value.replace(/\D/g, "").slice(0, 11);
 
   if (digits.length <= 3) return digits;
   if (digits.length <= 6) return digits.replace(/(\d{3})(\d{0,3})/, "$1.$2");

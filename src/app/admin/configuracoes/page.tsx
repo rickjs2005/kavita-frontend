@@ -270,7 +270,12 @@ export default function ConfiguracoesPage() {
   // ============================================================
   async function saveConfig(source: "top" | "bottom") {
     try {
-      source === "top" ? setSavingTop(true) : setSavingBottom(true);
+      // ✅ FIX lint: nada de ternário solto (unused-expressions)
+      if (source === "top") {
+        setSavingTop(true);
+      } else {
+        setSavingBottom(true);
+      }
 
       const changed = pickChangedFields(settings, baseline);
 
@@ -307,7 +312,12 @@ export default function ConfiguracoesPage() {
       console.error(err);
       toast.error(err?.message || "Erro ao salvar as configurações.");
     } finally {
-      source === "top" ? setSavingTop(false) : setSavingBottom(false);
+      // ✅ FIX lint: nada de ternário solto (unused-expressions)
+      if (source === "top") {
+        setSavingTop(false);
+      } else {
+        setSavingBottom(false);
+      }
     }
   }
 
@@ -337,8 +347,9 @@ export default function ConfiguracoesPage() {
                   Configurações da Loja
                 </h1>
                 <p className="mt-1 max-w-2xl text-sm text-slate-300">
-                  No topo você ajusta apenas a identidade (nome + logo). No footer
-                  ficam os dados públicos (CNPJ, e-mail, redes, links e endereço).
+                  No topo você ajusta apenas a identidade (nome + logo). No
+                  footer ficam os dados públicos (CNPJ, e-mail, redes, links e
+                  endereço).
                 </p>
 
                 {loading && (
@@ -377,7 +388,8 @@ export default function ConfiguracoesPage() {
                     Identidade da Loja
                   </h2>
                   <p className="text-xs text-slate-400">
-                    Aqui você muda apenas o nome e a logo (o nome também muda o título da aba).
+                    Aqui você muda apenas o nome e a logo (o nome também muda o
+                    título da aba).
                   </p>
                 </div>
                 <span className="hidden rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-300 sm:inline">
@@ -399,7 +411,9 @@ export default function ConfiguracoesPage() {
 
                 {/* Logo upload */}
                 <div>
-                  <label className="text-sm text-gray-200">Logo (upload)</label>
+                  <label className="text-sm text-gray-200">
+                    Logo (upload)
+                  </label>
 
                   <div className="mt-2 flex items-center gap-3">
                     <input
@@ -430,7 +444,9 @@ export default function ConfiguracoesPage() {
                     </div>
                   ) : null}
 
-                  <p className="mt-2 text-xs text-gray-400">PNG/JPG/WEBP até 2MB.</p>
+                  <p className="mt-2 text-xs text-gray-400">
+                    PNG/JPG/WEBP até 2MB.
+                  </p>
                 </div>
               </div>
             </section>
@@ -456,28 +472,36 @@ export default function ConfiguracoesPage() {
                   label="Exigir CPF no checkout"
                   description="O cliente precisa informar CPF para concluir o pedido."
                   checked={!!settings.checkout_require_cpf}
-                  onChange={(value) => handleChange("checkout_require_cpf", value)}
+                  onChange={(value) =>
+                    handleChange("checkout_require_cpf", value)
+                  }
                 />
 
                 <ToggleItem
                   label="Exigir endereço completo"
                   description="Obrigar cadastro de endereço para concluir o pedido."
                   checked={!!settings.checkout_require_address}
-                  onChange={(value) => handleChange("checkout_require_address", value)}
+                  onChange={(value) =>
+                    handleChange("checkout_require_address", value)
+                  }
                 />
 
                 <ToggleItem
                   label="Permitir retirada na loja / fazenda"
                   description="Adiciona a opção de retirada em vez de entrega."
                   checked={!!settings.checkout_allow_pickup}
-                  onChange={(value) => handleChange("checkout_allow_pickup", value)}
+                  onChange={(value) =>
+                    handleChange("checkout_allow_pickup", value)
+                  }
                 />
 
                 <ToggleItem
                   label="Habilitar uso de cupons"
                   description="Permite que o cliente aplique cupons no carrinho."
                   checked={!!settings.checkout_enable_coupons}
-                  onChange={(value) => handleChange("checkout_enable_coupons", value)}
+                  onChange={(value) =>
+                    handleChange("checkout_enable_coupons", value)
+                  }
                 />
 
                 <ToggleItem
@@ -514,7 +538,8 @@ export default function ConfiguracoesPage() {
                   Footer
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Dados que aparecem no rodapé do site (contato, endereço, redes, CTA e links).
+                  Dados que aparecem no rodapé do site (contato, endereço, redes,
+                  CTA e links).
                 </p>
               </div>
               <span className="hidden rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-300 sm:inline">
@@ -532,7 +557,10 @@ export default function ConfiguracoesPage() {
                 variant="dark"
                 placeholder="Conectando você ao melhor da agropecuária..."
                 onChange={(e) =>
-                  handleChange("footer_tagline" as any, e.target.value as any)
+                  handleChange(
+                    "footer_tagline" as any,
+                    e.target.value as any
+                  )
                 }
               />
 
@@ -545,7 +573,10 @@ export default function ConfiguracoesPage() {
                 type="tel"
                 placeholder="(31) 99999-9999"
                 onChange={(e) =>
-                  handleChange("contact_whatsapp" as any, e.target.value as any)
+                  handleChange(
+                    "contact_whatsapp" as any,
+                    e.target.value as any
+                  )
                 }
               />
 
@@ -569,7 +600,9 @@ export default function ConfiguracoesPage() {
                 mask="cnpj"
                 variant="dark"
                 placeholder="00.000.000/0000-00"
-                onChange={(e) => handleChange("cnpj" as any, e.target.value as any)}
+                onChange={(e) =>
+                  handleChange("cnpj" as any, e.target.value as any)
+                }
               />
 
               <FormattedInput
@@ -700,7 +733,10 @@ export default function ConfiguracoesPage() {
                   <TogglePill
                     checked={!!(settings as any).footer_partner_cta_enabled}
                     onChange={(v) =>
-                      handleChange("footer_partner_cta_enabled" as any, v as any)
+                      handleChange(
+                        "footer_partner_cta_enabled" as any,
+                        v as any
+                      )
                     }
                   />
                 </div>
@@ -849,7 +885,8 @@ export default function ConfiguracoesPage() {
                 )}
 
                 <p className="text-[11px] text-slate-500">
-                  Os links são salvos como JSON no banco ({`{ label, href, highlight }`}).
+                  Os links são salvos como JSON no banco (
+                  {`{ label, href, highlight }`}).
                 </p>
               </div>
             </div>
@@ -858,7 +895,8 @@ export default function ConfiguracoesPage() {
           {/* BOTÃO DE BAIXO (SALVAR FINAL) */}
           <div className="flex flex-col gap-3 border-t border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-[11px] text-slate-500">
-              Você pode salvar apenas o que mudou. Não é obrigatório preencher todos os campos.
+              Você pode salvar apenas o que mudou. Não é obrigatório preencher
+              todos os campos.
             </p>
 
             <button

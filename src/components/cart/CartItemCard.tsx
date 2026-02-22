@@ -31,7 +31,7 @@ function resolveImage(raw: any): string {
     if (candidate) return resolveImage(candidate);
     return PLACEHOLDER;
   }
-  let src = String(raw).trim().replace(/\\/g, "/");
+  const src = String(raw).trim().replace(/\\/g, "/");
   if (!src) return PLACEHOLDER;
   if (/^https?:\/\//i.test(src)) return src;
   if (src.startsWith("/uploads")) return `${API}${src}`;

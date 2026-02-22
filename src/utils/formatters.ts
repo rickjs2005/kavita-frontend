@@ -134,7 +134,7 @@ export function onlyDigits(value: string): string {
 
 /** CPF: 000.000.000-00 */
 export function formatCpfMask(value: string): string {
-  let digits = onlyDigits(value).slice(0, 11);
+  const digits = onlyDigits(value).slice(0, 11);
 
   if (digits.length <= 3) return digits;
 
@@ -151,7 +151,7 @@ export function formatCpfMask(value: string): string {
 
 /** CNPJ: 00.000.000/0000-00 */
 export function formatCnpjMask(value: string): string {
-  let digits = onlyDigits(value).slice(0, 14);
+  const digits = onlyDigits(value).slice(0, 14);
 
   if (digits.length <= 2) return digits;
   if (digits.length <= 5) {
@@ -172,7 +172,7 @@ export function formatCnpjMask(value: string): string {
 
 /** CEP: 00000-000 */
 export function formatCepMask(value: string): string {
-  let digits = onlyDigits(value).slice(0, 8);
+  const digits = onlyDigits(value).slice(0, 8);
 
   if (digits.length <= 5) {
     return digits;
@@ -183,7 +183,7 @@ export function formatCepMask(value: string): string {
 
 /** Telefone BR: (00) 00000-0000 ou (00) 0000-0000 */
 export function formatPhoneMask(value: string): string {
-  let digits = onlyDigits(value).slice(0, 11);
+  const digits = onlyDigits(value).slice(0, 11);
 
   if (!digits) return "";
 

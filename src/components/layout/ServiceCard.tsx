@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Service } from "@/types/service";
 
@@ -47,23 +47,32 @@ export default function ServiceCard({
   className = "",
   href,
 }: Props) {
-  if (!servico) return null;
-
+  // ✅ Hooks SEMPRE no topo (não pode ter return antes)
   const [removing, setRemoving] = useState(false);
 
   // ✅ Cria lista de imagens (capa + extras) sem duplicadas
   const images = useMemo(() => {
+    if (!servico) return [];
+
     const extras: string[] = Array.isArray(servico.images)
       ? (servico.images as unknown as string[])
       : [];
+
     const all = [servico.imagem, ...extras].filter(Boolean) as string[];
     const unique = Array.from(new Set(all));
     return unique.map(absUrl).filter(Boolean) as string[];
-  }, [servico.imagem, servico.images]);
+  }, [servico?.imagem, servico?.images]);
 
-  const [activeImg, setActiveImg] = useState<string>(
-    images[0] || PLACEHOLDER
-  );
+  // ✅ NÃO inicializa com images[0] (senão fica preso quando trocar servico)
+  const [activeImg, setActiveImg] = useState<string>(PLACEHOLDER);
+
+  // ✅ Sincroniza imagem ativa quando a lista de imagens muda
+  useEffect(() => {
+    setActiveImg(images[0] || PLACEHOLDER);
+  }, [images]);
+
+  // ✅ Só depois dos hooks pode retornar
+  if (!servico) return null;
 
   const waDigits = (servico.whatsapp || "").replace(/\D/g, "");
   const waLabel = formatWhatsApp(servico.whatsapp || "");
@@ -73,8 +82,7 @@ export default function ServiceCard({
   const ratingCount = (servico as any).rating_count as number | null | undefined;
 
   async function handleRemove() {
-    if (!onRemover || readOnly) return;
-    if (!servico) return;
+    if (!onRemover || readOnly || !servico) return;
     if (!window.confirm(confirmText)) return;
     try {
       setRemoving(true);
@@ -95,9 +103,7 @@ export default function ServiceCard({
           src={activeImg}
           alt={servico.nome || "Imagem do serviço"}
           className="absolute inset-0 h-full w-full object-cover transition-all duration-300"
-          onError={(e) =>
-            ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
-          }
+          onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
           loading="lazy"
         />
 
@@ -139,8 +145,7 @@ export default function ServiceCard({
           <div className="mt-0.5 flex items-center gap-1 text-xs text-amber-600">
             <span>⭐ {ratingAvg.toFixed(1)}</span>
             <span className="text-[11px] text-gray-500">
-              ({ratingCount} avaliação
-              {ratingCount && ratingCount > 1 ? "s" : ""})
+              ({ratingCount} avaliação{ratingCount && ratingCount > 1 ? "s" : ""})
             </span>
           </div>
         )}
@@ -176,18 +181,14 @@ export default function ServiceCard({
                   setActiveImg(src);
                 }}
                 className={`flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
-                  activeImg === src
-                    ? "border-[#2F7E7F] shadow-sm"
-                    : "border-transparent hover:border-gray-300"
+                  activeImg === src ? "border-[#2F7E7F] shadow-sm" : "border-transparent hover:border-gray-300"
                 }`}
               >
                 <img
                   src={src}
                   alt={`Miniatura ${i + 1}`}
                   className="h-12 w-12 object-cover sm:h-14 sm:w-14"
-                  onError={(e) =>
-                    ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
-                  }
+                  onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
                   loading="lazy"
                 />
               </button>
@@ -255,7 +256,7 @@ export default function ServiceCard({
     </article>
   );
 
-  // 🔗 Se tiver href, envolvemos o card inteiro em um Link (<a> só aqui)
+  // 🔗 Se tiver href, envolvemos o card inteiro em um Link
   if (href) {
     return (
       <Link href={href} className="block h-full">

@@ -1,130 +1,142 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-/* ------------------------------------------------------------------ */
-/* Mocks                                                              */
-/* ------------------------------------------------------------------ */
-
-// next/link → <a>
+// mock next/link
 vi.mock("next/link", () => ({
   __esModule: true,
-  default: ({
-    href,
-    children,
-    ...props
-  }: {
-    href: string;
-    children: React.ReactNode;
-    [key: string]: any;
-  }) => (
+  default: ({ href, children, ...props }: any) => (
     <a href={href} {...props}>
       {children}
     </a>
   ),
 }));
 
-/* ------------------------------------------------------------------ */
-
 import HeroSection from "@/components/layout/HeroSection";
 
-function getHeroVideo(container: HTMLElement) {
-  return container.querySelector("video");
+type FetchMock = ReturnType<typeof vi.fn>;
+
+function mockFetchOk(payload: any) {
+  const fetchMock = global.fetch as unknown as FetchMock;
+
+  fetchMock.mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+    json: async () => payload,
+  } as any);
 }
 
-function getHeroFallback(container: HTMLElement) {
-  // Fallback é uma <div> com style={{ backgroundImage: "url('/images/drone/fallback-hero1.jpg')" }}
-  // Em JSDOM isso aparece como atributo style com background-image.
-  return container.querySelector(
-    "div[style*=\"background-image\"][style*=\"fallback-hero1.jpg\"]"
-  );
+function mockFetchNotOk() {
+  const fetchMock = global.fetch as unknown as FetchMock;
+
+  fetchMock.mockResolvedValueOnce({
+    ok: false,
+    status: 500,
+    json: async () => ({}),
+  } as any);
 }
 
-describe("HeroSection (src/components/HeroSection.tsx)", () => {
+describe("HeroSection (layout/HeroSection.tsx)", () => {
+  const OLD_ENV = process.env;
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
+    process.env = { ...OLD_ENV };
+    process.env.NEXT_PUBLIC_API_URL = "http://localhost:5000";
+    global.fetch = vi.fn() as any;
   });
 
-  it("renderiza vídeo por padrão quando não há erro (positivo)", () => {
-    // Act
-    const { container } = render(<HeroSection />);
-
-    // Assert
-    const video = getHeroVideo(container);
-    expect(video).toBeInTheDocument();
-    expect(video).toHaveAttribute("src", "/videos/drone2.mp4");
-
-    // Controle: não deve existir fallback nesse estado
-    expect(getHeroFallback(container)).not.toBeInTheDocument();
+  afterEach(() => {
+    process.env = OLD_ENV;
   });
 
-  it("exibe fallback de imagem quando o vídeo dispara erro (positivo)", () => {
-    // Arrange
-    const { container } = render(<HeroSection />);
-    const video = getHeroVideo(container);
-    expect(video).toBeInTheDocument();
+  it("renderiza o vídeo quando backend retorna hero_video_url", async () => {
+    mockFetchOk({
+      hero_video_url: "https://cdn.site.com/hero.mp4",
+      hero_image_url: "https://cdn.site.com/hero.jpg",
+      button_label: "Ver drones",
+      button_href: "/drones",
+      title: "Meu título",
+      subtitle: "Meu subtítulo",
+    });
 
-    // Act
-    fireEvent.error(video!);
-
-    // Assert
-    expect(getHeroVideo(container)).not.toBeInTheDocument();
-
-    const fallback = getHeroFallback(container);
-    expect(fallback).toBeInTheDocument();
-    expect(fallback).toHaveStyle(
-      "background-image: url('/images/drone/fallback-hero1.jpg')"
-    );
-  });
-
-  it("renderiza overlay escuro independentemente do estado (controle)", () => {
-    // Arrange
-    const { container } = render(<HeroSection />);
-
-    // Act/Assert (estado inicial)
-    expect(container.querySelector(".bg-black\\/60")).toBeInTheDocument();
-
-    // Act: força erro do vídeo para trocar para fallback
-    const video = getHeroVideo(container);
-    expect(video).toBeInTheDocument();
-    fireEvent.error(video!);
-
-    // Assert (continua existindo)
-    expect(container.querySelector(".bg-black\\/60")).toBeInTheDocument();
-  });
-
-  it("renderiza título, descrição e CTA corretamente (positivo)", () => {
-    // Act
     render(<HeroSection />);
 
-    // Assert
-    expect(
-      screen.getByRole("heading", { name: /Revolucione sua Gestão Agrícola/i })
-    ).toBeInTheDocument();
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
 
-    expect(
-      screen.getByText(
-        /Conheça a tecnologia que otimiza o monitoramento e a eficiência no campo\./i
-      )
-    ).toBeInTheDocument();
+    const video = document.querySelector("video");
+    expect(video).toBeTruthy();
+    expect(video?.getAttribute("src")).toBe("https://cdn.site.com/hero.mp4");
 
-    const cta = screen.getByRole("link", { name: /Saiba Mais/i });
-    expect(cta).toBeInTheDocument();
+    expect(screen.getByText("Meu título")).toBeInTheDocument();
+    expect(screen.getByText("Meu subtítulo")).toBeInTheDocument();
+
+    const cta = screen.getByRole("link", { name: "Ver drones" });
     expect(cta).toHaveAttribute("href", "/drones");
   });
 
-  it("mantém o CTA visível mesmo após erro no vídeo (positivo)", () => {
-    // Arrange
-    const { container } = render(<HeroSection />);
-    const video = getHeroVideo(container);
-    expect(video).toBeInTheDocument();
+  it("exibe fallback de imagem quando vídeo dispara erro", async () => {
+    mockFetchOk({
+      hero_video_url: "https://cdn.site.com/hero.mp4",
+      hero_image_url: "https://cdn.site.com/hero.jpg",
+    });
 
-    // Act
-    fireEvent.error(video!);
+    render(<HeroSection />);
 
-    // Assert
-    const cta = screen.getByRole("link", { name: /Saiba Mais/i });
-    expect(cta).toBeInTheDocument();
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+
+    const video = document.querySelector("video") as HTMLVideoElement;
+    expect(video).toBeTruthy();
+
+    fireEvent.error(video);
+
+    await waitFor(() => {
+      const bg = document.querySelector(
+        'div[style*="background-image"]'
+      ) as HTMLDivElement | null;
+
+      expect(bg).toBeTruthy();
+      expect(bg?.getAttribute("style") || "").toContain("hero.jpg");
+    });
+  });
+
+  it("mantém defaults quando backend falha", async () => {
+    mockFetchNotOk();
+
+    render(<HeroSection />);
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByText(/Revolucione sua/i)).toBeInTheDocument();
+
+    const cta = screen.getByRole("link", { name: "Saiba Mais" });
     expect(cta).toHaveAttribute("href", "/drones");
+  });
+
+  it("normalizeHref: adiciona '/' quando necessário", async () => {
+    mockFetchOk({
+      button_label: "Ir",
+      button_href: "drones",
+    });
+
+    render(<HeroSection />);
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+
+    const cta = screen.getByRole("link", { name: "Ir" });
+    expect(cta).toHaveAttribute("href", "/drones");
+  });
+
+  it("chama fetch com endpoint correto", async () => {
+    mockFetchOk({});
+
+    render(<HeroSection />);
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+
+    const [url, init] = (global.fetch as any).mock.calls[0];
+
+    expect(url).toBe("http://localhost:5000/api/public/site-hero");
+    expect(init).toMatchObject({ method: "GET", cache: "no-store" });
   });
 });

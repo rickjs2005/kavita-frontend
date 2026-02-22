@@ -1,12 +1,13 @@
+// src/__tests__/components/AddToCartButton.test.tsx
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AddToCartButton from "@/components/buttons/AddToCartButton";
 
 const resolveStockValueMock = vi.fn();
 vi.mock("../../utils/stock", () => ({
-  resolveStockValue: (...args: any[]) => resolveStockValueMock(...args),
+  resolveStockValue: (...args: unknown[]) => resolveStockValueMock(...args),
 }));
 
 // Mock do CartContext
@@ -20,13 +21,20 @@ vi.mock("@/context/CartContext", () => ({
   }),
 }));
 
-function makeProduct(overrides: Record<string, any> = {}) {
+type TestProduct = {
+  id: number;
+  name: string;
+  price: number;
+  stock?: number;
+} & Record<string, unknown>;
+
+function makeProduct(overrides: Partial<TestProduct> = {}): TestProduct {
   return {
     id: 123,
     name: "Produto Teste",
     price: 10,
     ...overrides,
-  } as any;
+  };
 }
 
 describe("AddToCartButton", () => {
@@ -39,7 +47,7 @@ describe("AddToCartButton", () => {
   it("renderiza texto padrão e fica habilitado quando há estoque (positivo)", () => {
     const product = makeProduct({ stock: 10 });
 
-    render(<AddToCartButton product={product} />);
+    render(<AddToCartButton product={product as never} />);
 
     const btn = screen.getByRole("button", { name: /adicionar ao carrinho/i });
     expect(btn).toBeInTheDocument();
@@ -52,7 +60,7 @@ describe("AddToCartButton", () => {
     resolveStockValueMock.mockReturnValue(0);
 
     const product = makeProduct({ stock: 0 });
-    render(<AddToCartButton product={product} />);
+    render(<AddToCartButton product={product as never} />);
 
     const btn = screen.getByRole("button", { name: /esgotado/i });
     expect(btn).toBeDisabled();
@@ -64,7 +72,7 @@ describe("AddToCartButton", () => {
     const user = userEvent.setup();
     const product = makeProduct({ stock: 10 });
 
-    render(<AddToCartButton product={product} qty={3} />);
+    render(<AddToCartButton product={product as never} qty={3} />);
 
     await user.click(screen.getByRole("button", { name: /adicionar ao carrinho/i }));
 
@@ -83,7 +91,7 @@ describe("AddToCartButton", () => {
     const user = userEvent.setup();
     const product = makeProduct({ stock: 10 });
 
-    render(<AddToCartButton product={product} qty={2} />);
+    render(<AddToCartButton product={product as never} qty={2} />);
 
     await user.click(screen.getByRole("button", { name: /adicionar ao carrinho/i }));
 
@@ -96,7 +104,7 @@ describe("AddToCartButton", () => {
     const user = userEvent.setup();
     const product = makeProduct({ stock: 10 });
 
-    render(<AddToCartButton product={product} disabled />);
+    render(<AddToCartButton product={product as never} disabled />);
 
     const btn = screen.getByRole("button", { name: /adicionar ao carrinho/i });
     expect(btn).toBeDisabled();
@@ -113,7 +121,7 @@ describe("AddToCartButton", () => {
     const user = userEvent.setup();
     const product = makeProduct({ stock: 0 });
 
-    render(<AddToCartButton product={product} />);
+    render(<AddToCartButton product={product as never} />);
 
     const btn = screen.getByRole("button", { name: /esgotado/i });
     expect(btn).toBeDisabled();
@@ -129,13 +137,31 @@ describe("AddToCartButton", () => {
     const parentClick = vi.fn();
     const product = makeProduct({ stock: 10 });
 
+    // ✅ Ajuste para satisfazer jsx-a11y:
+    // - elemento com onClick precisa de suporte a teclado
+    // - se não for nativo, precisa role + tabIndex + handlers
+    const onParentKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+      if (e.key === "Enter" || e.key === " ") parentClick();
+    };
+
     render(
-      <div onClick={parentClick}>
-        <AddToCartButton product={product} />
+      <div
+        role="button"
+        aria-label="container-pai"
+        tabIndex={0}
+        onClick={parentClick}
+        onKeyDown={onParentKeyDown}
+      >
+        <AddToCartButton product={product as never} />
       </div>
     );
 
-    await user.click(screen.getByRole("button", { name: /adicionar ao carrinho/i }));
+    // ⚠️ Há 2 "buttons" agora (o div role=button e o button real).
+    // Então fazemos scope no container pai.
+    const parent = screen.getByRole("button", { name: /container-pai/i });
+    const btn = within(parent).getByRole("button", { name: /adicionar ao carrinho/i });
+
+    await user.click(btn);
 
     expect(parentClick).not.toHaveBeenCalled();
     expect(addToCartMock).toHaveBeenCalledTimes(1);
@@ -144,7 +170,7 @@ describe("AddToCartButton", () => {
   it("exponha aria-disabled quando disabled=true (a11y/semântica) (positivo/controle)", () => {
     const product = makeProduct({ stock: 10 });
 
-    render(<AddToCartButton product={product} disabled />);
+    render(<AddToCartButton product={product as never} disabled />);
 
     const btn = screen.getByRole("button", { name: /adicionar ao carrinho/i });
     // no seu componente: aria-disabled={loading || disabled || isOut || undefined}
@@ -154,7 +180,7 @@ describe("AddToCartButton", () => {
   it("concatena className no container raiz (positivo/controle)", () => {
     const product = makeProduct({ stock: 10 });
 
-    render(<AddToCartButton product={product} className="minha-classe" />);
+    render(<AddToCartButton product={product as never} className="minha-classe" />);
 
     const btn = screen.getByRole("button", { name: /adicionar ao carrinho/i });
     expect(btn.className).toContain("minha-classe");

@@ -132,23 +132,47 @@ export function mockObjectUrl() {
 type MockFetchOpts = {
   ok: boolean;
   status: number;
+
+  // ✅ novo: statusText (pra simular res.statusText do fetch real)
+  statusText?: string;
+
+  // mantém compatibilidade com o seu helper atual
   contentType?: string;
+
+  // ✅ novo: headers extras (ex: x-request-id)
+  headers?: Record<string, string>;
+
+  // payloads
   json?: any;
   text?: string;
+
+  // ✅ novo: simular falha de JSON (payload não-JSON)
+  jsonThrows?: boolean;
 };
 
 /**
- * Helper para montar Response-like, suficiente para .ok/.status/.headers/.json()/.text()
+ * Helper para montar Response-like, suficiente para .ok/.status/.statusText/.headers/.json()/.text()
  */
 export function makeFetchResponse(opts: MockFetchOpts): Response {
   const headers = new Headers();
+
+  // compat antigo
   if (opts.contentType) headers.set("content-type", opts.contentType);
+
+  // novo: headers extras
+  if (opts.headers) {
+    for (const [k, v] of Object.entries(opts.headers)) {
+      headers.set(k, v);
+    }
+  }
 
   const res = {
     ok: opts.ok,
     status: opts.status,
+    statusText: opts.statusText ?? "",
     headers,
     async json() {
+      if (opts.jsonThrows) throw new Error("Invalid JSON");
       return opts.json ?? {};
     },
     async text() {
@@ -157,4 +181,17 @@ export function makeFetchResponse(opts: MockFetchOpts): Response {
   };
 
   return res as unknown as Response;
+}
+
+/**
+ * ✅ novo: util pra comparar headers em testes (Headers -> objeto)
+ * Ex:
+ *   const [, init] = fetchMock.mock.calls[0];
+ *   expect(headersToObject(init.headers)).toMatchObject({ "content-type": "application/json" });
+ */
+export function headersToObject(h: any): Record<string, string> {
+  if (!h) return {};
+  if (h instanceof Headers) return Object.fromEntries(h.entries());
+  if (typeof h === "object") return { ...h };
+  return {};
 }

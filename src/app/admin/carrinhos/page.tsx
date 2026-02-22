@@ -233,9 +233,7 @@ function ItemsTable({ itens }: { itens: AbandonedCartItem[] }) {
           >
             <div className="min-w-0">
               <div className="truncate font-medium text-slate-100">{i.produto}</div>
-              {i.produto_id ? (
-                <div className="text-[11px] text-slate-500">ID: {i.produto_id}</div>
-              ) : null}
+              {i.produto_id ? <div className="text-[11px] text-slate-500">ID: {i.produto_id}</div> : null}
             </div>
             <div className="text-right text-slate-200">{Number(i.quantidade || 0)}</div>
             <div className="text-right text-slate-200">{money(i.preco_unitario || 0)}</div>
@@ -264,7 +262,12 @@ export default function AdminCarrinhosAbandonadosPage() {
 
   const goBack = () => {
     try {
-      window.history.length > 1 ? router.back() : router.push("/admin");
+      // ✅ FIX lint: nada de ternário solto (unused-expressions)
+      if (window.history.length > 1) {
+        router.back();
+      } else {
+        router.push("/admin");
+      }
     } catch {
       router.push("/admin");
     }
@@ -497,12 +500,7 @@ export default function AdminCarrinhosAbandonadosPage() {
             helper="Prioridade para contato"
             variant="warning"
           />
-          <KpiCard
-            label="Recuperados"
-            value={recuperados.length}
-            helper="Marcados como recuperados"
-            variant="success"
-          />
+          <KpiCard label="Recuperados" value={recuperados.length} helper="Marcados como recuperados" variant="success" />
           <KpiCard
             label="Total estimado (não recuperados)"
             value={money(totalNaoRecuperados)}
@@ -601,9 +599,7 @@ export default function AdminCarrinhosAbandonadosPage() {
                             <div className="px-4 py-4">
                               <div className="flex items-center justify-between gap-3">
                                 <div className="min-w-0">
-                                  <div className="text-xs font-medium text-slate-100">
-                                    {resumoItens(c.itens)}
-                                  </div>
+                                  <div className="text-xs font-medium text-slate-100">{resumoItens(c.itens)}</div>
                                   <div className="mt-1 text-[11px] text-slate-500">
                                     Clique em “Ver itens” para detalhes completos.
                                   </div>
@@ -667,7 +663,8 @@ export default function AdminCarrinhosAbandonadosPage() {
                                     Itens do carrinho #{c.carrinho_id}
                                   </div>
                                   <div className="mt-1 text-xs text-slate-400">
-                                    Total estimado: <span className="font-semibold text-slate-200">{money(c.total_estimado)}</span>
+                                    Total estimado:{" "}
+                                    <span className="font-semibold text-slate-200">{money(c.total_estimado)}</span>
                                   </div>
                                 </div>
 
@@ -719,9 +716,7 @@ export default function AdminCarrinhosAbandonadosPage() {
                         </div>
 
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-50">
-                            {c.usuario_nome || "Visitante"}
-                          </p>
+                          <p className="truncate text-sm font-semibold text-slate-50">{c.usuario_nome || "Visitante"}</p>
                           <p className="mt-0.5 text-[11px] text-slate-400">{formatDate(c.criado_em)}</p>
 
                           {c.usuario_telefone ? (
