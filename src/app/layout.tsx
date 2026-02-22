@@ -5,7 +5,6 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
 import Header from "../components/layout/Header";
-import Analytics from "@/components/Analytics";
 
 import { fetchPublicCategories } from "@/server/data/categories";
 import { fetchPublicShopSettings } from "@/server/data/shopSettings";
@@ -44,8 +43,6 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR">
       <body className="min-h-screen bg-white text-gray-900 antialiased">
-        <Analytics />
-
         <AuthProvider>
           <CartProvider>
             <Header categories={categories} shop={shop} />

@@ -1,7 +1,7 @@
 // src/__tests__/components/AddToCartButton.test.tsx
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AddToCartButton from "@/components/buttons/AddToCartButton";
 
@@ -141,18 +141,27 @@ describe("AddToCartButton", () => {
     // - elemento com onClick precisa de suporte a teclado
     // - se não for nativo, precisa role + tabIndex + handlers
     const onParentKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        parentClick();
-      }
+      if (e.key === "Enter" || e.key === " ") parentClick();
     };
 
     render(
-      <div role="button" tabIndex={0} onClick={parentClick} onKeyDown={onParentKeyDown}>
+      <div
+        role="button"
+        aria-label="container-pai"
+        tabIndex={0}
+        onClick={parentClick}
+        onKeyDown={onParentKeyDown}
+      >
         <AddToCartButton product={product as never} />
       </div>
     );
 
-    await user.click(screen.getByRole("button", { name: /adicionar ao carrinho/i }));
+    // ⚠️ Há 2 "buttons" agora (o div role=button e o button real).
+    // Então fazemos scope no container pai.
+    const parent = screen.getByRole("button", { name: /container-pai/i });
+    const btn = within(parent).getByRole("button", { name: /adicionar ao carrinho/i });
+
+    await user.click(btn);
 
     expect(parentClick).not.toHaveBeenCalled();
     expect(addToCartMock).toHaveBeenCalledTimes(1);
