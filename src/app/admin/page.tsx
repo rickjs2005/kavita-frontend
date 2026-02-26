@@ -612,9 +612,8 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className={`md:hidden flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-900/40 ${
-                isMobileMenuOpen ? "hidden" : "flex"
-              }`}
+              className={`md:hidden flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-900/40 ${isMobileMenuOpen ? "hidden" : "flex"
+                }`}
               aria-label="Abrir menu do painel"
             >
               <span className="sr-only">Abrir menu</span>
@@ -652,14 +651,11 @@ export default function AdminDashboardPage() {
           <div className="relative ml-0 flex h-full w-4/5 max-w-xs flex-col bg-slate-950/95 shadow-xl shadow-black/60">
             <div className="flex items-center justify-between border-b border-slate-800 px-3 py-2">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Menu</p>
-              <button
-                type="button"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <CloseButton
+                onClose={() => setIsMobileMenuOpen(false)}
                 className="ml-auto"
                 aria-label="Fechar menu"
-              >
-                <CloseButton />
-              </button>
+              />
             </div>
 
             <div className="flex-1 overflow-y-auto">
