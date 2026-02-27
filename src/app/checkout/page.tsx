@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useEffect, useState, useCallback } from "react";
-import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -14,8 +13,8 @@ import { useCart } from "@/context/CartContext";
 import { useCheckoutForm } from "@/hooks/useCheckoutForm";
 import CloseButton from "@/components/buttons/CloseButton";
 import LoadingButton from "@/components/buttons/LoadingButton";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { apiClient } from "@/lib/apiClient";
+import { ENDPOINTS } from "@/services/api/endpoints";
 
 interface CheckoutResponse {
   pedido_id: number;
@@ -251,10 +250,10 @@ export default function CheckoutPage() {
         const results = await Promise.all(
           uniqueIds.map(async (id) => {
             try {
-              const res = await axios.get<ProductPromotion>(`${API_BASE}/api/public/promocoes/${id}`);
-              return { id, promo: res.data };
+              const res = await apiClient.get<ProductPromotion>(ENDPOINTS.PRODUCTS.PROMOTIONS(id));
+              return { id, promo: res };
             } catch (err: any) {
-              if (err?.response?.status === 404) return { id, promo: null };
+              if (err?.status === 404) return { id, promo: null };
               return { id, promo: null };
             }
           })
@@ -398,15 +397,12 @@ export default function CheckoutPage() {
         setAddressesLoading(true);
         setAddressesError(null);
 
-        const res = await axios.get(`${API_BASE}/api/users/addresses`, {
-          withCredentials: true,
-        });
+        const list = await apiClient.get<SavedAddress[]>(ENDPOINTS.USERS.ADDRESSES);
+        const normalizedList: SavedAddress[] = Array.isArray(list) ? list : [];
+        setSavedAddresses(normalizedList);
 
-        const list: SavedAddress[] = Array.isArray(res.data) ? res.data : [];
-        setSavedAddresses(list);
-
-        if (list.length > 0) {
-          const preferred = list.find((a: any) => Number(a.is_default) === 1) || list[0];
+        if (normalizedList.length > 0) {
+          const preferred = normalizedList.find((a) => Number(a.is_default) === 1) || normalizedList[0];
           setSelectedAddressId(Number(preferred.id));
           setShowNewAddressForm(false);
 
@@ -520,31 +516,27 @@ export default function CheckoutPage() {
           items: JSON.stringify(itemsPayload),
         });
 
-        const res = await fetch(`${API_BASE}/api/shipping/quote?${params.toString()}`, {
-          method: "GET",
-          credentials: "include",
-        });
+        try {
+          const data = await apiClient.get<ShippingQuote>(
+            `${ENDPOINTS.SHIPPING.QUOTE}?${params.toString()}`
+          );
+          if (aborted) return;
 
-        if (!res.ok) {
-          const data = await res.json().catch(() => null);
-          const msg =
-            data?.message || (res.status === 404 ? "CEP sem cobertura." : "Não foi possível calcular o frete.");
+          setShippingQuote({
+            cep: String(data?.cep || cepDigits),
+            price: Number(data?.price || 0),
+            prazo_dias: Number(data?.prazo_dias || 0),
+            ruleApplied: (data?.ruleApplied as ShippingRuleApplied) || undefined,
+          });
+        } catch (err: any) {
           if (!aborted) {
+            const msg =
+              err?.message ||
+              (err?.status === 404 ? "CEP sem cobertura." : "Não foi possível calcular o frete.");
             setShippingQuote(null);
             setShippingError(msg);
           }
-          return;
         }
-
-        const data = await res.json();
-        if (aborted) return;
-
-        setShippingQuote({
-          cep: String(data?.cep || cepDigits),
-          price: Number(data?.price || 0),
-          prazo_dias: Number(data?.prazo_dias || 0),
-          ruleApplied: (data?.ruleApplied as ShippingRuleApplied) || undefined,
-        });
       } catch {
         if (!aborted) {
           setShippingQuote(null);
@@ -660,13 +652,12 @@ export default function CheckoutPage() {
       setCouponError(null);
       setCouponMessage(null);
 
-      const { data } = await axios.post<CouponPreviewResponse>(
-        `${API_BASE}/api/checkout/preview-cupom`,
+      const data = await apiClient.post<CouponPreviewResponse>(
+        ENDPOINTS.CHECKOUT.PREVIEW_COUPON,
         {
           codigo: couponCode.trim(),
           total: subtotalAtual,
-        },
-        { withCredentials: true }
+        }
       );
 
       if (!data?.success) {
@@ -685,8 +676,7 @@ export default function CheckoutPage() {
       setCouponError(null);
       toast.success(msg);
     } catch (err: any) {
-      const msgBackend = err?.response?.data?.message;
-      const msg = msgBackend || "Não foi possível aplicar este cupom.";
+      const msg = err?.message || "Não foi possível aplicar este cupom.";
       setDiscount(0);
       setCouponError(msg);
       toast.error(msg);
@@ -766,9 +756,7 @@ export default function CheckoutPage() {
     try {
       setSubmitting(true);
 
-      const { data } = await axios.post<CheckoutResponse>(`${API_BASE}/api/checkout`, payload, {
-        withCredentials: true,
-      });
+      const data = await apiClient.post<CheckoutResponse>(ENDPOINTS.CHECKOUT.PLACE_ORDER, payload);
 
       const pedidoId = data.pedido_id;
 
@@ -795,13 +783,12 @@ export default function CheckoutPage() {
       const isGatewayPayment = ["mercadopago", "pix", "boleto"].includes(payload.formaPagamento);
 
       if (isGatewayPayment) {
-        const res = await axios.post<PaymentResponse>(
-          `${API_BASE}/api/payment/start`,
-          { pedidoId },
-          { withCredentials: true }
+        const paymentData = await apiClient.post<PaymentResponse>(
+          ENDPOINTS.PAYMENT.START,
+          { pedidoId }
         );
 
-        const initPoint = res.data?.init_point || res.data?.sandbox_init_point || null;
+        const initPoint = paymentData?.init_point || paymentData?.sandbox_init_point || null;
 
         clearCart?.();
 
@@ -818,8 +805,8 @@ export default function CheckoutPage() {
       toast.success("Pedido criado com sucesso!");
       router.push(`/pedidos/${pedidoId}`);
     } catch (err: any) {
-      const status = err?.response?.status;
-      const msgBackend = err?.response?.data?.message as string | undefined;
+      const status = err?.status;
+      const msgBackend = err?.message as string | undefined;
 
       if (status === 401 || status === 403 || (msgBackend && msgBackend.toLowerCase().includes("token"))) {
         toast.error(msgBackend || "Sua sessão expirou. Faça login novamente para finalizar a compra.");
