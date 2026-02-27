@@ -25,18 +25,18 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
-// axios
-const axiosGetMock = vi.fn();
-const axiosPostMock = vi.fn();
-const axiosPutMock = vi.fn();
-const axiosDeleteMock = vi.fn();
+// apiClient
+const apiClientGetMock = vi.fn();
+const apiClientPostMock = vi.fn();
+const apiClientPutMock = vi.fn();
+const apiClientDelMock = vi.fn();
 
-vi.mock("axios", () => ({
-  default: {
-    get: (...args: any[]) => axiosGetMock(...args),
-    post: (...args: any[]) => axiosPostMock(...args),
-    put: (...args: any[]) => axiosPutMock(...args),
-    delete: (...args: any[]) => axiosDeleteMock(...args),
+vi.mock("@/lib/apiClient", () => ({
+  apiClient: {
+    get: (...args: any[]) => apiClientGetMock(...args),
+    post: (...args: any[]) => apiClientPostMock(...args),
+    put: (...args: any[]) => apiClientPutMock(...args),
+    del: (...args: any[]) => apiClientDelMock(...args),
   },
 }));
 
@@ -49,10 +49,8 @@ async function flushPromises() {
   await Promise.resolve();
 }
 
-async function importHookWithEnv(apiBase: string) {
-  // API_BASE é calculado no load do módulo: setar env antes do import
+async function importHook() {
   vi.resetModules();
-  process.env.NEXT_PUBLIC_API_URL = apiBase;
 
   const mod = await import("@/hooks/useUserAddresses");
   return mod.useUserAddresses;
@@ -69,7 +67,6 @@ describe("useUserAddresses (hook)", () => {
 
   it("AAA: estado inicial: loading true, addresses vazio; após GET sucesso, popula e loading false", async () => {
     // Arrange
-    const apiBase = "http://api.test";
     const apiResponse = [
       {
         id: 1,
@@ -87,9 +84,9 @@ describe("useUserAddresses (hook)", () => {
       },
     ];
 
-    axiosGetMock.mockResolvedValueOnce({ data: apiResponse });
+    apiClientGetMock.mockResolvedValueOnce(apiResponse);
 
-    const useUserAddresses = await importHookWithEnv(apiBase);
+    const useUserAddresses = await importHook();
 
     // Act
     const { result } = renderHook(() => useUserAddresses());
@@ -104,24 +101,19 @@ describe("useUserAddresses (hook)", () => {
     });
 
     // Assert (depois do GET)
-    expect(axiosGetMock).toHaveBeenCalledTimes(1);
-    expect(axiosGetMock).toHaveBeenCalledWith(`${apiBase}/api/users/addresses`, {
-      withCredentials: true,
-    });
+    expect(apiClientGetMock).toHaveBeenCalledTimes(1);
+    expect(apiClientGetMock).toHaveBeenCalledWith("/api/users/addresses");
 
     expect(result.current.addresses).toEqual(apiResponse);
     expect(result.current.loading).toBe(false);
     expect(toastErrorMock).not.toHaveBeenCalled();
   });
 
-  it("AAA: GET falha: mostra toast.error com mensagem do backend (mensagem/message) e loading volta para false", async () => {
+  it("AAA: GET falha: mostra toast.error com mensagem do backend e loading volta para false", async () => {
     // Arrange
-    const apiBase = "http://api.test";
-    axiosGetMock.mockRejectedValueOnce({
-      response: { data: { mensagem: "Sessão expirada" } },
-    });
+    apiClientGetMock.mockRejectedValueOnce({ message: "Sessão expirada" });
 
-    const useUserAddresses = await importHookWithEnv(apiBase);
+    const useUserAddresses = await importHook();
 
     // Act
     const { result } = renderHook(() => useUserAddresses());
@@ -131,7 +123,7 @@ describe("useUserAddresses (hook)", () => {
     });
 
     // Assert
-    expect(axiosGetMock).toHaveBeenCalledTimes(1);
+    expect(apiClientGetMock).toHaveBeenCalledTimes(1);
     expect(toastErrorMock).toHaveBeenCalledTimes(1);
     expect(toastErrorMock).toHaveBeenCalledWith("Sessão expirada");
     expect(result.current.loading).toBe(false);
@@ -139,10 +131,9 @@ describe("useUserAddresses (hook)", () => {
     expect(result.current.addresses).toEqual([]);
   });
 
-  it("AAA: createAddress sucesso: POST com withCredentials, adiciona no state e toast.success", async () => {
+  it("AAA: createAddress sucesso: POST, adiciona no state e toast.success", async () => {
     // Arrange
-    const apiBase = "http://api.test";
-    axiosGetMock.mockResolvedValueOnce({ data: [] });
+    apiClientGetMock.mockResolvedValueOnce([]);
 
     const created = {
       id: 99,
@@ -159,9 +150,9 @@ describe("useUserAddresses (hook)", () => {
       is_default: 0,
     };
 
-    axiosPostMock.mockResolvedValueOnce({ data: created });
+    apiClientPostMock.mockResolvedValueOnce(created);
 
-    const useUserAddresses = await importHookWithEnv(apiBase);
+    const useUserAddresses = await importHook();
 
     const { result } = renderHook(() => useUserAddresses());
 
@@ -187,12 +178,8 @@ describe("useUserAddresses (hook)", () => {
     });
 
     // Assert
-    expect(axiosPostMock).toHaveBeenCalledTimes(1);
-    expect(axiosPostMock).toHaveBeenCalledWith(
-      `${apiBase}/api/users/addresses`,
-      payload,
-      { withCredentials: true }
-    );
+    expect(apiClientPostMock).toHaveBeenCalledTimes(1);
+    expect(apiClientPostMock).toHaveBeenCalledWith("/api/users/addresses", payload);
 
     expect(result.current.addresses).toEqual([created]);
     expect(toastSuccessMock).toHaveBeenCalledTimes(1);
@@ -203,13 +190,12 @@ describe("useUserAddresses (hook)", () => {
 
   it("AAA: createAddress falha: toast.error, relança erro (throw)", async () => {
     // Arrange
-    const apiBase = "http://api.test";
-    axiosGetMock.mockResolvedValueOnce({ data: [] });
+    apiClientGetMock.mockResolvedValueOnce([]);
 
-    const err = { response: { data: { message: "Falha ao salvar" } } };
-    axiosPostMock.mockRejectedValueOnce(err);
+    const err = { message: "Falha ao salvar" };
+    apiClientPostMock.mockRejectedValueOnce(err);
 
-    const useUserAddresses = await importHookWithEnv(apiBase);
+    const useUserAddresses = await importHook();
     const { result } = renderHook(() => useUserAddresses());
 
     await act(async () => {
@@ -236,10 +222,8 @@ describe("useUserAddresses (hook)", () => {
     expect(toastErrorMock).toHaveBeenCalledWith("Falha ao salvar");
   });
 
-  it("AAA: updateAddress sucesso: PUT com withCredentials, substitui item por id e toast.success", async () => {
+  it("AAA: updateAddress sucesso: PUT, substitui item por id e toast.success", async () => {
     // Arrange
-    const apiBase = "http://api.test";
-
     const initial = [
       {
         id: 1,
@@ -271,12 +255,12 @@ describe("useUserAddresses (hook)", () => {
       },
     ];
 
-    axiosGetMock.mockResolvedValueOnce({ data: initial });
+    apiClientGetMock.mockResolvedValueOnce(initial);
 
     const updated = { ...initial[1], bairro: "Novo Bairro" };
-    axiosPutMock.mockResolvedValueOnce({ data: updated });
+    apiClientPutMock.mockResolvedValueOnce(updated);
 
-    const useUserAddresses = await importHookWithEnv(apiBase);
+    const useUserAddresses = await importHook();
     const { result } = renderHook(() => useUserAddresses());
 
     await act(async () => {
@@ -296,11 +280,10 @@ describe("useUserAddresses (hook)", () => {
     });
 
     // Assert
-    expect(axiosPutMock).toHaveBeenCalledTimes(1);
-    expect(axiosPutMock).toHaveBeenCalledWith(
-      `${apiBase}/api/users/addresses/2`,
-      expect.any(Object),
-      { withCredentials: true }
+    expect(apiClientPutMock).toHaveBeenCalledTimes(1);
+    expect(apiClientPutMock).toHaveBeenCalledWith(
+      "/api/users/addresses/2",
+      expect.any(Object)
     );
 
     expect(result.current.addresses).toEqual([initial[0], updated]);
@@ -311,13 +294,12 @@ describe("useUserAddresses (hook)", () => {
 
   it("AAA: updateAddress falha: toast.error e relança erro", async () => {
     // Arrange
-    const apiBase = "http://api.test";
-    axiosGetMock.mockResolvedValueOnce({ data: [] });
+    apiClientGetMock.mockResolvedValueOnce([]);
 
-    const err = { response: { data: { mensagem: "Falha ao atualizar" } } };
-    axiosPutMock.mockRejectedValueOnce(err);
+    const err = { message: "Falha ao atualizar" };
+    apiClientPutMock.mockRejectedValueOnce(err);
 
-    const useUserAddresses = await importHookWithEnv(apiBase);
+    const useUserAddresses = await importHook();
     const { result } = renderHook(() => useUserAddresses());
 
     await act(async () => {
@@ -345,10 +327,8 @@ describe("useUserAddresses (hook)", () => {
     expect(toastErrorMock).toHaveBeenCalledWith("Falha ao atualizar");
   });
 
-  it("AAA: deleteAddress sucesso: DELETE com withCredentials, remove do state e toast.success", async () => {
+  it("AAA: deleteAddress sucesso: DELETE, remove do state e toast.success", async () => {
     // Arrange
-    const apiBase = "http://api.test";
-
     const initial = [
       {
         id: 1,
@@ -380,10 +360,10 @@ describe("useUserAddresses (hook)", () => {
       },
     ];
 
-    axiosGetMock.mockResolvedValueOnce({ data: initial });
-    axiosDeleteMock.mockResolvedValueOnce({});
+    apiClientGetMock.mockResolvedValueOnce(initial);
+    apiClientDelMock.mockResolvedValueOnce(undefined);
 
-    const useUserAddresses = await importHookWithEnv(apiBase);
+    const useUserAddresses = await importHook();
     const { result } = renderHook(() => useUserAddresses());
 
     await act(async () => {
@@ -396,11 +376,8 @@ describe("useUserAddresses (hook)", () => {
     });
 
     // Assert
-    expect(axiosDeleteMock).toHaveBeenCalledTimes(1);
-    expect(axiosDeleteMock).toHaveBeenCalledWith(
-      `${apiBase}/api/users/addresses/1`,
-      { withCredentials: true }
-    );
+    expect(apiClientDelMock).toHaveBeenCalledTimes(1);
+    expect(apiClientDelMock).toHaveBeenCalledWith("/api/users/addresses/1");
 
     expect(result.current.addresses).toEqual([initial[1]]);
     expect(toastSuccessMock).toHaveBeenCalledWith(
@@ -410,13 +387,12 @@ describe("useUserAddresses (hook)", () => {
 
   it("AAA: deleteAddress falha: toast.error e relança erro", async () => {
     // Arrange
-    const apiBase = "http://api.test";
-    axiosGetMock.mockResolvedValueOnce({ data: [] });
+    apiClientGetMock.mockResolvedValueOnce([]);
 
-    const err = { response: { data: { message: "Falha ao excluir" } } };
-    axiosDeleteMock.mockRejectedValueOnce(err);
+    const err = { message: "Falha ao excluir" };
+    apiClientDelMock.mockRejectedValueOnce(err);
 
-    const useUserAddresses = await importHookWithEnv(apiBase);
+    const useUserAddresses = await importHook();
     const { result } = renderHook(() => useUserAddresses());
 
     await act(async () => {
@@ -436,7 +412,6 @@ describe("useUserAddresses (hook)", () => {
 
   it("AAA: reload chama GET novamente e atualiza addresses", async () => {
     // Arrange
-    const apiBase = "http://api.test";
     const first = [
       {
         id: 1,
@@ -470,11 +445,9 @@ describe("useUserAddresses (hook)", () => {
       },
     ];
 
-    axiosGetMock.mockResolvedValueOnce({ data: first }).mockResolvedValueOnce({
-      data: second,
-    });
+    apiClientGetMock.mockResolvedValueOnce(first).mockResolvedValueOnce(second);
 
-    const useUserAddresses = await importHookWithEnv(apiBase);
+    const useUserAddresses = await importHook();
     const { result } = renderHook(() => useUserAddresses());
 
     await act(async () => {
@@ -490,7 +463,7 @@ describe("useUserAddresses (hook)", () => {
     });
 
     // Assert
-    expect(axiosGetMock).toHaveBeenCalledTimes(2);
+    expect(apiClientGetMock).toHaveBeenCalledTimes(2);
     expect(result.current.addresses).toEqual(second);
     expect(result.current.loading).toBe(false);
   });

@@ -5,9 +5,8 @@ import Link from "next/link";
 import type { Product } from "@/types/product";
 import ProductCard from "@/components/products/ProductCard";
 import { useAuth } from "@/context/AuthContext";
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { apiClient } from "@/lib/apiClient";
+import { ENDPOINTS } from "@/services/api/endpoints";
 
 export default function FavoritosPage() {
   const { user, loading: authLoading } = useAuth();
@@ -28,24 +27,9 @@ export default function FavoritosPage() {
 
     async function fetchFavorites() {
       try {
-        const res = await fetch(`${API_BASE}/api/favorites`, {
-          credentials: "include",
-          headers: {
-            Authorization: `Bearer ${user!}`, 
-          },
-        });
-
-        if (!res.ok) {
-          if (res.status === 401) {
-            setError("Faça login novamente para ver seus favoritos.");
-          } else {
-            setError("Não foi possível carregar seus favoritos.");
-          }
-          setLoading(false);
-          return;
-        }
-
-        const json = await res.json();
+        const json = await apiClient.get<Product[] | { data: Product[] }>(
+          ENDPOINTS.FAVORITES.LIST
+        );
 
         // aceita { data: [...] } ou [...]
         const data: Product[] = Array.isArray(json)
@@ -53,9 +37,13 @@ export default function FavoritosPage() {
           : ((json as any)?.data ?? []);
 
         setFavoritos(data ?? []);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Erro ao buscar favoritos:", err);
-        setError("Erro ao carregar seus favoritos.");
+        if (err?.status === 401) {
+          setError("Faça login novamente para ver seus favoritos.");
+        } else {
+          setError("Erro ao carregar seus favoritos.");
+        }
       } finally {
         setLoading(false);
       }

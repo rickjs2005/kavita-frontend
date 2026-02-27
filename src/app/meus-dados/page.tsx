@@ -8,8 +8,8 @@ import {
   formatCpfMask,
   formatPhoneMask,
 } from "@/utils/formatters";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { apiClient } from "@/lib/apiClient";
+import { ENDPOINTS } from "@/services/api/endpoints";
 
 type Perfil = {
   id: number;
@@ -72,18 +72,7 @@ export default function MeusDadosPage() {
 
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/users/me`, {
-          credentials: "include",
-        });
-        if (!res.ok) {
-          const j = await res.json().catch(() => ({}));
-          const msg =
-            (j as any)?.mensagem ||
-            (j as any)?.message ||
-            "Não foi possível carregar seus dados.";
-          throw new Error(msg);
-        }
-        const data = (await res.json()) as Perfil;
+        const data = await apiClient.get<Perfil>(ENDPOINTS.USERS.ME);
         if (alive) {
           setPerfil(data);
           setOriginal(data);
@@ -150,19 +139,7 @@ export default function MeusDadosPage() {
 
     try {
       setSaving(true);
-      const res = await fetch(`${API_BASE}/api/users/me`, {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(diff),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j?.mensagem || j?.message || "Não foi possível salvar.");
-      }
-      const updated = (await res.json()) as Perfil;
+      const updated = await apiClient.put<Perfil>(ENDPOINTS.USERS.ME, diff);
       setPerfil(updated);
       setOriginal(updated);
       toast.success("Seus dados foram salvos com sucesso! ✅");
