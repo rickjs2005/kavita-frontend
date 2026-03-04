@@ -46,7 +46,8 @@ async function fetchCsrfToken(baseUrl: string): Promise<string | null> {
       return token;
     } catch (err) {
       // backend ainda não implementou; não quebra o fluxo
-      console.warn("[apiClient] CSRF token indisponível (endpoint ausente ou erro de rede).", err);
+      const msg = err instanceof Error ? err.message : "erro desconhecido";
+      console.warn(`[apiClient] CSRF token indisponível (endpoint ausente ou erro de rede). ${msg}`);
       return null;
     } finally {
       _csrfInflight = null;

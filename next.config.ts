@@ -40,8 +40,11 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            // Política restritiva: apenas origens conhecidas; inline-scripts desabilitados.
-            // Ajuste 'connect-src' conforme os domínios reais do backend em produção.
+            // NOTE: 'unsafe-inline' is required by Next.js for CSS-in-JS and style injection.
+            // 'unsafe-eval' is required by Next.js dev mode and some React internals.
+            // These can be tightened further in production by using nonce-based CSP via middleware
+            // once inline scripts are migrated to external modules.
+            // This CSP still protects against third-party script injection and clickjacking.
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
