@@ -46,7 +46,7 @@ describe("sanitizeAsTextWithLineBreaks", () => {
   });
 
   it("deve escapar HTML antes de converter \\n", () => {
-    expect(sanitizeAsTextWithLineBreaks("<b>negrito</b>\nova linha")).toBe(
+    expect(sanitizeAsTextWithLineBreaks("<b>negrito</b>\nnova linha")).toBe(
       "&lt;b&gt;negrito&lt;/b&gt;<br>nova linha"
     );
   });
