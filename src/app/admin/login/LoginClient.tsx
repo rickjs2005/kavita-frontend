@@ -90,16 +90,9 @@ export default function LoginClient() {
       // NÃO guarda token em localStorage, nem seta cookie via JS.
       // O cookie HttpOnly já foi definido pelo backend.
 
-      // Mantemos apenas os dados de UX (role/nome/permissões)
+      // Mantemos apenas o nome para UX; role/permissions vêm sempre do servidor (server-truth).
       try {
-        localStorage.setItem("adminRole", data.admin.role);
         localStorage.setItem("adminNome", data.admin.nome);
-        if (Array.isArray(data.admin.permissions)) {
-          localStorage.setItem(
-            "adminPermissions",
-            JSON.stringify(data.admin.permissions)
-          );
-        }
       } catch {
         // ignore
       }
@@ -158,18 +151,21 @@ export default function LoginClient() {
           >
             Acesso Administrativo
           </h1>
-          {errMsg && (
-            <p
-              className="
-                mt-4 text-sm sm:text-[0.95rem]
-                text-red-300 bg-red-900/30 border border-red-500/40
-                rounded-lg px-3 py-2
-              "
-              role="alert"
-            >
-              {errMsg}
-            </p>
-          )}
+          {/* min-h reserva espaço fixo para evitar layout jump */}
+          <div className="min-h-[40px] mt-4">
+            {errMsg && (
+              <p
+                className="
+                  text-sm sm:text-[0.95rem]
+                  text-red-300 bg-red-900/30 border border-red-500/40
+                  rounded-lg px-3 py-2 break-words
+                "
+                role="alert"
+              >
+                {errMsg}
+              </p>
+            )}
+          </div>
         </header>
 
         <div className="mb-4">
@@ -232,7 +228,7 @@ export default function LoginClient() {
           className="
             w-full rounded-xl
             bg-[#2b7c7c] text-white font-semibold
-            py-3 text-base
+            h-11 leading-none
             hover:bg-[#256f6f] active:scale-[0.99]
             transition disabled:opacity-60 disabled:cursor-not-allowed
           "

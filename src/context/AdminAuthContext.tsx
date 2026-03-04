@@ -112,6 +112,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(true);
 
         try {
+          // P0-4 (server-truth): permissões e role SEMPRE vêm de /api/admin/me.
+          // Nunca leia adminRole / adminPermissions do localStorage — isso exporia
+          // o painel a XSS que eleva privilégios sem passar pelo servidor.
           const data = await apiClient.get<{
             id: number;
             nome: string;

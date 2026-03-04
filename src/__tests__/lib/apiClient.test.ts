@@ -73,6 +73,21 @@ function getFirstFetchCall() {
   return { url, init };
 }
 
+/** Returns the Nth fetch call (0-based index). */
+function getNthFetchCall(n: number) {
+  const calls = (globalThis.fetch as any)?.mock?.calls ?? [];
+  if (calls.length <= n) throw new Error(`fetch foi chamado apenas ${calls.length} vez(es), esperava ao menos ${n + 1}`);
+  const [url, init] = calls[n] as [string, RequestInit];
+  return { url, init };
+}
+
+/** Mock CSRF endpoint returning no token (simulates backend without /api/csrf-token). */
+function mockCsrfNotAvailable() {
+  (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+    makeResponse({ ok: false, status: 404, headers: {} })
+  );
+}
+
 function headerGet(headers: HeadersInit | undefined, key: string) {
   if (!headers) return null;
 
@@ -234,6 +249,9 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
     vi.resetModules();
     const { apiFetch } = await importClient();
 
+    // CSRF fetch happens first for POST (backend not available → silent fail)
+    mockCsrfNotAvailable();
+
     (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
       makeResponse({
         ok: true,
@@ -247,7 +265,8 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
 
     expect(result).toEqual({ created: true });
 
-    const { init } = getFirstFetchCall();
+    // calls[1] is the actual API call (calls[0] is the CSRF prefetch)
+    const { init } = getNthFetchCall(1);
     expect(init.method).toBe("POST");
     expect(init.body).toBe(JSON.stringify({ name: "Produto" }));
     expect(headerGet(init.headers, "content-type")).toBe("application/json");
@@ -438,6 +457,9 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
     vi.resetModules();
     const { apiFetch } = await importClient();
 
+    // CSRF fetch happens first for POST (backend not available → silent fail)
+    mockCsrfNotAvailable();
+
     (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
       makeResponse({
         ok: true,
@@ -451,7 +473,8 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
 
     await apiFetch("/api/test", { method: "POST", body, skipContentType: true });
 
-    const { init } = getFirstFetchCall();
+    // calls[1] is the actual API call (calls[0] is the CSRF prefetch)
+    const { init } = getNthFetchCall(1);
     expect(init.body).toBe(body);
     expect(headerGet(init.headers, "content-type")).toBeNull();
     expect(headerGet(init.headers, "accept")).toBe("application/json");
