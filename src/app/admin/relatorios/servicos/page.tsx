@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import {
   ResponsiveContainer,
   BarChart,
@@ -17,7 +17,6 @@ import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type EspecialidadeStats = {
   especialidade_id: number | null;
@@ -67,26 +66,18 @@ export default function RelatorioServicosPage() {
         setLoadingRanking(true);
         setError(null);
 
-        const config = { withCredentials: true as const }; // ✅ cookie HttpOnly
-
         const [resServicos, resRanking] = await Promise.all([
-          axios.get<ServicosResponse>(
-            `${API_BASE}/api/admin/relatorios/servicos`,
-            config
-          ),
-          axios.get<ServicosRankingResponse>(
-            `${API_BASE}/api/admin/relatorios/servicos-ranking`,
-            config
-          ),
+          apiClient.get<ServicosResponse>('/api/admin/relatorios/servicos'),
+          apiClient.get<ServicosRankingResponse>('/api/admin/relatorios/servicos-ranking'),
         ]);
 
-        setData(resServicos.data);
-        setRanking(resRanking.data);
+        setData(resServicos);
+        setRanking(resRanking);
       } catch (err: any) {
         console.error(err);
 
         let msg = "Não foi possível carregar o relatório de serviços.";
-          if (err.response.status === 401 || err.response.status === 403) {
+          if (err?.status === 401 || err?.status === 403) {
             msg =
               "Sessão expirada ou sem permissão. Faça login novamente no admin.";
           }

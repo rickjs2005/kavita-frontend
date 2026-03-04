@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import CustomButton from "@/components/buttons/CustomButton";
 import DeleteButton from "@/components/buttons/DeleteButton";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type AdminUser = {
   id: number;
@@ -60,18 +58,13 @@ export default function AdminClientesPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await axios.get<AdminUser[]>(
-          `${API_BASE}/api/admin/users`,
-          {
-            withCredentials: true, // 🔐 Cookie HttpOnly
-          }
-        );
+        const data = await apiClient.get<AdminUser[]>("/api/admin/users");
 
-        setList(res.data ?? []);
+        setList(data ?? []);
       } catch (err: any) {
         console.error(err);
 
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
+        if (err?.status === 401 || err?.status === 403) {
           toast.error("Sessão expirada. Faça login novamente.");
           router.push("/admin/login");
           return;
@@ -102,16 +95,14 @@ export default function AdminClientesPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`${API_BASE}/api/admin/users/${id}`, {
-        withCredentials: true, // 🔐 Cookie HttpOnly
-      });
+      await apiClient.del(`/api/admin/users/${id}`);
 
       setList((prev) => prev.filter((u) => u.id !== id));
       toast.success("Cliente removido com sucesso.");
     } catch (err: any) {
       console.error(err);
 
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
+      if (err?.status === 401 || err?.status === 403) {
         toast.error("Sessão expirada. Faça login novamente.");
         router.push("/admin/login");
         return;

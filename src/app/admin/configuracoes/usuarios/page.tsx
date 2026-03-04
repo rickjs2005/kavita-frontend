@@ -7,9 +7,7 @@ import { toast } from "react-hot-toast";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useAdminRouteGuard } from "@/hooks/useAdminRouteGuard";
 import CloseButton from "@/components/buttons/CloseButton";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const API_URL = `${API_BASE}/api`;
+import apiClient from "@/lib/apiClient";
 
 // Gera um slug bonitinho a partir do nome do papel
 function slugify(value: string) {
@@ -78,34 +76,10 @@ export default function AdminUserPermissionsConfigPage() {
       setErrorMsg(null);
 
       try {
-        const [rolesRes, permsRes] = await Promise.all([
-          fetch(`${API_URL}/admin/roles`, { credentials: "include" }),
-          fetch(`${API_URL}/admin/permissions`, { credentials: "include" }),
+        const [rolesData, permsData] = await Promise.all([
+          apiClient.get<any>("/api/admin/roles"),
+          apiClient.get<Permission[]>("/api/admin/permissions"),
         ]);
-
-        if (
-          rolesRes.status === 401 ||
-          rolesRes.status === 403 ||
-          permsRes.status === 401 ||
-          permsRes.status === 403
-        ) {
-          toast.error("Sessão expirada. Faça login novamente.");
-          logout();
-          router.replace("/admin/login");
-          return;
-        }
-
-        if (!rolesRes.ok) {
-          const data = await rolesRes.json().catch(() => null);
-          throw new Error(data?.message || "Erro ao buscar papéis");
-        }
-        if (!permsRes.ok) {
-          const data = await permsRes.json().catch(() => null);
-          throw new Error(data?.message || "Erro ao buscar permissões");
-        }
-
-        const rolesData = await rolesRes.json();
-        const permsData: Permission[] = await permsRes.json();
 
         const mappedRoles: Role[] = Array.isArray(rolesData)
           ? rolesData.map((r: any) => ({
@@ -130,6 +104,12 @@ export default function AdminUserPermissionsConfigPage() {
         setPermissions(permsData);
       } catch (err: any) {
         console.error(err);
+        if (err?.status === 401 || err?.status === 403) {
+          toast.error("Sessão expirada. Faça login novamente.");
+          logout();
+          router.replace("/admin/login");
+          return;
+        }
         setErrorMsg(
           err?.message ||
             "Não foi possível carregar papéis e permissões no momento."
@@ -199,32 +179,14 @@ export default function AdminUserPermissionsConfigPage() {
 
     setCreatingRole(true);
     try {
-      const res = await fetch(`${API_URL}/admin/roles`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: nome,
-          nome,
-          slug,
-          description: descricao || undefined,
-          descricao: descricao || undefined,
-        }),
+      const created = await apiClient.post<any>("/api/admin/roles", {
+        name: nome,
+        nome,
+        slug,
+        description: descricao || undefined,
+        descricao: descricao || undefined,
       });
 
-      if (res.status === 401 || res.status === 403) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        logout();
-        router.replace("/admin/login");
-        return;
-      }
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Erro ao criar papel");
-      }
-
-      const created = await res.json();
       const newRole: Role = {
         id: created.id,
         name: created.name ?? created.nome ?? nome,
@@ -248,6 +210,12 @@ export default function AdminUserPermissionsConfigPage() {
       toast.success("Papel criado com sucesso.");
     } catch (err: any) {
       console.error(err);
+      if (err?.status === 401 || err?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        logout();
+        router.replace("/admin/login");
+        return;
+      }
       toast.error(err?.message || "Erro ao criar papel.");
     } finally {
       setCreatingRole(false);
@@ -263,30 +231,12 @@ export default function AdminUserPermissionsConfigPage() {
 
     setCreatingPerm(true);
     try {
-      const res = await fetch(`${API_URL}/admin/permissions`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chave,
-          grupo,
-          descricao: descricao || undefined,
-        }),
+      const created: Permission = await apiClient.post<Permission>("/api/admin/permissions", {
+        chave,
+        grupo,
+        descricao: descricao || undefined,
       });
 
-      if (res.status === 401 || res.status === 403) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        logout();
-        router.replace("/admin/login");
-        return;
-      }
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Erro ao criar permissão");
-      }
-
-      const created: Permission = await res.json();
       setPermissions((prev) => [...prev, created]);
       setNewPermKey("");
       setNewPermGroup("");
@@ -294,6 +244,12 @@ export default function AdminUserPermissionsConfigPage() {
       toast.success("Permissão criada com sucesso.");
     } catch (err: any) {
       console.error(err);
+      if (err?.status === 401 || err?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        logout();
+        router.replace("/admin/login");
+        return;
+      }
       toast.error(err?.message || "Erro ao criar permissão.");
     } finally {
       setCreatingPerm(false);
@@ -326,29 +282,18 @@ export default function AdminUserPermissionsConfigPage() {
       const roleToUpdate = updatedRoles.find((r) => r.id === roleId);
       if (!roleToUpdate) return;
 
-      const res = await fetch(`${API_URL}/admin/roles/${roleId}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ permissions: roleToUpdate.permissions }),
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        logout();
-        router.replace("/admin/login");
-        return;
-      }
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Erro ao atualizar permissões do papel");
-      }
+      await apiClient.put(`/api/admin/roles/${roleId}`, { permissions: roleToUpdate.permissions });
 
       toast.success("Permissões do papel atualizadas.");
     } catch (err: any) {
       console.error(err);
       setRoles(previousRoles);
+      if (err?.status === 401 || err?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        logout();
+        router.replace("/admin/login");
+        return;
+      }
       toast.error(err?.message || "Erro ao atualizar permissões.");
     }
   }
@@ -377,22 +322,7 @@ export default function AdminUserPermissionsConfigPage() {
     );
 
     try {
-      const res = await fetch(`${API_URL}/admin/permissions/${perm.id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        logout();
-        router.replace("/admin/login");
-        return;
-      }
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Erro ao excluir permissão");
-      }
+      await apiClient.del(`/api/admin/permissions/${perm.id}`);
 
       toast.success("Permissão excluída com sucesso.");
     } catch (err: any) {
@@ -400,6 +330,12 @@ export default function AdminUserPermissionsConfigPage() {
       // rollback
       setPermissions(prevPerms);
       setRoles(prevRoles);
+      if (err?.status === 401 || err?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        logout();
+        router.replace("/admin/login");
+        return;
+      }
       toast.error(err?.message || "Erro ao excluir permissão.");
     }
   }

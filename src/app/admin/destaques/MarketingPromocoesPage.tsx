@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import DeleteButton from "@/components/buttons/DeleteButton";
 import SearchInputProdutos from "@/components/products/SearchInput";
 import CloseButton from "@/components/buttons/CloseButton";
+import apiClient from "@/lib/apiClient";
 
 type Promocao = {
   id: number;
@@ -30,7 +31,6 @@ type Promocao = {
 type FormMode = "idle" | "create" | "edit";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
-const API_ADMIN = `${API_BASE}/api/admin`;
 const PLACEHOLDER = "https://via.placeholder.com/400x240?text=Sem+imagem";
 
 function toImageUrl(raw?: string | null) {
@@ -90,21 +90,7 @@ export default function MarketingPromocoesPage() {
       setLoading(true);
       setErr(null);
 
-      const res = await fetch(`${API_ADMIN}/marketing/promocoes`, {
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        throw new Error("Sessão expirada. Faça login novamente no admin.");
-      }
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || `Erro ao listar promoções (${res.status}).`);
-      }
-
-      const json = await res.json();
+      const json = await apiClient.get<any>("/api/admin/marketing/promocoes");
       const list = toArray(json) as Promocao[];
 
       setPromocoes(
@@ -235,47 +221,10 @@ export default function MarketingPromocoesPage() {
       setSaving(true);
 
       if (mode === "create") {
-        const res = await fetch(`${API_ADMIN}/marketing/promocoes`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ product_id: formProductId, ...payload }),
-        });
-
-        if (res.status === 401 || res.status === 403) {
-          toast.error("Sessão expirada. Faça login novamente no admin.");
-          return;
-        }
-
-        if (res.status === 409) {
-          toast.error("Já existe uma promoção para este produto.");
-          return;
-        }
-
-        if (!res.ok) {
-          const t = await res.text().catch(() => "");
-          throw new Error(t || "Erro ao criar promoção.");
-        }
-
+        await apiClient.post("/api/admin/marketing/promocoes", { product_id: formProductId, ...payload });
         toast.success("Promoção criada com sucesso.");
       } else if (mode === "edit" && formPromoId != null) {
-        const res = await fetch(`${API_ADMIN}/marketing/promocoes/${formPromoId}`, {
-          method: "PUT",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (res.status === 401 || res.status === 403) {
-          toast.error("Sessão expirada. Faça login novamente no admin.");
-          return;
-        }
-
-        if (!res.ok) {
-          const t = await res.text().catch(() => "");
-          throw new Error(t || "Erro ao atualizar promoção.");
-        }
-
+        await apiClient.put(`/api/admin/marketing/promocoes/${formPromoId}`, payload);
         toast.success("Promoção atualizada com sucesso.");
       }
 
@@ -283,6 +232,10 @@ export default function MarketingPromocoesPage() {
       limparFormulario();
     } catch (error: any) {
       console.error(error);
+      if (error?.status === 401 || error?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente no admin.");
+        return;
+      }
       toast.error(error?.message || "Erro ao salvar promoção.");
     } finally {
       setSaving(false);
@@ -291,25 +244,16 @@ export default function MarketingPromocoesPage() {
 
   async function removerPromocao(id: number) {
     try {
-      const res = await fetch(`${API_ADMIN}/marketing/promocoes/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        toast.error("Sessão expirada. Faça login novamente no admin.");
-        return;
-      }
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || "Erro ao remover promoção.");
-      }
+      await apiClient.del(`/api/admin/marketing/promocoes/${id}`);
 
       toast.success("Promoção removida com sucesso.");
       await buscarPromocoes();
     } catch (e: any) {
       console.error(e);
+      if (e?.status === 401 || e?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente no admin.");
+        return;
+      }
       toast.error(e?.message || "Erro ao remover promoção.");
     }
   }

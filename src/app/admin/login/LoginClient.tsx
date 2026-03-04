@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminAuth, AdminRole } from "@/context/AdminAuthContext";
+import apiClient from "@/lib/apiClient";
 
 type LoginResponse = {
   token: string; // ainda existe na resposta, mas não é usado pelo front
@@ -16,8 +17,6 @@ type LoginResponse = {
     permissions?: string[];
   };
 };
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -44,13 +43,9 @@ export default function LoginClient() {
       // ignore
     }
 
-    // tenta encerrar sessão antiga no backend (limpar cookie HttpOnly)
     (async () => {
       try {
-        await fetch(`${API}/api/admin/logout`, {
-          method: "POST",
-          credentials: "include",
-        });
+        await apiClient.post('/api/admin/logout');
       } catch {
         // se der erro, não quebra o fluxo de login
       }
@@ -63,29 +58,7 @@ export default function LoginClient() {
     setErrMsg(null);
 
     try {
-      const res = await fetch(`${API}/api/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // recebe cookie HttpOnly do backend
-        body: JSON.stringify({ email, senha }),
-      });
-
-      if (!res.ok) {
-        let msg = "Credenciais inválidas.";
-        try {
-          const data = await res.json();
-          if (typeof (data as any)?.message === "string") {
-            msg = (data as any).message;
-          }
-        } catch {
-          // ignore
-        }
-        setErrMsg(msg);
-        setLoading(false);
-        return;
-      }
-
-      const data = (await res.json()) as LoginResponse;
+      const data = await apiClient.post<LoginResponse>('/api/admin/login', { email, senha });
 
       // NÃO guarda token em localStorage, nem seta cookie via JS.
       // O cookie HttpOnly já foi definido pelo backend.
@@ -110,9 +83,9 @@ export default function LoginClient() {
       });
 
       router.replace(redirectTo);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Erro de login:", e);
-      setErrMsg("Falha de conexão com o servidor.");
+      setErrMsg(e?.message || "Credenciais inválidas.");
       setLoading(false);
     }
   }, [email, senha, loading, redirectTo, router, markAsAdmin]);

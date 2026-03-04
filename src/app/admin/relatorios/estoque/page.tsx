@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import toast from "react-hot-toast";
 
 import CloseButton from "@/components/buttons/CloseButton";
 import CustomButton from "@/components/buttons/CustomButton";
 import { formatCurrency } from "@/utils/formatters";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 interface ProdutoEstoque {
   id: number;
@@ -36,19 +35,16 @@ export default function RelatorioEstoquePage() {
         setLoading(true);
         setError(null);
 
-        const res = await axios.get<ProdutoEstoque[]>(
-          `${API_BASE}/api/admin/relatorios/estoque`,
-          {
-            withCredentials: true, // ✅ cookie HttpOnly
-          }
+        const res = await apiClient.get<ProdutoEstoque[]>(
+          '/api/admin/relatorios/estoque'
         );
 
-        setRows(res.data ?? []);
+        setRows(res ?? []);
       } catch (err: any) {
         console.error(err);
 
         let msg = "Não foi possível carregar o relatório de estoque.";
-          if (err.response.status === 401 || err.response.status === 403) {
+          if (err?.status === 401 || err?.status === 403) {
             msg =
               "Sessão expirada ou sem permissão. Faça login novamente no admin.";
           }

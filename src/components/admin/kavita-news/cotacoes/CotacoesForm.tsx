@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { CotacaoFormState, CotacaoItem } from "@/types/kavita-news";
 import LoadingButton from "@/components/buttons/LoadingButton";
+import apiClient from "@/lib/apiClient";
 
 type MetaResponse = {
   ok: boolean;
@@ -36,9 +37,6 @@ type Props = {
   onStartCreate: () => void;
 };
 
-function apiBase() {
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-}
 
 export default function CotacoesForm({
   allowedSlugs,
@@ -78,13 +76,7 @@ export default function CotacoesForm({
 
     (async () => {
       try {
-        const res = await fetch(`${apiBase()}/api/admin/news/cotacoes/meta`, {
-          method: "GET",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-        });
-
-        const json = (await res.json()) as MetaResponse;
+        const json = await apiClient.get<MetaResponse>('/api/admin/news/cotacoes/meta');
 
         if (!mounted) return;
 

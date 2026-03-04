@@ -6,6 +6,7 @@ import Link from "next/link";
 import CustomButton from "@/components/buttons/CustomButton";
 import LoadingButton from "@/components/buttons/LoadingButton";
 import DeleteButton from "@/components/buttons/DeleteButton";
+import apiClient from "@/lib/apiClient";
 
 type ShippingZone = {
   id: number;
@@ -45,8 +46,6 @@ type FormState = {
   prazoStr: string;
   is_active: boolean;
 };
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /* =========================
    Helpers
@@ -88,19 +87,6 @@ function splitTextToItems(text: string) {
 
 function toCepDigits(v: string) {
   return String(v || "").replace(/\D/g, "").slice(0, 8);
-}
-
-async function safeText(res: Response) {
-  try {
-    const ct = res.headers.get("content-type") || "";
-    if (ct.includes("application/json")) {
-      const j = await res.json();
-      return j?.message || JSON.stringify(j);
-    }
-    return await res.text();
-  } catch {
-    return "";
-  }
 }
 
 async function fetchViaCep(cepDigits: string): Promise<CepLookup | null> {
@@ -197,24 +183,7 @@ export default function FreteAdminPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/admin/shipping/zones`, {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (res.status === 401) {
-        setError("Sessão expirada. Faça login novamente.");
-        setZones([]);
-        return;
-      }
-
-      if (!res.ok) {
-        const txt = await safeText(res);
-        throw new Error(`Falha ao carregar (${res.status}). ${txt}`);
-      }
-
-      const data = await res.json();
+      const data = await apiClient.get<any>("/api/admin/shipping/zones");
       const arr: ShippingZone[] = Array.isArray(data) ? data : data?.items || [];
 
       setZones(
@@ -233,6 +202,11 @@ export default function FreteAdminPage() {
         }))
       );
     } catch (e: any) {
+      if (e?.status === 401) {
+        setError("Sessão expirada. Faça login novamente.");
+        setZones([]);
+        return;
+      }
       setError(e?.message || "Erro ao carregar regras de frete.");
       setZones([]);
     } finally {
@@ -293,25 +267,16 @@ export default function FreteAdminPage() {
 
   async function removeZone(id: number) {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/shipping/zones/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (res.status === 401) {
-        flash("Sessão expirada. Faça login novamente.");
-        return;
-      }
-
-      if (!res.ok && res.status !== 204) {
-        const txt = await safeText(res);
-        throw new Error(`Falha ao excluir (${res.status}). ${txt}`);
-      }
+      await apiClient.del(`/api/admin/shipping/zones/${id}`);
 
       await loadZones();
       if (form.id === id) resetForm();
       flash("Regra excluída.");
     } catch (e: any) {
+      if (e?.status === 401) {
+        flash("Sessão expirada. Faça login novamente.");
+        return;
+      }
       flash(e?.message || "Erro ao excluir regra.");
     }
   }
@@ -384,33 +349,22 @@ export default function FreteAdminPage() {
       is_active: Boolean(form.is_active),
     };
 
-    const url = form.id
-      ? `${API_BASE}/api/admin/shipping/zones/${form.id}`
-      : `${API_BASE}/api/admin/shipping/zones`;
-
     setSaving(true);
     try {
-      const res = await fetch(url, {
-        method: form.id ? "PUT" : "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.status === 401) {
-        setError("Sessão expirada. Faça login novamente.");
-        return;
-      }
-
-      if (!res.ok) {
-        const txt = await safeText(res);
-        throw new Error(`Falha ao salvar (${res.status}). ${txt}`);
+      if (form.id) {
+        await apiClient.put(`/api/admin/shipping/zones/${form.id}`, payload);
+      } else {
+        await apiClient.post("/api/admin/shipping/zones", payload);
       }
 
       resetForm();
       await loadZones();
       flash(form.id ? "Regra atualizada." : "Regra criada.");
     } catch (e: any) {
+      if (e?.status === 401) {
+        setError("Sessão expirada. Faça login novamente.");
+        return;
+      }
       setError(e?.message || "Erro ao salvar regra.");
     } finally {
       setSaving(false);

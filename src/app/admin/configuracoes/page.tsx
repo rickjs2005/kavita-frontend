@@ -5,6 +5,7 @@ import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import apiClient from "@/lib/apiClient";
 import type { AdminConfig } from "../../../types/adminConfig";
 import FormattedInput from "@/components/layout/FormattedInput";
 
@@ -82,22 +83,7 @@ export default function ConfiguracoesPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`${API_BASE}/api/admin/config`, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (res.status === 401 || res.status === 403) {
-          toast.error("Sessão expirada. Faça login novamente.");
-          router.push("/admin/login");
-          return;
-        }
-
-        if (!res.ok) {
-          throw new Error("Erro ao carregar configurações.");
-        }
-
-        const data = (await res.json()) as any;
+        const data = await apiClient.get<any>('/api/admin/config');
 
         // Se footer_links vier como string, parse aqui.
         let footerLinksParsed: FooterLinkItem[] | null | undefined =
@@ -149,8 +135,13 @@ export default function ConfiguracoesPage() {
 
         setSettings(normalized);
         setBaseline(normalized); // baseline para patch (somente alterados)
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        if (err?.status === 401 || err?.status === 403) {
+          toast.error("Sessão expirada. Faça login novamente.");
+          router.push("/admin/login");
+          return;
+        }
         toast.error("Não foi possível carregar as configurações.");
       } finally {
         setLoading(false);
@@ -235,14 +226,11 @@ export default function ConfiguracoesPage() {
       const fd = new FormData();
       fd.append("logo", logoFile);
 
-      const res = await fetch(`${API_BASE}/api/admin/shop-config/upload/logo`, {
-        method: "POST",
-        credentials: "include",
-        body: fd,
-      });
-
-      const data = await res.json().catch(() => ({} as any));
-      if (!res.ok) throw new Error(data?.error || "Falha ao enviar logo.");
+      const data = await apiClient.post<any>(
+        '/api/admin/shop-config/upload/logo',
+        fd,
+        { skipContentType: true }
+      );
 
       setSettings((prev: any) => ({ ...prev, logo_url: data.logo_url }));
       setBaseline((prev: any) => ({ ...prev, logo_url: data.logo_url }));
@@ -286,23 +274,7 @@ export default function ConfiguracoesPage() {
 
       const tId = toast.loading("Salvando alterações...");
 
-      const res = await fetch(`${API_BASE}/api/admin/config`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(changed),
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        toast.error("Sessão expirada. Faça login novamente.", { id: tId });
-        router.push("/admin/login");
-        return;
-      }
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || "Erro ao salvar as configurações.");
-      }
+      await apiClient.put('/api/admin/config', changed);
 
       setBaseline(settings);
       toast.success("Configurações salvas com sucesso!", { id: tId });
@@ -310,6 +282,11 @@ export default function ConfiguracoesPage() {
       topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (err: any) {
       console.error(err);
+      if (err?.status === 401 || err?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        router.push("/admin/login");
+        return;
+      }
       toast.error(err?.message || "Erro ao salvar as configurações.");
     } finally {
       // ✅ FIX lint: nada de ternário solto (unused-expressions)

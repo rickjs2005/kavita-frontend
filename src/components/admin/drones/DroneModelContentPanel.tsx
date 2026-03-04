@@ -5,8 +5,7 @@ import DroneModelSpecsEditor from "./DroneModelSpecsEditor";
 import DroneModelFeaturesEditor from "./DroneModelFeaturesEditor";
 import DroneModelBenefitsEditor from "./DroneModelBenefitsEditor";
 import GalleryForm from "./GalleryForm";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 type DroneModelRow = {
   key: string;
@@ -40,23 +39,6 @@ type AdminModelAggregateResponse = {
   data?: ModelData | null; // models_json[modelKey]
   gallery?: any[]; // galeria do modelo (array)
 };
-
-function isAuthError(res: Response) {
-  return res.status === 401 || res.status === 403;
-}
-
-function redirectToLogin() {
-  if (typeof window !== "undefined") window.location.assign("/admin/login");
-}
-
-async function readSafe(res: Response) {
-  const txt = await res.text();
-  try {
-    return { txt, data: JSON.parse(txt) };
-  } catch {
-    return { txt, data: null as any };
-  }
-}
 
 function extractItemsArray<T>(payload: any): T[] {
   if (Array.isArray(payload)) return payload as T[];
@@ -123,35 +105,6 @@ function SectionShell({
   );
 }
 
-/**
- * ✅ Helper único pro admin:
- * - sempre manda cookies (credentials: include)
- * - redireciona no 401/403
- * - padroniza leitura de erro
- */
-async function adminFetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    credentials: "include",
-    cache: "no-store",
-    ...init,
-    headers: {
-      ...(init?.headers || {}),
-    },
-  });
-
-  if (isAuthError(res)) {
-    redirectToLogin();
-    throw new Error("AUTH");
-  }
-
-  const { data } = await readSafe(res);
-  if (!res.ok) {
-    throw new Error(data?.message || "Falha na requisição.");
-  }
-
-  return data as T;
-}
-
 export default function DroneModelContentPanel() {
   const [models, setModels] = useState<DroneModelRow[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
@@ -177,7 +130,7 @@ export default function DroneModelContentPanel() {
     setMsg(null);
 
     try {
-      const data = await adminFetchJson<any>("/api/admin/drones/models?includeInactive=1");
+      const data = await apiClient.get<any>("/api/admin/drones/models?includeInactive=1");
       const items = extractItemsArray<DroneModelRow>(data);
 
       const sorted = [...items].sort(
@@ -194,7 +147,6 @@ export default function DroneModelContentPanel() {
         if (firstActive?.key) setSelectedKey(firstActive.key);
       }
     } catch (e: any) {
-      if (e?.message === "AUTH") return;
       setMsg(e?.message || "Falha ao carregar modelos.");
     } finally {
       setLoadingModels(false);
@@ -208,7 +160,7 @@ export default function DroneModelContentPanel() {
     setMsg(null);
 
     try {
-      const agg = await adminFetchJson<AdminModelAggregateResponse>(
+      const agg = await apiClient.get<AdminModelAggregateResponse>(
         `/api/admin/drones/models/${selectedKey}`
       );
 
@@ -217,7 +169,6 @@ export default function DroneModelContentPanel() {
 
       setModelData((agg?.data ?? null) as any);
     } catch (e: any) {
-      if (e?.message === "AUTH") return;
       setMsg(e?.message || "Falha ao carregar dados do modelo.");
       setModelData(null);
       setModelLabel("");
@@ -243,13 +194,9 @@ export default function DroneModelContentPanel() {
     });
 
     try {
-      const resp = await adminFetchJson<any>(
+      const resp = await apiClient.put<any>(
         `/api/admin/drones/models/${modelKey}/media-selection`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ target, media_id: mediaId }),
-        }
+        { target, media_id: mediaId }
       );
 
       // se o backend devolver algo útil, aplica também (tolerante)

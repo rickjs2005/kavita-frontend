@@ -19,8 +19,7 @@ import { useAdminAuth, AdminRole } from "@/context/AdminAuthContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 type AdminResumo = {
   totalProdutos: number;
@@ -294,13 +293,6 @@ export default function AdminDashboardPage() {
     router.replace("/admin/login");
   }, [logout, router]);
 
-  const authOptions = useMemo<RequestInit>(
-    () => ({
-      credentials: "include",
-    }),
-    []
-  );
-
   // === Resumo + gráfico ===
   useEffect(() => {
     let cancelado = false;
@@ -310,24 +302,10 @@ export default function AdminDashboardPage() {
       setErrorMsg(null);
 
       try {
-        const [resResumo, resVendas] = await Promise.all([
-          fetch(`${API_BASE}/api/admin/stats/resumo`, authOptions),
-          fetch(`${API_BASE}/api/admin/stats/vendas?range=7`, authOptions),
+        const [resumoJson, vendasJson] = await Promise.all([
+          apiClient.get<AdminResumo>('/api/admin/stats/resumo'),
+          apiClient.get<{ rangeDays: number; points: VendaPoint[] }>('/api/admin/stats/vendas?range=7'),
         ]);
-
-        if (cancelado) return;
-
-        if (resResumo.status === 401 || resVendas.status === 401) {
-          handleUnauthorized();
-          return;
-        }
-
-        if (!resResumo.ok) throw new Error("Erro ao carregar resumo da loja.");
-        if (!resVendas.ok) throw new Error("Erro ao carregar resumo de vendas.");
-
-        const resumoJson: AdminResumo = await resResumo.json();
-        const vendasJson: { rangeDays: number; points: VendaPoint[] } =
-          await resVendas.json();
 
         if (cancelado) return;
 
@@ -335,6 +313,10 @@ export default function AdminDashboardPage() {
         setVendas(Array.isArray(vendasJson.points) ? vendasJson.points : []);
       } catch (err: any) {
         if (cancelado) return;
+        if (err?.status === 401 || err?.status === 403) {
+          handleUnauthorized();
+          return;
+        }
         console.error("Erro ao carregar dashboard:", err);
         const msg =
           err?.message || "Não foi possível carregar o painel. Tente novamente.";
@@ -349,7 +331,7 @@ export default function AdminDashboardPage() {
     return () => {
       cancelado = true;
     };
-  }, [authOptions, handleUnauthorized]);
+  }, [handleUnauthorized]);
 
   // === Logs (atividade recente) ===
   useEffect(() => {
@@ -362,15 +344,7 @@ export default function AdminDashboardPage() {
       setLogsError(null);
 
       try {
-        const res = await fetch(`${API_BASE}/api/admin/logs?limit=20`, authOptions);
-
-        if (res.status === 401) {
-          handleUnauthorized();
-          return;
-        }
-        if (!res.ok) throw new Error("Erro ao buscar logs");
-
-        const data: any[] = await res.json();
+        const data = await apiClient.get<any[]>('/api/admin/logs?limit=20');
         if (cancelado) return;
 
         const parsed: AdminLog[] = data.map((log) => ({
@@ -382,8 +356,12 @@ export default function AdminDashboardPage() {
         }));
 
         setLogs(parsed ?? []);
-      } catch (err) {
+      } catch (err: any) {
         if (cancelado) return;
+        if (err?.status === 401 || err?.status === 403) {
+          handleUnauthorized();
+          return;
+        }
         console.warn("Erro ao carregar logs de auditoria:", err);
         setLogsError(
           "Não foi possível carregar a atividade recente. Tente novamente mais tarde."
@@ -397,7 +375,7 @@ export default function AdminDashboardPage() {
     return () => {
       cancelado = true;
     };
-  }, [authOptions, canViewLogs, handleUnauthorized]);
+  }, [canViewLogs, handleUnauthorized]);
 
   // === Mini-rankings (top clientes / produtos / serviços) ===
   useEffect(() => {
@@ -408,23 +386,25 @@ export default function AdminDashboardPage() {
       setTopsError(null);
 
       try {
-        const [resCli, resProd, resServ] = await Promise.all([
-          fetch(`${API_BASE}/api/admin/relatorios/clientes-top`, authOptions),
-          fetch(`${API_BASE}/api/admin/stats/produtos-mais-vendidos?limit=5`, authOptions),
-          fetch(`${API_BASE}/api/admin/relatorios/servicos-ranking`, authOptions),
+        const [resCli, resProd, resServ] = await Promise.allSettled([
+          apiClient.get<{ rows: any[] }>('/api/admin/relatorios/clientes-top'),
+          apiClient.get<any[]>('/api/admin/stats/produtos-mais-vendidos?limit=5'),
+          apiClient.get<{ rows: any[] }>('/api/admin/relatorios/servicos-ranking'),
         ]);
 
         if (cancelado) return;
 
-        if (resCli.status === 401 || resProd.status === 401 || resServ.status === 401) {
-          handleUnauthorized();
-          return;
+        for (const result of [resCli, resProd, resServ]) {
+          if (result.status === 'rejected' && (result.reason?.status === 401 || result.reason?.status === 403)) {
+            handleUnauthorized();
+            return;
+          }
         }
 
         let algumaCoisaOk = false;
 
-        if (resCli.ok) {
-          const data: { rows: any[] } = await resCli.json();
+        if (resCli.status === 'fulfilled') {
+          const data = resCli.value;
           const rows = Array.isArray(data.rows) ? data.rows : [];
           const mapped: TopCliente[] = rows.slice(0, 5).map((c) => ({
             id: c.id,
@@ -436,8 +416,8 @@ export default function AdminDashboardPage() {
           algumaCoisaOk = true;
         }
 
-        if (resProd.ok) {
-          const data: any[] = await resProd.json();
+        if (resProd.status === 'fulfilled') {
+          const data = resProd.value;
           const mapped: TopProduto[] = (Array.isArray(data) ? data : []).map((p) => ({
             id: p.id,
             nome: p.name,
@@ -448,8 +428,8 @@ export default function AdminDashboardPage() {
           algumaCoisaOk = true;
         }
 
-        if (resServ.ok) {
-          const data: { rows: any[] } = await resServ.json();
+        if (resServ.status === 'fulfilled') {
+          const data = resServ.value;
           const rows = Array.isArray(data.rows) ? data.rows : [];
           const mapped: TopServico[] = rows.slice(0, 5).map((s) => ({
             id: s.id,
@@ -480,7 +460,7 @@ export default function AdminDashboardPage() {
     return () => {
       cancelado = true;
     };
-  }, [authOptions, handleUnauthorized]);
+  }, [handleUnauthorized]);
 
   // === Alertas da loja ===
   useEffect(() => {
@@ -491,23 +471,16 @@ export default function AdminDashboardPage() {
       setAlertasError(null);
 
       try {
-        const res = await fetch(`${API_BASE}/api/admin/stats/alertas`, authOptions);
-
+        const data = await apiClient.get<AlertItem[]>('/api/admin/stats/alertas');
         if (cancelado) return;
-
-        if (res.status === 401) {
+        setAlertas(Array.isArray(data) ? data : []);
+      } catch (err: any) {
+        if (cancelado) return;
+        if (err?.status === 401 || err?.status === 403) {
           handleUnauthorized();
           return;
         }
-
-        if (res.ok) {
-          const data: AlertItem[] = await res.json();
-          setAlertas(Array.isArray(data) ? data : []);
-        } else if (res.status !== 404) {
-          throw new Error("Erro ao carregar alertas");
-        }
-      } catch (err) {
-        if (cancelado) return;
+        if (err?.status === 404) return; // silently ignore missing endpoint
         console.warn("Erro ao carregar alertas:", err);
         setAlertasError("Não foi possível carregar os alertas da loja.");
       } finally {
@@ -519,7 +492,7 @@ export default function AdminDashboardPage() {
     return () => {
       cancelado = true;
     };
-  }, [authOptions, handleUnauthorized]);
+  }, [handleUnauthorized]);
 
   const chartData = useMemo(
     () =>
