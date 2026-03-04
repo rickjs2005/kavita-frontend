@@ -13,8 +13,8 @@ export function middleware(req: NextRequest) {
       return NextResponse.next();
     }
 
-    // ✅ usa o MESMO cookie do backend
-    const token = req.cookies.get("auth_token")?.value;
+    // ✅ usa o MESMO cookie do backend (HttpOnly; Secure; SameSite=Strict)
+    const token = req.cookies.get("adminToken")?.value;
 
     if (!token) {
       const url = req.nextUrl.clone();
