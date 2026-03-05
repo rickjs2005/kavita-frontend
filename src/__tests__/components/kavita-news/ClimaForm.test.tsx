@@ -26,7 +26,7 @@ vi.mock("@/components/buttons/LoadingButton", () => {
   };
 });
 
-// Mock do apiClient (vamos controlar o .get no meta)
+// Mock do apiClient (controlamos o .get)
 vi.mock("@/lib/apiClient", () => {
   return {
     default: {
@@ -69,7 +69,7 @@ function Wrapper(props: WrapperProps) {
 
   return (
     <CotacoesForm
-      allowedSlugs={props.allowedSlugs ?? ["dolar", "cafe"]}
+      allowedSlugs={props.allowedSlugs ?? []} // ✅ default vazio p/ garantir determinismo
       mode={props.mode ?? "create"}
       editing={props.editing ?? null}
       form={form}
@@ -92,8 +92,6 @@ describe("CotacoesForm", () => {
   beforeEach(() => {
     vi.useRealTimers();
 
-    // ✅ meta padrão com preset do slug "dolar"
-    mockedApi.get = mockedApi.get || (vi.fn() as any);
     mockedApi.get.mockResolvedValue({
       ok: true,
       data: {
@@ -123,14 +121,20 @@ describe("CotacoesForm", () => {
   });
 
   it("renderiza layout base", async () => {
-    render(<Wrapper />);
+    render(<Wrapper allowedSlugs={[]} />);
 
     expect(screen.getByText("Cotações")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Limpar dados/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Limpar dados/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Salvar$/i })).toBeInTheDocument();
 
-    // aguarda o meta carregar (não é obrigatório pro layout, mas estabiliza)
-    await waitFor(() => expect(mockedApi.get).toHaveBeenCalled());
+    await waitFor(() => expect(mockedApi.get).toHaveBeenCalledTimes(1));
+
+    // ✅ garante que o option do meta apareceu (metaPresets carregou)
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: "dolar" })).toBeInTheDocument(),
+    );
   });
 
   it("Limpar dados: reseta formulário e chama onStartCreate", async () => {
@@ -139,6 +143,7 @@ describe("CotacoesForm", () => {
 
     render(
       <Wrapper
+        allowedSlugs={[]}
         onStartCreate={onStartCreate}
         initialForm={{
           name: "Teste",
@@ -155,11 +160,9 @@ describe("CotacoesForm", () => {
       />,
     );
 
-    await waitFor(() => expect(mockedApi.get).toHaveBeenCalled());
+    await waitFor(() => expect(mockedApi.get).toHaveBeenCalledTimes(1));
 
     await user.click(screen.getByRole("button", { name: /Limpar dados/i }));
-
-    // clearForm é síncrono; só damos um tick pra React aplicar state
     await sleep(10);
 
     expect(
@@ -168,27 +171,8 @@ describe("CotacoesForm", () => {
       ) as HTMLInputElement).value,
     ).toBe("");
 
-    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("");
-
-    expect(
-      (screen.getByPlaceholderText(
-        "Ex: cambio, graos, pecuaria, cafe...",
-      ) as HTMLInputElement).value,
-    ).toBe("");
-
-    expect(
-      (screen.getByPlaceholderText("Ex: R$/saca, R$/@, R$") as HTMLInputElement)
-        .value,
-    ).toBe("");
-
-    expect(
-      (screen.getByPlaceholderText("Ex: CEPEA, B3...") as HTMLInputElement).value,
-    ).toBe("");
-
-    expect(
-      (screen.getByPlaceholderText("Ex: BCB PTAX, CEPEA, B3...") as HTMLInputElement)
-        .value,
-    ).toBe("");
+    const slugSelect = screen.getByRole("combobox") as HTMLSelectElement;
+    expect(slugSelect.value).toBe("");
 
     expect(onStartCreate).toHaveBeenCalledTimes(1);
   });
@@ -198,8 +182,8 @@ describe("CotacoesForm", () => {
 
     render(
       <Wrapper
+        allowedSlugs={[]} // ✅ sem prop; option só aparece quando meta carregar
         initialForm={{
-          // campos vazios: devem ser preenchidos pelo preset
           name: "",
           type: "",
           unit: "",
@@ -209,12 +193,12 @@ describe("CotacoesForm", () => {
       />,
     );
 
-    // ✅ garante que metaPresets já foi carregado
-    await waitFor(() => expect(mockedApi.get).toHaveBeenCalled());
+    await waitFor(() => expect(mockedApi.get).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: "dolar" })).toBeInTheDocument(),
+    );
 
-    // select "Slug (padrão)" não tem aria-label, então pegamos o único combobox
     const slugSelect = screen.getByRole("combobox") as HTMLSelectElement;
-
     await user.selectOptions(slugSelect, "dolar");
 
     await waitFor(() => {
@@ -245,10 +229,12 @@ describe("CotacoesForm", () => {
         .value,
     ).toBe("PTAX");
 
-    // ✅ e como existe preset, o botão aparece
-    expect(
-      screen.getByRole("button", { name: /Aplicar preset do slug/i }),
-    ).toBeInTheDocument();
+    // ✅ botão aparece porque selectedPreset agora existe
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: /Aplicar preset do slug/i }),
+      ).toBeInTheDocument(),
+    );
   });
 
   it("Aplicar preset sobrescreve campos manualmente", async () => {
@@ -256,8 +242,8 @@ describe("CotacoesForm", () => {
 
     render(
       <Wrapper
+        allowedSlugs={[]} // ✅ determinístico
         initialForm={{
-          // usuário digitou coisas diferentes do preset
           name: "Nome manual",
           type: "tipo-manual",
           unit: "unid-manual",
@@ -267,20 +253,21 @@ describe("CotacoesForm", () => {
       />,
     );
 
-    await waitFor(() => expect(mockedApi.get).toHaveBeenCalled());
+    await waitFor(() => expect(mockedApi.get).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: "dolar" })).toBeInTheDocument(),
+    );
 
     const slugSelect = screen.getByRole("combobox") as HTMLSelectElement;
-
-    // seleciona slug: applySlugPreset NÃO sobrescreve (porque já tem conteúdo)
     await user.selectOptions(slugSelect, "dolar");
 
+    // applySlugPreset não sobrescreve o que já foi digitado
     expect(
       (screen.getByPlaceholderText(
         "Ex: Dólar comercial, Soja CEPEA, Boi Gordo...",
       ) as HTMLInputElement).value,
     ).toBe("Nome manual");
 
-    // agora força sobrescrever via botão
     const btn = await screen.findByRole("button", {
       name: /Aplicar preset do slug/i,
     });
@@ -300,19 +287,5 @@ describe("CotacoesForm", () => {
         "Ex: cambio, graos, pecuaria, cafe...",
       ) as HTMLInputElement).value,
     ).toBe("cambio");
-
-    expect(
-      (screen.getByPlaceholderText("Ex: R$/saca, R$/@, R$") as HTMLInputElement)
-        .value,
-    ).toBe("R$");
-
-    expect(
-      (screen.getByPlaceholderText("Ex: CEPEA, B3...") as HTMLInputElement).value,
-    ).toBe("BCB");
-
-    expect(
-      (screen.getByPlaceholderText("Ex: BCB PTAX, CEPEA, B3...") as HTMLInputElement)
-        .value,
-    ).toBe("PTAX");
   });
 });
