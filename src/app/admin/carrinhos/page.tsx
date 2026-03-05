@@ -1,14 +1,12 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 import CustomButton from "@/components/buttons/CustomButton";
 import { KpiCard } from "../../../components/admin/KpiCard";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /**
  * Alinhado ao backend (adminCarts.js):
@@ -168,27 +166,19 @@ function itemSubtotal(i: AbandonedCartItem) {
 /* ------------------------------ API ------------------------------ */
 
 async function fetchAbandonedCarts(): Promise<AbandonedCart[]> {
-  const resp = await axios.get(`${API_BASE}/api/admin/carrinhos`, {
-    withCredentials: true,
-  });
+  const data = await apiClient.get<any>("/api/admin/carrinhos");
 
-  const list = extractCartsFromResponseData(resp.data);
+  const list = extractCartsFromResponseData(data);
   return list.map(normalizeCart);
 }
 
 async function notifyCart(id: number, tipo: "whatsapp" | "email") {
-  await axios.post(
-    `${API_BASE}/api/admin/carrinhos/${id}/notificar`,
-    { tipo },
-    { withCredentials: true }
-  );
+  await apiClient.post(`/api/admin/carrinhos/${id}/notificar`, { tipo });
 }
 
 async function getWhatsAppLink(id: number): Promise<WhatsAppLinkResponse> {
-  const resp = await axios.get(`${API_BASE}/api/admin/carrinhos/${id}/whatsapp-link`, {
-    withCredentials: true,
-  });
-  return resp.data as WhatsAppLinkResponse;
+  const data = await apiClient.get<WhatsAppLinkResponse>(`/api/admin/carrinhos/${id}/whatsapp-link`);
+  return data;
 }
 
 /* --------------------- UI helpers (sem disabled) --------------------- */

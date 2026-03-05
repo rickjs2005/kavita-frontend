@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import { useSearchParams, useRouter } from "next/navigation";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type StatusPagamento = "pendente" | "pago" | "falhou" | "estornado";
 type StatusEntrega =
@@ -196,15 +194,9 @@ export default function PedidosAdminPage() {
         setLoading(true);
         setErro(null);
 
-        // 🔐 Agora usa só cookie HttpOnly (withCredentials), sem localStorage / Authorization
-        const resp = await axios.get<PedidoAdmin[]>(
-          `${API_BASE}/api/admin/pedidos`,
-          {
-            withCredentials: true,
-          }
-        );
+        const resp = await apiClient.get<PedidoAdmin[]>("/api/admin/pedidos");
 
-        setPedidos(resp.data);
+        setPedidos(resp);
       } catch (err) {
         console.error("Erro ao carregar pedidos admin:", err);
         setErro("Não foi possível carregar os pedidos.");
@@ -233,14 +225,8 @@ export default function PedidosAdminPage() {
     try {
       setAtualizandoId(id);
 
-      // 🔐 Requisição autenticada só via cookie
-      await axios.put(
-        `${API_BASE}/api/admin/pedidos/${id}/entrega`,
-        { status_entrega: novoStatus },
-        {
-          withCredentials: true,
-        }
-      );
+      // 🔐 Requisição autenticada via apiClient (CSRF automático)
+      await apiClient.put(`/api/admin/pedidos/${id}/entrega`, { status_entrega: novoStatus });
 
       setPedidos((prev) =>
         prev.map((p) =>
@@ -262,14 +248,8 @@ export default function PedidosAdminPage() {
     try {
       setAtualizandoId(id);
 
-      // 🔐 Requisição autenticada só via cookie
-      await axios.put(
-        `${API_BASE}/api/admin/pedidos/${id}/pagamento`,
-        { status_pagamento: novoStatus },
-        {
-          withCredentials: true,
-        }
-      );
+      // 🔐 Requisição autenticada via apiClient (CSRF automático)
+      await apiClient.put(`/api/admin/pedidos/${id}/pagamento`, { status_pagamento: novoStatus });
 
       setPedidos((prev) =>
         prev.map((p) =>
@@ -292,18 +272,9 @@ export default function PedidosAdminPage() {
     try {
       setAtualizandoId(id);
 
-      // 🔐 Config global: só cookie HttpOnly
-      const config = {
-        withCredentials: true as const,
-      };
-
       // e-mail
       try {
-        await axios.post(
-          `${API_BASE}/api/admin/comunicacao/email`,
-          { template, pedidoId: id },
-          config
-        );
+        await apiClient.post("/api/admin/comunicacao/email", { template, pedidoId: id });
       } catch (err) {
         console.error("Erro ao enviar e-mail de comunicação:", err);
         alert("Erro ao enviar e-mail de comunicação.");
@@ -311,11 +282,7 @@ export default function PedidosAdminPage() {
 
       // WhatsApp
       try {
-        await axios.post(
-          `${API_BASE}/api/admin/comunicacao/whatsapp`,
-          { template, pedidoId: id },
-          config
-        );
+        await apiClient.post("/api/admin/comunicacao/whatsapp", { template, pedidoId: id });
       } catch (err) {
         console.error("Erro ao enviar WhatsApp de comunicação:", err);
         alert("Erro ao enviar mensagem de WhatsApp.");

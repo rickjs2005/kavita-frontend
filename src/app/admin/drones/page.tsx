@@ -4,29 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import DronesTabs from "@/components/admin/drones/DronesTabs";
 import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-function safeJson(text: string) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
-function isAuthError(res: Response) {
-  return res.status === 401 || res.status === 403;
-}
-
-function redirectToLogin() {
-  if (typeof window !== "undefined") window.location.assign("/admin/login");
-}
-
-async function readSafe(res: Response) {
-  const txt = await res.text();
-  return { txt, data: safeJson(txt) };
-}
+import apiClient from "@/lib/apiClient";
 
 type Kpis = {
   models: number;
@@ -44,46 +22,29 @@ export default function AdminDronesPage() {
     setKpisLoading(true);
     setKpisMsg(null);
     try {
-      const [modelsRes, galleryRes, repsRes, commentsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/admin/drones/models?includeInactive=1`, { credentials: "include", cache: "no-store" }),
-        fetch(`${API_BASE}/api/admin/drones/galeria`, { credentials: "include", cache: "no-store" }),
-        fetch(`${API_BASE}/api/admin/drones/representantes?page=1&limit=1`, { credentials: "include", cache: "no-store" }),
-        fetch(`${API_BASE}/api/admin/drones/comentarios?page=1&limit=1`, { credentials: "include", cache: "no-store" }),
+      const [modelsData, galleryData, repsData, commentsData] = await Promise.all([
+        apiClient.get<any>("/api/admin/drones/models?includeInactive=1"),
+        apiClient.get<any>("/api/admin/drones/galeria"),
+        apiClient.get<any>("/api/admin/drones/representantes?page=1&limit=1"),
+        apiClient.get<any>("/api/admin/drones/comentarios?page=1&limit=1"),
       ]);
 
-      if ([modelsRes, galleryRes, repsRes, commentsRes].some((r) => isAuthError(r))) {
-        redirectToLogin();
-        return;
-      }
-
-      const [modelsBody, galleryBody, repsBody, commentsBody] = await Promise.all([
-        readSafe(modelsRes),
-        readSafe(galleryRes),
-        readSafe(repsRes),
-        readSafe(commentsRes),
-      ]);
-
-      if (!modelsRes.ok) throw new Error(modelsBody?.data?.message || "Falha ao carregar modelos");
-      if (!galleryRes.ok) throw new Error(galleryBody?.data?.message || "Falha ao carregar galeria");
-      if (!repsRes.ok) throw new Error(repsBody?.data?.message || "Falha ao carregar representantes");
-      if (!commentsRes.ok) throw new Error(commentsBody?.data?.message || "Falha ao carregar comentários");
-
-      const modelsItems = Array.isArray(modelsBody.data?.items)
-        ? modelsBody.data.items
-        : Array.isArray(modelsBody.data)
-          ? modelsBody.data
+      const modelsItems = Array.isArray(modelsData?.items)
+        ? modelsData.items
+        : Array.isArray(modelsData)
+          ? modelsData
           : [];
 
-      const galleryItems = Array.isArray(galleryBody.data?.items)
-        ? galleryBody.data.items
-        : Array.isArray(galleryBody.data)
-          ? galleryBody.data
-          : Array.isArray(galleryBody.data?.data)
-            ? galleryBody.data.data
+      const galleryItems = Array.isArray(galleryData?.items)
+        ? galleryData.items
+        : Array.isArray(galleryData)
+          ? galleryData
+          : Array.isArray(galleryData?.data)
+            ? galleryData.data
             : [];
 
-      const repsTotal = Number(repsBody.data?.total || 0);
-      const commentsTotal = Number(commentsBody.data?.total || 0);
+      const repsTotal = Number(repsData?.total || 0);
+      const commentsTotal = Number(commentsData?.total || 0);
 
       setKpis({
         models: modelsItems.length,

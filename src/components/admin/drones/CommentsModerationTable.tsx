@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import apiClient from "@/lib/apiClient";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -19,28 +20,6 @@ type CommentRow = {
   updated_at: string;
   media: CommentMedia[];
 };
-
-function safeJson(text: string) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
-function isAuthError(res: Response) {
-  return res.status === 401 || res.status === 403;
-}
-
-function redirectToLogin() {
-  if (typeof window !== "undefined") window.location.assign("/admin/login");
-}
-
-async function readSafe(res: Response) {
-  const txt = await res.text();
-  const data = safeJson(txt);
-  return { txt, data };
-}
 
 export default function CommentsModerationTable() {
   const [page, setPage] = useState(1);
@@ -65,19 +44,9 @@ export default function CommentsModerationTable() {
       // Se seu backend ainda exigir "status", você pode fixar aqui:
       // params.set("status", "aprovado");
 
-      const res = await fetch(`${API_BASE}/api/admin/drones/comentarios?${params.toString()}`, {
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) {
-        setMsg(data?.message || "Falha ao carregar comentários.");
-        setData(null);
-        return;
-      }
+      const data = await apiClient.get<any>(
+        `/api/admin/drones/comentarios?${params.toString()}`
+      );
 
       setData({
         items: Array.isArray(data?.items) ? data.items : [],
@@ -85,8 +54,12 @@ export default function CommentsModerationTable() {
         totalPages: Number(data?.totalPages || 1),
       });
       setPage(Number(data?.page || p));
-    } catch {
-      setMsg("Erro de rede ao carregar comentários.");
+    } catch (err: any) {
+      if (err?.status === 401 || err?.status === 403) {
+        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        return;
+      }
+      setMsg(err?.message || "Erro de rede ao carregar comentários.");
       setData(null);
     } finally {
       setLoading(false);
@@ -102,23 +75,15 @@ export default function CommentsModerationTable() {
     setMsg(null);
     setActingId(id);
     try {
-      const res = await fetch(`${API_BASE}/api/admin/drones/comentarios/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) {
-        setMsg(data?.message || "Falha ao excluir comentário.");
-        return;
-      }
-
+      await apiClient.del(`/api/admin/drones/comentarios/${id}`);
       setMsg("Comentário excluído.");
       await load(1);
-    } catch {
-      setMsg("Erro de rede ao excluir.");
+    } catch (err: any) {
+      if (err?.status === 401 || err?.status === 403) {
+        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        return;
+      }
+      setMsg(err?.message || "Erro de rede ao excluir.");
     } finally {
       setActingId(null);
     }

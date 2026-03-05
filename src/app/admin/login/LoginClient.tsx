@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminAuth, AdminRole } from "@/context/AdminAuthContext";
+import apiClient from "@/lib/apiClient";
 
 type LoginResponse = {
   token: string; // ainda existe na resposta, mas não é usado pelo front
@@ -16,8 +17,6 @@ type LoginResponse = {
     permissions?: string[];
   };
 };
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -44,13 +43,9 @@ export default function LoginClient() {
       // ignore
     }
 
-    // tenta encerrar sessão antiga no backend (limpar cookie HttpOnly)
     (async () => {
       try {
-        await fetch(`${API}/api/admin/logout`, {
-          method: "POST",
-          credentials: "include",
-        });
+        await apiClient.post('/api/admin/logout');
       } catch {
         // se der erro, não quebra o fluxo de login
       }
@@ -63,43 +58,14 @@ export default function LoginClient() {
     setErrMsg(null);
 
     try {
-      const res = await fetch(`${API}/api/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // recebe cookie HttpOnly do backend
-        body: JSON.stringify({ email, senha }),
-      });
-
-      if (!res.ok) {
-        let msg = "Credenciais inválidas.";
-        try {
-          const data = await res.json();
-          if (typeof (data as any)?.message === "string") {
-            msg = (data as any).message;
-          }
-        } catch {
-          // ignore
-        }
-        setErrMsg(msg);
-        setLoading(false);
-        return;
-      }
-
-      const data = (await res.json()) as LoginResponse;
+      const data = await apiClient.post<LoginResponse>('/api/admin/login', { email, senha });
 
       // NÃO guarda token em localStorage, nem seta cookie via JS.
       // O cookie HttpOnly já foi definido pelo backend.
 
-      // Mantemos apenas os dados de UX (role/nome/permissões)
+      // Mantemos apenas o nome para UX; role/permissions vêm sempre do servidor (server-truth).
       try {
-        localStorage.setItem("adminRole", data.admin.role);
         localStorage.setItem("adminNome", data.admin.nome);
-        if (Array.isArray(data.admin.permissions)) {
-          localStorage.setItem(
-            "adminPermissions",
-            JSON.stringify(data.admin.permissions)
-          );
-        }
       } catch {
         // ignore
       }
@@ -117,9 +83,9 @@ export default function LoginClient() {
       });
 
       router.replace(redirectTo);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Erro de login:", e);
-      setErrMsg("Falha de conexão com o servidor.");
+      setErrMsg(e?.message || "Credenciais inválidas.");
       setLoading(false);
     }
   }, [email, senha, loading, redirectTo, router, markAsAdmin]);
@@ -158,18 +124,21 @@ export default function LoginClient() {
           >
             Acesso Administrativo
           </h1>
-          {errMsg && (
-            <p
-              className="
-                mt-4 text-sm sm:text-[0.95rem]
-                text-red-300 bg-red-900/30 border border-red-500/40
-                rounded-lg px-3 py-2
-              "
-              role="alert"
-            >
-              {errMsg}
-            </p>
-          )}
+          {/* min-h reserva espaço fixo para evitar layout jump */}
+          <div className="min-h-[40px] mt-4">
+            {errMsg && (
+              <p
+                className="
+                  text-sm sm:text-[0.95rem]
+                  text-red-300 bg-red-900/30 border border-red-500/40
+                  rounded-lg px-3 py-2 break-words
+                "
+                role="alert"
+              >
+                {errMsg}
+              </p>
+            )}
+          </div>
         </header>
 
         <div className="mb-4">
@@ -232,7 +201,7 @@ export default function LoginClient() {
           className="
             w-full rounded-xl
             bg-[#2b7c7c] text-white font-semibold
-            py-3 text-base
+            h-11 leading-none
             hover:bg-[#256f6f] active:scale-[0.99]
             transition disabled:opacity-60 disabled:cursor-not-allowed
           "

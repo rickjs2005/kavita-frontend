@@ -112,6 +112,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(true);
 
         try {
+          // P0-4 (server-truth): permissões e role SEMPRE vêm de /api/admin/me.
+          // Nunca leia adminRole / adminPermissions do localStorage — isso exporia
+          // o painel a XSS que eleva privilégios sem passar pelo servidor.
           const data = await apiClient.get<{
             id: number;
             nome: string;
@@ -164,18 +167,18 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(
     async (opts?: { redirectTo?: string }) => {
-      // Sempre tenta invalidar sessão no backend, mas não depende disso para limpar state.
-      try {
-        await apiClient.post("/api/admin/logout");
-      } catch (err) {
-        // não bloqueia UX; garante limpeza local
+      // P1: Limpa o state LOCAL PRIMEIRO (previne "ghost state" se o backend falhar).
+      // O backend é notificado em segundo plano (fire-and-forget tolerante a falhas).
+      clearState();
+
+      // Invalida sessão no backend de forma não-bloqueante
+      apiClient.post("/api/admin/logout").catch((err) => {
+        // não bloqueia UX; limpeza local já foi feita acima
         handleApiError(err, {
           fallback: "Falha ao encerrar sessão de administrador.",
           // debug: true,
         });
-      } finally {
-        clearState();
-      }
+      });
 
       // Não faz router aqui para não acoplar provider a layout;
       // quem chama decide se redireciona.

@@ -3,6 +3,7 @@
 import { JSX, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import CustomButton from "@/components/buttons/CustomButton";
+import apiClient from "@/lib/apiClient";
 
 import ProdutoForm from "@/components/admin/produtos/produtoform";
 import ProdutoCard from "@/components/admin/produtos/produtocard";
@@ -26,23 +27,7 @@ export default function ProdutosPage() {
     setErro(null);
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/produtos`, {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (res.status === 401) {
-        setErro("Sessão expirada. Faça login novamente.");
-        return;
-      }
-
-      if (!res.ok) {
-        const texto = await safeText(res);
-        throw new Error(`Falha ao carregar (${res.status}) ${texto}`);
-      }
-
-      const data = await res.json();
+      const data = await apiClient.get<Product[]>('/api/admin/produtos');
       const arr = Array.isArray(data) ? data : [];
 
       const parsed: Product[] = arr.map((p: any) => ({
@@ -54,6 +39,10 @@ export default function ProdutosPage() {
       setProdutos(parsed);
     } catch (e: any) {
       console.error("carregarProdutos:", e);
+      if (e?.status === 401 || e?.status === 403) {
+        setErro("Sessão expirada. Faça login novamente.");
+        return;
+      }
       setErro(e?.message || "Erro ao carregar produtos.");
       setProdutos([]);
     } finally {
@@ -74,38 +63,15 @@ export default function ProdutosPage() {
     if (!confirm("Tem certeza que deseja remover este produto?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/produtos/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (res.status === 401) {
-        alert("Sessão expirada. Faça login novamente.");
-        return;
-      }
-
-      if (!res.ok && res.status !== 204) {
-        const texto = await safeText(res);
-        throw new Error(`Falha ao remover (${res.status}). ${texto}`);
-      }
-
+      await apiClient.del(`/api/admin/produtos/${id}`);
       await carregarProdutos();
     } catch (e: any) {
       console.error("removerProduto:", e);
-      alert(e?.message || "Erro ao remover produto.");
-    }
-  }
-
-  async function safeText(res: Response) {
-    try {
-      const ct = res.headers.get("content-type") || "";
-      if (ct.includes("application/json")) {
-        const j = await res.json();
-        return (j as any)?.message || JSON.stringify(j);
+      if (e?.status === 401 || e?.status === 403) {
+        alert("Sessão expirada. Faça login novamente.");
+        return;
       }
-      return await res.text();
-    } catch {
-      return "";
+      alert(e?.message || "Erro ao remover produto.");
     }
   }
 

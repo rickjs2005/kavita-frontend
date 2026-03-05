@@ -1,10 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { apiClient } from "@/lib/apiClient";
+import { ENDPOINTS } from "@/services/api/endpoints";
 
 export type UserAddress = {
   id: number;
@@ -52,18 +51,12 @@ export function useUserAddresses(): UseUserAddressesResult {
   const fetchAddresses = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get<UserAddress[]>(
-        `${API_BASE}/api/users/addresses`,
-        {
-          withCredentials: true,
-        }
-      );
-      setAddresses(res.data || []);
+      const data = await apiClient.get<UserAddress[]>(ENDPOINTS.USERS.ADDRESSES);
+      setAddresses(data || []);
     } catch (err: any) {
       console.error("[useUserAddresses] erro ao carregar endereços:", err);
       const msg =
-        err?.response?.data?.mensagem ||
-        err?.response?.data?.message ||
+        err?.message ||
         "Não foi possível carregar seus endereços.";
       toast.error(msg);
     } finally {
@@ -78,21 +71,16 @@ export function useUserAddresses(): UseUserAddressesResult {
   const createAddress = useCallback(
     async (payload: UserAddressPayload) => {
       try {
-        const res = await axios.post<UserAddress>(
-          `${API_BASE}/api/users/addresses`,
-          payload,
-          {
-            withCredentials: true,
-          }
+        const created = await apiClient.post<UserAddress>(
+          ENDPOINTS.USERS.ADDRESSES,
+          payload
         );
-        const created = res.data;
         setAddresses((prev) => [...prev, created]);
         toast.success("Endereço salvo com sucesso! ✅");
       } catch (err: any) {
         console.error("[useUserAddresses] erro ao criar endereço:", err);
         const msg =
-          err?.response?.data?.mensagem ||
-          err?.response?.data?.message ||
+          err?.message ||
           "Não foi possível salvar o endereço.";
         toast.error(msg);
         throw err;
@@ -104,14 +92,10 @@ export function useUserAddresses(): UseUserAddressesResult {
   const updateAddress = useCallback(
     async (id: number, payload: UserAddressPayload) => {
       try {
-        const res = await axios.put<UserAddress>(
-          `${API_BASE}/api/users/addresses/${id}`,
-          payload,
-          {
-            withCredentials: true,
-          }
+        const updated = await apiClient.put<UserAddress>(
+          ENDPOINTS.USERS.ADDRESS(id),
+          payload
         );
-        const updated = res.data;
         setAddresses((prev) =>
           prev.map((addr) => (addr.id === id ? updated : addr))
         );
@@ -119,8 +103,7 @@ export function useUserAddresses(): UseUserAddressesResult {
       } catch (err: any) {
         console.error("[useUserAddresses] erro ao atualizar endereço:", err);
         const msg =
-          err?.response?.data?.mensagem ||
-          err?.response?.data?.message ||
+          err?.message ||
           "Não foi possível atualizar o endereço.";
         toast.error(msg);
         throw err;
@@ -131,16 +114,13 @@ export function useUserAddresses(): UseUserAddressesResult {
 
   const deleteAddress = useCallback(async (id: number) => {
     try {
-      await axios.delete(`${API_BASE}/api/users/addresses/${id}`, {
-        withCredentials: true,
-      });
+      await apiClient.del(ENDPOINTS.USERS.ADDRESS(id));
       setAddresses((prev) => prev.filter((addr) => addr.id !== id));
       toast.success("Endereço excluído com sucesso.");
     } catch (err: any) {
       console.error("[useUserAddresses] erro ao excluir endereço:", err);
       const msg =
-        err?.response?.data?.mensagem ||
-        err?.response?.data?.message ||
+        err?.message ||
         "Não foi possível excluir o endereço.";
       toast.error(msg);
       throw err;

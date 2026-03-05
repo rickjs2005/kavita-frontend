@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 type HeroConfig = {
   hero_video_url: string;
@@ -17,10 +16,6 @@ type HeroConfig = {
   button_label: string;
   button_href: string;
 };
-
-function isAuthError(res: Response) {
-  return res.status === 401 || res.status === 403;
-}
 
 export default function SiteHeroAdminPage() {
   const router = useRouter();
@@ -62,20 +57,7 @@ export default function SiteHeroAdminPage() {
     async function load() {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE}/api/admin/site-hero`, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (isAuthError(res)) {
-          toast.error("Sessão expirada. Faça login novamente.");
-          router.push("/admin/login");
-          return;
-        }
-
-        if (!res.ok) throw new Error("Erro ao carregar Hero.");
-
-        const data = (await res.json()) as Partial<HeroConfig>;
+        const data = await apiClient.get<Partial<HeroConfig>>("/api/admin/site-hero");
 
         setConfig({
           hero_video_url: data.hero_video_url || "",
@@ -88,8 +70,13 @@ export default function SiteHeroAdminPage() {
           button_label: data.button_label || "Saiba Mais",
           button_href: data.button_href || "/drones",
         });
-      } catch (e) {
+      } catch (e: any) {
         console.error(e);
+        if (e?.status === 401 || e?.status === 403) {
+          toast.error("Sessão expirada. Faça login novamente.");
+          router.push("/admin/login");
+          return;
+        }
         toast.error("Não foi possível carregar as configurações do Hero.");
       } finally {
         setLoading(false);
@@ -113,24 +100,7 @@ export default function SiteHeroAdminPage() {
       fd.append("button_label", config.button_label || "");
       fd.append("button_href", config.button_href || "");
 
-      const res = await fetch(`${API_BASE}/api/admin/site-hero`, {
-        method: "PUT",
-        credentials: "include",
-        body: fd,
-      });
-
-      if (isAuthError(res)) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        router.push("/admin/login");
-        return;
-      }
-
-      const payload = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        toast.error(payload?.message || "Erro ao salvar Hero.");
-        return;
-      }
+      const payload = await apiClient.put<any>("/api/admin/site-hero", fd, { skipContentType: true });
 
       toast.success("Hero atualizado com sucesso!");
       setVideoFile(null);
@@ -148,9 +118,14 @@ export default function SiteHeroAdminPage() {
           button_href: hero.button_href || "/drones",
         });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Falha ao salvar Hero.");
+      if (e?.status === 401 || e?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        router.push("/admin/login");
+        return;
+      }
+      toast.error(e?.message || "Falha ao salvar Hero.");
     } finally {
       setSaving(false);
     }

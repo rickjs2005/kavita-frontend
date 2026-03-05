@@ -4,6 +4,61 @@
 
 import { ApiError, type ApiErrorPayload } from "./errors";
 
+// ---------------------------------------------------------------------------
+// CSRF token cache (P0-2)
+// TTL de 10 minutos; dedup de requisições simultâneas; falha silenciosa.
+// ---------------------------------------------------------------------------
+
+const CSRF_TTL_MS = 10 * 60 * 1000; // 10 minutos
+
+let _csrfToken: string | null = null;
+let _csrfFetchedAt: number | null = null;
+let _csrfInflight: Promise<string | null> | null = null;
+
+/** Obtém o token CSRF do backend (com cache de 10 min e dedup). Falha silenciosamente. */
+async function fetchCsrfToken(baseUrl: string): Promise<string | null> {
+  const now = Date.now();
+
+  // cache ainda válido
+  if (_csrfToken && _csrfFetchedAt && now - _csrfFetchedAt < CSRF_TTL_MS) {
+    return _csrfToken;
+  }
+
+  // dedup: se já tem requisição em andamento, reutiliza
+  if (_csrfInflight) return _csrfInflight;
+
+  _csrfInflight = (async () => {
+    try {
+      const url = joinUrl(baseUrl, "/api/csrf-token");
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) {
+        console.warn(`[apiClient] CSRF token fetch falhou: HTTP ${res.status}`);
+        return null;
+      }
+      const json = await res.json();
+      const token = typeof json?.token === "string" ? json.token : null;
+      if (token) {
+        _csrfToken = token;
+        _csrfFetchedAt = Date.now();
+      } else {
+        console.warn("[apiClient] CSRF token endpoint não retornou token válido.");
+      }
+      return token;
+    } catch (err) {
+      // backend ainda não implementou; não quebra o fluxo
+      const msg = err instanceof Error ? err.message : "erro desconhecido";
+      console.warn(`[apiClient] CSRF token indisponível (endpoint ausente ou erro de rede). ${msg}`);
+      return null;
+    } finally {
+      _csrfInflight = null;
+    }
+  })();
+
+  return _csrfInflight;
+}
+
+const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
 export type ApiRequestOptions = RequestInit & {
   /**
    * Quando true, retorna o Response cru (útil para download/stream).
@@ -145,6 +200,15 @@ export async function apiRequest<T = any>(path: string, options: ApiRequestOptio
   }
 
   const headers = buildHeaders(options.headers, options.skipContentType ? undefined : contentType);
+
+  // P0-2: Injeta CSRF token automaticamente para mutações (POST/PUT/PATCH/DELETE).
+  // Falha silenciosa: se o backend ainda não expõe /api/csrf-token, continua sem o header.
+  if (CSRF_METHODS.has(method)) {
+    const csrfToken = await fetchCsrfToken(baseUrl);
+    if (csrfToken && !headers.has("x-csrf-token")) {
+      headers.set("x-csrf-token", csrfToken);
+    }
+  }
 
   const res = await fetch(url, {
     ...options,
