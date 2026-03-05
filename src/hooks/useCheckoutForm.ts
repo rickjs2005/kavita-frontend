@@ -47,10 +47,12 @@ export type CheckoutFormData = {
  */
 export type CheckoutFormChangeHandler = (
   arg1:
-    | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    | React.ChangeEvent<
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
     | string
     | Record<string, any>,
-  arg2?: any
+  arg2?: any,
 ) => void;
 
 /** Estado inicial seguro */
@@ -146,7 +148,7 @@ export function useCheckoutForm() {
 
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
-    [updateEndereco]
+    [updateEndereco],
   );
 
   /** Helpers opcionais */

@@ -35,7 +35,9 @@ vi.mock("../../lib/errors", () => {
 type FetchMock = ReturnType<typeof vi.fn>;
 
 function makeHeaders(map: Record<string, string>) {
-  const lower = Object.fromEntries(Object.entries(map).map(([k, v]) => [k.toLowerCase(), v]));
+  const lower = Object.fromEntries(
+    Object.entries(map).map(([k, v]) => [k.toLowerCase(), v]),
+  );
   return {
     get: (key: string) => lower[String(key).toLowerCase()] ?? null,
   } as unknown as Headers;
@@ -52,7 +54,11 @@ function makeResponse(params: {
     ok: params.ok,
     status: params.status,
     headers: makeHeaders(params.headers ?? {}),
-    json: params.json ?? (async () => { throw new Error("json() não mockado"); }),
+    json:
+      params.json ??
+      (async () => {
+        throw new Error("json() não mockado");
+      }),
     text: params.text ?? (async () => ""),
   } as unknown as Response;
 }
@@ -64,7 +70,9 @@ function headerGet(headers: HeadersInit | undefined, key: string) {
     return (headers as any).get(key) ?? (headers as any).get(k) ?? null;
   }
   if (Array.isArray(headers)) {
-    const found = (headers as [string, string][]).find(([hk]) => String(hk).toLowerCase() === k);
+    const found = (headers as [string, string][]).find(
+      ([hk]) => String(hk).toLowerCase() === k,
+    );
     return found ? String(found[1]) : null;
   }
   const obj = headers as Record<string, any>;
@@ -76,7 +84,10 @@ function headerGet(headers: HeadersInit | undefined, key: string) {
 
 function getNthFetchCall(n: number) {
   const calls = (globalThis.fetch as any)?.mock?.calls ?? [];
-  if (calls.length <= n) throw new Error(`fetch foi chamado apenas ${calls.length} vez(es), esperava ao menos ${n + 1}`);
+  if (calls.length <= n)
+    throw new Error(
+      `fetch foi chamado apenas ${calls.length} vez(es), esperava ao menos ${n + 1}`,
+    );
   const [url, init] = calls[n] as [string, RequestInit];
   return { url, init };
 }
@@ -110,7 +121,7 @@ describe("apiClient – CSRF token injection", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ token: "csrf-abc123" }),
-      })
+      }),
     );
 
     // 2nd call: actual API call
@@ -120,7 +131,7 @@ describe("apiClient – CSRF token injection", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ created: true }),
-      })
+      }),
     );
 
     await apiClient.post("/api/admin/test", { key: "value" });
@@ -145,7 +156,7 @@ describe("apiClient – CSRF token injection", () => {
           status: 200,
           headers: { "content-type": "application/json" },
           json: async () => ({ token: `token-${method}` }),
-        })
+        }),
       );
 
       // actual API call
@@ -155,7 +166,7 @@ describe("apiClient – CSRF token injection", () => {
           status: 200,
           headers: { "content-type": "application/json" },
           json: async () => ({ ok: true }),
-        })
+        }),
       );
 
       if (method === "del") {
@@ -178,7 +189,7 @@ describe("apiClient – CSRF token injection", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ data: [] }),
-      })
+      }),
     );
 
     await apiClient.get("/api/admin/items");
@@ -196,7 +207,7 @@ describe("apiClient – CSRF token injection", () => {
 
     // CSRF endpoint not available
     (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
-      makeResponse({ ok: false, status: 404, headers: {} })
+      makeResponse({ ok: false, status: 404, headers: {} }),
     );
 
     // actual API call succeeds
@@ -206,7 +217,7 @@ describe("apiClient – CSRF token injection", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ ok: true }),
-      })
+      }),
     );
 
     const result = await apiClient.post("/api/admin/test", { x: 1 });
@@ -228,7 +239,7 @@ describe("apiClient – CSRF token injection", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ token: "cached-token" }),
-      })
+      }),
     );
 
     // First API call
@@ -238,7 +249,7 @@ describe("apiClient – CSRF token injection", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ n: 1 }),
-      })
+      }),
     );
 
     // Second API call (no CSRF fetch needed – should use cache)
@@ -248,7 +259,7 @@ describe("apiClient – CSRF token injection", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ n: 2 }),
-      })
+      }),
     );
 
     await apiClient.post("/api/admin/first", { a: 1 });
@@ -289,7 +300,7 @@ describe("apiClient – CSRF fallback quando endpoint lança exceção", () => {
           status: 200,
           headers: { "content-type": "application/json" },
           json: async () => ({ ok: true }),
-        })
+        }),
       );
 
     const result = await apiClient.post("/api/admin/save", { data: 1 });

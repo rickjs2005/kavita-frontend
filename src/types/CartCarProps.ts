@@ -8,10 +8,10 @@ export type ImageLike =
 export interface CartItem {
   id: number;
   name: string;
-  price: number;          // normalizado no contexto
-  image?: ImageLike;      // 👉 opcional para alinhar com o contexto
+  price: number; // normalizado no contexto
+  image?: ImageLike; // 👉 opcional para alinhar com o contexto
   quantity: number;
-  _stock?: number;        // estoque conhecido/sincronizado
+  _stock?: number; // estoque conhecido/sincronizado
 }
 
 export interface Product {
@@ -19,6 +19,6 @@ export interface Product {
   name: string;
   price: number | string; // pode vir string do backend
   image?: ImageLike;
-  quantity?: number | null;      // alguns backends usam "quantity"
-  estoque?: number | null;       // outros usam "estoque"
+  quantity?: number | null; // alguns backends usam "quantity"
+  estoque?: number | null; // outros usam "estoque"
 }

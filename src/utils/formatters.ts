@@ -38,7 +38,10 @@ export function formatCurrency(value: NumericInput): string {
 }
 
 /** Formata número como porcentagem (ex: 12.3 -> "12,3%") */
-export function formatPercent(value: NumericInput, decimals: number = 1): string {
+export function formatPercent(
+  value: NumericInput,
+  decimals: number = 1,
+): string {
   const num = toNumber(value);
   return `${num.toFixed(decimals).replace(".", ",")}%`;
 }
@@ -64,7 +67,11 @@ export function toDate(value: DateInput): Date | null {
 /** Formata data genérica com opções do Intl.DateTimeFormat */
 export function formatDate(
   value: DateInput,
-  options: Intl.DateTimeFormatOptions = { day: "2-digit", month: "2-digit", year: "numeric" }
+  options: Intl.DateTimeFormatOptions = {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  },
 ): string {
   const dt = toDate(value);
   if (!dt) return "";
@@ -166,7 +173,7 @@ export function formatCnpjMask(value: string): string {
 
   return digits.replace(
     /(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2}).*/,
-    "$1.$2.$3/$4-$5"
+    "$1.$2.$3/$4-$5",
   );
 }
 
@@ -221,9 +228,7 @@ export function normalizeName(value: string): string {
     .replace(/\s+/g, " ")
     .split(" ")
     .map((word) =>
-      word.length === 0
-        ? ""
-        : word.charAt(0).toUpperCase() + word.slice(1)
+      word.length === 0 ? "" : word.charAt(0).toUpperCase() + word.slice(1),
     )
     .join(" ");
 }

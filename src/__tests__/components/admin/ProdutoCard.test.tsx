@@ -1,5 +1,13 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { act } from "react";
 
@@ -55,7 +63,9 @@ describe("ProdutoCard", () => {
 
     render(<ProdutoCard produto={produto} />);
 
-    expect(screen.getByRole("heading", { name: /ração premium/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /ração premium/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/descrição do produto/i)).toBeInTheDocument();
     expect(screen.getByText(/R\$\s?200/)).toBeInTheDocument();
     expect(screen.getByText(/Qtde:\s*10/i)).toBeInTheDocument();
@@ -86,11 +96,17 @@ describe("ProdutoCard", () => {
 
     render(<ProdutoCard produto={produto} />);
 
-    const capa = screen.getByRole("img", { name: /ração premium/i }) as HTMLImageElement;
+    const capa = screen.getByRole("img", {
+      name: /ração premium/i,
+    }) as HTMLImageElement;
     expect(capa.src).toBe("http://test.local/uploads/capa.jpg");
 
-    const mini1 = screen.getByRole("img", { name: /miniatura 1/i }) as HTMLImageElement;
-    const mini2 = screen.getByRole("img", { name: /miniatura 2/i }) as HTMLImageElement;
+    const mini1 = screen.getByRole("img", {
+      name: /miniatura 1/i,
+    }) as HTMLImageElement;
+    const mini2 = screen.getByRole("img", {
+      name: /miniatura 2/i,
+    }) as HTMLImageElement;
 
     expect(mini1.src).toBe("http://test.local/uploads/1.jpg");
     expect(mini2.src).toBe("http://test.local/uploads/2.jpg");
@@ -102,7 +118,9 @@ describe("ProdutoCard", () => {
 
     render(<ProdutoCard produto={produto} />);
 
-    const capa = screen.getByRole("img", { name: /ração premium/i }) as HTMLImageElement;
+    const capa = screen.getByRole("img", {
+      name: /ração premium/i,
+    }) as HTMLImageElement;
     fireEvent.error(capa);
 
     expect(capa.src).toContain("/placeholder.png");
@@ -163,12 +181,14 @@ describe("ProdutoCard", () => {
       () =>
         new Promise<void>((resolve) => {
           resolvePromise = resolve;
-        })
+        }),
     );
 
     render(<ProdutoCard produto={produto} onRemover={onRemover} />);
 
-    const actionBtn = screen.getByRole("button", { name: /remover|excluir|🗑️/i });
+    const actionBtn = screen.getByRole("button", {
+      name: /remover|excluir|🗑️/i,
+    });
     fireEvent.click(actionBtn);
 
     expect(onRemover).toHaveBeenCalledWith(produto.id);
@@ -185,10 +205,14 @@ describe("ProdutoCard", () => {
 
     // volta ao estado normal: some o "Removendo..."
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: /removendo/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /removendo/i }),
+      ).not.toBeInTheDocument();
     });
 
     // e o botão de ação volta a existir (texto ou emoji)
-    expect(screen.getByRole("button", { name: /remover|excluir|🗑️/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /remover|excluir|🗑️/i }),
+    ).toBeInTheDocument();
   });
 });

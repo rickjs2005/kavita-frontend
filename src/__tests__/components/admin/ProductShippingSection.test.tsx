@@ -1,7 +1,9 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import ProductShippingSection, { type ShippingRules } from "@/components/admin/produtos/ProductShippingSection";
+import ProductShippingSection, {
+  type ShippingRules,
+} from "@/components/admin/produtos/ProductShippingSection";
 
 type HarnessProps = {
   initial: ShippingRules;
@@ -40,8 +42,8 @@ describe("ProductShippingSection (src/components/ProductShippingSection.tsx)", (
     expect(screen.getByText("Frete do produto")).toBeInTheDocument();
     expect(
       screen.getByText(
-        /Configure regras simples de frete grátis por produto e o prazo específico deste item\./i
-      )
+        /Configure regras simples de frete grátis por produto e o prazo específico deste item\./i,
+      ),
     ).toBeInTheDocument();
 
     // Quando shippingFree=false, só existe 1 input com placeholder "Ex.: 3" (prazo).
@@ -49,19 +51,25 @@ describe("ProductShippingSection (src/components/ProductShippingSection.tsx)", (
     expect(inputs).toHaveLength(1);
 
     // Checkbox presente e desmarcado
-    const checkbox = screen.getByLabelText("Frete grátis (este produto)") as HTMLInputElement;
+    const checkbox = screen.getByLabelText(
+      "Frete grátis (este produto)",
+    ) as HTMLInputElement;
     expect(checkbox).toBeInTheDocument();
     expect(checkbox.checked).toBe(false);
 
     // Não deve existir a área de "Frete grátis a partir de"
-    expect(screen.queryByText(/Frete grátis a partir de/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Frete grátis a partir de/i),
+    ).not.toBeInTheDocument();
   });
 
   it("normaliza o prazo (dias): permite só dígitos, limita a 4 chars, e trata '0' como ''", () => {
     const onChangeSpy = vi.fn();
     render(<Harness initial={baseValue} onChangeSpy={onChangeSpy} />);
 
-    const prazoInput = screen.getByPlaceholderText("Ex.: 3") as HTMLInputElement;
+    const prazoInput = screen.getByPlaceholderText(
+      "Ex.: 3",
+    ) as HTMLInputElement;
 
     // Digita com letras/símbolos => só números; limite 4
     fireEvent.change(prazoInput, { target: { value: "12a3-45" } });
@@ -92,10 +100,12 @@ describe("ProductShippingSection (src/components/ProductShippingSection.tsx)", (
           shippingPrazoDiasStr: "7",
         }}
         onChangeSpy={onChangeSpy}
-      />
+      />,
     );
 
-    const checkbox = screen.getByLabelText("Frete grátis (este produto)") as HTMLInputElement;
+    const checkbox = screen.getByLabelText(
+      "Frete grátis (este produto)",
+    ) as HTMLInputElement;
     expect(checkbox.checked).toBe(false);
 
     fireEvent.click(checkbox);
@@ -111,7 +121,9 @@ describe("ProductShippingSection (src/components/ProductShippingSection.tsx)", (
     expect(screen.getByText(/Frete grátis a partir de/i)).toBeInTheDocument();
 
     // Agora existem 2 inputs com placeholder "Ex.: 3": prazo (1º) e qty (2º)
-    const inputs = screen.getAllByPlaceholderText("Ex.: 3") as HTMLInputElement[];
+    const inputs = screen.getAllByPlaceholderText(
+      "Ex.: 3",
+    ) as HTMLInputElement[];
     expect(inputs).toHaveLength(2);
 
     // Sanidade: o primeiro é prazo e deve estar com "7"
@@ -129,13 +141,15 @@ describe("ProductShippingSection (src/components/ProductShippingSection.tsx)", (
           shippingPrazoDiasStr: "3",
         }}
         onChangeSpy={onChangeSpy}
-      />
+      />,
     );
 
     // Campo de qty deve existir inicialmente
     expect(screen.getByText(/Frete grátis a partir de/i)).toBeInTheDocument();
 
-    const checkbox = screen.getByLabelText("Frete grátis (este produto)") as HTMLInputElement;
+    const checkbox = screen.getByLabelText(
+      "Frete grátis (este produto)",
+    ) as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
 
     fireEvent.click(checkbox);
@@ -148,7 +162,9 @@ describe("ProductShippingSection (src/components/ProductShippingSection.tsx)", (
     });
 
     // UI deve esconder detalhes após state update do Harness
-    expect(screen.queryByText(/Frete grátis a partir de/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Frete grátis a partir de/i),
+    ).not.toBeInTheDocument();
 
     // Volta a ter só 1 input "Ex.: 3" (prazo)
     const inputs = screen.getAllByPlaceholderText("Ex.: 3");
@@ -168,11 +184,13 @@ describe("ProductShippingSection (src/components/ProductShippingSection.tsx)", (
           shippingPrazoDiasStr: "",
         }}
         onChangeSpy={onChangeSpy}
-      />
+      />,
     );
 
     // Com shippingFree=true, há 2 inputs com placeholder "Ex.: 3": [0]=prazo, [1]=qty
-    const inputs = screen.getAllByPlaceholderText("Ex.: 3") as HTMLInputElement[];
+    const inputs = screen.getAllByPlaceholderText(
+      "Ex.: 3",
+    ) as HTMLInputElement[];
     expect(inputs).toHaveLength(2);
 
     const qtyInput = inputs[1];

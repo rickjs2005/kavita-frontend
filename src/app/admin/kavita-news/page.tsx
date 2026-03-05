@@ -24,7 +24,7 @@ export default function AdminKavitaNewsPage() {
     () => ({
       credentials: "include",
     }),
-    []
+    [],
   );
 
   const handleUnauthorized = useCallback(() => {

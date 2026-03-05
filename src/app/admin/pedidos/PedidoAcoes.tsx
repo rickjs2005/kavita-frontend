@@ -15,7 +15,10 @@ export default function PedidoAcoes({ pedidoId }: PedidoAcoesProps) {
   const sendEmail = async (template: string) => {
     try {
       setIsLoading(true);
-      await apiClient.post("/api/admin/comunicacao/email", { template, pedidoId });
+      await apiClient.post("/api/admin/comunicacao/email", {
+        template,
+        pedidoId,
+      });
       toast.success("E-mail enviado/registrado com sucesso.");
     } catch (err: any) {
       console.error(err);
@@ -29,7 +32,10 @@ export default function PedidoAcoes({ pedidoId }: PedidoAcoesProps) {
   const sendWhatsapp = async (template: string) => {
     try {
       setIsLoading(true);
-      await apiClient.post("/api/admin/comunicacao/whatsapp", { template, pedidoId });
+      await apiClient.post("/api/admin/comunicacao/whatsapp", {
+        template,
+        pedidoId,
+      });
       toast.success("WhatsApp enviado/registrado com sucesso.");
     } catch (err: any) {
       console.error(err);

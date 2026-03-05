@@ -19,7 +19,9 @@ vi.mock("next/link", () => ({
  */
 vi.mock("next/image", () => ({
   __esModule: true,
-  default: ({ alt, fill: _fill, ...props }: any) => <img alt={alt} {...props} />,
+  default: ({ alt, fill: _fill, ...props }: any) => (
+    <img alt={alt} {...props} />
+  ),
 }));
 
 const apiMock = vi.fn();

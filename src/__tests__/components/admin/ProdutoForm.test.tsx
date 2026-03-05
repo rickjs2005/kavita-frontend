@@ -17,11 +17,19 @@ function getInputByPlaceholder(placeholder: string) {
 }
 
 async function submitForm() {
-  fireEvent.click(screen.getByRole("button", { name: /adicionar produto|salvar alterações/i }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /adicionar produto|salvar alterações/i,
+    }),
+  );
   await flushMicrotasks();
 }
 
-function fillRequiredInAddModeExceptCategory(opts?: { name?: string; price?: string; qty?: string }) {
+function fillRequiredInAddModeExceptCategory(opts?: {
+  name?: string;
+  price?: string;
+  qty?: string;
+}) {
   fireEvent.change(getInputByPlaceholder("Ex.: Ração Premium 10kg"), {
     target: { value: opts?.name ?? "Produto X" },
   });
@@ -35,7 +43,11 @@ function fillRequiredInAddModeExceptCategory(opts?: { name?: string; price?: str
   });
 }
 
-function fillBaseValidInEditMode(opts?: { name?: string; price?: string; qty?: string }) {
+function fillBaseValidInEditMode(opts?: {
+  name?: string;
+  price?: string;
+  qty?: string;
+}) {
   fireEvent.change(getInputByPlaceholder("Ex.: Ração Premium 10kg"), {
     target: { value: opts?.name ?? "Produto Editado OK" },
   });
@@ -89,11 +101,17 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     // ✅ “Adicionar Produto” aparece no heading e no botão.
     // Para evitar ambiguidade, validamos o modo via heading.
-    expect(screen.getByRole("heading", { name: "Adicionar Produto" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Adicionar Produto" }),
+    ).toBeInTheDocument();
 
     // preenche preço/qty, mas não nome
-    fireEvent.change(getInputByPlaceholder("Ex.: 200,00"), { target: { value: "200,00" } });
-    fireEvent.change(getInputByPlaceholder("Ex.: 10"), { target: { value: "10" } });
+    fireEvent.change(getInputByPlaceholder("Ex.: 200,00"), {
+      target: { value: "200,00" },
+    });
+    fireEvent.change(getInputByPlaceholder("Ex.: 10"), {
+      target: { value: "10" },
+    });
 
     await submitForm();
 
@@ -122,7 +140,10 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
     };
 
     render(
-      <ProdutoForm API_BASE="http://localhost:5000" produtoEditado={produtoEditado as any} />
+      <ProdutoForm
+        API_BASE="http://localhost:5000"
+        produtoEditado={produtoEditado as any}
+      />,
     );
 
     expect(screen.getByText("Editar Produto")).toBeInTheDocument();
@@ -150,7 +171,10 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
     };
 
     render(
-      <ProdutoForm API_BASE="http://localhost:5000" produtoEditado={produtoEditado as any} />
+      <ProdutoForm
+        API_BASE="http://localhost:5000"
+        produtoEditado={produtoEditado as any}
+      />,
     );
 
     expect(screen.getByText("Editar Produto")).toBeInTheDocument();
@@ -165,7 +189,9 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(
-      screen.getByText("Frete grátis por quantidade: informe um número válido (ex: 10).")
+      screen.getByText(
+        "Frete grátis por quantidade: informe um número válido (ex: 10).",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -192,7 +218,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
         status: 200,
         contentType: "application/json",
         json: { ok: true },
-      })
+      }),
     );
 
     render(
@@ -200,20 +226,26 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
         API_BASE="http://localhost:5000"
         produtoEditado={produtoEditado as any}
         onLimparEdicao={onLimparEdicao}
-      />
+      />,
     );
 
     // tenta remover /img/2.jpg (se estiver na UI)
     const img2Abs = "http://localhost:5000/img/2.jpg";
     const allButtons = screen.getAllByRole("button");
-    const btnWithImg2 = allButtons.find((b) => b.querySelector(`img[src="${img2Abs}"]`));
+    const btnWithImg2 = allButtons.find((b) =>
+      b.querySelector(`img[src="${img2Abs}"]`),
+    );
 
     if (btnWithImg2) {
       fireEvent.click(btnWithImg2);
       expect(screen.getByText("Remover")).toBeInTheDocument();
     }
 
-    fillBaseValidInEditMode({ name: "Produto Editado 2", price: "10", qty: "5" });
+    fillBaseValidInEditMode({
+      name: "Produto Editado 2",
+      price: "10",
+      qty: "5",
+    });
 
     const prazoInput = getShippingPrazoInput();
     fireEvent.change(prazoInput, { target: { value: "3" } });
@@ -244,7 +276,9 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
     expect(Array.isArray(keepImages)).toBe(true);
     expect(keepImages).toContain("/img/1.jpg");
 
-    expect(await screen.findByText("Produto atualizado com sucesso.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Produto atualizado com sucesso."),
+    ).toBeInTheDocument();
     expect(onLimparEdicao).toHaveBeenCalledTimes(1);
   });
 
@@ -263,14 +297,21 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
         status: 403,
         contentType: "application/json",
         json: { message: "Sem permissão (RBAC)" },
-      })
+      }),
     );
 
     render(
-      <ProdutoForm API_BASE="http://localhost:5000" produtoEditado={produtoEditado as any} />
+      <ProdutoForm
+        API_BASE="http://localhost:5000"
+        produtoEditado={produtoEditado as any}
+      />,
     );
 
-    fillBaseValidInEditMode({ name: "Produto Editado OK", price: "10", qty: "1" });
+    fillBaseValidInEditMode({
+      name: "Produto Editado OK",
+      price: "10",
+      qty: "1",
+    });
 
     await submitForm();
 
@@ -293,26 +334,41 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
         status: 500,
         contentType: "text/plain",
         text: "Explodiu no servidor",
-      })
+      }),
     );
 
     render(
-      <ProdutoForm API_BASE="http://localhost:5000" produtoEditado={produtoEditado as any} />
+      <ProdutoForm
+        API_BASE="http://localhost:5000"
+        produtoEditado={produtoEditado as any}
+      />,
     );
 
-    fillBaseValidInEditMode({ name: "Produto Editado OK", price: "10", qty: "1" });
+    fillBaseValidInEditMode({
+      name: "Produto Editado OK",
+      price: "10",
+      qty: "1",
+    });
 
     await submitForm();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText(/Falha ao atualizar \(500\)\./i)).toBeInTheDocument();
-    expect(await screen.findByText(/Explodiu no servidor/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Falha ao atualizar \(500\)\./i),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Explodiu no servidor/i),
+    ).toBeInTheDocument();
   });
 
   it("botão Limpar reseta campos e não chama fetch", async () => {
     render(<ProdutoForm API_BASE="http://localhost:5000" />);
 
-    fillRequiredInAddModeExceptCategory({ name: "Produto X", price: "200,00", qty: "10" });
+    fillRequiredInAddModeExceptCategory({
+      name: "Produto X",
+      price: "200,00",
+      qty: "10",
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Limpar" }));
 
@@ -329,7 +385,9 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     const label = screen.getByText("Imagens do produto (opcional)");
     const wrapper = label.parentElement as HTMLElement;
-    const inputFile = wrapper.querySelector('input[type="file"]') as HTMLInputElement;
+    const inputFile = wrapper.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
 
     expect(inputFile).toBeInTheDocument();
 
@@ -360,7 +418,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
         API_BASE="http://localhost:5000"
         produtoEditado={produtoEditado as any}
         onLimparEdicao={onLimparEdicao}
-      />
+      />,
     );
 
     expect(screen.getByText("Editar Produto")).toBeInTheDocument();

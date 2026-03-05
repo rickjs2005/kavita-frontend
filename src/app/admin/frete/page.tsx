@@ -81,12 +81,14 @@ function splitTextToItems(text: string) {
     text
       .split(/[\n,;]+/g)
       .map((x) => x.trim())
-      .filter(Boolean)
+      .filter(Boolean),
   );
 }
 
 function toCepDigits(v: string) {
-  return String(v || "").replace(/\D/g, "").slice(0, 8);
+  return String(v || "")
+    .replace(/\D/g, "")
+    .slice(0, 8);
 }
 
 async function fetchViaCep(cepDigits: string): Promise<CepLookup | null> {
@@ -184,7 +186,9 @@ export default function FreteAdminPage() {
     setError(null);
     try {
       const data = await apiClient.get<any>("/api/admin/shipping/zones");
-      const arr: ShippingZone[] = Array.isArray(data) ? data : data?.items || [];
+      const arr: ShippingZone[] = Array.isArray(data)
+        ? data
+        : data?.items || [];
 
       setZones(
         arr.map((z) => ({
@@ -193,13 +197,16 @@ export default function FreteAdminPage() {
           all_cities: Boolean((z as any).all_cities),
           is_free: Boolean((z as any).is_free),
           is_active:
-            (z as any).is_active === undefined ? true : Boolean((z as any).is_active),
+            (z as any).is_active === undefined
+              ? true
+              : Boolean((z as any).is_active),
           cities: Array.isArray((z as any).cities) ? (z as any).cities : [],
           prazo_dias:
-            (z as any).prazo_dias === null || (z as any).prazo_dias === undefined
+            (z as any).prazo_dias === null ||
+            (z as any).prazo_dias === undefined
               ? null
               : Number((z as any).prazo_dias),
-        }))
+        })),
       );
     } catch (e: any) {
       if (e?.status === 401) {
@@ -312,7 +319,8 @@ export default function FreteAdminPage() {
 
     if (!form.is_free) {
       const price = normalizeMoneyToNumber(form.priceStr);
-      if (price <= 0) return "Informe um preço de frete válido (ou marque 'Frete grátis').";
+      if (price <= 0)
+        return "Informe um preço de frete válido (ou marque 'Frete grátis').";
     }
 
     if (form.prazoStr.trim() !== "") {
@@ -345,7 +353,8 @@ export default function FreteAdminPage() {
       cities: form.all_cities ? [] : uniqueList(form.cities),
       is_free: Boolean(form.is_free),
       price: form.is_free ? 0 : normalizeMoneyToNumber(form.priceStr),
-      prazo_dias: form.prazoStr.trim() === "" ? null : Math.floor(Number(form.prazoStr)),
+      prazo_dias:
+        form.prazoStr.trim() === "" ? null : Math.floor(Number(form.prazoStr)),
       is_active: Boolean(form.is_active),
     };
 
@@ -491,7 +500,8 @@ export default function FreteAdminPage() {
               {isEditing ? "Editar regra de frete" : "Criar regra de frete"}
             </h2>
             <p className="mt-1 text-xs text-gray-500 sm:text-sm">
-              Ex.: “Santana do Manhuaçu + Simonésia grátis” ou “MG inteiro R$ 19,90”.
+              Ex.: “Santana do Manhuaçu + Simonésia grátis” ou “MG inteiro R$
+              19,90”.
             </p>
           </div>
 
@@ -506,7 +516,9 @@ export default function FreteAdminPage() {
             <Field label="Nome da regra">
               <input
                 value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, name: e.target.value }))
+                }
                 placeholder="Ex.: Manhuaçu e Simonésia grátis"
                 className={inputBase}
               />
@@ -516,7 +528,9 @@ export default function FreteAdminPage() {
               <Field label="Estado (UF)">
                 <input
                   value={form.state}
-                  onChange={(e) => setForm((p) => ({ ...p, state: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, state: e.target.value }))
+                  }
                   placeholder="Ex.: MG"
                   maxLength={2}
                   className={`${inputBase} uppercase`}
@@ -538,7 +552,10 @@ export default function FreteAdminPage() {
                   }
                   className="h-4 w-4 rounded border-gray-300 text-[#359293] focus:ring-[#359293]"
                 />
-                <label htmlFor="allCities" className="text-sm font-medium text-gray-800">
+                <label
+                  htmlFor="allCities"
+                  className="text-sm font-medium text-gray-800"
+                >
                   Estado inteiro
                 </label>
               </div>
@@ -551,15 +568,27 @@ export default function FreteAdminPage() {
                   Atalho por CEP (autocomplete)
                 </h3>
                 <p className="mt-0.5 text-[11px] text-gray-500">
-                  Digite um CEP para preencher UF e sugerir a cidade automaticamente.
+                  Digite um CEP para preencher UF e sugerir a cidade
+                  automaticamente.
                 </p>
               </div>
 
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <Field label="CEP" hint={cepLoading ? "Consultando CEP..." : form.cepInfo?.erro ? "CEP não encontrado." : ""}>
+                <Field
+                  label="CEP"
+                  hint={
+                    cepLoading
+                      ? "Consultando CEP..."
+                      : form.cepInfo?.erro
+                        ? "CEP não encontrado."
+                        : ""
+                  }
+                >
                   <input
                     value={form.cepInput}
-                    onChange={(e) => setForm((p) => ({ ...p, cepInput: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, cepInput: e.target.value }))
+                    }
                     placeholder="Ex.: 36900-000"
                     inputMode="numeric"
                     className={inputBase}
@@ -577,7 +606,9 @@ export default function FreteAdminPage() {
                           {form.cepInfo.localidade}/{form.cepInfo.uf}
                         </span>
                         <span className="text-[12px] text-gray-500">
-                          {form.cepInfo.logradouro ? `${form.cepInfo.logradouro} — ` : ""}
+                          {form.cepInfo.logradouro
+                            ? `${form.cepInfo.logradouro} — `
+                            : ""}
                           {form.cepInfo.bairro || ""}
                         </span>
                       </div>
@@ -592,7 +623,9 @@ export default function FreteAdminPage() {
             {/* Cidades/Localidades */}
             <div className="lg:col-span-2 rounded-xl border border-gray-200 p-3 sm:p-4">
               <div>
-                <h3 className="text-sm font-semibold text-gray-900">Cidades / Localidades</h3>
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Cidades / Localidades
+                </h3>
                 <p className="mt-0.5 text-[11px] text-gray-500">
                   Pode ser cidade, comunidade, córrego, distrito, etc.
                 </p>
@@ -604,7 +637,12 @@ export default function FreteAdminPage() {
                     <div className="relative w-full">
                       <input
                         value={form.citiesInput}
-                        onChange={(e) => setForm((p) => ({ ...p, citiesInput: e.target.value }))}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            citiesInput: e.target.value,
+                          }))
+                        }
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
@@ -628,7 +666,10 @@ export default function FreteAdminPage() {
                               onClick={() => {
                                 setForm((p) => ({
                                   ...p,
-                                  cities: uniqueList([...(p.cities || []), sug]),
+                                  cities: uniqueList([
+                                    ...(p.cities || []),
+                                    sug,
+                                  ]),
                                   citiesInput: "",
                                 }));
                                 flash(`Adicionado: ${sug}`);
@@ -700,7 +741,10 @@ export default function FreteAdminPage() {
                   }
                   className="h-4 w-4 rounded border-gray-300 text-[#359293] focus:ring-[#359293]"
                 />
-                <label htmlFor="isFree" className="text-sm font-medium text-gray-800">
+                <label
+                  htmlFor="isFree"
+                  className="text-sm font-medium text-gray-800"
+                >
                   Frete grátis
                 </label>
               </div>
@@ -711,7 +755,9 @@ export default function FreteAdminPage() {
               >
                 <input
                   value={form.priceStr}
-                  onChange={(e) => setForm((p) => ({ ...p, priceStr: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, priceStr: e.target.value }))
+                  }
                   placeholder="Ex.: 19,90"
                   inputMode="decimal"
                   disabled={form.is_free}
@@ -722,7 +768,9 @@ export default function FreteAdminPage() {
 
             {/* Prazo / status */}
             <div className="rounded-xl border border-gray-200 p-3 sm:p-4">
-              <h3 className="text-sm font-semibold text-gray-900">Prazo e status</h3>
+              <h3 className="text-sm font-semibold text-gray-900">
+                Prazo e status
+              </h3>
               <p className="mt-0.5 text-[11px] text-gray-500">
                 Prazo é opcional. Você pode desativar sem excluir.
               </p>
@@ -731,7 +779,9 @@ export default function FreteAdminPage() {
                 <Field label="Prazo (dias) — opcional">
                   <input
                     value={form.prazoStr}
-                    onChange={(e) => setForm((p) => ({ ...p, prazoStr: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, prazoStr: e.target.value }))
+                    }
                     placeholder="Ex.: 2"
                     inputMode="numeric"
                     className={inputBase}
@@ -743,10 +793,15 @@ export default function FreteAdminPage() {
                     id="isActive"
                     type="checkbox"
                     checked={form.is_active}
-                    onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.checked }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, is_active: e.target.checked }))
+                    }
                     className="h-4 w-4 rounded border-gray-300 text-[#359293] focus:ring-[#359293]"
                   />
-                  <label htmlFor="isActive" className="text-sm font-medium text-gray-800">
+                  <label
+                    htmlFor="isActive"
+                    className="text-sm font-medium text-gray-800"
+                  >
                     Regra ativa
                   </label>
                 </div>
@@ -771,7 +826,11 @@ export default function FreteAdminPage() {
               Limpar
             </button>
 
-            <LoadingButton isLoading={saving} onClick={submit} className="w-full sm:w-auto">
+            <LoadingButton
+              isLoading={saving}
+              onClick={submit}
+              className="w-full sm:w-auto"
+            >
               {isEditing ? "Atualizar regra" : "Salvar regra"}
             </LoadingButton>
           </div>
@@ -781,7 +840,9 @@ export default function FreteAdminPage() {
         <section className="rounded-2xl bg-white/95 p-4 shadow-sm sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Regras cadastradas</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Regras cadastradas
+              </h2>
               <p className="mt-1 text-sm text-gray-600">
                 Total: <strong>{zones.length}</strong>
               </p>
@@ -804,9 +865,13 @@ export default function FreteAdminPage() {
             </div>
           </div>
 
-          {loading && <p className="mt-4 text-sm text-gray-600">Carregando regras…</p>}
+          {loading && (
+            <p className="mt-4 text-sm text-gray-600">Carregando regras…</p>
+          )}
           {!loading && filtered.length === 0 && (
-            <p className="mt-4 text-sm text-gray-600">Nenhuma regra encontrada.</p>
+            <p className="mt-4 text-sm text-gray-600">
+              Nenhuma regra encontrada.
+            </p>
           )}
 
           {!loading && filtered.length > 0 && (
@@ -814,19 +879,28 @@ export default function FreteAdminPage() {
               {/* Mobile: cards */}
               <div className="grid grid-cols-1 gap-3 lg:hidden">
                 {filtered.map((z) => (
-                  <div key={z.id} className="rounded-xl border border-gray-200 p-3">
+                  <div
+                    key={z.id}
+                    className="rounded-xl border border-gray-200 p-3"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate font-semibold text-gray-900">{z.name}</div>
+                        <div className="truncate font-semibold text-gray-900">
+                          {z.name}
+                        </div>
                         <div className="mt-1 text-xs text-gray-600">
                           {z.state} •{" "}
-                          {z.all_cities ? "Estado inteiro" : `${(z.cities || []).length} itens`}
+                          {z.all_cities
+                            ? "Estado inteiro"
+                            : `${(z.cities || []).length} itens`}
                         </div>
                       </div>
 
                       <span
                         className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${
-                          z.is_active ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-700"
+                          z.is_active
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-gray-100 text-gray-700"
                         }`}
                       >
                         {z.is_active ? "Ativa" : "Inativa"}
@@ -843,10 +917,14 @@ export default function FreteAdminPage() {
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <span
                         className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                          z.is_free ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"
+                          z.is_free
+                            ? "bg-green-50 text-green-700"
+                            : "bg-blue-50 text-blue-700"
                         }`}
                       >
-                        {z.is_free ? "Grátis" : `R$ ${Number(z.price || 0).toFixed(2)}`}
+                        {z.is_free
+                          ? "Grátis"
+                          : `R$ ${Number(z.price || 0).toFixed(2)}`}
                       </span>
 
                       <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
@@ -864,7 +942,10 @@ export default function FreteAdminPage() {
                       </button>
 
                       <div className="flex-1">
-                        <DeleteButton onConfirm={() => removeZone(z.id)} label="Excluir" />
+                        <DeleteButton
+                          onConfirm={() => removeZone(z.id)}
+                          label="Excluir"
+                        />
                       </div>
                     </div>
                   </div>
@@ -876,13 +957,25 @@ export default function FreteAdminPage() {
                 <table className="w-full min-w-[900px] border-separate border-spacing-0">
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
-                      <th className="border-b border-gray-200 px-3 py-2">Regra</th>
+                      <th className="border-b border-gray-200 px-3 py-2">
+                        Regra
+                      </th>
                       <th className="border-b border-gray-200 px-3 py-2">UF</th>
-                      <th className="border-b border-gray-200 px-3 py-2">Cobertura</th>
-                      <th className="border-b border-gray-200 px-3 py-2">Frete</th>
-                      <th className="border-b border-gray-200 px-3 py-2">Prazo</th>
-                      <th className="border-b border-gray-200 px-3 py-2">Status</th>
-                      <th className="border-b border-gray-200 px-3 py-2">Ações</th>
+                      <th className="border-b border-gray-200 px-3 py-2">
+                        Cobertura
+                      </th>
+                      <th className="border-b border-gray-200 px-3 py-2">
+                        Frete
+                      </th>
+                      <th className="border-b border-gray-200 px-3 py-2">
+                        Prazo
+                      </th>
+                      <th className="border-b border-gray-200 px-3 py-2">
+                        Status
+                      </th>
+                      <th className="border-b border-gray-200 px-3 py-2">
+                        Ações
+                      </th>
                     </tr>
                   </thead>
 
@@ -890,11 +983,17 @@ export default function FreteAdminPage() {
                     {filtered.map((z) => (
                       <tr key={z.id} className="text-sm text-gray-800">
                         <td className="border-b border-gray-100 px-3 py-3">
-                          <div className="font-semibold text-gray-900">{z.name}</div>
-                          <div className="mt-0.5 text-[11px] text-gray-500">ID: {z.id}</div>
+                          <div className="font-semibold text-gray-900">
+                            {z.name}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-gray-500">
+                            ID: {z.id}
+                          </div>
                         </td>
 
-                        <td className="border-b border-gray-100 px-3 py-3">{z.state}</td>
+                        <td className="border-b border-gray-100 px-3 py-3">
+                          {z.state}
+                        </td>
 
                         <td className="border-b border-gray-100 px-3 py-3">
                           {z.all_cities ? (
@@ -950,7 +1049,10 @@ export default function FreteAdminPage() {
                             >
                               Editar
                             </button>
-                            <DeleteButton onConfirm={() => removeZone(z.id)} label="Excluir" />
+                            <DeleteButton
+                              onConfirm={() => removeZone(z.id)}
+                              label="Excluir"
+                            />
                           </div>
                         </td>
                       </tr>

@@ -179,12 +179,15 @@ describe("useUserAddresses (hook)", () => {
 
     // Assert
     expect(apiClientPostMock).toHaveBeenCalledTimes(1);
-    expect(apiClientPostMock).toHaveBeenCalledWith("/api/users/addresses", payload);
+    expect(apiClientPostMock).toHaveBeenCalledWith(
+      "/api/users/addresses",
+      payload,
+    );
 
     expect(result.current.addresses).toEqual([created]);
     expect(toastSuccessMock).toHaveBeenCalledTimes(1);
     expect(toastSuccessMock).toHaveBeenCalledWith(
-      "Endereço salvo com sucesso! ✅"
+      "Endereço salvo com sucesso! ✅",
     );
   });
 
@@ -215,7 +218,7 @@ describe("useUserAddresses (hook)", () => {
     await expect(
       act(async () => {
         await result.current.createAddress(payload as any);
-      })
+      }),
     ).rejects.toBeTruthy();
 
     expect(toastErrorMock).toHaveBeenCalledTimes(1);
@@ -283,12 +286,12 @@ describe("useUserAddresses (hook)", () => {
     expect(apiClientPutMock).toHaveBeenCalledTimes(1);
     expect(apiClientPutMock).toHaveBeenCalledWith(
       "/api/users/addresses/2",
-      expect.any(Object)
+      expect.any(Object),
     );
 
     expect(result.current.addresses).toEqual([initial[0], updated]);
     expect(toastSuccessMock).toHaveBeenCalledWith(
-      "Endereço atualizado com sucesso! ✅"
+      "Endereço atualizado com sucesso! ✅",
     );
   });
 
@@ -309,18 +312,15 @@ describe("useUserAddresses (hook)", () => {
     // Act + Assert
     await expect(
       act(async () => {
-        await result.current.updateAddress(
-          1,
-          {
-            cep: "00000-000",
-            endereco: "Rua A",
-            numero: "10",
-            bairro: "Centro",
-            cidade: "X",
-            estado: "MG",
-          } as any
-        );
-      })
+        await result.current.updateAddress(1, {
+          cep: "00000-000",
+          endereco: "Rua A",
+          numero: "10",
+          bairro: "Centro",
+          cidade: "X",
+          estado: "MG",
+        } as any);
+      }),
     ).rejects.toBeTruthy();
 
     expect(toastErrorMock).toHaveBeenCalledTimes(1);
@@ -381,7 +381,7 @@ describe("useUserAddresses (hook)", () => {
 
     expect(result.current.addresses).toEqual([initial[1]]);
     expect(toastSuccessMock).toHaveBeenCalledWith(
-      "Endereço excluído com sucesso."
+      "Endereço excluído com sucesso.",
     );
   });
 
@@ -403,7 +403,7 @@ describe("useUserAddresses (hook)", () => {
     await expect(
       act(async () => {
         await result.current.deleteAddress(1);
-      })
+      }),
     ).rejects.toBeTruthy();
 
     expect(toastErrorMock).toHaveBeenCalledTimes(1);

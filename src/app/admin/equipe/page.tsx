@@ -36,7 +36,7 @@ function parseAdminDate(dateStr: string | null | undefined): Date | null {
   }
 
   const match = dateStr.match(
-    /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+    /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/,
   );
   if (match) {
     const [, dd, mm, yyyy, hh = "00", min = "00", ss = "00"] = match;
@@ -46,7 +46,7 @@ function parseAdminDate(dateStr: string | null | undefined): Date | null {
       Number(dd),
       Number(hh),
       Number(min),
-      Number(ss)
+      Number(ss),
     );
     if (!Number.isNaN(dt.getTime())) {
       return dt;
@@ -130,8 +130,7 @@ export default function EquipePage() {
           return;
         }
 
-        if (!adminsRes.ok)
-          throw new Error("Erro ao carregar administradores.");
+        if (!adminsRes.ok) throw new Error("Erro ao carregar administradores.");
         if (!rolesRes.ok) throw new Error("Erro ao carregar papéis.");
 
         const adminsData: AdminRow[] = await adminsRes.json();
@@ -224,7 +223,8 @@ export default function EquipePage() {
     for (const admin of admins) {
       if (!admin.ultimo_login) continue;
       const dt = parseAdminDate(admin.ultimo_login);
-      if (dt && (!best || dt > best.date)) best = { date: dt, raw: admin.ultimo_login };
+      if (dt && (!best || dt > best.date))
+        best = { date: dt, raw: admin.ultimo_login };
     }
     return best?.raw ?? null;
   }, [admins]);
@@ -234,7 +234,7 @@ export default function EquipePage() {
     ? `Último acesso em ${formatDateTime(lastLoginStr)}`
     : "Nenhum administrador acessou ainda";
 
-   return (
+  return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-8">
       {/* HEADER COM X NO TOPO */}
       <header className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

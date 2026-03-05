@@ -51,13 +51,13 @@ export function useUserAddresses(): UseUserAddressesResult {
   const fetchAddresses = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiClient.get<UserAddress[]>(ENDPOINTS.USERS.ADDRESSES);
+      const data = await apiClient.get<UserAddress[]>(
+        ENDPOINTS.USERS.ADDRESSES,
+      );
       setAddresses(data || []);
     } catch (err: any) {
       console.error("[useUserAddresses] erro ao carregar endereços:", err);
-      const msg =
-        err?.message ||
-        "Não foi possível carregar seus endereços.";
+      const msg = err?.message || "Não foi possível carregar seus endereços.";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -68,48 +68,41 @@ export function useUserAddresses(): UseUserAddressesResult {
     fetchAddresses();
   }, [fetchAddresses]);
 
-  const createAddress = useCallback(
-    async (payload: UserAddressPayload) => {
-      try {
-        const created = await apiClient.post<UserAddress>(
-          ENDPOINTS.USERS.ADDRESSES,
-          payload
-        );
-        setAddresses((prev) => [...prev, created]);
-        toast.success("Endereço salvo com sucesso! ✅");
-      } catch (err: any) {
-        console.error("[useUserAddresses] erro ao criar endereço:", err);
-        const msg =
-          err?.message ||
-          "Não foi possível salvar o endereço.";
-        toast.error(msg);
-        throw err;
-      }
-    },
-    []
-  );
+  const createAddress = useCallback(async (payload: UserAddressPayload) => {
+    try {
+      const created = await apiClient.post<UserAddress>(
+        ENDPOINTS.USERS.ADDRESSES,
+        payload,
+      );
+      setAddresses((prev) => [...prev, created]);
+      toast.success("Endereço salvo com sucesso! ✅");
+    } catch (err: any) {
+      console.error("[useUserAddresses] erro ao criar endereço:", err);
+      const msg = err?.message || "Não foi possível salvar o endereço.";
+      toast.error(msg);
+      throw err;
+    }
+  }, []);
 
   const updateAddress = useCallback(
     async (id: number, payload: UserAddressPayload) => {
       try {
         const updated = await apiClient.put<UserAddress>(
           ENDPOINTS.USERS.ADDRESS(id),
-          payload
+          payload,
         );
         setAddresses((prev) =>
-          prev.map((addr) => (addr.id === id ? updated : addr))
+          prev.map((addr) => (addr.id === id ? updated : addr)),
         );
         toast.success("Endereço atualizado com sucesso! ✅");
       } catch (err: any) {
         console.error("[useUserAddresses] erro ao atualizar endereço:", err);
-        const msg =
-          err?.message ||
-          "Não foi possível atualizar o endereço.";
+        const msg = err?.message || "Não foi possível atualizar o endereço.";
         toast.error(msg);
         throw err;
       }
     },
-    []
+    [],
   );
 
   const deleteAddress = useCallback(async (id: number) => {
@@ -119,9 +112,7 @@ export function useUserAddresses(): UseUserAddressesResult {
       toast.success("Endereço excluído com sucesso.");
     } catch (err: any) {
       console.error("[useUserAddresses] erro ao excluir endereço:", err);
-      const msg =
-        err?.message ||
-        "Não foi possível excluir o endereço.";
+      const msg = err?.message || "Não foi possível excluir o endereço.";
       toast.error(msg);
       throw err;
     }

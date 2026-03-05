@@ -28,7 +28,7 @@ export default function FavoritosPage() {
     async function fetchFavorites() {
       try {
         const json = await apiClient.get<Product[] | { data: Product[] }>(
-          ENDPOINTS.FAVORITES.LIST
+          ENDPOINTS.FAVORITES.LIST,
         );
 
         // aceita { data: [...] } ou [...]
@@ -78,21 +78,14 @@ export default function FavoritosPage() {
       <div className="flex items-center justify-between gap-2 mb-6 flex-wrap">
         <h1 className="text-2xl font-semibold">Meus Favoritos</h1>
 
-        <Link
-          href="/"
-          className="text-sm text-[#2F7E7F] hover:underline"
-        >
+        <Link href="/" className="text-sm text-[#2F7E7F] hover:underline">
           Voltar para a loja
         </Link>
       </div>
 
-      {loading && (
-        <p className="text-gray-600">Carregando favoritos...</p>
-      )}
+      {loading && <p className="text-gray-600">Carregando favoritos...</p>}
 
-      {!loading && error && (
-        <p className="text-red-600">{error}</p>
-      )}
+      {!loading && error && <p className="text-red-600">{error}</p>}
 
       {!loading && !error && favoritos.length === 0 && (
         <div className="border border-dashed border-gray-300 rounded-xl p-6 text-center">

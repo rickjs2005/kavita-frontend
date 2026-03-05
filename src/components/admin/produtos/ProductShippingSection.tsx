@@ -29,9 +29,12 @@ export default function ProductShippingSection({ value, onChange }: Props) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <div>
-        <h3 className="text-sm font-semibold text-gray-900">Frete do produto</h3>
+        <h3 className="text-sm font-semibold text-gray-900">
+          Frete do produto
+        </h3>
         <p className="mt-0.5 text-[11px] text-gray-500">
-          Configure regras simples de frete grátis por produto e o prazo específico deste item.
+          Configure regras simples de frete grátis por produto e o prazo
+          específico deste item.
         </p>
       </div>
 
@@ -60,8 +63,8 @@ export default function ProductShippingSection({ value, onChange }: Props) {
           />
 
           <span className="text-[11px] text-gray-500">
-            Se vazio, o sistema usa o prazo da zona (UF/cidade). No checkout, o prazo final será o maior prazo
-            entre os produtos do carrinho.
+            Se vazio, o sistema usa o prazo da zona (UF/cidade). No checkout, o
+            prazo final será o maior prazo entre os produtos do carrinho.
           </span>
         </div>
       </div>
@@ -89,7 +92,10 @@ export default function ProductShippingSection({ value, onChange }: Props) {
           }}
           className="h-4 w-4 rounded border-gray-300 text-[#359293] focus:ring-[#359293]"
         />
-        <label htmlFor="shippingFree" className="text-sm font-medium text-gray-800">
+        <label
+          htmlFor="shippingFree"
+          className="text-sm font-medium text-gray-800"
+        >
           Frete grátis (este produto)
         </label>
       </div>
@@ -119,7 +125,8 @@ export default function ProductShippingSection({ value, onChange }: Props) {
             />
 
             <span className="text-[11px] text-gray-500">
-              Se vazio, o frete grátis vale para qualquer quantidade (sem limite).
+              Se vazio, o frete grátis vale para qualquer quantidade (sem
+              limite).
             </span>
           </div>
         </div>

@@ -50,7 +50,9 @@ function SectionHeader(props: {
         </h2>
 
         {subtitle ? (
-          <p className="mt-1 text-sm text-zinc-600 leading-relaxed">{subtitle}</p>
+          <p className="mt-1 text-sm text-zinc-600 leading-relaxed">
+            {subtitle}
+          </p>
         ) : null}
       </div>
 
@@ -129,12 +131,14 @@ export default async function NewsHomePage() {
                 </h1>
 
                 <p className="mt-3 max-w-2xl text-sm sm:text-base text-zinc-600 leading-relaxed">
-                  Clima, mercado e notícias que impactam o agro brasileiro, em um só lugar.
+                  Clima, mercado e notícias que impactam o agro brasileiro, em
+                  um só lugar.
                 </p>
 
                 <p className="mt-3 max-w-3xl text-sm text-zinc-600 leading-relaxed">
-                  Acompanhe cotações agrícolas, clima regional e as principais notícias do agronegócio.
-                  Informação clara, atualizada e feita para quem vive o campo.
+                  Acompanhe cotações agrícolas, clima regional e as principais
+                  notícias do agronegócio. Informação clara, atualizada e feita
+                  para quem vive o campo.
                 </p>
               </div>
 
@@ -158,7 +162,9 @@ export default async function NewsHomePage() {
                 <span className="hidden sm:inline text-zinc-400">•</span>
                 <span>Economia rural, clima e mercado</span>
                 <span className="hidden sm:inline text-zinc-400">•</span>
-                <span className="font-medium text-zinc-800">Conteúdo informativo e confiável</span>
+                <span className="font-medium text-zinc-800">
+                  Conteúdo informativo e confiável
+                </span>
               </div>
             </div>
           </div>
@@ -206,13 +212,16 @@ export default async function NewsHomePage() {
                           </p>
                         ) : (
                           <p className="mt-3 text-sm md:text-base text-zinc-700 leading-relaxed">
-                            Sem resumo disponível. O conteúdo completo está disponível na matéria.
+                            Sem resumo disponível. O conteúdo completo está
+                            disponível na matéria.
                           </p>
                         )}
 
                         <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
                           Ler matéria{" "}
-                          <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                          <span className="transition-transform group-hover:translate-x-0.5">
+                            →
+                          </span>
                         </div>
                       </div>
 
@@ -231,7 +240,8 @@ export default async function NewsHomePage() {
                             <div className="h-full w-full p-6 flex items-end">
                               <div className="rounded-2xl border border-zinc-200 bg-white/80 px-4 py-3">
                                 <p className="text-xs text-zinc-700">
-                                  Sem imagem de capa. O conteúdo completo está disponível na matéria.
+                                  Sem imagem de capa. O conteúdo completo está
+                                  disponível na matéria.
                                 </p>
                               </div>
                             </div>
@@ -318,15 +328,24 @@ export default async function NewsHomePage() {
                   eyebrow="CLIMA"
                   title="Cidades monitoradas"
                   subtitle="Condições recentes e volume de chuvas nas regiões acompanhadas."
-                  action={<EditorialLink href="/news/clima">Ver detalhes</EditorialLink>}
+                  action={
+                    <EditorialLink href="/news/clima">
+                      Ver detalhes
+                    </EditorialLink>
+                  }
                 />
               </div>
 
               <div className="p-5 space-y-4">
                 {clima?.length ? (
-                  clima.slice(0, 3).map((c: any) => <ClimaCard key={c.id} item={c} />)
+                  clima
+                    .slice(0, 3)
+                    .map((c: any) => <ClimaCard key={c.id} item={c} />)
                 ) : (
-                  <EmptyState title="Nenhuma cidade monitorada no momento." subtitle="Volte em breve." />
+                  <EmptyState
+                    title="Nenhuma cidade monitorada no momento."
+                    subtitle="Volte em breve."
+                  />
                 )}
               </div>
             </div>
@@ -338,15 +357,24 @@ export default async function NewsHomePage() {
                   eyebrow="MERCADO"
                   title="Painel de cotações"
                   subtitle="Principais ativos e referências do agronegócio."
-                  action={<EditorialLink href="/news/cotacoes">Ver todas</EditorialLink>}
+                  action={
+                    <EditorialLink href="/news/cotacoes">
+                      Ver todas
+                    </EditorialLink>
+                  }
                 />
               </div>
 
               <div className="p-5 space-y-4">
                 {cotacoes?.length ? (
-                  cotacoes.slice(0, 3).map((c: any) => <CotacaoCard key={c.id} item={c} />)
+                  cotacoes
+                    .slice(0, 3)
+                    .map((c: any) => <CotacaoCard key={c.id} item={c} />)
                 ) : (
-                  <EmptyState title="Sem cotações disponíveis no momento." subtitle="Atualizado continuamente." />
+                  <EmptyState
+                    title="Sem cotações disponíveis no momento."
+                    subtitle="Atualizado continuamente."
+                  />
                 )}
               </div>
             </div>
@@ -360,7 +388,11 @@ export default async function NewsHomePage() {
               eyebrow="MERCADO"
               title="Painel de cotações"
               subtitle="Principais ativos e referências do agronegócio."
-              action={<EditorialLink href="/news/cotacoes">Ver todas as cotações</EditorialLink>}
+              action={
+                <EditorialLink href="/news/cotacoes">
+                  Ver todas as cotações
+                </EditorialLink>
+              }
             />
           </div>
 
@@ -372,7 +404,10 @@ export default async function NewsHomePage() {
                 ))}
               </div>
             ) : (
-              <EmptyState title="Sem cotações disponíveis no momento." subtitle="Volte em breve." />
+              <EmptyState
+                title="Sem cotações disponíveis no momento."
+                subtitle="Volte em breve."
+              />
             )}
           </div>
         </section>
@@ -384,7 +419,9 @@ export default async function NewsHomePage() {
               eyebrow="CLIMA"
               title="Cidades monitoradas"
               subtitle="Acompanhe o volume de chuvas e as condições recentes nas regiões acompanhadas."
-              action={<EditorialLink href="/news/clima">Ver detalhes</EditorialLink>}
+              action={
+                <EditorialLink href="/news/clima">Ver detalhes</EditorialLink>
+              }
             />
           </div>
 
@@ -396,7 +433,10 @@ export default async function NewsHomePage() {
                 ))}
               </div>
             ) : (
-              <EmptyState title="Nenhuma cidade monitorada no momento." subtitle="Volte em breve." />
+              <EmptyState
+                title="Nenhuma cidade monitorada no momento."
+                subtitle="Volte em breve."
+              />
             )}
           </div>
         </section>
@@ -408,7 +448,11 @@ export default async function NewsHomePage() {
               eyebrow="EDITORIAL"
               title="Matérias e análises"
               subtitle="Leitura confortável, com foco em contexto e impacto no agro."
-              action={<EditorialLink href="/news/posts" variant="primary">Ver notícias</EditorialLink>}
+              action={
+                <EditorialLink href="/news/posts" variant="primary">
+                  Ver notícias
+                </EditorialLink>
+              }
             />
           </div>
 
@@ -435,8 +479,9 @@ export default async function NewsHomePage() {
               Informação que conecta o campo ao mercado
             </h2>
             <p className="mt-3 text-sm md:text-base text-zinc-700 leading-relaxed max-w-4xl">
-              O Kavita News nasce para informar produtores, comerciantes e consumidores sobre o que realmente
-              importa no agro: clima, mercado e contexto. Conteúdo direto, sem ruído, pensado para apoiar
+              O Kavita News nasce para informar produtores, comerciantes e
+              consumidores sobre o que realmente importa no agro: clima, mercado
+              e contexto. Conteúdo direto, sem ruído, pensado para apoiar
               decisões no dia a dia.
             </p>
           </div>

@@ -54,12 +54,12 @@ export default function ProdutoContent({ produto }: Props) {
       [produto.image, ...extras]
         .filter(Boolean)
         .map((img) => absUrl(img as string | null))
-        .filter(Boolean) as string[]
-    )
+        .filter(Boolean) as string[],
+    ),
   );
 
   const estoque = Number(
-    (produto as any).estoque ?? (produto as any).quantity ?? 0
+    (produto as any).estoque ?? (produto as any).quantity ?? 0,
   );
   const disponivel = estoque > 0;
 
@@ -73,7 +73,7 @@ export default function ProdutoContent({ produto }: Props) {
 
         // espera-se rota GET /api/public/promocoes/:productId
         const res = await fetch(
-          `${API_BASE}/api/public/promocoes/${produto.id}`
+          `${API_BASE}/api/public/promocoes/${produto.id}`,
         );
 
         if (!res.ok) {
@@ -98,13 +98,9 @@ export default function ProdutoContent({ produto }: Props) {
   // ===== LÓGICA DE PREÇO / DESCONTO (mesma da page.tsx) =====
   const precoBase = Number(produto.price ?? 0);
 
-  const originalFromPromo =
-    promocao?.original_price ?? promocao?.price ?? null;
+  const originalFromPromo = promocao?.original_price ?? promocao?.price ?? null;
   const finalFromPromo =
-    promocao?.final_price ??
-    promocao?.promo_price ??
-    promocao?.price ??
-    null;
+    promocao?.final_price ?? promocao?.promo_price ?? promocao?.price ?? null;
 
   const originalPrice =
     originalFromPromo != null ? Number(originalFromPromo) : precoBase || 0;
@@ -130,8 +126,7 @@ export default function ProdutoContent({ produto }: Props) {
     }
 
     if (originalPrice > 0 && finalPrice < originalPrice) {
-      discountPercent =
-        ((originalPrice - finalPrice) / originalPrice) * 100;
+      discountPercent = ((originalPrice - finalPrice) / originalPrice) * 100;
     } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
       discountPercent = explicitDiscount;
     }
@@ -169,7 +164,7 @@ export default function ProdutoContent({ produto }: Props) {
       try {
         setLoadingReviews(true);
         const res = await fetch(
-          `${API_BASE}/api/public/produtos/${produto.id}/avaliacoes`
+          `${API_BASE}/api/public/produtos/${produto.id}/avaliacoes`,
         );
         if (!res.ok) {
           console.error("Erro ao buscar avaliações:", res.status);
@@ -218,7 +213,7 @@ export default function ProdutoContent({ produto }: Props) {
       setComentario("");
 
       const resList = await fetch(
-        `${API_BASE}/api/public/produtos/${produto.id}/avaliacoes`
+        `${API_BASE}/api/public/produtos/${produto.id}/avaliacoes`,
       );
       const data = await resList.json();
       setReviews(Array.isArray(data) ? data : []);
@@ -235,14 +230,14 @@ export default function ProdutoContent({ produto }: Props) {
     ratingAvgBackend && ratingAvgBackend > 0
       ? Number(ratingAvgBackend)
       : reviews.length
-      ? reviews.reduce((acc, r) => acc + Number(r.nota || 0), 0) /
-        reviews.length
-      : 0;
+        ? reviews.reduce((acc, r) => acc + Number(r.nota || 0), 0) /
+          reviews.length
+        : 0;
 
   const totalAval = ratingCountBackend ?? reviews.length;
 
   const totalComentarios = reviews.filter(
-    (r) => r.comentario && r.comentario.trim() !== ""
+    (r) => r.comentario && r.comentario.trim() !== "",
   ).length;
 
   const dist = [5, 4, 3, 2, 1].map((star) => {
@@ -294,8 +289,8 @@ export default function ProdutoContent({ produto }: Props) {
                     {media >= i + 1
                       ? "★"
                       : media > i && media < i + 1
-                      ? "★"
-                      : "☆"}
+                        ? "★"
+                        : "☆"}
                   </span>
                 ))}
               </div>
@@ -381,8 +376,8 @@ export default function ProdutoContent({ produto }: Props) {
                       {media >= i + 1
                         ? "★"
                         : media > i && media < i + 1
-                        ? "★"
-                        : "☆"}
+                          ? "★"
+                          : "☆"}
                     </span>
                   ))}
                 </div>
@@ -496,9 +491,7 @@ export default function ProdutoContent({ produto }: Props) {
                       </span>
                     </div>
                     {rev.comentario ? (
-                      <p className="text-sm text-gray-700">
-                        {rev.comentario}
-                      </p>
+                      <p className="text-sm text-gray-700">{rev.comentario}</p>
                     ) : (
                       <p className="text-xs text-gray-400">
                         Cliente avaliou sem comentário.

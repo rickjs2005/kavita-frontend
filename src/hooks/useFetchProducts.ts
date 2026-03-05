@@ -64,7 +64,8 @@ export function useFetchProducts(opts: Opts = {}) {
         // - array direto
         // - { products: [...] }
         // - { data: [...] }
-        const list: unknown = (res as any)?.products ?? (res as any)?.data ?? res;
+        const list: unknown =
+          (res as any)?.products ?? (res as any)?.data ?? res;
 
         if (alive) {
           setData(Array.isArray(list) ? (list as Product[]) : []);
@@ -80,9 +81,9 @@ export function useFetchProducts(opts: Opts = {}) {
         const msg =
           typeof ui === "string"
             ? ui
-            : (ui as any)?.message ??
+            : ((ui as any)?.message ??
               (ui as any)?.fallback ??
-              "Não foi possível carregar os produtos.";
+              "Não foi possível carregar os produtos.");
 
         if (alive) setError(msg);
       } finally {

@@ -22,7 +22,6 @@ import {
   formatFullDateShortYear,
 } from "@/utils/formatters";
 
-
 interface DailySale {
   date: string;
   total: number;
@@ -47,7 +46,7 @@ export default function RelatorioVendasPage() {
         setError(null);
 
         const response = await apiClient.get<VendasAPIResponse>(
-          '/api/admin/relatorios/vendas'
+          "/api/admin/relatorios/vendas",
         );
 
         const mapped: DailySale[] =
@@ -62,11 +61,10 @@ export default function RelatorioVendasPage() {
 
         let msg = "Não foi possível carregar o relatório de vendas.";
 
-          if (err?.status === 401 || err?.status === 403) {
-            msg =
-              "Sessão expirada ou sem permissão. Faça login novamente no admin.";
-          }
-        
+        if (err?.status === 401 || err?.status === 403) {
+          msg =
+            "Sessão expirada ou sem permissão. Faça login novamente no admin.";
+        }
 
         setError(msg);
         toast.error(msg);
@@ -80,7 +78,7 @@ export default function RelatorioVendasPage() {
 
   const totalFaturado = useMemo(
     () => sales.reduce((sum, sale) => sum + (sale.total || 0), 0),
-    [sales]
+    [sales],
   );
 
   const chartData = useMemo(
@@ -89,7 +87,7 @@ export default function RelatorioVendasPage() {
         label: formatShortDate(sale.date),
         total: sale.total,
       })),
-    [sales]
+    [sales],
   );
 
   return (
@@ -168,10 +166,7 @@ export default function RelatorioVendasPage() {
                         data={chartData}
                         margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                       >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#1e293b"
-                        />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                         <XAxis
                           dataKey="label"
                           tick={{ fill: "#9ca3af", fontSize: 11 }}
@@ -184,7 +179,9 @@ export default function RelatorioVendasPage() {
                           axisLine={{ stroke: "#1f2937" }}
                         />
                         <Tooltip
-                          formatter={(value: number | undefined) => value !== undefined ? formatCurrency(value) : "-"}
+                          formatter={(value: number | undefined) =>
+                            value !== undefined ? formatCurrency(value) : "-"
+                          }
                           labelFormatter={(label) =>
                             label ? `Dia ${label}` : "-"
                           }
@@ -194,8 +191,7 @@ export default function RelatorioVendasPage() {
                             borderRadius: "0.75rem",
                             color: "#020617",
                             fontSize: 12,
-                            boxShadow:
-                              "0 15px 35px rgba(15,23,42,0,0.22)",
+                            boxShadow: "0 15px 35px rgba(15,23,42,0,0.22)",
                           }}
                         />
                         <Bar
@@ -223,7 +219,9 @@ export default function RelatorioVendasPage() {
                     />
                     <KpiCard
                       label="Ticket médio (por dia)"
-                      value={formatCurrency(totalFaturado / (sales.length || 1))}
+                      value={formatCurrency(
+                        totalFaturado / (sales.length || 1),
+                      )}
                       helper="Faturamento médio diário."
                       icon={<span>💳</span>}
                       variant="success"
@@ -301,7 +299,7 @@ export default function RelatorioVendasPage() {
 function getBestDayLabel(sales: DailySale[]): string {
   if (!sales.length) return "-";
   const best = sales.reduce((prev, curr) =>
-    curr.total > prev.total ? curr : prev
+    curr.total > prev.total ? curr : prev,
   );
   return `${formatShortDate(best.date)} · ${formatCurrency(best.total)}`;
 }

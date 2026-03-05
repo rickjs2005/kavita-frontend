@@ -4,8 +4,7 @@ import React from "react";
 import { FaSpinner } from "react-icons/fa";
 import clsx from "clsx";
 
-export interface LoadingButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface LoadingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading: boolean;
   children: React.ReactNode;
 }
@@ -36,7 +35,7 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
           ? "bg-gray-400 cursor-wait"
           : "bg-[#EC5B20] hover:bg-[#c94a16] text-white",
 
-        className
+        className,
       )}
       {...props}
     >

@@ -35,7 +35,7 @@ module.exports = [
           { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
         ],
       },
-    }
+    },
   ),
 
   // React / Next / A11y / Imports

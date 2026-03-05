@@ -93,7 +93,9 @@ describe("CotacoesForm", () => {
     render(<Wrapper />);
 
     expect(screen.getByText("Cotações")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Limpar dados/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Limpar dados/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Salvar/i })).toBeInTheDocument();
   });
 
@@ -105,16 +107,19 @@ describe("CotacoesForm", () => {
 
     await user.type(
       screen.getByPlaceholderText(/Dólar comercial, Soja CEPEA, Boi Gordo/i),
-      "Teste"
+      "Teste",
     );
 
     await user.click(screen.getByRole("button", { name: /Limpar dados/i }));
 
     await waitFor(() =>
       expect(
-        (screen.getByPlaceholderText(/Dólar comercial, Soja CEPEA, Boi Gordo/i) as HTMLInputElement)
-          .value
-      ).toBe("")
+        (
+          screen.getByPlaceholderText(
+            /Dólar comercial, Soja CEPEA, Boi Gordo/i,
+          ) as HTMLInputElement
+        ).value,
+      ).toBe(""),
     );
 
     expect(onStartCreate).toHaveBeenCalledTimes(1);
@@ -130,14 +135,24 @@ describe("CotacoesForm", () => {
     await user.selectOptions(getSlugSelect(), "dolar");
 
     expect(
-      (screen.getByPlaceholderText(/Dólar comercial, Soja CEPEA, Boi Gordo/i) as HTMLInputElement)
-        .value
+      (
+        screen.getByPlaceholderText(
+          /Dólar comercial, Soja CEPEA, Boi Gordo/i,
+        ) as HTMLInputElement
+      ).value,
     ).toBe("Dólar");
 
-    expect((screen.getByPlaceholderText(/Ex: R\$\//i) as HTMLInputElement).value || "").toContain("R$");
+    expect(
+      (screen.getByPlaceholderText(/Ex: R\$\//i) as HTMLInputElement).value ||
+        "",
+    ).toContain("R$");
     // Obs: seu placeholder de Unidade é "Ex: R$/saca, R$/@, R$"
     expect(
-      (screen.getByPlaceholderText(/Ex: R\$\/saca, R\$\/@, R\$/i) as HTMLInputElement).value
+      (
+        screen.getByPlaceholderText(
+          /Ex: R\$\/saca, R\$\/@, R\$/i,
+        ) as HTMLInputElement
+      ).value,
     ).toBe("R$");
   });
 
@@ -150,16 +165,23 @@ describe("CotacoesForm", () => {
 
     await user.selectOptions(getSlugSelect(), "dolar");
 
-    const nome = screen.getByPlaceholderText(/Dólar comercial, Soja CEPEA, Boi Gordo/i) as HTMLInputElement;
+    const nome = screen.getByPlaceholderText(
+      /Dólar comercial, Soja CEPEA, Boi Gordo/i,
+    ) as HTMLInputElement;
     await user.clear(nome);
     await user.type(nome, "XXX");
     expect(nome.value).toBe("XXX");
 
-    await user.click(screen.getByRole("button", { name: /Aplicar preset do slug/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Aplicar preset do slug/i }),
+    );
 
     expect(
-      (screen.getByPlaceholderText(/Dólar comercial, Soja CEPEA, Boi Gordo/i) as HTMLInputElement)
-        .value
+      (
+        screen.getByPlaceholderText(
+          /Dólar comercial, Soja CEPEA, Boi Gordo/i,
+        ) as HTMLInputElement
+      ).value,
     ).toBe("Dólar");
   });
 });

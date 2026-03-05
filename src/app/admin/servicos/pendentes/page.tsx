@@ -44,7 +44,7 @@ export default function ColaboradoresPendentesPage() {
         console.error("Erro ao buscar pendentes:", res.status);
         if (res.status === 401 || res.status === 403) {
           toast.error(
-            "Você não tem permissão para ver colaboradores pendentes. Faça login novamente."
+            "Você não tem permissão para ver colaboradores pendentes. Faça login novamente.",
           );
         } else {
           toast.error("Erro ao carregar colaboradores pendentes.");
@@ -66,7 +66,6 @@ export default function ColaboradoresPendentesPage() {
 
   useEffect(() => {
     carregar();
-     
   }, []);
 
   async function aprovar(id: number) {
@@ -85,7 +84,7 @@ export default function ColaboradoresPendentesPage() {
         console.error("Erro ao verificar colaborador:", res.status);
         if (res.status === 401 || res.status === 403) {
           toast.error(
-            "Você não tem permissão para aprovar colaboradores. Faça login novamente."
+            "Você não tem permissão para aprovar colaboradores. Faça login novamente.",
           );
         } else {
           toast.error("Erro ao verificar colaborador.");
@@ -114,7 +113,7 @@ export default function ColaboradoresPendentesPage() {
         console.error("Erro ao remover colaborador:", res.status);
         if (res.status === 401 || res.status === 403) {
           toast.error(
-            "Você não tem permissão para remover colaboradores. Faça login novamente."
+            "Você não tem permissão para remover colaboradores. Faça login novamente.",
           );
         } else {
           toast.error("Erro ao remover colaborador.");
@@ -190,8 +189,8 @@ export default function ColaboradoresPendentesPage() {
                 c.imagem && c.imagem.startsWith("http")
                   ? c.imagem
                   : c.imagem
-                  ? `${BACKEND_BASE}${c.imagem}`
-                  : null;
+                    ? `${BACKEND_BASE}${c.imagem}`
+                    : null;
 
               return (
                 <article

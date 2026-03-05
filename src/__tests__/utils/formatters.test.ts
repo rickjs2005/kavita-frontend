@@ -8,7 +8,10 @@ import {
 } from "@/utils/formatters";
 
 function normalizeSpaces(s: string) {
-  return s.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
+  return s
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 describe("utils/formatters", () => {

@@ -29,9 +29,7 @@ export function SectionHeader({
         </div>
 
         {subtitle ? (
-          <p className="text-sm text-zinc-600 leading-relaxed">
-            {subtitle}
-          </p>
+          <p className="text-sm text-zinc-600 leading-relaxed">{subtitle}</p>
         ) : null}
       </div>
 
@@ -48,7 +46,10 @@ export function SectionHeader({
           "
         >
           {actionLabel}
-          <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
+          <span
+            aria-hidden
+            className="transition-transform group-hover:translate-x-0.5"
+          >
             →
           </span>
         </Link>

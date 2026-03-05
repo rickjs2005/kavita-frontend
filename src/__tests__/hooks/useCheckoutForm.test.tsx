@@ -14,7 +14,7 @@ type AnyChangeEvent = {
 function makeEvent(
   name?: string,
   value?: any,
-  opts?: { type?: string; checked?: boolean }
+  opts?: { type?: string; checked?: boolean },
 ): AnyChangeEvent {
   return {
     target: {
@@ -94,7 +94,10 @@ describe("useCheckoutForm (src/hooks/useCheckoutForm.ts)", () => {
     // Act
     act(() => {
       result.current.updateForm(
-        makeEvent("termosAceitos", undefined, { type: "checkbox", checked: true }) as any
+        makeEvent("termosAceitos", undefined, {
+          type: "checkbox",
+          checked: true,
+        }) as any,
       );
     });
 
@@ -110,7 +113,10 @@ describe("useCheckoutForm (src/hooks/useCheckoutForm.ts)", () => {
     // Act
     act(() => {
       result.current.updateForm(
-        makeEvent("endereco.temPorteira", undefined, { type: "checkbox", checked: false }) as any
+        makeEvent("endereco.temPorteira", undefined, {
+          type: "checkbox",
+          checked: false,
+        }) as any,
       );
     });
 

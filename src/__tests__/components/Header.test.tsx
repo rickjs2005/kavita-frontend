@@ -22,7 +22,9 @@ vi.mock("next/link", () => ({
 
 vi.mock("next/image", () => ({
   __esModule: true,
-  default: ({ src, alt, ...props }: any) => <img src={src} alt={alt} {...props} />,
+  default: ({ src, alt, ...props }: any) => (
+    <img src={src} alt={alt} {...props} />
+  ),
 }));
 
 vi.mock("next/dynamic", () => ({
@@ -48,7 +50,9 @@ vi.mock("@/context/AuthContext", () => ({
 // ============ Mocks Componentes Filhos ============
 vi.mock("@/components/cart/CartCar", () => ({
   __esModule: true,
-  default: ({ isCartOpen }: any) => <div data-testid="cartcar">{String(!!isCartOpen)}</div>,
+  default: ({ isCartOpen }: any) => (
+    <div data-testid="cartcar">{String(!!isCartOpen)}</div>
+  ),
 }));
 
 vi.mock("@/components/ui/UserMenu", () => ({
@@ -59,7 +63,9 @@ vi.mock("@/components/ui/UserMenu", () => ({
 vi.mock("@/components/layout/MainNavCategories", () => ({
   __esModule: true,
   default: ({ categories }: any) => (
-    <div data-testid="mainnav">{Array.isArray(categories) ? categories.length : "x"}</div>
+    <div data-testid="mainnav">
+      {Array.isArray(categories) ? categories.length : "x"}
+    </div>
   ),
 }));
 
@@ -96,7 +102,11 @@ describe("Header (src/components/layout/Header.tsx)", () => {
 
   it("deve usar logo de drone quando rota começa com /drones", () => {
     mockUsePathname.mockReturnValue("/drones/t100");
-    render(<Header shop={{ store_name: "Kavita", logo_url: "/uploads/x.png" } as any} />);
+    render(
+      <Header
+        shop={{ store_name: "Kavita", logo_url: "/uploads/x.png" } as any}
+      />,
+    );
 
     const img = screen.getByAltText("Kavita") as HTMLImageElement;
     expect(img.src).toContain("/kavita-drone.png");
@@ -104,7 +114,16 @@ describe("Header (src/components/layout/Header.tsx)", () => {
 
   it("deve usar shop.logo_url absoluto sem prefixar", () => {
     mockUsePathname.mockReturnValue("/");
-    render(<Header shop={{ store_name: "Minha Loja", logo_url: "https://cdn.site.com/logo.png" } as any} />);
+    render(
+      <Header
+        shop={
+          {
+            store_name: "Minha Loja",
+            logo_url: "https://cdn.site.com/logo.png",
+          } as any
+        }
+      />,
+    );
 
     const img = screen.getByAltText("Minha Loja") as HTMLImageElement;
     expect(img.getAttribute("src")).toBe("https://cdn.site.com/logo.png");
@@ -114,10 +133,18 @@ describe("Header (src/components/layout/Header.tsx)", () => {
     process.env.NEXT_PUBLIC_API_URL = "http://localhost:5000";
     mockUsePathname.mockReturnValue("/");
 
-    render(<Header shop={{ store_name: "Minha Loja", logo_url: "/uploads/logo.png" } as any} />);
+    render(
+      <Header
+        shop={
+          { store_name: "Minha Loja", logo_url: "/uploads/logo.png" } as any
+        }
+      />,
+    );
 
     const img = screen.getByAltText("Minha Loja") as HTMLImageElement;
-    expect(img.getAttribute("src")).toBe("http://localhost:5000/uploads/logo.png");
+    expect(img.getAttribute("src")).toBe(
+      "http://localhost:5000/uploads/logo.png",
+    );
   });
 
   it("badge do carrinho: mostra quando cartItems.length > 0 e some quando 0", async () => {
@@ -216,7 +243,7 @@ describe("Header (src/components/layout/Header.tsx)", () => {
           { id: 3, name: "C", slug: "c", is_active: true },
           { id: 4, name: "D", slug: "d" }, // undefined => ativa
         ]}
-      />
+      />,
     );
 
     expect(screen.getByTestId("mainnav").textContent).toBe("3");

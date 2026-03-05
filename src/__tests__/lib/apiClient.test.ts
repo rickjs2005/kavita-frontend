@@ -36,7 +36,9 @@ vi.mock("../../lib/errors", () => {
 type FetchMock = ReturnType<typeof vi.fn>;
 
 function makeHeaders(map: Record<string, string>) {
-  const lower = Object.fromEntries(Object.entries(map).map(([k, v]) => [k.toLowerCase(), v]));
+  const lower = Object.fromEntries(
+    Object.entries(map).map(([k, v]) => [k.toLowerCase(), v]),
+  );
   return {
     get: (key: string) => lower[String(key).toLowerCase()] ?? null,
   } as unknown as Headers;
@@ -76,7 +78,10 @@ function getFirstFetchCall() {
 /** Returns the Nth fetch call (0-based index). */
 function getNthFetchCall(n: number) {
   const calls = (globalThis.fetch as any)?.mock?.calls ?? [];
-  if (calls.length <= n) throw new Error(`fetch foi chamado apenas ${calls.length} vez(es), esperava ao menos ${n + 1}`);
+  if (calls.length <= n)
+    throw new Error(
+      `fetch foi chamado apenas ${calls.length} vez(es), esperava ao menos ${n + 1}`,
+    );
   const [url, init] = calls[n] as [string, RequestInit];
   return { url, init };
 }
@@ -84,7 +89,7 @@ function getNthFetchCall(n: number) {
 /** Mock CSRF endpoint returning no token (simulates backend without /api/csrf-token). */
 function mockCsrfNotAvailable() {
   (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
-    makeResponse({ ok: false, status: 404, headers: {} })
+    makeResponse({ ok: false, status: 404, headers: {} }),
   );
 }
 
@@ -145,7 +150,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ ok: true, items: [1, 2, 3] }),
-      })
+      }),
     );
 
     const result = await apiFetch("/api/ping");
@@ -175,7 +180,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ ok: true }),
-      })
+      }),
     );
 
     await apiFetch("/v1/health");
@@ -196,7 +201,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ ok: true }),
-      })
+      }),
     );
 
     await apiFetch("/api/produtos");
@@ -217,7 +222,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ ok: true }),
-      })
+      }),
     );
 
     await apiFetch("https://external.service.com/echo");
@@ -236,7 +241,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ ok: true }),
-      })
+      }),
     );
 
     await apiFetch("/api/test");
@@ -258,10 +263,13 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ created: true }),
-      })
+      }),
     );
 
-    const result = await apiFetch("/api/produtos", { method: "POST", body: JSON.stringify({ name: "Produto" }) });
+    const result = await apiFetch("/api/produtos", {
+      method: "POST",
+      body: JSON.stringify({ name: "Produto" }),
+    });
 
     expect(result).toEqual({ created: true });
 
@@ -282,7 +290,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ ok: true }),
-      })
+      }),
     );
 
     await apiFetch("/api/test", { headers: { "X-Test": "1" } });
@@ -302,7 +310,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ ok: true }),
-      })
+      }),
     );
 
     await apiFetch("/api/test", { headers: { "content-type": "text/plain" } });
@@ -321,7 +329,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ ok: true }),
-      })
+      }),
     );
 
     await apiFetch("/api/test", { credentials: "omit" });
@@ -341,7 +349,9 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
       json: async () => ({ shouldNot: "be used" }),
     });
 
-    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(responseLike);
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      responseLike,
+    );
 
     const res = await apiFetch<Response>("/api/download", { raw: true });
     expect(res).toBe(responseLike);
@@ -357,7 +367,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json; charset=utf-8" },
         json: async () => ({ ok: true }),
-      })
+      }),
     );
 
     const data = await apiFetch("/api/json");
@@ -377,7 +387,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
           throw new Error("invalid json");
         },
         text: async () => "ok-text",
-      })
+      }),
     );
 
     const data = await apiFetch("/api/bad-json");
@@ -394,7 +404,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "text/html" },
         text: async () => "<h1>ok</h1>",
-      })
+      }),
     );
 
     const data = await apiFetch("/api/html");
@@ -416,7 +426,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
           details: { field: "name" },
           requestId: "req-123",
         }),
-      })
+      }),
     );
 
     await expect(apiFetch("/api/fail")).rejects.toMatchObject({
@@ -437,12 +447,15 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
       makeResponse({
         ok: false,
         status: 401,
-        headers: { "content-type": "application/json", "x-request-id": "hdr-req-9" },
+        headers: {
+          "content-type": "application/json",
+          "x-request-id": "hdr-req-9",
+        },
         json: async () => {
           throw new Error("invalid json");
         },
         text: async () => "",
-      })
+      }),
     );
 
     await expect(apiFetch("/api/unauthorized")).rejects.toMatchObject({
@@ -466,12 +479,16 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
         status: 200,
         headers: { "content-type": "application/json" },
         json: async () => ({ ok: true }),
-      })
+      }),
     );
 
     const body = JSON.stringify({ a: 1 });
 
-    await apiFetch("/api/test", { method: "POST", body, skipContentType: true });
+    await apiFetch("/api/test", {
+      method: "POST",
+      body,
+      skipContentType: true,
+    });
 
     // calls[1] is the actual API call (calls[0] is the CSRF prefetch)
     const { init } = getNthFetchCall(1);

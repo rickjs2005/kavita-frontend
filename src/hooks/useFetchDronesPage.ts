@@ -79,7 +79,11 @@ export type PublicDronesModelAggregateResponse = PublicDronesRootResponse;
  */
 
 function isValidModelKey(modelKey: string) {
-  return /^[a-z0-9_]{2,20}$/.test(String(modelKey || "").trim().toLowerCase());
+  return /^[a-z0-9_]{2,20}$/.test(
+    String(modelKey || "")
+      .trim()
+      .toLowerCase(),
+  );
 }
 
 function extractItemsArray<T>(payload: AnyJson): T[] {
@@ -92,7 +96,9 @@ function extractItemsArray<T>(payload: AnyJson): T[] {
   return [];
 }
 
-async function readJsonSafely(res: Response): Promise<{ text: string; json: AnyJson }> {
+async function readJsonSafely(
+  res: Response,
+): Promise<{ text: string; json: AnyJson }> {
   const text = await res.text();
   try {
     return { text, json: JSON.parse(text) as AnyJson };
@@ -115,7 +121,10 @@ function pickErrorMessage(json: AnyJson, fallback: string) {
  * - aplica cache: "no-store" por padrão (você pode sobrescrever)
  * - captura payload padrão do backend (status/code/message/details)
  */
-async function fetchJsonOrThrow<T>(url: string, init: RequestInit = {}): Promise<T> {
+async function fetchJsonOrThrow<T>(
+  url: string,
+  init: RequestInit = {},
+): Promise<T> {
   const res = await fetch(url, {
     cache: "no-store",
     ...init,
@@ -124,12 +133,14 @@ async function fetchJsonOrThrow<T>(url: string, init: RequestInit = {}): Promise
   const { json } = await readJsonSafely(res);
 
   if (!res.ok) {
-    const payload = (json && typeof json === "object" ? (json as any) : {}) as ApiErrorPayload;
+    const payload = (
+      json && typeof json === "object" ? (json as any) : {}
+    ) as ApiErrorPayload;
     throw new ApiError(
       pickErrorMessage(json, "Falha na requisição."),
       res.status,
       payload.code,
-      payload.details
+      payload.details,
     );
   }
 
@@ -145,7 +156,9 @@ function normalizeModels(raw: any): DroneModel[] {
   const arr = extractItemsArray<any>(raw);
   return arr
     .map((m) => {
-      const key = String(m.key || m.model_key || "").trim().toLowerCase();
+      const key = String(m.key || m.model_key || "")
+        .trim()
+        .toLowerCase();
       const label = String(m.label || m.name || "").trim();
 
       return {
@@ -154,9 +167,13 @@ function normalizeModels(raw: any): DroneModel[] {
         is_active: m.is_active,
         sort_order: m.sort_order,
         current_hero_media_id:
-          m.current_hero_media_id === undefined ? null : (m.current_hero_media_id ?? null),
+          m.current_hero_media_id === undefined
+            ? null
+            : (m.current_hero_media_id ?? null),
         current_card_media_id:
-          m.current_card_media_id === undefined ? null : (m.current_card_media_id ?? null),
+          m.current_card_media_id === undefined
+            ? null
+            : (m.current_card_media_id ?? null),
       } as DroneModel;
     })
     .filter((m) => m.key && m.label);
@@ -176,7 +193,9 @@ function resolvePageFromRoot(root: any): DronePageSettings | null {
  */
 export function useFetchDronesPage(modelKey?: ModelKey) {
   const normalizedModelKey = useMemo(() => {
-    const mk = String(modelKey || "").trim().toLowerCase();
+    const mk = String(modelKey || "")
+      .trim()
+      .toLowerCase();
     return mk && isValidModelKey(mk) ? mk : undefined;
   }, [modelKey]);
 
@@ -185,7 +204,9 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
   const [page, setPage] = useState<DronePageSettings | null>(null);
   const [models, setModels] = useState<DroneModel[]>([]);
   const [gallery, setGallery] = useState<DroneGalleryItem[]>([]);
-  const [representatives, setRepresentatives] = useState<DroneRepresentative[]>([]);
+  const [representatives, setRepresentatives] = useState<DroneRepresentative[]>(
+    [],
+  );
   const [comments, setComments] = useState<DroneComment[]>([]);
   const [model, setModel] = useState<any | null>(null); // model_data (models_json[modelKey])
 
@@ -223,20 +244,27 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
        * E buscamos em paralelo com:
        * - root agregado (sem modelKey) OU aggregate do modelo (com modelKey)
        */
-      const modelsPromise = fetchJsonOrThrow<any>(`${API_BASE}/api/public/drones/models`, fetchInit);
+      const modelsPromise = fetchJsonOrThrow<any>(
+        `${API_BASE}/api/public/drones/models`,
+        fetchInit,
+      );
 
       const repsPromise = fetchJsonOrThrow<any>(
         `${API_BASE}/api/public/drones/representantes?page=1&limit=12`,
-        fetchInit
+        fetchInit,
       );
 
       if (normalizedModelKey) {
         const aggPromise = fetchJsonOrThrow<PublicDronesModelAggregateResponse>(
           `${API_BASE}/api/public/drones/models/${normalizedModelKey}`,
-          fetchInit
+          fetchInit,
         );
 
-        const [modelsRes, repsRes, agg] = await Promise.all([modelsPromise, repsPromise, aggPromise]);
+        const [modelsRes, repsRes, agg] = await Promise.all([
+          modelsPromise,
+          repsPromise,
+          aggPromise,
+        ]);
 
         setModels(normalizeModels(modelsRes));
         setRepresentatives(extractItemsArray<DroneRepresentative>(repsRes));
@@ -252,10 +280,14 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
       // sem modelKey: root agregado
       const rootPromise = fetchJsonOrThrow<PublicDronesRootResponse>(
         `${API_BASE}/api/public/drones`,
-        fetchInit
+        fetchInit,
       );
 
-      const [modelsRes, repsRes, root] = await Promise.all([modelsPromise, repsPromise, rootPromise]);
+      const [modelsRes, repsRes, root] = await Promise.all([
+        modelsPromise,
+        repsPromise,
+        rootPromise,
+      ]);
 
       setModels(normalizeModels(modelsRes));
       setRepresentatives(extractItemsArray<DroneRepresentative>(repsRes));
@@ -263,8 +295,12 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
       const pageResolved = resolvePageFromRoot(root);
       const modelResolved = (root as any)?.model_data ?? null;
 
-      const galleryResolved = extractItemsArray<DroneGalleryItem>((root as any)?.gallery);
-      const commentsResolved = extractItemsArray<DroneComment>((root as any)?.comments);
+      const galleryResolved = extractItemsArray<DroneGalleryItem>(
+        (root as any)?.gallery,
+      );
+      const commentsResolved = extractItemsArray<DroneComment>(
+        (root as any)?.comments,
+      );
 
       setPage(pageResolved);
       setModel(modelResolved);
@@ -286,10 +322,10 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
           (async () => {
             const gal = await fetchJsonOrThrow<any>(
               `${API_BASE}/api/public/drones/galeria`,
-              fetchInit
+              fetchInit,
             );
             setGallery(extractItemsArray<DroneGalleryItem>(gal));
-          })()
+          })(),
         );
       }
 
@@ -298,10 +334,10 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
           (async () => {
             const com = await fetchJsonOrThrow<any>(
               `${API_BASE}/api/public/drones/comentarios?page=1&limit=10`,
-              fetchInit
+              fetchInit,
             );
             setComments(extractItemsArray<DroneComment>(com));
-          })()
+          })(),
         );
       }
 

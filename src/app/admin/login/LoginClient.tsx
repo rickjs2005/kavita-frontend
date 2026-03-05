@@ -45,7 +45,7 @@ export default function LoginClient() {
 
     (async () => {
       try {
-        await apiClient.post('/api/admin/logout');
+        await apiClient.post("/api/admin/logout");
       } catch {
         // se der erro, não quebra o fluxo de login
       }
@@ -58,7 +58,10 @@ export default function LoginClient() {
     setErrMsg(null);
 
     try {
-      const data = await apiClient.post<LoginResponse>('/api/admin/login', { email, senha });
+      const data = await apiClient.post<LoginResponse>("/api/admin/login", {
+        email,
+        senha,
+      });
 
       // NÃO guarda token em localStorage, nem seta cookie via JS.
       // O cookie HttpOnly já foi definido pelo backend.

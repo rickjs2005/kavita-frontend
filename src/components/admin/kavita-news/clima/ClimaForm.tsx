@@ -2,7 +2,11 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ClimaEditMode, ClimaFormState, ClimaItem } from "@/types/kavita-news";
+import type {
+  ClimaEditMode,
+  ClimaFormState,
+  ClimaItem,
+} from "@/types/kavita-news";
 import LoadingButton from "@/components/buttons/LoadingButton";
 import { normalizeSlug } from "@/utils/kavita-news/clima";
 
@@ -34,11 +38,16 @@ type GeoSuggestion = {
 
 function isAbortError(e: any) {
   const msg = String(e?.message || e || "").toLowerCase();
-  return e?.name === "AbortError" || msg.includes("aborted") || msg.includes("abort");
+  return (
+    e?.name === "AbortError" || msg.includes("aborted") || msg.includes("abort")
+  );
 }
 
 function stripAccents(s: string) {
-  return (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 function getIbgeNome(m: any): string {
@@ -88,7 +97,11 @@ type Props = {
 
   onBuscarIbge?: (q: { uf: string; city: string }) => void;
 
-  onSuggestStations?: (uf: string, q: string, limit?: number) => Promise<GeoSuggestion[]>;
+  onSuggestStations?: (
+    uf: string,
+    q: string,
+    limit?: number,
+  ) => Promise<GeoSuggestion[]>;
 };
 
 export default function ClimaForm({
@@ -110,7 +123,9 @@ export default function ClimaForm({
 
   const [ibgeLoading, setIbgeLoading] = useState(false);
   const [ibgeError, setIbgeError] = useState<string | null>(null);
-  const [ibgeSuggestions, setIbgeSuggestions] = useState<IbgeMunicipioNivelado[]>([]);
+  const [ibgeSuggestions, setIbgeSuggestions] = useState<
+    IbgeMunicipioNivelado[]
+  >([]);
   const ibgeAllRef = useRef<IbgeMunicipioNivelado[] | null>(null);
   const ibgeAbortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<any>(null);
@@ -126,11 +141,15 @@ export default function ClimaForm({
     if (!showIbgeUi) return null;
     if (ibgeError) return ibgeError;
     if (ibgeLoading) return "Buscando no IBGE...";
-    if (ibgeSuggestions.length > 0) return `Sugestões: ${ibgeSuggestions.length}`;
+    if (ibgeSuggestions.length > 0)
+      return `Sugestões: ${ibgeSuggestions.length}`;
     return "Digite o nome da cidade (ou o IBGE ID) para preencher automaticamente.";
   }, [showIbgeUi, ibgeError, ibgeLoading, ibgeSuggestions.length]);
 
-  function set<K extends keyof ClimaFormState>(key: K, value: ClimaFormState[K]) {
+  function set<K extends keyof ClimaFormState>(
+    key: K,
+    value: ClimaFormState[K],
+  ) {
     setForm((p) => ({ ...p, [key]: value }));
   }
 
@@ -187,7 +206,8 @@ export default function ClimaForm({
     setIbgeError(null);
 
     try {
-      const url = "https://servicodados.ibge.gov.br/api/v1/localidades/municipios?view=nivelado&orderBy=nome";
+      const url =
+        "https://servicodados.ibge.gov.br/api/v1/localidades/municipios?view=nivelado&orderBy=nome";
       const res = await fetch(url);
       if (!res.ok) throw new Error(`IBGE: HTTP ${res.status}`);
       const data = (await res.json()) as IbgeMunicipioNivelado[];
@@ -255,7 +275,9 @@ export default function ClimaForm({
   async function geocodeFlow(uf: string, city: string) {
     if (!onSuggestStations) return;
 
-    const UF = String(uf || "").trim().toUpperCase();
+    const UF = String(uf || "")
+      .trim()
+      .toUpperCase();
     const CITY = String(city || "").trim();
 
     if (UF.length !== 2 || CITY.length < 2) {
@@ -273,7 +295,9 @@ export default function ClimaForm({
 
       if (items.length === 0) {
         setGeoPickerOpen(false);
-        setGeoHint("Não encontrei coordenadas. Verifique cidade/UF (ex.: “Caratinga / MG”).");
+        setGeoHint(
+          "Não encontrei coordenadas. Verifique cidade/UF (ex.: “Caratinga / MG”).",
+        );
         return;
       }
 
@@ -283,7 +307,9 @@ export default function ClimaForm({
 
       if (hasCoords) {
         setGeoPickerOpen(true);
-        setGeoHint("Sugestões encontradas. Você pode trocar as coordenadas se quiser.");
+        setGeoHint(
+          "Sugestões encontradas. Você pode trocar as coordenadas se quiser.",
+        );
         return;
       }
 
@@ -299,15 +325,21 @@ export default function ClimaForm({
           station_source: "OPEN_METEO_GEOCODING",
         }));
         setGeoPickerOpen(false);
-        setGeoHint(`Coordenadas sugeridas automaticamente: ${fmtCoord(lat)}, ${fmtCoord(lon)}`);
+        setGeoHint(
+          `Coordenadas sugeridas automaticamente: ${fmtCoord(lat)}, ${fmtCoord(lon)}`,
+        );
       } else {
         setGeoPickerOpen(true);
-        setGeoHint("Encontrei sugestões, mas selecione manualmente para aplicar as coordenadas.");
+        setGeoHint(
+          "Encontrei sugestões, mas selecione manualmente para aplicar as coordenadas.",
+        );
       }
     } catch {
       setGeoSuggestions([]);
       setGeoPickerOpen(false);
-      setGeoHint("Falha ao buscar coordenadas. Você pode preencher latitude/longitude manualmente.");
+      setGeoHint(
+        "Falha ao buscar coordenadas. Você pode preencher latitude/longitude manualmente.",
+      );
     } finally {
       setGeoLoading(false);
     }
@@ -330,7 +362,9 @@ export default function ClimaForm({
     }));
 
     setGeoPickerOpen(false);
-    setGeoHint(`Coordenadas selecionadas: ${fmtCoord(lat)}, ${fmtCoord(lon)} (${s.name})`);
+    setGeoHint(
+      `Coordenadas selecionadas: ${fmtCoord(lat)}, ${fmtCoord(lon)} (${s.name})`,
+    );
   }
 
   async function applyMunicipio(m: any) {
@@ -384,7 +418,6 @@ export default function ClimaForm({
   useEffect(() => {
     if (!showIbgeUi) return;
     ensureIbgeAllLoaded();
-     
   }, [showIbgeUi]);
 
   useEffect(() => {
@@ -400,7 +433,8 @@ export default function ClimaForm({
     "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 " +
     "placeholder:text-slate-400 shadow-sm " +
     "focus:outline-none focus:ring-2 focus:ring-[#EC5B20] focus:border-transparent";
-  const labelBase = "text-xs font-semibold uppercase tracking-wide text-slate-600";
+  const labelBase =
+    "text-xs font-semibold uppercase tracking-wide text-slate-600";
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.08)] overflow-hidden">
@@ -413,7 +447,9 @@ export default function ClimaForm({
             <div>
               <h3 className="text-base font-semibold text-slate-900">Clima</h3>
               <p className="text-sm text-slate-500">
-                {isEdit ? `Editando: ${editing?.city_name ?? ""}` : "Cadastrar / atualizar cidades monitoradas"}
+                {isEdit
+                  ? `Editando: ${editing?.city_name ?? ""}`
+                  : "Cadastrar / atualizar cidades monitoradas"}
               </p>
             </div>
           </div>
@@ -425,7 +461,9 @@ export default function ClimaForm({
                 type="button"
                 onClick={() => setEditMode("manual")}
                 className={`px-3 py-1.5 text-sm rounded-lg transition ${
-                  editMode === "manual" ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-50"
+                  editMode === "manual"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 Manual
@@ -434,7 +472,9 @@ export default function ClimaForm({
                 type="button"
                 onClick={() => setEditMode("ibge")}
                 className={`px-3 py-1.5 text-sm rounded-lg transition ${
-                  editMode === "ibge" ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-50"
+                  editMode === "ibge"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 IBGE
@@ -484,7 +524,9 @@ export default function ClimaForm({
                           onClick={() => applyMunicipio(m)}
                           className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition flex items-center justify-between"
                         >
-                          <span className="font-medium text-slate-900">{nome}</span>
+                          <span className="font-medium text-slate-900">
+                            {nome}
+                          </span>
                           <span className="text-xs text-slate-500">
                             {uf ? `${uf} · ` : ""}
                             {id}
@@ -523,7 +565,9 @@ export default function ClimaForm({
               disabled={showIbgeUi}
             />
             <p className="text-xs text-slate-500">
-              {showIbgeUi ? "No modo IBGE, o slug é gerado automaticamente pela cidade." : "Use letras minúsculas e hífen."}
+              {showIbgeUi
+                ? "No modo IBGE, o slug é gerado automaticamente pela cidade."
+                : "Use letras minúsculas e hífen."}
             </p>
           </div>
         </div>
@@ -531,16 +575,29 @@ export default function ClimaForm({
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900">Coordenadas (Open-Meteo)</p>
-              <p className="text-xs text-slate-500">Chuva (mm) será sincronizada via latitude/longitude.</p>
-              {geoHint ? <p className="text-xs text-slate-600 mt-1 break-words">{geoHint}</p> : null}
+              <p className="text-sm font-semibold text-slate-900">
+                Coordenadas (Open-Meteo)
+              </p>
+              <p className="text-xs text-slate-500">
+                Chuva (mm) será sincronizada via latitude/longitude.
+              </p>
+              {geoHint ? (
+                <p className="text-xs text-slate-600 mt-1 break-words">
+                  {geoHint}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               {editMode === "ibge" && onBuscarIbge ? (
                 <button
                   type="button"
-                  onClick={() => onBuscarIbge({ uf: form.uf.trim().toUpperCase(), city: form.city_name.trim() })}
+                  onClick={() =>
+                    onBuscarIbge({
+                      uf: form.uf.trim().toUpperCase(),
+                      city: form.city_name.trim(),
+                    })
+                  }
                   className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 hover:bg-slate-50 transition"
                 >
                   Buscar no IBGE
@@ -577,10 +634,15 @@ export default function ClimaForm({
                     className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition flex items-center justify-between gap-3"
                   >
                     <span className="font-medium text-slate-900 truncate">
-                      {s.name} <span className="font-normal text-slate-600">— {s.uf}</span>
+                      {s.name}{" "}
+                      <span className="font-normal text-slate-600">
+                        — {s.uf}
+                      </span>
                     </span>
                     <span className="text-xs text-slate-500 whitespace-nowrap">
-                      {lat !== null && lon !== null ? `${fmtCoord(lat)}, ${fmtCoord(lon)}` : "—"}
+                      {lat !== null && lon !== null
+                        ? `${fmtCoord(lat)}, ${fmtCoord(lon)}`
+                        : "—"}
                     </span>
                   </button>
                 );
@@ -593,7 +655,9 @@ export default function ClimaForm({
               <label className={labelBase}>Latitude</label>
               <input
                 value={(form as any).station_lat ?? ""}
-                onChange={(e) => setForm((p: any) => ({ ...p, station_lat: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p: any) => ({ ...p, station_lat: e.target.value }))
+                }
                 className={inputBase}
                 placeholder="Ex: -18.920000"
                 inputMode="decimal"
@@ -604,7 +668,9 @@ export default function ClimaForm({
               <label className={labelBase}>Longitude</label>
               <input
                 value={(form as any).station_lon ?? ""}
-                onChange={(e) => setForm((p: any) => ({ ...p, station_lon: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p: any) => ({ ...p, station_lon: e.target.value }))
+                }
                 className={inputBase}
                 placeholder="Ex: -48.260000"
                 inputMode="decimal"
@@ -624,26 +690,44 @@ export default function ClimaForm({
                 placeholder="Ex: 3170206"
                 inputMode="numeric"
               />
-              {showIbgeUi ? <p className="text-xs text-slate-500">Se digitar o ID (6–8 dígitos), ele preenche automático.</p> : null}
+              {showIbgeUi ? (
+                <p className="text-xs text-slate-500">
+                  Se digitar o ID (6–8 dígitos), ele preenche automático.
+                </p>
+              ) : null}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className={labelBase}>Station Code (legado / opcional)</label>
+              <label className={labelBase}>
+                Station Code (legado / opcional)
+              </label>
               <input
                 value={(form as any).station_code ?? ""}
-                onChange={(e) => setForm((p: any) => ({ ...p, station_code: e.target.value.toUpperCase() }))}
+                onChange={(e) =>
+                  setForm((p: any) => ({
+                    ...p,
+                    station_code: e.target.value.toUpperCase(),
+                  }))
+                }
                 className={inputBase}
                 placeholder="Ex: A827 (não é mais necessário)"
                 maxLength={10}
               />
-              <p className="text-xs text-slate-500">Open-Meteo não precisa deste campo para chuva.</p>
+              <p className="text-xs text-slate-500">
+                Open-Meteo não precisa deste campo para chuva.
+              </p>
             </div>
 
             <div className="space-y-2">
               <label className={labelBase}>Source (opcional)</label>
-              <input value={form.source} onChange={(e) => set("source", e.target.value)} className={inputBase} placeholder="Ex: OPEN_METEO" />
+              <input
+                value={form.source}
+                onChange={(e) => set("source", e.target.value)}
+                className={inputBase}
+                placeholder="Ex: OPEN_METEO"
+              />
             </div>
           </div>
         </div>
@@ -651,21 +735,43 @@ export default function ClimaForm({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
             <label className={labelBase}>mm 24h</label>
-            <input value={form.mm_24h} onChange={(e) => set("mm_24h", e.target.value)} className={inputBase} placeholder="Ex: 12.3" inputMode="decimal" />
+            <input
+              value={form.mm_24h}
+              onChange={(e) => set("mm_24h", e.target.value)}
+              className={inputBase}
+              placeholder="Ex: 12.3"
+              inputMode="decimal"
+            />
           </div>
           <div className="space-y-2">
             <label className={labelBase}>mm 7d</label>
-            <input value={form.mm_7d} onChange={(e) => set("mm_7d", e.target.value)} className={inputBase} placeholder="Ex: 55.7" inputMode="decimal" />
+            <input
+              value={form.mm_7d}
+              onChange={(e) => set("mm_7d", e.target.value)}
+              className={inputBase}
+              placeholder="Ex: 55.7"
+              inputMode="decimal"
+            />
           </div>
           <div className="space-y-2 md:col-span-2">
             <label className={labelBase}>Last update (opcional)</label>
-            <input value={form.last_update_at} onChange={(e) => set("last_update_at", e.target.value)} className={inputBase} placeholder="YYYY-MM-DD HH:mm:ss" />
+            <input
+              value={form.last_update_at}
+              onChange={(e) => set("last_update_at", e.target.value)}
+              className={inputBase}
+              placeholder="YYYY-MM-DD HH:mm:ss"
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm md:col-span-1">
-            <input type="checkbox" checked={form.ativo} onChange={(e) => set("ativo", e.target.checked)} className="h-4 w-4 accent-[#EC5B20]" />
+            <input
+              type="checkbox"
+              checked={form.ativo}
+              onChange={(e) => set("ativo", e.target.checked)}
+              className="h-4 w-4 accent-[#EC5B20]"
+            />
             Ativo
           </label>
 

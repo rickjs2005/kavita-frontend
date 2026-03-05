@@ -15,7 +15,10 @@ export default function CotacoesSection(props: {
   const cot = useCotacoesAdmin({ apiBase, authOptions, onUnauthorized });
   const [syncingAll, setSyncingAll] = useState(false);
 
-  const handleReload = useMemo(() => async () => Promise.resolve(cot.load()), [cot.load]);
+  const handleReload = useMemo(
+    () => async () => Promise.resolve(cot.load()),
+    [cot.load],
+  );
 
   const handleSyncAll = useMemo(() => {
     return async () => {

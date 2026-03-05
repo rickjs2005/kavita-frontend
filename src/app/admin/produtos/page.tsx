@@ -27,7 +27,7 @@ export default function ProdutosPage() {
     setErro(null);
 
     try {
-      const data = await apiClient.get<Product[]>('/api/admin/produtos');
+      const data = await apiClient.get<Product[]>("/api/admin/produtos");
       const arr = Array.isArray(data) ? data : [];
 
       const parsed: Product[] = arr.map((p: any) => ({

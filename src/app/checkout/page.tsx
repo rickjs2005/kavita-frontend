@@ -133,7 +133,10 @@ const Icon = {
   ),
   shield: () => (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
-      <path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5Z" />
+      <path
+        fill="currentColor"
+        d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5Z"
+      />
     </svg>
   ),
   truck: () => (
@@ -146,7 +149,10 @@ const Icon = {
   ),
   ticket: () => (
     <svg viewBox="0 0 24 24" className="h-5 w-5">
-      <path fill="currentColor" d="M3 6h18v4a2 2 0 0 1 0 4v4H3v-4a2 2 0 0 1 0-4Z" />
+      <path
+        fill="currentColor"
+        d="M3 6h18v4a2 2 0 0 1 0 4v4H3v-4a2 2 0 0 1 0-4Z"
+      />
     </svg>
   ),
   store: () => (
@@ -181,12 +187,16 @@ function toId(value: any) {
 }
 
 function normalizeTipoLocalidade(v: any): "URBANA" | "RURAL" {
-  const t = String(v || "URBANA").trim().toUpperCase();
+  const t = String(v || "URBANA")
+    .trim()
+    .toUpperCase();
   return t === "RURAL" ? "RURAL" : "URBANA";
 }
 
 function formatCepLabel(cep?: string | null) {
-  const d = String(cep || "").replace(/\D/g, "").slice(0, 8);
+  const d = String(cep || "")
+    .replace(/\D/g, "")
+    .slice(0, 8);
   if (d.length !== 8) return String(cep || "");
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
@@ -216,8 +226,12 @@ export default function CheckoutPage() {
 
     return raw
       .map((it, index) => {
-        const resolvedId = toId(it.id) ?? toId(it.productId) ?? toId(it.product_id);
-        const resolvedQty = toPositiveInt(it.quantity ?? it.quantidade ?? it.qtd, 1);
+        const resolvedId =
+          toId(it.id) ?? toId(it.productId) ?? toId(it.product_id);
+        const resolvedQty = toPositiveInt(
+          it.quantity ?? it.quantidade ?? it.qtd,
+          1,
+        );
         const resolvedPrice = Number(it.price ?? 0) || 0;
         const resolvedName = String(it.nome || it.name || "").trim();
 
@@ -235,7 +249,9 @@ export default function CheckoutPage() {
   // -----------------------------
   // PROMOÇÕES POR PRODUTO
   // -----------------------------
-  const [promotions, setPromotions] = useState<Record<number, ProductPromotion | null>>({});
+  const [promotions, setPromotions] = useState<
+    Record<number, ProductPromotion | null>
+  >({});
 
   useEffect(() => {
     if (!normalizedCartItems.length) {
@@ -243,20 +259,24 @@ export default function CheckoutPage() {
       return;
     }
 
-    const uniqueIds = Array.from(new Set(normalizedCartItems.map((it) => Number(it.id)))).filter(Boolean);
+    const uniqueIds = Array.from(
+      new Set(normalizedCartItems.map((it) => Number(it.id))),
+    ).filter(Boolean);
 
     (async () => {
       try {
         const results = await Promise.all(
           uniqueIds.map(async (id) => {
             try {
-              const res = await apiClient.get<ProductPromotion>(ENDPOINTS.PRODUCTS.PROMOTIONS(id));
+              const res = await apiClient.get<ProductPromotion>(
+                ENDPOINTS.PRODUCTS.PROMOTIONS(id),
+              );
               return { id, promo: res };
             } catch (err: any) {
               if (err?.status === 404) return { id, promo: null };
               return { id, promo: null };
             }
-          })
+          }),
         );
 
         setPromotions((prev) => {
@@ -284,7 +304,8 @@ export default function CheckoutPage() {
       };
     }
 
-    const originalFromPromo = promo.original_price != null ? Number(promo.original_price) : null;
+    const originalFromPromo =
+      promo.original_price != null ? Number(promo.original_price) : null;
     const finalFromPromo =
       promo.final_price != null
         ? Number(promo.final_price)
@@ -292,14 +313,21 @@ export default function CheckoutPage() {
           ? Number(promo.promo_price)
           : null;
 
-    const originalPrice = originalFromPromo !== null ? originalFromPromo : basePrice || 0;
+    const originalPrice =
+      originalFromPromo !== null ? originalFromPromo : basePrice || 0;
     let finalPrice = finalFromPromo !== null ? finalFromPromo : originalPrice;
 
     let discountPercent: number | null = null;
 
-    const explicitDiscount = promo.discount_percent != null ? Number(promo.discount_percent) : NaN;
+    const explicitDiscount =
+      promo.discount_percent != null ? Number(promo.discount_percent) : NaN;
 
-    if (finalFromPromo === null && !Number.isNaN(explicitDiscount) && explicitDiscount > 0 && originalPrice > 0) {
+    if (
+      finalFromPromo === null &&
+      !Number.isNaN(explicitDiscount) &&
+      explicitDiscount > 0 &&
+      originalPrice > 0
+    ) {
       finalPrice = originalPrice * (1 - explicitDiscount / 100);
     }
 
@@ -309,7 +337,10 @@ export default function CheckoutPage() {
       discountPercent = explicitDiscount;
     }
 
-    const hasDiscount = discountPercent !== null && discountPercent > 0 && finalPrice < originalPrice;
+    const hasDiscount =
+      discountPercent !== null &&
+      discountPercent > 0 &&
+      finalPrice < originalPrice;
     const discountValue = hasDiscount ? originalPrice - finalPrice : 0;
 
     return { originalPrice, finalPrice, discountValue, hasDiscount };
@@ -325,8 +356,12 @@ export default function CheckoutPage() {
   const [discount, setDiscount] = useState(0);
 
   const itemsCount = useMemo(
-    () => normalizedCartItems.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
-    [normalizedCartItems]
+    () =>
+      normalizedCartItems.reduce(
+        (acc, it) => acc + Number(it.quantity || 0),
+        0,
+      ),
+    [normalizedCartItems],
   );
 
   // Subtotal SEM cupom (apenas promoções)
@@ -344,7 +379,9 @@ export default function CheckoutPage() {
   const [addressesLoading, setAddressesLoading] = useState(false);
   const [addressesError, setAddressesError] = useState<string | null>(null);
 
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+    null,
+  );
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
 
   const applyAddressToForm = useCallback(
@@ -358,22 +395,40 @@ export default function CheckoutPage() {
       updateForm("endereco.tipo_localidade" as any, tipo);
 
       if (tipo === "RURAL") {
-        updateForm("endereco.comunidade" as any, String(addr?.comunidade || ""));
-        updateForm("endereco.observacoes_acesso" as any, String(addr?.observacoes_acesso || ""));
+        updateForm(
+          "endereco.comunidade" as any,
+          String(addr?.comunidade || ""),
+        );
+        updateForm(
+          "endereco.observacoes_acesso" as any,
+          String(addr?.observacoes_acesso || ""),
+        );
 
-        updateForm("endereco.logradouro", String(addr?.endereco || addr?.logradouro || ""));
+        updateForm(
+          "endereco.logradouro",
+          String(addr?.endereco || addr?.logradouro || ""),
+        );
         updateForm("endereco.bairro", String(addr?.bairro || ""));
       } else {
-        updateForm("endereco.logradouro", String(addr?.endereco || addr?.logradouro || ""));
+        updateForm(
+          "endereco.logradouro",
+          String(addr?.endereco || addr?.logradouro || ""),
+        );
         updateForm("endereco.bairro", String(addr?.bairro || ""));
       }
 
       updateForm("endereco.numero", String(addr?.numero || ""));
 
-      updateForm("endereco.complemento" as any, String(addr?.complemento || ""));
-      updateForm("endereco.referencia", String(addr?.ponto_referencia || addr?.referencia || ""));
+      updateForm(
+        "endereco.complemento" as any,
+        String(addr?.complemento || ""),
+      );
+      updateForm(
+        "endereco.referencia",
+        String(addr?.ponto_referencia || addr?.referencia || ""),
+      );
     },
-    [updateForm]
+    [updateForm],
   );
 
   // Busca endereços salvos (logado) e fallback para lastOrder
@@ -397,12 +452,16 @@ export default function CheckoutPage() {
         setAddressesLoading(true);
         setAddressesError(null);
 
-        const list = await apiClient.get<SavedAddress[]>(ENDPOINTS.USERS.ADDRESSES);
+        const list = await apiClient.get<SavedAddress[]>(
+          ENDPOINTS.USERS.ADDRESSES,
+        );
         const normalizedList: SavedAddress[] = Array.isArray(list) ? list : [];
         setSavedAddresses(normalizedList);
 
         if (normalizedList.length > 0) {
-          const preferred = normalizedList.find((a) => Number(a.is_default) === 1) || normalizedList[0];
+          const preferred =
+            normalizedList.find((a) => Number(a.is_default) === 1) ||
+            normalizedList[0];
           setSelectedAddressId(Number(preferred.id));
           setShowNewAddressForm(false);
 
@@ -435,7 +494,10 @@ export default function CheckoutPage() {
 
   const selectedSavedAddress = useMemo(() => {
     if (!selectedAddressId) return null;
-    return savedAddresses.find((a) => Number(a.id) === Number(selectedAddressId)) || null;
+    return (
+      savedAddresses.find((a) => Number(a.id) === Number(selectedAddressId)) ||
+      null
+    );
   }, [savedAddresses, selectedAddressId]);
 
   const handleSelectAddress = (addr: SavedAddress) => {
@@ -449,7 +511,9 @@ export default function CheckoutPage() {
   // -----------------------------
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState<string | null>(null);
-  const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null);
+  const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(
+    null,
+  );
 
   const cepDigits = String(formData?.endereco?.cep || "")
     .replace(/\D/g, "")
@@ -460,7 +524,8 @@ export default function CheckoutPage() {
   // Total depende do tipo:
   // - RETIRADA: sem frete e sem prazo
   // - ENTREGA: frete vindo do quote
-  const frete = !isPickup && shippingQuote ? Number(shippingQuote.price || 0) : 0;
+  const frete =
+    !isPickup && shippingQuote ? Number(shippingQuote.price || 0) : 0;
   const total = Math.max(subtotal - discount + frete, 0);
 
   // reseta cupom quando subtotal muda (por promo ou quantidade)
@@ -518,7 +583,7 @@ export default function CheckoutPage() {
 
         try {
           const data = await apiClient.get<ShippingQuote>(
-            `${ENDPOINTS.SHIPPING.QUOTE}?${params.toString()}`
+            `${ENDPOINTS.SHIPPING.QUOTE}?${params.toString()}`,
           );
           if (aborted) return;
 
@@ -526,13 +591,16 @@ export default function CheckoutPage() {
             cep: String(data?.cep || cepDigits),
             price: Number(data?.price || 0),
             prazo_dias: Number(data?.prazo_dias || 0),
-            ruleApplied: (data?.ruleApplied as ShippingRuleApplied) || undefined,
+            ruleApplied:
+              (data?.ruleApplied as ShippingRuleApplied) || undefined,
           });
         } catch (err: any) {
           if (!aborted) {
             const msg =
               err?.message ||
-              (err?.status === 404 ? "CEP sem cobertura." : "Não foi possível calcular o frete.");
+              (err?.status === 404
+                ? "CEP sem cobertura."
+                : "Não foi possível calcular o frete.");
             setShippingQuote(null);
             setShippingError(msg);
           }
@@ -575,7 +643,9 @@ export default function CheckoutPage() {
     const telefoneDigits = String(formData?.telefone || "").replace(/\D/g, "");
     const email = String(formData?.email || "").trim();
 
-    const tipoLocalidade = normalizeTipoLocalidade((endereco as any)?.tipo_localidade);
+    const tipoLocalidade = normalizeTipoLocalidade(
+      (endereco as any)?.tipo_localidade,
+    );
 
     const base = {
       entrega_tipo: entregaTipo,
@@ -612,13 +682,21 @@ export default function CheckoutPage() {
         estado: endereco?.estado || "",
 
         // ✅ campos distintos
-        complemento: (endereco as any)?.complemento ? String((endereco as any).complemento) : null,
-        ponto_referencia: endereco?.referencia ? String(endereco.referencia) : null,
+        complemento: (endereco as any)?.complemento
+          ? String((endereco as any).complemento)
+          : null,
+        ponto_referencia: endereco?.referencia
+          ? String(endereco.referencia)
+          : null,
 
         // ✅ Rural/urbano alinhado com backend
         tipo_localidade: tipoLocalidade,
-        comunidade: (endereco as any)?.comunidade ? String((endereco as any).comunidade) : null,
-        observacoes_acesso: (endereco as any)?.observacoes_acesso ? String((endereco as any).observacoes_acesso) : null,
+        comunidade: (endereco as any)?.comunidade
+          ? String((endereco as any).comunidade)
+          : null,
+        observacoes_acesso: (endereco as any)?.observacoes_acesso
+          ? String((endereco as any).observacoes_acesso)
+          : null,
 
         // ✅ (opcional) futura opção "sem número" (quando você adicionar no form)
         // sem_numero: Boolean((endereco as any)?.sem_numero),
@@ -657,7 +735,7 @@ export default function CheckoutPage() {
         {
           codigo: couponCode.trim(),
           total: subtotalAtual,
-        }
+        },
       );
 
       if (!data?.success) {
@@ -691,7 +769,11 @@ export default function CheckoutPage() {
   const canFinalizeCheckout =
     isLoggedIn &&
     (payload.produtos?.length || 0) > 0 &&
-    (isPickup || (isCepValid && shippingQuote !== null && !shippingError && !shippingLoading));
+    (isPickup ||
+      (isCepValid &&
+        shippingQuote !== null &&
+        !shippingError &&
+        !shippingLoading));
 
   const handleSubmit = async () => {
     if (submitting) return;
@@ -730,10 +812,12 @@ export default function CheckoutPage() {
     if (!payload.nome) errors.push("Informe o nome do cliente.");
 
     if (!payload.cpf) errors.push("Informe o CPF.");
-    else if (payload.cpf.length !== 11) errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
+    else if (payload.cpf.length !== 11)
+      errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
 
     if (!payload.telefone) errors.push("Informe o WhatsApp.");
-    else if (payload.telefone.length < 10) errors.push("WhatsApp deve ter pelo menos 10 dígitos.");
+    else if (payload.telefone.length < 10)
+      errors.push("WhatsApp deve ter pelo menos 10 dígitos.");
 
     // ENTREGA: validação inteligente (frontend) para rural
     if (!isPickup) {
@@ -756,7 +840,10 @@ export default function CheckoutPage() {
     try {
       setSubmitting(true);
 
-      const data = await apiClient.post<CheckoutResponse>(ENDPOINTS.CHECKOUT.PLACE_ORDER, payload);
+      const data = await apiClient.post<CheckoutResponse>(
+        ENDPOINTS.CHECKOUT.PLACE_ORDER,
+        payload,
+      );
 
       const pedidoId = data.pedido_id;
 
@@ -776,19 +863,22 @@ export default function CheckoutPage() {
             formaPagamento: payload.formaPagamento,
             entrega_tipo: payload.entrega_tipo,
             criadoEm: new Date().toISOString(),
-          })
+          }),
         );
       }
 
-      const isGatewayPayment = ["mercadopago", "pix", "boleto"].includes(payload.formaPagamento);
+      const isGatewayPayment = ["mercadopago", "pix", "boleto"].includes(
+        payload.formaPagamento,
+      );
 
       if (isGatewayPayment) {
         const paymentData = await apiClient.post<PaymentResponse>(
           ENDPOINTS.PAYMENT.START,
-          { pedidoId }
+          { pedidoId },
         );
 
-        const initPoint = paymentData?.init_point || paymentData?.sandbox_init_point || null;
+        const initPoint =
+          paymentData?.init_point || paymentData?.sandbox_init_point || null;
 
         clearCart?.();
 
@@ -797,7 +887,9 @@ export default function CheckoutPage() {
           return;
         }
 
-        toast.error("Não foi possível abrir a tela de pagamento. Tente novamente.");
+        toast.error(
+          "Não foi possível abrir a tela de pagamento. Tente novamente.",
+        );
         return;
       }
 
@@ -808,8 +900,15 @@ export default function CheckoutPage() {
       const status = err?.status;
       const msgBackend = err?.message as string | undefined;
 
-      if (status === 401 || status === 403 || (msgBackend && msgBackend.toLowerCase().includes("token"))) {
-        toast.error(msgBackend || "Sua sessão expirou. Faça login novamente para finalizar a compra.");
+      if (
+        status === 401 ||
+        status === 403 ||
+        (msgBackend && msgBackend.toLowerCase().includes("token"))
+      ) {
+        toast.error(
+          msgBackend ||
+            "Sua sessão expirou. Faça login novamente para finalizar a compra.",
+        );
 
         try {
           await logout();
@@ -821,7 +920,9 @@ export default function CheckoutPage() {
         return;
       }
 
-      const msg = msgBackend || "Erro ao finalizar a compra. Verifique os dados e tente novamente.";
+      const msg =
+        msgBackend ||
+        "Erro ao finalizar a compra. Verifique os dados e tente novamente.";
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -837,14 +938,18 @@ export default function CheckoutPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <CloseButton className="text-2xl sm:text-3xl text-gray-600 hover:text-[#EC5B20]" />
-            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">Checkout</h1>
+            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">
+              Checkout
+            </h1>
           </div>
 
           <div className="rounded-2xl border border-black/10 bg-white/95 p-6 sm:p-8 shadow-sm text-center">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">Faça login para finalizar sua compra</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">
+              Faça login para finalizar sua compra
+            </h2>
             <p className="text-sm sm:text-base text-gray-600 mb-6">
-              Para garantir sua segurança e vincular o pedido à sua conta, é necessário estar logado antes de concluir o
-              checkout.
+              Para garantir sua segurança e vincular o pedido à sua conta, é
+              necessário estar logado antes de concluir o checkout.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -877,8 +982,12 @@ export default function CheckoutPage() {
         <div className="flex items-center justify-between gap-3">
           <CloseButton className="text-2xl sm:text-3xl text-gray-600 hover:text-[#EC5B20]" />
           <div className="flex-1 flex flex-col items-center sm:items-start">
-            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">Finalizar compra</h1>
-            <p className="text-xs sm:text-sm text-gray-600">Revise seus dados e confirme o pedido com segurança.</p>
+            <h1 className="text-lg sm:text-2xl font-extrabold tracking-wide text-[#EC5B20] uppercase">
+              Finalizar compra
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-600">
+              Revise seus dados e confirme o pedido com segurança.
+            </p>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-xs sm:text-sm text-gray-500">
             <Icon.shield />
@@ -901,7 +1010,9 @@ export default function CheckoutPage() {
                     <Icon.user />
                     Dados do cliente
                   </h2>
-                  <p className="text-xs text-gray-500">Nome, CPF, e contato para confirmação do pedido.</p>
+                  <p className="text-xs text-gray-500">
+                    Nome, CPF, e contato para confirmação do pedido.
+                  </p>
                 </div>
               </div>
 
@@ -918,7 +1029,9 @@ export default function CheckoutPage() {
                   <div>
                     <h2 className="text-sm sm:text-base font-semibold text-gray-800 flex items-center gap-2">
                       {isPickup ? <Icon.store /> : <Icon.pin />}
-                      {isPickup ? "Retirada no estabelecimento" : "Endereço de entrega"}
+                      {isPickup
+                        ? "Retirada no estabelecimento"
+                        : "Endereço de entrega"}
                     </h2>
                     <p className="text-xs text-gray-500">
                       {isPickup
@@ -944,9 +1057,13 @@ export default function CheckoutPage() {
                   >
                     <div className="flex items-center gap-2">
                       <Icon.truck />
-                      <span className="text-sm font-semibold text-gray-800">Entrega</span>
+                      <span className="text-sm font-semibold text-gray-800">
+                        Entrega
+                      </span>
                     </div>
-                    <p className="mt-1 text-[12px] text-gray-600">Calcular frete e prazo pelo CEP.</p>
+                    <p className="mt-1 text-[12px] text-gray-600">
+                      Calcular frete e prazo pelo CEP.
+                    </p>
                   </button>
 
                   <button
@@ -961,9 +1078,13 @@ export default function CheckoutPage() {
                   >
                     <div className="flex items-center gap-2">
                       <Icon.store />
-                      <span className="text-sm font-semibold text-gray-800">Retirar no local</span>
+                      <span className="text-sm font-semibold text-gray-800">
+                        Retirar no local
+                      </span>
                     </div>
-                    <p className="mt-1 text-[12px] text-gray-600">Sem frete e sem prazo de entrega.</p>
+                    <p className="mt-1 text-[12px] text-gray-600">
+                      Sem frete e sem prazo de entrega.
+                    </p>
                   </button>
                 </div>
               </div>
@@ -992,14 +1113,19 @@ export default function CheckoutPage() {
                       Carregando endereços...
                     </div>
                   ) : addressesError ? (
-                    <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">{addressesError}</div>
+                    <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+                      {addressesError}
+                    </div>
                   ) : savedAddresses.length > 0 && !showNewAddressForm ? (
                     <div className="space-y-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {savedAddresses.map((addr) => {
-                          const isSelected = Number(addr.id) === Number(selectedAddressId);
+                          const isSelected =
+                            Number(addr.id) === Number(selectedAddressId);
                           const isDefault = Number(addr.is_default) === 1;
-                          const tipo = normalizeTipoLocalidade(addr.tipo_localidade);
+                          const tipo = normalizeTipoLocalidade(
+                            addr.tipo_localidade,
+                          );
 
                           return (
                             <button
@@ -1017,7 +1143,9 @@ export default function CheckoutPage() {
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm font-semibold text-gray-800 truncate">
-                                      {addr.apelido?.trim() ? addr.apelido : "Endereço"}
+                                      {addr.apelido?.trim()
+                                        ? addr.apelido
+                                        : "Endereço"}
                                     </span>
 
                                     {isDefault ? (
@@ -1027,32 +1155,51 @@ export default function CheckoutPage() {
                                     ) : null}
 
                                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-600 border border-gray-100">
-                                      {tipo === "RURAL" ? "Zona rural" : "Zona urbana"}
+                                      {tipo === "RURAL"
+                                        ? "Zona rural"
+                                        : "Zona urbana"}
                                     </span>
                                   </div>
 
                                   <p className="mt-1 text-[12px] text-gray-600">
                                     {tipo === "RURAL" ? (
                                       <>
-                                        <span className="font-medium">Comunidade:</span>{" "}
-                                        {addr.comunidade?.trim() ? addr.comunidade : "—"}
+                                        <span className="font-medium">
+                                          Comunidade:
+                                        </span>{" "}
+                                        {addr.comunidade?.trim()
+                                          ? addr.comunidade
+                                          : "—"}
                                       </>
                                     ) : (
                                       <>
-                                        {String(addr.endereco || "").trim() || "—"}, {String(addr.numero || "").trim() || "S/N"}
-                                        {String(addr.bairro || "").trim() ? ` • ${addr.bairro}` : ""}
+                                        {String(addr.endereco || "").trim() ||
+                                          "—"}
+                                        ,{" "}
+                                        {String(addr.numero || "").trim() ||
+                                          "S/N"}
+                                        {String(addr.bairro || "").trim()
+                                          ? ` • ${addr.bairro}`
+                                          : ""}
                                       </>
                                     )}
                                   </p>
 
                                   <p className="mt-1 text-[12px] text-gray-500">
-                                    {String(addr.cidade || "").trim() || "—"} / {String(addr.estado || "").trim() || "—"} •{" "}
+                                    {String(addr.cidade || "").trim() || "—"} /{" "}
+                                    {String(addr.estado || "").trim() || "—"} •{" "}
                                     {formatCepLabel(addr.cep)}
                                   </p>
 
-                                  {tipo === "RURAL" && String(addr.observacoes_acesso || "").trim() ? (
+                                  {tipo === "RURAL" &&
+                                  String(
+                                    addr.observacoes_acesso || "",
+                                  ).trim() ? (
                                     <p className="mt-2 text-[11px] text-gray-600 line-clamp-2">
-                                      <span className="font-medium">Acesso:</span> {addr.observacoes_acesso}
+                                      <span className="font-medium">
+                                        Acesso:
+                                      </span>{" "}
+                                      {addr.observacoes_acesso}
                                     </p>
                                   ) : null}
                                 </div>
@@ -1060,7 +1207,9 @@ export default function CheckoutPage() {
                                 <span
                                   className={[
                                     "mt-1 h-4 w-4 rounded-full border flex-none",
-                                    isSelected ? "bg-[#EC5B20] border-[#EC5B20]" : "bg-white border-gray-300",
+                                    isSelected
+                                      ? "bg-[#EC5B20] border-[#EC5B20]"
+                                      : "bg-white border-gray-300",
                                   ].join(" ")}
                                   aria-hidden="true"
                                 />
@@ -1071,7 +1220,10 @@ export default function CheckoutPage() {
                       </div>
 
                       <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white p-3">
-                        <div className="text-xs text-gray-600">Selecione um endereço acima. Quer entregar em outro local?</div>
+                        <div className="text-xs text-gray-600">
+                          Selecione um endereço acima. Quer entregar em outro
+                          local?
+                        </div>
                         <button
                           type="button"
                           onClick={() => {
@@ -1088,12 +1240,18 @@ export default function CheckoutPage() {
                     <div className="space-y-3">
                       {savedAddresses.length > 0 ? (
                         <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white p-3">
-                          <div className="text-xs text-gray-600">Preencha um novo endereço para esta entrega.</div>
+                          <div className="text-xs text-gray-600">
+                            Preencha um novo endereço para esta entrega.
+                          </div>
                           <button
                             type="button"
                             onClick={() => {
                               const preferred =
-                                savedAddresses.find((a: any) => Number(a.is_default) === 1) || savedAddresses[0] || null;
+                                savedAddresses.find(
+                                  (a: any) => Number(a.is_default) === 1,
+                                ) ||
+                                savedAddresses[0] ||
+                                null;
 
                               if (preferred) {
                                 setSelectedAddressId(Number(preferred.id));
@@ -1110,15 +1268,21 @@ export default function CheckoutPage() {
                         </div>
                       ) : null}
 
-                      <AddressForm endereco={formData.endereco} onChange={updateForm} />
+                      <AddressForm
+                        endereco={formData.endereco}
+                        onChange={updateForm}
+                      />
                     </div>
                   )}
                 </>
               ) : (
                 <div className="rounded-xl border border-gray-100 bg-white p-4 text-sm text-gray-700">
-                  <p className="font-semibold text-gray-800">Retirada no estabelecimento</p>
+                  <p className="font-semibold text-gray-800">
+                    Retirada no estabelecimento
+                  </p>
                   <p className="mt-1 text-[12px] text-gray-600">
-                    Ao selecionar retirada, não há cobrança de frete e não há prazo de entrega.
+                    Ao selecionar retirada, não há cobrança de frete e não há
+                    prazo de entrega.
                   </p>
                 </div>
               )}
@@ -1135,11 +1299,16 @@ export default function CheckoutPage() {
                     <Icon.card />
                     Pagamento
                   </h2>
-                  <p className="text-xs text-gray-500">Escolha a melhor forma de pagamento para você.</p>
+                  <p className="text-xs text-gray-500">
+                    Escolha a melhor forma de pagamento para você.
+                  </p>
                 </div>
               </div>
 
-              <PaymentMethodForm formaPagamento={formData.formaPagamento} onChange={updateForm} />
+              <PaymentMethodForm
+                formaPagamento={formData.formaPagamento}
+                onChange={updateForm}
+              />
             </section>
           </div>
 
@@ -1150,7 +1319,9 @@ export default function CheckoutPage() {
               <header className="flex items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                   <Icon.truck />
-                  <h2 className="text-sm sm:text-base font-semibold text-gray-800">Resumo do pedido</h2>
+                  <h2 className="text-sm sm:text-base font-semibold text-gray-800">
+                    Resumo do pedido
+                  </h2>
                 </div>
                 <span className="text-xs text-gray-500">
                   {itemsCount} {itemsCount === 1 ? "item" : "itens"}
@@ -1159,7 +1330,10 @@ export default function CheckoutPage() {
 
               <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
                 {normalizedCartItems.map((item) => {
-                  const info = getPriceInfo({ id: item.id as number, price: item.price });
+                  const info = getPriceInfo({
+                    id: item.id as number,
+                    price: item.price,
+                  });
 
                   return (
                     <div
@@ -1167,26 +1341,44 @@ export default function CheckoutPage() {
                       className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 last:border-none last:pb-0"
                     >
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800">{item.name || `Produto #${item.id}`}</p>
-                        <p className="text-[11px] text-gray-500">Quantidade: {item.quantity}</p>
-                        {info.hasDiscount && <p className="mt-1 text-[11px] text-emerald-600">Promoção aplicada automaticamente</p>}
+                        <p className="text-sm font-medium text-gray-800">
+                          {item.name || `Produto #${item.id}`}
+                        </p>
+                        <p className="text-[11px] text-gray-500">
+                          Quantidade: {item.quantity}
+                        </p>
+                        {info.hasDiscount && (
+                          <p className="mt-1 text-[11px] text-emerald-600">
+                            Promoção aplicada automaticamente
+                          </p>
+                        )}
                       </div>
 
                       <div className="text-right text-xs sm:text-sm">
                         {info.hasDiscount ? (
                           <>
-                            <div className="text-gray-400 line-through">{money(info.originalPrice * item.quantity)}</div>
-                            <div className="text-[#EC5B20] font-semibold">{money(info.finalPrice * item.quantity)}</div>
+                            <div className="text-gray-400 line-through">
+                              {money(info.originalPrice * item.quantity)}
+                            </div>
+                            <div className="text-[#EC5B20] font-semibold">
+                              {money(info.finalPrice * item.quantity)}
+                            </div>
                           </>
                         ) : (
-                          <div className="text-gray-800 font-medium">{money(info.finalPrice * item.quantity)}</div>
+                          <div className="text-gray-800 font-medium">
+                            {money(info.finalPrice * item.quantity)}
+                          </div>
                         )}
                       </div>
                     </div>
                   );
                 })}
 
-                {!normalizedCartItems.length && <p className="text-xs text-gray-500">Seu carrinho está vazio.</p>}
+                {!normalizedCartItems.length && (
+                  <p className="text-xs text-gray-500">
+                    Seu carrinho está vazio.
+                  </p>
+                )}
               </div>
             </section>
 
@@ -1196,14 +1388,18 @@ export default function CheckoutPage() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Icon.ticket />
-                  <span className="text-sm font-semibold text-gray-800">Cupom de desconto</span>
+                  <span className="text-sm font-semibold text-gray-800">
+                    Cupom de desconto
+                  </span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      setCouponCode(e.target.value.toUpperCase())
+                    }
                     placeholder="Digite o código do cupom"
                     className="flex-1 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#EC5B20]/70"
                   />
@@ -1217,8 +1413,14 @@ export default function CheckoutPage() {
                   </button>
                 </div>
 
-                {couponMessage && <p className="mt-1 text-[11px] text-emerald-600">{couponMessage}</p>}
-                {couponError && <p className="mt-1 text-[11px] text-red-500">{couponError}</p>}
+                {couponMessage && (
+                  <p className="mt-1 text-[11px] text-emerald-600">
+                    {couponMessage}
+                  </p>
+                )}
+                {couponError && (
+                  <p className="mt-1 text-[11px] text-red-500">{couponError}</p>
+                )}
               </div>
 
               {/* Totais */}
@@ -1241,27 +1443,40 @@ export default function CheckoutPage() {
                     <span>{isPickup ? "Retirada" : "Frete"}</span>
 
                     {!isPickup && shippingLoading && isCepValid && (
-                      <span className="text-[11px] text-gray-500">Calculando...</span>
+                      <span className="text-[11px] text-gray-500">
+                        Calculando...
+                      </span>
                     )}
 
-                    {!isPickup && !shippingLoading && shippingQuote?.prazo_dias ? (
+                    {!isPickup &&
+                    !shippingLoading &&
+                    shippingQuote?.prazo_dias ? (
                       <span className="text-[11px] text-gray-500">
-                        ({shippingQuote.prazo_dias} {shippingQuote.prazo_dias === 1 ? "dia" : "dias"})
+                        ({shippingQuote.prazo_dias}{" "}
+                        {shippingQuote.prazo_dias === 1 ? "dia" : "dias"})
                       </span>
                     ) : null}
                   </span>
 
                   <span>
                     {isPickup ? (
-                      <span className="text-[11px] text-emerald-700">Sem frete</span>
+                      <span className="text-[11px] text-emerald-700">
+                        Sem frete
+                      </span>
                     ) : shippingError ? (
-                      <span className="text-[11px] text-red-500">{shippingError}</span>
+                      <span className="text-[11px] text-red-500">
+                        {shippingError}
+                      </span>
                     ) : !isCepValid ? (
                       "Informe o CEP"
                     ) : shippingLoading ? (
-                      <span className="text-[11px] text-gray-600">Calculando...</span>
+                      <span className="text-[11px] text-gray-600">
+                        Calculando...
+                      </span>
                     ) : shippingQuote === null ? (
-                      <span className="text-[11px] text-gray-600">Aguardando cotação</span>
+                      <span className="text-[11px] text-gray-600">
+                        Aguardando cotação
+                      </span>
                     ) : shippingQuote.price === 0 ? (
                       "Grátis"
                     ) : (
@@ -1278,8 +1493,12 @@ export default function CheckoutPage() {
                 ) : null}
 
                 <div className="flex justify-between items-center border-t border-gray-100 pt-2 mt-1">
-                  <span className="text-sm font-semibold text-gray-900">Total</span>
-                  <span className="text-lg font-extrabold text-[#EC5B20]">{money(total)}</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    Total
+                  </span>
+                  <span className="text-lg font-extrabold text-[#EC5B20]">
+                    {money(total)}
+                  </span>
                 </div>
 
                 {/* Aviso de Nota Fiscal (sempre) */}
@@ -1289,7 +1508,8 @@ export default function CheckoutPage() {
 
                 <p className="mt-1 text-[11px] text-gray-500 flex items-center gap-1">
                   <Icon.shield />
-                  Pagamento processado com segurança. Nenhum dado sensível fica salvo no navegador.
+                  Pagamento processado com segurança. Nenhum dado sensível fica
+                  salvo no navegador.
                 </p>
               </div>
             </section>
@@ -1322,8 +1542,15 @@ export default function CheckoutPage() {
               )}
 
               <p className="mt-2 text-[11px] text-center text-gray-500">
-                Ao continuar, você concorda com os <span className="underline underline-offset-2">termos de uso</span> e{" "}
-                <span className="underline underline-offset-2">política de privacidade</span>.
+                Ao continuar, você concorda com os{" "}
+                <span className="underline underline-offset-2">
+                  termos de uso
+                </span>{" "}
+                e{" "}
+                <span className="underline underline-offset-2">
+                  política de privacidade
+                </span>
+                .
               </p>
             </div>
           </div>

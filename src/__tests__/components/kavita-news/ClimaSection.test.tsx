@@ -76,7 +76,7 @@ describe("ClimaSection", () => {
         apiBase="http://localhost:3000"
         authOptions={{ headers: { Authorization: "Bearer x" } }}
         onUnauthorized={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Kavita News")).toBeInTheDocument();
@@ -99,11 +99,7 @@ describe("ClimaSection", () => {
     });
 
     render(
-      <ClimaSection
-        apiBase="x"
-        authOptions={{}}
-        onUnauthorized={vi.fn()}
-      />
+      <ClimaSection apiBase="x" authOptions={{}} onUnauthorized={vi.fn()} />,
     );
 
     // só existe 1 botão "Atualizar" (sem duplicação)
@@ -120,11 +116,7 @@ describe("ClimaSection", () => {
     hookState = baseState({ sorted: [] });
 
     render(
-      <ClimaSection
-        apiBase="x"
-        authOptions={{}}
-        onUnauthorized={vi.fn()}
-      />
+      <ClimaSection apiBase="x" authOptions={{}} onUnauthorized={vi.fn()} />,
     );
 
     const btn = screen.getByRole("button", { name: "Atualizar" });

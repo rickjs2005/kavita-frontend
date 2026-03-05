@@ -1,6 +1,12 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 import { createMockStorage, makeFetchResponse } from "../testUtils";
 
@@ -115,15 +121,19 @@ function moneyRegex(value: string) {
  * This flushes initial effects and avoids act() warnings.
  */
 async function renderCartAndReady(
-  props?: Partial<React.ComponentProps<typeof CartCar>>
+  props?: Partial<React.ComponentProps<typeof CartCar>>,
 ) {
   const closeCart = vi.fn();
   render(<CartCar isCartOpen={true} closeCart={closeCart} {...props} />);
 
   // "Ready" point: dialog + heading present
   await waitFor(() => {
-    expect(screen.getByRole("dialog", { name: "Carrinho de compras" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Carrinho de compras" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Carrinho de compras" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Carrinho de compras" }),
+    ).toBeInTheDocument();
   });
 
   return { closeCart };
@@ -135,8 +145,14 @@ describe("CartCar", () => {
 
     const ls = createMockStorage();
     const ss = createMockStorage();
-    Object.defineProperty(globalThis, "localStorage", { value: ls, configurable: true });
-    Object.defineProperty(globalThis, "sessionStorage", { value: ss, configurable: true });
+    Object.defineProperty(globalThis, "localStorage", {
+      value: ls,
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, "sessionStorage", {
+      value: ss,
+      configurable: true,
+    });
 
     globalThis.fetch = vi.fn();
 
@@ -153,9 +169,15 @@ describe("CartCar", () => {
 
     expect(screen.getByText(/carrinho está vazio/i)).toBeInTheDocument();
 
-    expect(screen.queryByRole("button", { name: /Finalizar Compra/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Aplicar/i })).not.toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(/Cupom de desconto/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Finalizar Compra/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Aplicar/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/Cupom de desconto/i),
+    ).not.toBeInTheDocument();
 
     await waitFor(() => expect(closeCart).toHaveBeenCalledTimes(1));
   });
@@ -179,7 +201,9 @@ describe("CartCar", () => {
     const prices = screen.getAllByText(moneyRegex("R$ 25,50"));
     expect(prices.length).toBeGreaterThanOrEqual(2);
 
-    expect(screen.getByRole("button", { name: /Finalizar Compra/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Finalizar Compra/i }),
+    ).toBeInTheDocument();
   });
 
   it("mostra warning de estoque quando quantity >= _stock", async () => {
@@ -191,8 +215,12 @@ describe("CartCar", () => {
     await renderCartAndReady();
 
     // Validar a frase do warning (evita conflito com 'Produto A' do item)
-    expect(screen.getByText(/atingiu o limite de estoque/i)).toBeInTheDocument();
-    expect(screen.getByText(/“Produto A” atingiu o limite de estoque \(5\)\./i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/atingiu o limite de estoque/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/“Produto A” atingiu o limite de estoque \(5\)\./i),
+    ).toBeInTheDocument();
   });
 
   it("busca promoções por id único e usa finalPrice no subtotal", async () => {
@@ -208,9 +236,13 @@ describe("CartCar", () => {
           makeFetchResponse({
             ok: true,
             status: 200,
-            json: { original_price: 100, final_price: 80, discount_percent: 20 },
+            json: {
+              original_price: 100,
+              final_price: 80,
+              discount_percent: 20,
+            },
             contentType: "application/json",
-          })
+          }),
         );
       }
       if (String(url).includes("/promocoes/20")) {
@@ -220,10 +252,12 @@ describe("CartCar", () => {
             status: 404,
             json: { message: "Sem promo" },
             contentType: "application/json",
-          })
+          }),
         );
       }
-      return Promise.resolve(makeFetchResponse({ ok: false, status: 500, text: "unexpected" }));
+      return Promise.resolve(
+        makeFetchResponse({ ok: false, status: 500, text: "unexpected" }),
+      );
     });
 
     await renderCartAndReady();
@@ -234,7 +268,9 @@ describe("CartCar", () => {
 
     // (2*80) + (2*80) + (1*50) = 370
     await waitFor(() => {
-      expect(screen.getAllByText(moneyRegex("R$ 370,00")).length).toBeGreaterThanOrEqual(1);
+      expect(
+        screen.getAllByText(moneyRegex("R$ 370,00")).length,
+      ).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -246,7 +282,9 @@ describe("CartCar", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
 
-    await waitFor(() => expect(H.toast.error).toHaveBeenCalledWith("Informe um cupom."));
+    await waitFor(() =>
+      expect(H.toast.error).toHaveBeenCalledWith("Informe um cupom."),
+    );
     expect(H.axios.post).not.toHaveBeenCalled();
   });
 
@@ -262,7 +300,9 @@ describe("CartCar", () => {
     fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
 
     await waitFor(() => {
-      expect(H.toast.error).toHaveBeenCalledWith("Você precisa estar logado para aplicar um cupom.");
+      expect(H.toast.error).toHaveBeenCalledWith(
+        "Você precisa estar logado para aplicar um cupom.",
+      );
       expect(H.router.push).toHaveBeenCalledWith("/login");
     });
 
@@ -296,7 +336,9 @@ describe("CartCar", () => {
     expect(config).toEqual({ withCredentials: true });
 
     await waitFor(() => {
-      expect(H.toast.success).toHaveBeenCalledWith("Cupom aplicado com sucesso!");
+      expect(H.toast.success).toHaveBeenCalledWith(
+        "Cupom aplicado com sucesso!",
+      );
     });
     expect(screen.getByText("Cupom aplicado com sucesso!")).toBeInTheDocument();
 
@@ -319,8 +361,12 @@ describe("CartCar", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
 
-    await waitFor(() => expect(H.toast.error).toHaveBeenCalledWith("Cupom inválido."));
-    expect(screen.getAllByText(moneyRegex("R$ 100,00")).length).toBeGreaterThanOrEqual(1);
+    await waitFor(() =>
+      expect(H.toast.error).toHaveBeenCalledWith("Cupom inválido."),
+    );
+    expect(
+      screen.getAllByText(moneyRegex("R$ 100,00")).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("applyDiscount: trata erro do backend (response.data.message) e mantém total", async () => {
@@ -338,8 +384,12 @@ describe("CartCar", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
 
-    await waitFor(() => expect(H.toast.error).toHaveBeenCalledWith("Cupom expirado."));
-    expect(screen.getAllByText(moneyRegex("R$ 100,00")).length).toBeGreaterThanOrEqual(1);
+    await waitFor(() =>
+      expect(H.toast.error).toHaveBeenCalledWith("Cupom expirado."),
+    );
+    expect(
+      screen.getAllByText(moneyRegex("R$ 100,00")).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("handleCheckout: não logado mostra toast(call) e navega /login", async () => {
@@ -378,10 +428,14 @@ describe("CartCar", () => {
     });
 
     const closeCart = vi.fn();
-    const { rerender } = render(<CartCar isCartOpen={true} closeCart={closeCart} />);
+    const { rerender } = render(
+      <CartCar isCartOpen={true} closeCart={closeCart} />,
+    );
 
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "Carrinho de compras" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "Carrinho de compras" }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByPlaceholderText("Cupom de desconto"), {
@@ -399,7 +453,9 @@ describe("CartCar", () => {
     rerender(<CartCar isCartOpen={true} closeCart={closeCart} />);
 
     await waitFor(() => {
-      expect(screen.getAllByText(moneyRegex("R$ 50,00")).length).toBeGreaterThanOrEqual(1);
+      expect(
+        screen.getAllByText(moneyRegex("R$ 50,00")).length,
+      ).toBeGreaterThanOrEqual(1);
     });
   });
 });

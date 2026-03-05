@@ -27,7 +27,11 @@ export default function CommentsModerationTable() {
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const [data, setData] = useState<{ items: CommentRow[]; total: number; totalPages: number } | null>(null);
+  const [data, setData] = useState<{
+    items: CommentRow[];
+    total: number;
+    totalPages: number;
+  } | null>(null);
 
   const [actingId, setActingId] = useState<number | null>(null);
 
@@ -45,7 +49,7 @@ export default function CommentsModerationTable() {
       // params.set("status", "aprovado");
 
       const data = await apiClient.get<any>(
-        `/api/admin/drones/comentarios?${params.toString()}`
+        `/api/admin/drones/comentarios?${params.toString()}`,
       );
 
       setData({
@@ -56,7 +60,8 @@ export default function CommentsModerationTable() {
       setPage(Number(data?.page || p));
     } catch (err: any) {
       if (err?.status === 401 || err?.status === 403) {
-        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        if (typeof window !== "undefined")
+          window.location.assign("/admin/login");
         return;
       }
       setMsg(err?.message || "Erro de rede ao carregar comentários.");
@@ -80,7 +85,8 @@ export default function CommentsModerationTable() {
       await load(1);
     } catch (err: any) {
       if (err?.status === 401 || err?.status === 403) {
-        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        if (typeof window !== "undefined")
+          window.location.assign("/admin/login");
         return;
       }
       setMsg(err?.message || "Erro de rede ao excluir.");
@@ -93,9 +99,12 @@ export default function CommentsModerationTable() {
     <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-extrabold">Comentários/Relatos (admin)</h2>
+          <h2 className="text-sm font-extrabold">
+            Comentários/Relatos (admin)
+          </h2>
           <p className="mt-1 text-xs text-slate-300">
-            Fluxo sem moderação: os comentários entram e aparecem no público. Aqui você pode apenas excluir.
+            Fluxo sem moderação: os comentários entram e aparecem no público.
+            Aqui você pode apenas excluir.
           </p>
         </div>
 
@@ -115,12 +124,17 @@ export default function CommentsModerationTable() {
         <>
           <div className="mt-4 grid gap-3">
             {items.map((c) => (
-              <div key={c.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+              <div
+                key={c.id}
+                className="rounded-2xl border border-white/10 bg-black/30 p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-bold text-white">
                       {c.display_name || "Cliente Kavita"}{" "}
-                      <span className="text-xs text-slate-400 font-normal">• ID #{c.id}</span>
+                      <span className="text-xs text-slate-400 font-normal">
+                        • ID #{c.id}
+                      </span>
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
                       {new Date(c.created_at).toLocaleString()}
@@ -139,7 +153,9 @@ export default function CommentsModerationTable() {
                   </div>
                 </div>
 
-                <p className="mt-3 text-sm text-slate-200 whitespace-pre-wrap">{c.comment_text}</p>
+                <p className="mt-3 text-sm text-slate-200 whitespace-pre-wrap">
+                  {c.comment_text}
+                </p>
 
                 {c.media?.length ? (
                   <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -164,7 +180,9 @@ export default function CommentsModerationTable() {
                     })}
                   </div>
                 ) : (
-                  <p className="mt-3 text-xs text-slate-400">Sem mídia anexada.</p>
+                  <p className="mt-3 text-xs text-slate-400">
+                    Sem mídia anexada.
+                  </p>
                 )}
               </div>
             ))}
@@ -193,7 +211,9 @@ export default function CommentsModerationTable() {
           ) : null}
 
           {!items.length ? (
-            <p className="mt-4 text-sm text-slate-300">Nenhum comentário encontrado.</p>
+            <p className="mt-4 text-sm text-slate-300">
+              Nenhum comentário encontrado.
+            </p>
           ) : null}
         </>
       )}

@@ -6,12 +6,15 @@ import { useState } from "react";
 
 // Define as propriedades que o componente pode receber
 interface DeleteButtonProps {
-  onConfirm: () => void;  // Função que será chamada quando o usuário confirmar a exclusão
-  label?: string;         // Texto opcional do botão (padrão é "Excluir")
+  onConfirm: () => void; // Função que será chamada quando o usuário confirmar a exclusão
+  label?: string; // Texto opcional do botão (padrão é "Excluir")
 }
 
 // Componente funcional que representa o botão de exclusão
-export default function DeleteButton({ onConfirm, label = "Excluir" }: DeleteButtonProps) {
+export default function DeleteButton({
+  onConfirm,
+  label = "Excluir",
+}: DeleteButtonProps) {
   // Estado para controlar se a exclusão está em andamento (para exibir "Removendo...")
   const [loading, setLoading] = useState(false);
 
@@ -33,8 +36,8 @@ export default function DeleteButton({ onConfirm, label = "Excluir" }: DeleteBut
   // Retorna o botão visual
   return (
     <button
-      onClick={handleClick}    // Define o que acontece ao clicar no botão
-      disabled={loading}       // Desativa o botão enquanto está carregando
+      onClick={handleClick} // Define o que acontece ao clicar no botão
+      disabled={loading} // Desativa o botão enquanto está carregando
       className={`bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-1 rounded transition ${
         loading ? "opacity-50 cursor-not-allowed" : "" // Aplica estilo de "desativado" se estiver carregando
       }`}

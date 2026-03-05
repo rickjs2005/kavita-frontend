@@ -68,7 +68,10 @@ const schema = z
     // Honeypot anti-bot (campo invisível no form)
     website: z.string().optional(),
 
-    nome: z.string().min(2, "Informe seu nome").transform((v) => v.trim()),
+    nome: z
+      .string()
+      .min(2, "Informe seu nome")
+      .transform((v) => v.trim()),
     email: z
       .string()
       .email("Email inválido")
@@ -76,7 +79,10 @@ const schema = z
     cpf: z
       .string()
       .min(11, "Informe seu CPF")
-      .refine((value) => onlyDigits(value).length === 11, "CPF deve ter 11 dígitos"),
+      .refine(
+        (value) => onlyDigits(value).length === 11,
+        "CPF deve ter 11 dígitos",
+      ),
     senha: passwordSchema,
     confirmSenha: z.string().min(8, "Confirme sua senha"),
   })
@@ -137,7 +143,7 @@ export default function RegisterPage() {
     if (!ok) {
       setServerMsg(
         safeServerMessage(message) ||
-        "Não foi possível concluir o cadastro. Verifique seus dados e tente novamente."
+          "Não foi possível concluir o cadastro. Verifique seus dados e tente novamente.",
       );
       return;
     }
@@ -194,7 +200,10 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="p-8 grid grid-cols-1 gap-5">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="p-8 grid grid-cols-1 gap-5"
+            >
               {/* Mensagem do servidor (aria-live para acessibilidade) */}
               {serverMsg && (
                 <div
@@ -218,19 +227,27 @@ export default function RegisterPage() {
 
               {/* Nome */}
               <div>
-                <label className="block text-sm font-medium text-white/90 mb-1">Nome</label>
+                <label className="block text-sm font-medium text-white/90 mb-1">
+                  Nome
+                </label>
                 <input
                   {...register("nome")}
                   placeholder="Seu nome"
                   autoComplete="name"
                   className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
                 />
-                {errors.nome && <p className="mt-1 text-xs text-red-200">{errors.nome.message}</p>}
+                {errors.nome && (
+                  <p className="mt-1 text-xs text-red-200">
+                    {errors.nome.message}
+                  </p>
+                )}
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-white/90 mb-1">Email</label>
+                <label className="block text-sm font-medium text-white/90 mb-1">
+                  Email
+                </label>
                 <input
                   type="email"
                   {...register("email")}
@@ -240,13 +257,17 @@ export default function RegisterPage() {
                   className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
                 />
                 {errors.email && (
-                  <p className="mt-1 text-xs text-red-200">{errors.email.message}</p>
+                  <p className="mt-1 text-xs text-red-200">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
               {/* CPF */}
               <div>
-                <label className="block text-sm font-medium text-white/90 mb-1">CPF</label>
+                <label className="block text-sm font-medium text-white/90 mb-1">
+                  CPF
+                </label>
                 <input
                   {...register("cpf", {
                     onChange: (e) => {
@@ -260,12 +281,18 @@ export default function RegisterPage() {
                   maxLength={14}
                   className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
                 />
-                {errors.cpf && <p className="mt-1 text-xs text-red-200">{errors.cpf.message}</p>}
+                {errors.cpf && (
+                  <p className="mt-1 text-xs text-red-200">
+                    {errors.cpf.message}
+                  </p>
+                )}
               </div>
 
               {/* Senha */}
               <div>
-                <label className="block text-sm font-medium text-white/90 mb-1">Senha</label>
+                <label className="block text-sm font-medium text-white/90 mb-1">
+                  Senha
+                </label>
                 <div className="relative">
                   <input
                     type={showPw ? "text" : "password"}
@@ -285,7 +312,9 @@ export default function RegisterPage() {
                   </button>
                 </div>
                 {errors.senha && (
-                  <p className="mt-1 text-xs text-red-200">{errors.senha.message}</p>
+                  <p className="mt-1 text-xs text-red-200">
+                    {errors.senha.message}
+                  </p>
                 )}
               </div>
 
@@ -313,7 +342,9 @@ export default function RegisterPage() {
                   </button>
                 </div>
                 {errors.confirmSenha && (
-                  <p className="mt-1 text-xs text-red-200">{errors.confirmSenha.message}</p>
+                  <p className="mt-1 text-xs text-red-200">
+                    {errors.confirmSenha.message}
+                  </p>
                 )}
               </div>
 
@@ -327,13 +358,17 @@ export default function RegisterPage() {
                   Cadastrar
                 </LoadingButton>
                 <p className="mt-2 text-[11px] text-white/60 text-center">
-                  Dica: use uma senha com letras maiúsculas, minúsculas e números.
+                  Dica: use uma senha com letras maiúsculas, minúsculas e
+                  números.
                 </p>
               </div>
 
               <p className="text-center text-white/90 text-sm">
                 Já tem conta?{" "}
-                <Link className="underline text-[#EC5B20] hover:text-white transition" href="/login">
+                <Link
+                  className="underline text-[#EC5B20] hover:text-white transition"
+                  href="/login"
+                >
                   Entrar
                 </Link>
               </p>
@@ -341,7 +376,8 @@ export default function RegisterPage() {
           </div>
 
           <p className="mt-4 text-center text-white/60 text-xs">
-            Ao continuar, você concorda com nossos Termos e Política de Privacidade.
+            Ao continuar, você concorda com nossos Termos e Política de
+            Privacidade.
           </p>
         </div>
       </div>

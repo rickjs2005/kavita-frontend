@@ -23,7 +23,9 @@ vi.mock("@/components/products/ProductCard", () => ({
 
 vi.mock("@/components/cart/CartCar", () => ({
   default: ({ isCartOpen }: { isCartOpen: boolean }) => (
-    <div data-testid="cart-car">{isCartOpen ? "Carrinho aberto" : "Carrinho fechado"}</div>
+    <div data-testid="cart-car">
+      {isCartOpen ? "Carrinho aberto" : "Carrinho fechado"}
+    </div>
   ),
 }));
 
@@ -74,7 +76,7 @@ describe("ProductsPageClient", () => {
 
     // Assert
     expect(
-      screen.getByText(/não foi possível carregar os produtos/i)
+      screen.getByText(/não foi possível carregar os produtos/i),
     ).toBeInTheDocument();
 
     expect(screen.queryByTestId("product-card")).not.toBeInTheDocument();

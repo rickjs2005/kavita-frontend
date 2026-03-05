@@ -31,8 +31,10 @@ function absUrl(p?: string | null) {
 /** 📱 Formata telefone BR para exibição */
 function formatWhatsApp(raw: string) {
   const digits = raw.replace(/\D/g, "");
-  if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-  if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  if (digits.length === 11)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  if (digits.length === 10)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
   return digits || raw;
 }
 
@@ -44,7 +46,9 @@ function normalizeVerificado(v: unknown): boolean {
 /** ✅ Extrai imagens válidas (string[]) de qualquer formato */
 function normalizeImages(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
-  return v.filter((x): x is string => typeof x === "string" && x.trim().length > 0);
+  return v.filter(
+    (x): x is string => typeof x === "string" && x.trim().length > 0,
+  );
 }
 
 export default function ServiceCard({
@@ -64,7 +68,9 @@ export default function ServiceCard({
   const images = useMemo(() => {
     if (!servico) return [];
 
-    const extras = normalizeImages((servico as unknown as { images?: unknown }).images);
+    const extras = normalizeImages(
+      (servico as unknown as { images?: unknown }).images,
+    );
     const capa = typeof servico.imagem === "string" ? servico.imagem : "";
 
     const all = [capa, ...extras].filter(Boolean) as string[];
@@ -86,7 +92,9 @@ export default function ServiceCard({
   const waDigits = (servico.whatsapp || "").replace(/\D/g, "");
   const waLabel = formatWhatsApp(servico.whatsapp || "");
 
-  const verificadoRaw: unknown = (servico as unknown as { verificado?: unknown }).verificado;
+  const verificadoRaw: unknown = (
+    servico as unknown as { verificado?: unknown }
+  ).verificado;
   const isVerified = normalizeVerificado(verificadoRaw);
 
   async function handleRemove() {
@@ -126,7 +134,9 @@ export default function ServiceCard({
           src={activeImg}
           alt={servico.nome || "Imagem do serviço"}
           className="absolute inset-0 h-full w-full object-cover transition-all duration-300"
-          onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
+          onError={(e) =>
+            ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+          }
           loading="lazy"
         />
 
@@ -140,7 +150,9 @@ export default function ServiceCard({
           }`}
         >
           <span>{isVerified ? "✓" : "⏳"}</span>
-          <span>{isVerified ? "Profissional verificado" : "Pendente de verificação"}</span>
+          <span>
+            {isVerified ? "Profissional verificado" : "Pendente de verificação"}
+          </span>
         </div>
 
         {/* Contador de fotos */}
@@ -207,7 +219,9 @@ export default function ServiceCard({
                   src={src}
                   alt={`Miniatura ${i + 1}`}
                   className="h-12 w-12 object-cover sm:h-14 sm:w-14"
-                  onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
+                  onError={(e) =>
+                    ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+                  }
                   loading="lazy"
                 />
               </button>
@@ -243,7 +257,11 @@ export default function ServiceCard({
                     : "bg-emerald-600 text-white hover:bg-emerald-700"
                 }`}
               >
-                {toggling ? "Salvando..." : isVerified ? "Desverificar" : "Verificar"}
+                {toggling
+                  ? "Salvando..."
+                  : isVerified
+                    ? "Desverificar"
+                    : "Verificar"}
               </button>
             )}
 

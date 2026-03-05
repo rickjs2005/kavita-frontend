@@ -26,7 +26,7 @@ describe("CustomButton", () => {
         variant="primary"
         size="medium"
         isLoading={false}
-      />
+      />,
     );
 
     expect(screen.getByRole("button", { name: /salvar/i })).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe("CustomButton", () => {
         size="medium"
         isLoading={false}
         onClick={onClickMock}
-      />
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: /enviar/i }));
@@ -62,7 +62,7 @@ describe("CustomButton", () => {
         size="medium"
         isLoading={true}
         onClick={onClickMock}
-      />
+      />,
     );
 
     const button = screen.getByRole("button");
@@ -81,7 +81,7 @@ describe("CustomButton", () => {
         variant="primary"
         size="medium"
         isLoading={true}
-      />
+      />,
     );
 
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
@@ -96,7 +96,7 @@ describe("CustomButton", () => {
         variant="secondary"
         size="small"
         isLoading={false}
-      />
+      />,
     );
 
     const link = screen.getByRole("link", { name: /ir para página/i });
@@ -113,7 +113,7 @@ describe("CustomButton", () => {
         variant="secondary"
         size="small"
         isLoading={true}
-      />
+      />,
     );
 
     const link = screen.getByRole("link");
@@ -130,7 +130,7 @@ describe("CustomButton", () => {
         size="medium"
         isLoading={false}
         message="Erro ao salvar"
-      />
+      />,
     );
 
     expect(screen.getByText("Erro ao salvar")).toBeInTheDocument();
@@ -144,7 +144,7 @@ describe("CustomButton", () => {
         size="medium"
         isLoading={true}
         message="Erro ao salvar"
-      />
+      />,
     );
 
     expect(screen.queryByText("Erro ao salvar")).not.toBeInTheDocument();
@@ -158,7 +158,7 @@ describe("CustomButton", () => {
         size="large"
         isLoading={false}
         className="extra-class"
-      />
+      />,
     );
 
     const button = screen.getByRole("button", { name: /custom/i });
@@ -176,7 +176,7 @@ describe("CustomButton", () => {
         size="medium"
         isLoading={false}
         type="submit"
-      />
+      />,
     );
 
     const button = screen.getByRole("button", { name: /submit/i });
@@ -190,7 +190,7 @@ describe("CustomButton", () => {
         variant="primary"
         size="medium"
         isLoading={true}
-      />
+      />,
     );
 
     const button = screen.getByRole("button");

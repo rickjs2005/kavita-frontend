@@ -75,7 +75,10 @@ export default function ServicoContent({ servico }: { servico: Service }) {
   }, [servico.whatsapp, servico.id, titulo]);
 
   const ratingAvg = (servico as any).rating_avg as number | null | undefined;
-  const ratingCount = (servico as any).rating_count as number | null | undefined;
+  const ratingCount = (servico as any).rating_count as
+    | number
+    | null
+    | undefined;
 
   const [nota, setNota] = useState<number>(5);
   const [comentario, setComentario] = useState("");
@@ -109,7 +112,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
     try {
       setLoadingAval(true);
       const res = await fetch(
-        `${API}/api/public/servicos/${servico.id}/avaliacoes`
+        `${API}/api/public/servicos/${servico.id}/avaliacoes`,
       );
       if (!res.ok) {
         throw new Error(await res.text());
@@ -225,8 +228,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                       width={88}
                       height={88}
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src =
-                          PLACEHOLDER;
+                        (e.currentTarget as HTMLImageElement).src = PLACEHOLDER;
                       }}
                     />
                   </button>
@@ -241,9 +243,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
               </h2>
 
               {loadingAval ? (
-                <p className="text-xs text-slate-500">
-                  Carregando avaliações…
-                </p>
+                <p className="text-xs text-slate-500">Carregando avaliações…</p>
               ) : avaliacoes.length === 0 ? (
                 <p className="text-xs text-slate-500">
                   Ainda não há comentários para este profissional. Seja o
@@ -260,7 +260,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                         <div className="flex flex-col">
                           <span className="text-[11px] font-semibold text-slate-900">
                             {Array.from({ length: av.nota }).map(
-                              (_, i) => "⭐"
+                              (_, i) => "⭐",
                             )}
                           </span>
                           {av.autor_nome && (
@@ -326,9 +326,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                 )}
                 {servico.cargo && (
                   <p>
-                    <span className="font-semibold text-slate-900">
-                      Cargo:
-                    </span>{" "}
+                    <span className="font-semibold text-slate-900">Cargo:</span>{" "}
                     {servico.cargo}
                   </p>
                 )}
@@ -361,7 +359,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                 ) : (
                   <a
                     href={`/contatos?servico=${encodeURIComponent(
-                      titulo
+                      titulo,
                     )}&id=${servico.id}`}
                     className="inline-flex w-full items-center justify-center rounded-full bg-[#2F7E7F] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#277273] sm:w-auto"
                   >
@@ -412,8 +410,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                   Pedir orçamento rápido
                 </h2>
                 <p className="text-xs text-slate-700">
-                  Seus dados serão enviados diretamente para este
-                  profissional.
+                  Seus dados serão enviados diretamente para este profissional.
                 </p>
 
                 <input

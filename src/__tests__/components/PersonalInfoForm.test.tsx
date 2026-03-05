@@ -3,7 +3,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 import PersonalInfoForm from "@/components/checkout/PersonalInfoForm";
-import type { CheckoutFormChangeHandler, CheckoutFormData } from "@/hooks/useCheckoutForm";
+import type {
+  CheckoutFormChangeHandler,
+  CheckoutFormData,
+} from "@/hooks/useCheckoutForm";
 
 /**
  * Mock do FormattedInput para:
@@ -46,7 +49,9 @@ vi.mock("@/components/layout/FormattedInput", () => {
   };
 });
 
-function makeFormData(overrides: Partial<CheckoutFormData> = {}): CheckoutFormData {
+function makeFormData(
+  overrides: Partial<CheckoutFormData> = {},
+): CheckoutFormData {
   // Aqui basta criar um "shape mínimo" e completar com overrides.
   // O componente acessa as chaves via (formData as any)[field.name].
   return {
@@ -82,40 +87,87 @@ describe("PersonalInfoForm", () => {
     // Nome completo
     expect(screen.getByLabelText("Nome completo")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Digite seu nome")).toBeInTheDocument();
-    expect(screen.getByTestId("meta-nome")).toHaveAttribute("data-mask", "none");
-    expect(screen.getByTestId("meta-nome")).toHaveAttribute("data-required", "true");
-    expect(screen.getByTestId("meta-nome")).toHaveAttribute("data-autocomplete", "name");
-    expect(screen.getByTestId("meta-nome")).toHaveAttribute("data-helpertext", "Digite seu nome");
+    expect(screen.getByTestId("meta-nome")).toHaveAttribute(
+      "data-mask",
+      "none",
+    );
+    expect(screen.getByTestId("meta-nome")).toHaveAttribute(
+      "data-required",
+      "true",
+    );
+    expect(screen.getByTestId("meta-nome")).toHaveAttribute(
+      "data-autocomplete",
+      "name",
+    );
+    expect(screen.getByTestId("meta-nome")).toHaveAttribute(
+      "data-helpertext",
+      "Digite seu nome",
+    );
 
     // CPF
     expect(screen.getByLabelText("CPF")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("000.000.000-00")).toBeInTheDocument();
     expect(screen.getByTestId("meta-cpf")).toHaveAttribute("data-mask", "cpf");
-    expect(screen.getByTestId("meta-cpf")).toHaveAttribute("data-required", "true");
-    expect(screen.getByTestId("meta-cpf")).toHaveAttribute("data-autocomplete", "off");
-    expect(screen.getByTestId("meta-cpf")).toHaveAttribute("data-helpertext", "000.000.000-00");
+    expect(screen.getByTestId("meta-cpf")).toHaveAttribute(
+      "data-required",
+      "true",
+    );
+    expect(screen.getByTestId("meta-cpf")).toHaveAttribute(
+      "data-autocomplete",
+      "off",
+    );
+    expect(screen.getByTestId("meta-cpf")).toHaveAttribute(
+      "data-helpertext",
+      "000.000.000-00",
+    );
 
     // E-mail
     expect(screen.getByLabelText("E-mail")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("voce@gmail.com")).toBeInTheDocument();
-    expect(screen.getByTestId("meta-email")).toHaveAttribute("data-mask", "email");
-    expect(screen.getByTestId("meta-email")).toHaveAttribute("data-required", "true");
-    expect(screen.getByTestId("meta-email")).toHaveAttribute("data-autocomplete", "email");
-    expect(screen.getByTestId("meta-email")).toHaveAttribute("data-helpertext", "voce@gmail.com");
+    expect(screen.getByTestId("meta-email")).toHaveAttribute(
+      "data-mask",
+      "email",
+    );
+    expect(screen.getByTestId("meta-email")).toHaveAttribute(
+      "data-required",
+      "true",
+    );
+    expect(screen.getByTestId("meta-email")).toHaveAttribute(
+      "data-autocomplete",
+      "email",
+    );
+    expect(screen.getByTestId("meta-email")).toHaveAttribute(
+      "data-helpertext",
+      "voce@gmail.com",
+    );
 
     // WhatsApp (telefone) é opcional => required=false
     expect(screen.getByLabelText("WhatsApp")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("(00) 00000-0000")).toBeInTheDocument();
-    expect(screen.getByTestId("meta-telefone")).toHaveAttribute("data-mask", "telefone");
-    expect(screen.getByTestId("meta-telefone")).toHaveAttribute("data-required", "false");
-    expect(screen.getByTestId("meta-telefone")).toHaveAttribute("data-autocomplete", "tel");
-    expect(screen.getByTestId("meta-telefone")).toHaveAttribute("data-helpertext", "(00) 00000-0000");
+    expect(screen.getByTestId("meta-telefone")).toHaveAttribute(
+      "data-mask",
+      "telefone",
+    );
+    expect(screen.getByTestId("meta-telefone")).toHaveAttribute(
+      "data-required",
+      "false",
+    );
+    expect(screen.getByTestId("meta-telefone")).toHaveAttribute(
+      "data-autocomplete",
+      "tel",
+    );
+    expect(screen.getByTestId("meta-telefone")).toHaveAttribute(
+      "data-helpertext",
+      "(00) 00000-0000",
+    );
   });
 
   it("usa fallback para string vazia quando formData não contém a chave (negativo/controle)", () => {
     const onChange = vi.fn() as unknown as CheckoutFormChangeHandler;
 
-    render(<PersonalInfoForm formData={makeFormData({})} onChange={onChange} />);
+    render(
+      <PersonalInfoForm formData={makeFormData({})} onChange={onChange} />,
+    );
 
     const nome = screen.getByLabelText("Nome completo") as HTMLInputElement;
     const cpf = screen.getByLabelText("CPF") as HTMLInputElement;
@@ -140,13 +192,21 @@ describe("PersonalInfoForm", () => {
           telefone: "(31) 99999-9999" as any,
         })}
         onChange={onChange}
-      />
+      />,
     );
 
-    expect((screen.getByLabelText("Nome completo") as HTMLInputElement).value).toBe("Rick Januario");
-    expect((screen.getByLabelText("CPF") as HTMLInputElement).value).toBe("123.456.789-10");
-    expect((screen.getByLabelText("E-mail") as HTMLInputElement).value).toBe("rick@email.com");
-    expect((screen.getByLabelText("WhatsApp") as HTMLInputElement).value).toBe("(31) 99999-9999");
+    expect(
+      (screen.getByLabelText("Nome completo") as HTMLInputElement).value,
+    ).toBe("Rick Januario");
+    expect((screen.getByLabelText("CPF") as HTMLInputElement).value).toBe(
+      "123.456.789-10",
+    );
+    expect((screen.getByLabelText("E-mail") as HTMLInputElement).value).toBe(
+      "rick@email.com",
+    );
+    expect((screen.getByLabelText("WhatsApp") as HTMLInputElement).value).toBe(
+      "(31) 99999-9999",
+    );
   });
 
   it("encaminha onChange para os inputs (positivo): disparar change chama o handler", () => {

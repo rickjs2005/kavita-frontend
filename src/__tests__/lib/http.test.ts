@@ -26,7 +26,9 @@ describe("src/lib/api/http.ts -> apiPublic()", () => {
 
   it("deve chamar apiClient.request com o path e options vazias quando init não for passado", async () => {
     // Arrange
-    (apiClient.request as unknown as RequestMock).mockResolvedValueOnce({ ok: true });
+    (apiClient.request as unknown as RequestMock).mockResolvedValueOnce({
+      ok: true,
+    });
 
     // Act
     const res = await apiPublic("/news");
@@ -39,7 +41,9 @@ describe("src/lib/api/http.ts -> apiPublic()", () => {
 
   it("deve repassar init para apiClient.request (ex: method/body/headers)", async () => {
     // Arrange
-    (apiClient.request as unknown as RequestMock).mockResolvedValueOnce({ created: true });
+    (apiClient.request as unknown as RequestMock).mockResolvedValueOnce({
+      created: true,
+    });
 
     const init: RequestInit = {
       method: "POST",
@@ -59,7 +63,9 @@ describe("src/lib/api/http.ts -> apiPublic()", () => {
 
   it("deve clonar init para não depender de mutações externas (garante spread)", async () => {
     // Arrange
-    (apiClient.request as unknown as RequestMock).mockResolvedValueOnce({ ok: true });
+    (apiClient.request as unknown as RequestMock).mockResolvedValueOnce({
+      ok: true,
+    });
 
     const init: RequestInit = { method: "GET", headers: { "X-Test": "1" } };
 
@@ -74,7 +80,9 @@ describe("src/lib/api/http.ts -> apiPublic()", () => {
 
   it("se init for undefined, deve passar {} (não undefined)", async () => {
     // Arrange
-    (apiClient.request as unknown as RequestMock).mockResolvedValueOnce({ ok: true });
+    (apiClient.request as unknown as RequestMock).mockResolvedValueOnce({
+      ok: true,
+    });
 
     // Act
     await apiPublic("/ping", undefined);

@@ -7,7 +7,6 @@ import CustomButton from "@/components/buttons/CustomButton";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
-
 type Categoria = {
   id: number;
   name: string;
@@ -37,9 +36,7 @@ export default function AdminCategoriasPage() {
   async function loadCategorias() {
     try {
       setLoading(true);
-      const res = await apiClient.get<Categoria[]>(
-        '/api/admin/categorias'
-      );
+      const res = await apiClient.get<Categoria[]>("/api/admin/categorias");
       setCategorias(res);
     } catch (err: any) {
       console.error(err);
@@ -63,7 +60,7 @@ export default function AdminCategoriasPage() {
 
   function handleChange<K extends keyof typeof form>(
     field: K,
-    value: (typeof form)[K]
+    value: (typeof form)[K],
   ) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
@@ -89,24 +86,18 @@ export default function AdminCategoriasPage() {
       setSaving(true);
 
       if (editingId) {
-        await apiClient.put(
-          `/api/admin/categorias/${editingId}`,
-          {
-            name: form.name.trim(),
-            slug: form.slug.trim() || undefined,
-            sort_order: Number(form.sort_order) || 0,
-          }
-        );
+        await apiClient.put(`/api/admin/categorias/${editingId}`, {
+          name: form.name.trim(),
+          slug: form.slug.trim() || undefined,
+          sort_order: Number(form.sort_order) || 0,
+        });
         toast.success("Categoria atualizada.");
       } else {
-        await apiClient.post(
-          '/api/admin/categorias',
-          {
-            name: form.name.trim(),
-            slug: form.slug.trim() || undefined,
-            sort_order: Number(form.sort_order) || 0,
-          }
-        );
+        await apiClient.post("/api/admin/categorias", {
+          name: form.name.trim(),
+          slug: form.slug.trim() || undefined,
+          sort_order: Number(form.sort_order) || 0,
+        });
         toast.success("Categoria criada.");
       }
 
@@ -121,8 +112,7 @@ export default function AdminCategoriasPage() {
         return;
       }
 
-      const msg =
-        err?.message || "Erro ao salvar categoria.";
+      const msg = err?.message || "Erro ao salvar categoria.";
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -131,12 +121,11 @@ export default function AdminCategoriasPage() {
 
   async function toggleAtivo(cat: Categoria) {
     try {
-      await apiClient.patch(
-        `/api/admin/categorias/${cat.id}/status`,
-        { is_active: !cat.is_active }
-      );
+      await apiClient.patch(`/api/admin/categorias/${cat.id}/status`, {
+        is_active: !cat.is_active,
+      });
       toast.success(
-        !cat.is_active ? "Categoria ativada." : "Categoria desativada."
+        !cat.is_active ? "Categoria ativada." : "Categoria desativada.",
       );
       await loadCategorias();
     } catch (err: any) {
@@ -168,8 +157,7 @@ export default function AdminCategoriasPage() {
         return;
       }
 
-      const msg =
-        err?.message || "Erro ao remover categoria.";
+      const msg = err?.message || "Erro ao remover categoria.";
       toast.error(msg);
     }
   }
@@ -283,8 +271,8 @@ export default function AdminCategoriasPage() {
                     saving
                       ? "Salvando..."
                       : editingId
-                      ? "Salvar edição"
-                      : "Criar categoria"
+                        ? "Salvar edição"
+                        : "Criar categoria"
                   }
                   size="medium"
                   variant="primary"
@@ -325,15 +313,11 @@ export default function AdminCategoriasPage() {
                   <tr>
                     <th className="px-3 py-2 font-medium">Nome</th>
                     <th className="px-3 py-2 font-medium">Slug</th>
-                    <th className="px-3 py-2 text-center font-medium">
-                      Ordem
-                    </th>
+                    <th className="px-3 py-2 text-center font-medium">Ordem</th>
                     <th className="px-3 py-2 text-center font-medium">
                       Status
                     </th>
-                    <th className="px-3 py-2 text-right font-medium">
-                      Ações
-                    </th>
+                    <th className="px-3 py-2 text-right font-medium">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -420,8 +404,7 @@ export default function AdminCategoriasPage() {
                         {cat.name}
                       </p>
                       <p className="text-[11px] text-slate-400">
-                        Slug:{" "}
-                        <span className="text-slate-300">{cat.slug}</span>
+                        Slug: <span className="text-slate-300">{cat.slug}</span>
                       </p>
                       <p className="text-[11px] text-slate-400">
                         Ordem no menu:{" "}

@@ -37,7 +37,11 @@ type Props = {
   onCreated?: () => void;
 };
 
-export default function CommentsSection({ comments, modelKey, onCreated }: Props) {
+export default function CommentsSection({
+  comments,
+  modelKey,
+  onCreated,
+}: Props) {
   const [text, setText] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
   const [sending, setSending] = useState(false);
@@ -51,8 +55,7 @@ export default function CommentsSection({ comments, modelKey, onCreated }: Props
 
       const media = ((c as any).media ?? []).map((m: any, mIdx: number) => {
         const mediaKey =
-          m?.id ??
-          `${commentKey}-${m?.media_path ?? "no-path"}-${mIdx}`;
+          m?.id ?? `${commentKey}-${m?.media_path ?? "no-path"}-${mIdx}`;
 
         return { ...m, __key: mediaKey };
       });
@@ -89,7 +92,9 @@ export default function CommentsSection({ comments, modelKey, onCreated }: Props
       });
 
       if (isAuthError(res)) {
-        setMsg("Você precisa estar logado para postar comentários e anexar mídias.");
+        setMsg(
+          "Você precisa estar logado para postar comentários e anexar mídias.",
+        );
         return;
       }
 
@@ -114,12 +119,15 @@ export default function CommentsSection({ comments, modelKey, onCreated }: Props
 
   return (
     <section className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
-      <h2 className="text-xl sm:text-2xl font-extrabold text-white">Relatos de clientes</h2>
+      <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+        Relatos de clientes
+      </h2>
       <p className="mt-2 text-sm text-slate-300">
         Para postar relatos com fotos/vídeos, é necessário estar logado.
         {modelKey ? (
           <span className="ml-2 text-xs text-slate-400">
-            Modelo: <span className="text-slate-200 font-semibold">{modelKey}</span>
+            Modelo:{" "}
+            <span className="text-slate-200 font-semibold">{modelKey}</span>
           </span>
         ) : null}
       </p>
@@ -141,7 +149,9 @@ export default function CommentsSection({ comments, modelKey, onCreated }: Props
               <p className="text-xs font-semibold text-slate-200">
                 Adicionar fotos/vídeos (até 6 arquivos)
               </p>
-              <p className="mt-1 text-[11px] text-slate-400">Formatos: JPG/PNG/WEBP e MP4.</p>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Formatos: JPG/PNG/WEBP e MP4.
+              </p>
               <input
                 type="file"
                 multiple
@@ -188,15 +198,22 @@ export default function CommentsSection({ comments, modelKey, onCreated }: Props
           <div className="mt-4 grid gap-4">
             {normalizedComments.length ? (
               normalizedComments.map((c: any) => (
-                <div key={c.__key} className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                <div
+                  key={c.__key}
+                  className="rounded-2xl border border-white/10 bg-black/25 p-4"
+                >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-white truncate">{c.display_name}</p>
+                    <p className="text-sm font-semibold text-white truncate">
+                      {c.display_name}
+                    </p>
                     <p className="text-xs text-slate-400 shrink-0">
                       {new Date(c.created_at).toLocaleDateString()}
                     </p>
                   </div>
 
-                  <p className="mt-2 text-sm text-slate-200 leading-relaxed">{c.comment_text}</p>
+                  <p className="mt-2 text-sm text-slate-200 leading-relaxed">
+                    {c.comment_text}
+                  </p>
 
                   {c.media?.length ? (
                     <div className="mt-4 grid gap-2 grid-cols-2 sm:grid-cols-3">

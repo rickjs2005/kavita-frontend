@@ -30,7 +30,8 @@ function ResetPasswordContent() {
     if (!token) {
       setToast({
         type: "error",
-        message: "Token ausente ou inválido. Verifique o link enviado ao seu e-mail.",
+        message:
+          "Token ausente ou inválido. Verifique o link enviado ao seu e-mail.",
       });
     }
   }, [token]);
@@ -40,7 +41,10 @@ function ResetPasswordContent() {
     if (!token) return;
 
     if (!password || password.length < 6) {
-      setToast({ type: "error", message: "A nova senha deve ter pelo menos 6 caracteres." });
+      setToast({
+        type: "error",
+        message: "A nova senha deve ter pelo menos 6 caracteres.",
+      });
       return;
     }
     if (password !== confirm) {
@@ -58,12 +62,18 @@ function ResetPasswordContent() {
         body: JSON.stringify({ token, novaSenha: password }),
       });
 
-      setToast({ type: "success", message: "Senha redefinida com sucesso! Você já pode fazer login." });
+      setToast({
+        type: "success",
+        message: "Senha redefinida com sucesso! Você já pode fazer login.",
+      });
       setPassword("");
       setConfirm("");
       setTimeout(() => router.push("/login"), 2000);
     } catch (err: any) {
-      setToast({ type: "error", message: err?.message ?? "Falha ao redefinir a senha." });
+      setToast({
+        type: "error",
+        message: err?.message ?? "Falha ao redefinir a senha.",
+      });
     } finally {
       setLoading(false);
       setTimeout(() => setToast(null), 5500);
@@ -103,7 +113,10 @@ function ResetPasswordContent() {
 
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="text-left">
-            <label htmlFor="password" className="block text-sm mb-1 text-white/90">
+            <label
+              htmlFor="password"
+              className="block text-sm mb-1 text-white/90"
+            >
               Nova senha
             </label>
             <input
@@ -119,7 +132,10 @@ function ResetPasswordContent() {
           </div>
 
           <div className="text-left">
-            <label htmlFor="confirm" className="block text-sm mb-1 text-white/90">
+            <label
+              htmlFor="confirm"
+              className="block text-sm mb-1 text-white/90"
+            >
               Confirmar nova senha
             </label>
             <input
@@ -163,7 +179,9 @@ function ResetPasswordContent() {
 function ResetPasswordFallback() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-      <p className="text-sm opacity-80">Carregando formulário de redefinição...</p>
+      <p className="text-sm opacity-80">
+        Carregando formulário de redefinição...
+      </p>
     </main>
   );
 }

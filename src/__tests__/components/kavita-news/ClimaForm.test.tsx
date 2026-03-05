@@ -4,14 +4,23 @@ import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import ClimaForm from "@/components/admin/kavita-news/clima/ClimaForm";
-import type { ClimaEditMode, ClimaFormState, ClimaItem } from "@/types/kavita-news";
+import type {
+  ClimaEditMode,
+  ClimaFormState,
+  ClimaItem,
+} from "@/types/kavita-news";
 
 vi.mock("@/components/buttons/LoadingButton", () => {
   return {
     default: (props: any) => {
       const { isLoading, onClick, className, children } = props;
       return (
-        <button type="button" onClick={onClick} className={className} disabled={!!isLoading}>
+        <button
+          type="button"
+          onClick={onClick}
+          className={className}
+          disabled={!!isLoading}
+        >
           {children}
         </button>
       );
@@ -54,19 +63,21 @@ function makeInitialForm(): ClimaFormState {
     source: "",
     last_update_at: "",
     ativo: true,
-    ...( {
+    ...({
       ibge_id: "",
       station_code: "",
       station_lat: "",
       station_lon: "",
       station_distance: "",
       station_source: "",
-    } as any ),
+    } as any),
   };
 }
 
 function Wrapper(props: WrapperProps) {
-  const [editMode, setEditMode] = useState<ClimaEditMode>(props.initialEditMode ?? "manual");
+  const [editMode, setEditMode] = useState<ClimaEditMode>(
+    props.initialEditMode ?? "manual",
+  );
   const [form, setForm] = useState<ClimaFormState>(makeInitialForm());
 
   return (
@@ -122,14 +133,18 @@ describe("ClimaForm", () => {
     expect(screen.getByRole("button", { name: "Manual" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "IBGE" })).toBeInTheDocument();
 
-    const slug = screen.getByPlaceholderText("Ex: uberlandia") as HTMLInputElement;
+    const slug = screen.getByPlaceholderText(
+      "Ex: uberlandia",
+    ) as HTMLInputElement;
     expect(slug).not.toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "IBGE" }));
 
     expect(slug).toBeDisabled();
     expect(
-      screen.getByText(/Digite o nome da cidade .* preencher automaticamente\./i)
+      screen.getByText(
+        /Digite o nome da cidade .* preencher automaticamente\./i,
+      ),
     ).toBeInTheDocument();
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -141,7 +156,9 @@ describe("ClimaForm", () => {
 
     render(<Wrapper onStartCreate={onStartCreate} />);
 
-    const cidade = screen.getByPlaceholderText("Ex: Uberlândia") as HTMLInputElement;
+    const cidade = screen.getByPlaceholderText(
+      "Ex: Uberlândia",
+    ) as HTMLInputElement;
     await user.type(cidade, "Caratinga");
     expect(cidade.value).toBe("Caratinga");
 
@@ -150,9 +167,15 @@ describe("ClimaForm", () => {
     // o componente usa setTimeout(0). Com timers reais, aguardamos um tick.
     await sleep(10);
 
-    expect((screen.getByPlaceholderText("Ex: Uberlândia") as HTMLInputElement).value).toBe("");
-    expect((screen.getByPlaceholderText("Ex: MG") as HTMLInputElement).value).toBe("");
-    expect((screen.getByPlaceholderText("Ex: uberlandia") as HTMLInputElement).value).toBe("");
+    expect(
+      (screen.getByPlaceholderText("Ex: Uberlândia") as HTMLInputElement).value,
+    ).toBe("");
+    expect(
+      (screen.getByPlaceholderText("Ex: MG") as HTMLInputElement).value,
+    ).toBe("");
+    expect(
+      (screen.getByPlaceholderText("Ex: uberlandia") as HTMLInputElement).value,
+    ).toBe("");
 
     expect(onStartCreate).toHaveBeenCalledTimes(1);
   });
@@ -162,10 +185,22 @@ describe("ClimaForm", () => {
 
     (global.fetch as any).mockResolvedValueOnce(
       mockFetchOkJson([
-        { "municipio-id": "3106200", "municipio-nome": "Belo Horizonte", "UF-sigla": "MG" },
-        { "municipio-id": "3118601", "municipio-nome": "Contagem", "UF-sigla": "MG" },
-        { "municipio-id": "3110000", "municipio-nome": "Caratinga", "UF-sigla": "MG" },
-      ])
+        {
+          "municipio-id": "3106200",
+          "municipio-nome": "Belo Horizonte",
+          "UF-sigla": "MG",
+        },
+        {
+          "municipio-id": "3118601",
+          "municipio-nome": "Contagem",
+          "UF-sigla": "MG",
+        },
+        {
+          "municipio-id": "3110000",
+          "municipio-nome": "Caratinga",
+          "UF-sigla": "MG",
+        },
+      ]),
     );
 
     render(<Wrapper initialEditMode="ibge" />);
@@ -173,7 +208,9 @@ describe("ClimaForm", () => {
     // espera o effect carregar a base
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
 
-    const cidade = screen.getByPlaceholderText("Ex: Uberlândia") as HTMLInputElement;
+    const cidade = screen.getByPlaceholderText(
+      "Ex: Uberlândia",
+    ) as HTMLInputElement;
     await user.type(cidade, "cara");
 
     // debounce do componente (250ms ou similar). Usa folga pequena.
@@ -185,7 +222,9 @@ describe("ClimaForm", () => {
     const uf = screen.getByPlaceholderText("Ex: MG") as HTMLInputElement;
     expect(uf.value).toBe("MG");
 
-    const slug = screen.getByPlaceholderText("Ex: uberlandia") as HTMLInputElement;
+    const slug = screen.getByPlaceholderText(
+      "Ex: uberlandia",
+    ) as HTMLInputElement;
     expect(slug.value).toBe("slug-normalizado");
   });
 
@@ -201,25 +240,31 @@ describe("ClimaForm", () => {
         id: 3170206,
         nome: "Uberlândia",
         microrregiao: { mesorregiao: { UF: { sigla: "MG" } } },
-      })
+      }),
     );
 
     render(<Wrapper initialEditMode="ibge" />);
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
 
-    const ibgeId = screen.getByPlaceholderText("Ex: 3170206") as HTMLInputElement;
+    const ibgeId = screen.getByPlaceholderText(
+      "Ex: 3170206",
+    ) as HTMLInputElement;
     await user.type(ibgeId, "3170206");
 
     await sleep(350);
 
     await waitFor(() => {
-      const cidade = screen.getByPlaceholderText("Ex: Uberlândia") as HTMLInputElement;
+      const cidade = screen.getByPlaceholderText(
+        "Ex: Uberlândia",
+      ) as HTMLInputElement;
       expect(cidade.value).toBe("Uberlândia");
     });
 
     const uf = screen.getByPlaceholderText("Ex: MG") as HTMLInputElement;
-    const slug = screen.getByPlaceholderText("Ex: uberlandia") as HTMLInputElement;
+    const slug = screen.getByPlaceholderText(
+      "Ex: uberlandia",
+    ) as HTMLInputElement;
 
     expect(uf.value).toBe("MG");
     expect(slug.value).toBe("slug-normalizado");
@@ -232,11 +277,15 @@ describe("ClimaForm", () => {
 
     render(<Wrapper onSuggestStations={onSuggestStations} />);
 
-    await user.click(screen.getByRole("button", { name: /Buscar coordenadas/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Buscar coordenadas/i }),
+    );
 
     expect(onSuggestStations).not.toHaveBeenCalled();
     expect(
-      screen.getByText(/Preencha UF \(2 letras\) e cidade para buscar coordenadas\./i)
+      screen.getByText(
+        /Preencha UF \(2 letras\) e cidade para buscar coordenadas\./i,
+      ),
     ).toBeInTheDocument();
   });
 
@@ -253,14 +302,22 @@ describe("ClimaForm", () => {
     await user.type(screen.getByPlaceholderText("Ex: Uberlândia"), "Caratinga");
     await user.type(screen.getByPlaceholderText("Ex: MG"), "mg");
 
-    await user.click(screen.getByRole("button", { name: /Buscar coordenadas/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Buscar coordenadas/i }),
+    );
 
     expect(onSuggestStations).toHaveBeenCalledWith("MG", "Caratinga", 10);
 
-    expect(await screen.findByText(/Coordenadas sugeridas automaticamente:/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Coordenadas sugeridas automaticamente:/i),
+    ).toBeInTheDocument();
 
-    const lat = screen.getByPlaceholderText("Ex: -18.920000") as HTMLInputElement;
-    const lon = screen.getByPlaceholderText("Ex: -48.260000") as HTMLInputElement;
+    const lat = screen.getByPlaceholderText(
+      "Ex: -18.920000",
+    ) as HTMLInputElement;
+    const lon = screen.getByPlaceholderText(
+      "Ex: -48.260000",
+    ) as HTMLInputElement;
 
     expect(lat.value).toMatch(/-19\.7890/);
     expect(lon.value).toMatch(/-42\.1412/);
@@ -275,10 +332,14 @@ describe("ClimaForm", () => {
     await user.type(screen.getByPlaceholderText("Ex: Uberlândia"), "Caratinga");
     await user.type(screen.getByPlaceholderText("Ex: MG"), "MG");
 
-    await user.click(screen.getByRole("button", { name: /Buscar coordenadas/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Buscar coordenadas/i }),
+    );
 
     expect(
-      screen.getByText(/Falha ao buscar coordenadas\. Você pode preencher latitude\/longitude manualmente\./i)
+      screen.getByText(
+        /Falha ao buscar coordenadas\. Você pode preencher latitude\/longitude manualmente\./i,
+      ),
     ).toBeInTheDocument();
   });
 });

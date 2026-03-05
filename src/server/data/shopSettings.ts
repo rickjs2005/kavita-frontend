@@ -122,14 +122,16 @@ function defaultPublicSettings(): PublicShopSettings {
   return {
     store_name: "Kavita",
     logo_url: "",
-    footer_tagline: "Conectando você ao melhor da agropecuária com qualidade e tradição.",
+    footer_tagline:
+      "Conectando você ao melhor da agropecuária com qualidade e tradição.",
     footer_links: [
       { label: "Home", href: "/" },
       { label: "Serviços", href: "/servicos" },
       { label: "Contato", href: "/contato" },
     ],
     footer: {
-      tagline: "Conectando você ao melhor da agropecuária com qualidade e tradição.",
+      tagline:
+        "Conectando você ao melhor da agropecuária com qualidade e tradição.",
       links: [
         { label: "Home", href: "/" },
         { label: "Serviços", href: "/servicos" },
@@ -144,7 +146,7 @@ type AnyObj = Record<string, any>;
 function buildFooterFromFlat(
   flat: AnyObj,
   legacyFooter: AnyObj,
-  footerLinks?: FooterLink[]
+  footerLinks?: FooterLink[],
 ): PublicShopSettings["footer"] {
   // Regra: prioriza flat -> depois legacyFooter
   const tagline = toStr(flat.footer_tagline) ?? toStr(legacyFooter.tagline);
@@ -154,7 +156,8 @@ function buildFooterFromFlat(
     toStr(flat.contact_email) ?? toStr(legacyFooter.contact_email);
 
   const social_instagram_url =
-    toStr(flat.social_instagram_url) ?? toStr(legacyFooter.social_instagram_url);
+    toStr(flat.social_instagram_url) ??
+    toStr(legacyFooter.social_instagram_url);
   const social_whatsapp_url =
     toStr(flat.social_whatsapp_url) ?? toStr(legacyFooter.social_whatsapp_url);
 
@@ -166,7 +169,8 @@ function buildFooterFromFlat(
   const address_street =
     toStr(flat.address_street) ?? toStr(legacyFooter.address_street);
   const address_neighborhood =
-    toStr(flat.address_neighborhood) ?? toStr(legacyFooter.address_neighborhood);
+    toStr(flat.address_neighborhood) ??
+    toStr(legacyFooter.address_neighborhood);
   const address_zip =
     toStr(flat.address_zip) ?? toStr(legacyFooter.address_zip);
 
@@ -175,11 +179,14 @@ function buildFooterFromFlat(
     toBool(legacyFooter?.partner_cta?.enabled);
 
   const title =
-    toStr(flat.footer_partner_cta_title) ?? toStr(legacyFooter?.partner_cta?.title);
+    toStr(flat.footer_partner_cta_title) ??
+    toStr(legacyFooter?.partner_cta?.title);
   const text =
-    toStr(flat.footer_partner_cta_text) ?? toStr(legacyFooter?.partner_cta?.text);
+    toStr(flat.footer_partner_cta_text) ??
+    toStr(legacyFooter?.partner_cta?.text);
   const href =
-    toStr(flat.footer_partner_cta_href) ?? toStr(legacyFooter?.partner_cta?.href);
+    toStr(flat.footer_partner_cta_href) ??
+    toStr(legacyFooter?.partner_cta?.href);
 
   const footer: PublicShopSettings["footer"] = {
     ...(tagline ? { tagline } : {}),
@@ -250,36 +257,47 @@ export async function fetchPublicShopSettings(): Promise<PublicShopSettings> {
       contact_whatsapp:
         toStr(raw?.contact_whatsapp) ?? toStr(legacyFooter?.contact_whatsapp),
 
-      contact_email: toStr(raw?.contact_email) ?? toStr(legacyFooter?.contact_email),
+      contact_email:
+        toStr(raw?.contact_email) ?? toStr(legacyFooter?.contact_email),
 
       cnpj: toStr(raw?.cnpj),
 
       social_instagram_url:
-        toStr(raw?.social_instagram_url) ?? toStr(legacyFooter?.social_instagram_url),
+        toStr(raw?.social_instagram_url) ??
+        toStr(legacyFooter?.social_instagram_url),
 
       social_whatsapp_url:
-        toStr(raw?.social_whatsapp_url) ?? toStr(legacyFooter?.social_whatsapp_url),
+        toStr(raw?.social_whatsapp_url) ??
+        toStr(legacyFooter?.social_whatsapp_url),
 
       footer_partner_cta_enabled:
-        toBool(raw?.footer_partner_cta_enabled) ?? toBool(legacyFooter?.partner_cta?.enabled),
+        toBool(raw?.footer_partner_cta_enabled) ??
+        toBool(legacyFooter?.partner_cta?.enabled),
 
       footer_partner_cta_title:
-        toStr(raw?.footer_partner_cta_title) ?? toStr(legacyFooter?.partner_cta?.title),
+        toStr(raw?.footer_partner_cta_title) ??
+        toStr(legacyFooter?.partner_cta?.title),
 
       footer_partner_cta_text:
-        toStr(raw?.footer_partner_cta_text) ?? toStr(legacyFooter?.partner_cta?.text),
+        toStr(raw?.footer_partner_cta_text) ??
+        toStr(legacyFooter?.partner_cta?.text),
 
       footer_partner_cta_href:
-        toStr(raw?.footer_partner_cta_href) ?? toStr(legacyFooter?.partner_cta?.href),
+        toStr(raw?.footer_partner_cta_href) ??
+        toStr(legacyFooter?.partner_cta?.href),
 
       footer_links: footerLinks,
 
       // ✅ Endereço (flat)
-      address_city: toStr(raw?.address_city) ?? toStr(legacyFooter?.address_city),
-      address_state: toStr(raw?.address_state) ?? toStr(legacyFooter?.address_state),
-      address_street: toStr(raw?.address_street) ?? toStr(legacyFooter?.address_street),
+      address_city:
+        toStr(raw?.address_city) ?? toStr(legacyFooter?.address_city),
+      address_state:
+        toStr(raw?.address_state) ?? toStr(legacyFooter?.address_state),
+      address_street:
+        toStr(raw?.address_street) ?? toStr(legacyFooter?.address_street),
       address_neighborhood:
-        toStr(raw?.address_neighborhood) ?? toStr(legacyFooter?.address_neighborhood),
+        toStr(raw?.address_neighborhood) ??
+        toStr(legacyFooter?.address_neighborhood),
       address_zip: toStr(raw?.address_zip) ?? toStr(legacyFooter?.address_zip),
     };
 

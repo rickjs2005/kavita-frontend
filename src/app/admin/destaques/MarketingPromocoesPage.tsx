@@ -82,7 +82,6 @@ export default function MarketingPromocoesPage() {
 
   useEffect(() => {
     buscarPromocoes();
-     
   }, []);
 
   async function buscarPromocoes() {
@@ -107,7 +106,7 @@ export default function MarketingPromocoesPage() {
               ? Number(d.promo_price)
               : null,
           image: toImageUrl(d.image),
-        }))
+        })),
       );
     } catch (e: any) {
       console.error(e);
@@ -156,9 +155,11 @@ export default function MarketingPromocoesPage() {
     setFormTitle(promo.title || "");
     setFormType(promo.type === "FLASH" ? "FLASH" : "PROMOCAO");
     setFormDiscountPercent(
-      promo.discount_percent != null ? String(promo.discount_percent) : ""
+      promo.discount_percent != null ? String(promo.discount_percent) : "",
     );
-    setFormPromoPrice(promo.promo_price != null ? String(promo.promo_price) : "");
+    setFormPromoPrice(
+      promo.promo_price != null ? String(promo.promo_price) : "",
+    );
     setFormStartAt(toInputDateTime((promo as any).start_at));
     setFormEndAt(toInputDateTime((promo as any).end_at));
     setFormActive(promo.is_active === 1 || promo.status === "ATIVA");
@@ -221,10 +222,16 @@ export default function MarketingPromocoesPage() {
       setSaving(true);
 
       if (mode === "create") {
-        await apiClient.post("/api/admin/marketing/promocoes", { product_id: formProductId, ...payload });
+        await apiClient.post("/api/admin/marketing/promocoes", {
+          product_id: formProductId,
+          ...payload,
+        });
         toast.success("Promoção criada com sucesso.");
       } else if (mode === "edit" && formPromoId != null) {
-        await apiClient.put(`/api/admin/marketing/promocoes/${formPromoId}`, payload);
+        await apiClient.put(
+          `/api/admin/marketing/promocoes/${formPromoId}`,
+          payload,
+        );
         toast.success("Promoção atualizada com sucesso.");
       }
 
@@ -274,8 +281,9 @@ export default function MarketingPromocoesPage() {
             </h1>
 
             <p className="text-xs text-gray-300 sm:text-sm">
-              Busque um produto e transforme em promoção. Use descontos em porcentagem ou preços
-              especiais para criar campanhas como os grandes ecommerces.
+              Busque um produto e transforme em promoção. Use descontos em
+              porcentagem ou preços especiais para criar campanhas como os
+              grandes ecommerces.
             </p>
 
             <div className="mt-3 w-full sm:w-80 md:w-96">
@@ -350,7 +358,9 @@ export default function MarketingPromocoesPage() {
                 <select
                   value={formType}
                   onChange={(e) =>
-                    setFormType(e.target.value === "FLASH" ? "FLASH" : "PROMOCAO")
+                    setFormType(
+                      e.target.value === "FLASH" ? "FLASH" : "PROMOCAO",
+                    )
                   }
                   className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 >
@@ -376,7 +386,8 @@ export default function MarketingPromocoesPage() {
                   <span className="text-xs text-slate-400">%</span>
                 </div>
                 <p className="mt-1 text-[10px] text-slate-400">
-                  Se você preencher preço promocional abaixo, ele será prioridade.
+                  Se você preencher preço promocional abaixo, ele será
+                  prioridade.
                 </p>
               </div>
 
@@ -430,9 +441,12 @@ export default function MarketingPromocoesPage() {
                   onChange={(e) => setFormActive(e.target.checked)}
                   className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-500 focus:ring-emerald-500"
                 />
-                <label htmlFor="promo-active" className="text-xs text-slate-200">
-                  Promoção ativa (aparece para os clientes enquanto estiver dentro do período
-                  configurado)
+                <label
+                  htmlFor="promo-active"
+                  className="text-xs text-slate-200"
+                >
+                  Promoção ativa (aparece para os clientes enquanto estiver
+                  dentro do período configurado)
                 </label>
               </div>
 
@@ -453,8 +467,8 @@ export default function MarketingPromocoesPage() {
                   {saving
                     ? "Salvando..."
                     : mode === "create"
-                    ? "Criar promoção"
-                    : "Salvar alterações"}
+                      ? "Criar promoção"
+                      : "Salvar alterações"}
                 </button>
               </div>
             </form>
@@ -474,7 +488,8 @@ export default function MarketingPromocoesPage() {
         )}
         {!loading && !err && !temItens && (
           <div className="mt-6 rounded-2xl bg-white p-4 text-sm text-gray-600 shadow-sm sm:p-5">
-            Nenhuma promoção cadastrada ainda. Use a busca acima para criar a primeira oferta.
+            Nenhuma promoção cadastrada ainda. Use a busca acima para criar a
+            primeira oferta.
           </div>
         )}
 
@@ -503,7 +518,9 @@ export default function MarketingPromocoesPage() {
                       fill
                       className="object-cover"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      onError={(e) => ((e.currentTarget as any).src = PLACEHOLDER)}
+                      onError={(e) =>
+                        ((e.currentTarget as any).src = PLACEHOLDER)
+                      }
                     />
 
                     <div className="absolute left-2 top-2 flex items-center gap-2">

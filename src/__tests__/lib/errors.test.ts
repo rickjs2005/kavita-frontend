@@ -66,7 +66,16 @@ describe("lib/api/errors.ts", () => {
 
   it("isApiError: deve retornar false para null/undefined e primitivos (não-objetos)", () => {
     // Arrange
-    const cases: unknown[] = [null, undefined, 0, 1, "x", true, false, Symbol("x")];
+    const cases: unknown[] = [
+      null,
+      undefined,
+      0,
+      1,
+      "x",
+      true,
+      false,
+      Symbol("x"),
+    ];
 
     // Act + Assert
     for (const c of cases) {

@@ -17,7 +17,12 @@ export default function ProductBuyBox({ product, stock = 0 }: Props) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-5 shadow-sm">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-        <QuantityInput max={stock} disabled={!disponivel} value={qty} onChange={setQty} />
+        <QuantityInput
+          max={stock}
+          disabled={!disponivel}
+          value={qty}
+          onChange={setQty}
+        />
         <div className="flex-1">
           <AddToCartButton product={product} qty={qty} disabled={!disponivel} />
         </div>

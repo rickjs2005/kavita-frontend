@@ -2,7 +2,11 @@
 // Unit tests for XSS-hardening helpers in sanitizeHtml.ts
 
 import { describe, it, expect } from "vitest";
-import { sanitizeAsText, sanitizeAsTextWithLineBreaks, sanitizeUrl } from "../../lib/sanitizeHtml";
+import {
+  sanitizeAsText,
+  sanitizeAsTextWithLineBreaks,
+  sanitizeUrl,
+} from "../../lib/sanitizeHtml";
 
 describe("sanitizeAsText", () => {
   it("deve escapar o caractere &", () => {
@@ -10,7 +14,9 @@ describe("sanitizeAsText", () => {
   });
 
   it("deve escapar < e >", () => {
-    expect(sanitizeAsText("<script>alert(1)</script>")).toBe("&lt;script&gt;alert(1)&lt;/script&gt;");
+    expect(sanitizeAsText("<script>alert(1)</script>")).toBe(
+      "&lt;script&gt;alert(1)&lt;/script&gt;",
+    );
   });
 
   it("deve escapar aspas duplas", () => {
@@ -42,12 +48,14 @@ describe("sanitizeAsText", () => {
 
 describe("sanitizeAsTextWithLineBreaks", () => {
   it("deve converter \\n em <br>", () => {
-    expect(sanitizeAsTextWithLineBreaks("linha1\nlinha2")).toBe("linha1<br>linha2");
+    expect(sanitizeAsTextWithLineBreaks("linha1\nlinha2")).toBe(
+      "linha1<br>linha2",
+    );
   });
 
   it("deve escapar HTML antes de converter \\n", () => {
     expect(sanitizeAsTextWithLineBreaks("<b>negrito</b>\nnova linha")).toBe(
-      "&lt;b&gt;negrito&lt;/b&gt;<br>nova linha"
+      "&lt;b&gt;negrito&lt;/b&gt;<br>nova linha",
     );
   });
 
@@ -59,11 +67,15 @@ describe("sanitizeAsTextWithLineBreaks", () => {
 
 describe("sanitizeUrl", () => {
   it("deve permitir URLs https normais", () => {
-    expect(sanitizeUrl("https://example.com/path?q=1")).toBe("https://example.com/path?q=1");
+    expect(sanitizeUrl("https://example.com/path?q=1")).toBe(
+      "https://example.com/path?q=1",
+    );
   });
 
   it("deve permitir URLs http normais", () => {
-    expect(sanitizeUrl("http://localhost:5000/api/ping")).toBe("http://localhost:5000/api/ping");
+    expect(sanitizeUrl("http://localhost:5000/api/ping")).toBe(
+      "http://localhost:5000/api/ping",
+    );
   });
 
   it("deve permitir caminhos relativos com /", () => {

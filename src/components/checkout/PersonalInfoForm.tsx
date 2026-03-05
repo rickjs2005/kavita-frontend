@@ -1,4 +1,7 @@
-import { CheckoutFormChangeHandler, CheckoutFormData } from "@/hooks/useCheckoutForm";
+import {
+  CheckoutFormChangeHandler,
+  CheckoutFormData,
+} from "@/hooks/useCheckoutForm";
 import FormattedInput from "@/components/layout/FormattedInput";
 
 type PersonalFieldName = "nome" | "cpf" | "email" | "telefone";
@@ -54,7 +57,10 @@ type PersonalInfoFormProps = {
   onChange: CheckoutFormChangeHandler;
 };
 
-export function PersonalInfoForm({ formData, onChange }: PersonalInfoFormProps) {
+export function PersonalInfoForm({
+  formData,
+  onChange,
+}: PersonalInfoFormProps) {
   return (
     <div className="space-y-4 sm:space-y-5">
       {PERSONAL_FIELDS.map((field) => {

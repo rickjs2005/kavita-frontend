@@ -23,7 +23,8 @@ const CARDS: ReportCard[] = [
   {
     href: "/admin/relatorios/vendas",
     title: "Relatório de Vendas",
-    description: "Acompanhe o faturamento diário e identifique picos de vendas.",
+    description:
+      "Acompanhe o faturamento diário e identifique picos de vendas.",
     icon: BarChart2,
     accent: "#22c55e", // verde
   },

@@ -37,7 +37,9 @@ describe("QuantityInput (src/components/QuantityInput.tsx)", () => {
     const onChange = vi.fn();
     render(<QuantityInput value={1} onChange={onChange} />);
 
-    const incButton = screen.getByRole("button", { name: "Aumentar quantidade" });
+    const incButton = screen.getByRole("button", {
+      name: "Aumentar quantidade",
+    });
     const input = screen.getByRole("textbox") as HTMLInputElement;
 
     // Act
@@ -53,7 +55,9 @@ describe("QuantityInput (src/components/QuantityInput.tsx)", () => {
     const onChange = vi.fn();
     render(<QuantityInput value={3} onChange={onChange} />);
 
-    const decButton = screen.getByRole("button", { name: "Diminuir quantidade" });
+    const decButton = screen.getByRole("button", {
+      name: "Diminuir quantidade",
+    });
     const input = screen.getByRole("textbox") as HTMLInputElement;
 
     // Act
@@ -69,7 +73,9 @@ describe("QuantityInput (src/components/QuantityInput.tsx)", () => {
     const onChange = vi.fn();
     render(<QuantityInput value={1} onChange={onChange} />);
 
-    const decButton = screen.getByRole("button", { name: "Diminuir quantidade" });
+    const decButton = screen.getByRole("button", {
+      name: "Diminuir quantidade",
+    });
     const input = screen.getByRole("textbox") as HTMLInputElement;
 
     // Assert
@@ -83,7 +89,9 @@ describe("QuantityInput (src/components/QuantityInput.tsx)", () => {
     const onChange = vi.fn();
     render(<QuantityInput value={2} max={3} onChange={onChange} />);
 
-    const incButton = screen.getByRole("button", { name: "Aumentar quantidade" });
+    const incButton = screen.getByRole("button", {
+      name: "Aumentar quantidade",
+    });
     const input = screen.getByRole("textbox") as HTMLInputElement;
 
     // Act
@@ -132,8 +140,12 @@ describe("QuantityInput (src/components/QuantityInput.tsx)", () => {
     render(<QuantityInput value={2} disabled onChange={onChange} />);
 
     const input = screen.getByRole("textbox") as HTMLInputElement;
-    const incButton = screen.getByRole("button", { name: "Aumentar quantidade" });
-    const decButton = screen.getByRole("button", { name: "Diminuir quantidade" });
+    const incButton = screen.getByRole("button", {
+      name: "Aumentar quantidade",
+    });
+    const decButton = screen.getByRole("button", {
+      name: "Diminuir quantidade",
+    });
 
     // Assert inicial
     expect(input).toBeDisabled();
@@ -153,7 +165,9 @@ describe("QuantityInput (src/components/QuantityInput.tsx)", () => {
     // Arrange
     render(<QuantityInput value={2} />);
 
-    const incButton = screen.getByRole("button", { name: "Aumentar quantidade" });
+    const incButton = screen.getByRole("button", {
+      name: "Aumentar quantidade",
+    });
     const input = screen.getByRole("textbox") as HTMLInputElement;
 
     // Act

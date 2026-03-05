@@ -38,15 +38,9 @@ const baseServico = {
   verificado: 1,
 };
 
-function renderCard(
-  props?: Partial<React.ComponentProps<typeof ServiceCard>>
-) {
+function renderCard(props?: Partial<React.ComponentProps<typeof ServiceCard>>) {
   return render(
-    <ServiceCard
-      servico={baseServico as any}
-      readOnly={false}
-      {...props}
-    />
+    <ServiceCard servico={baseServico as any} readOnly={false} {...props} />,
   );
 }
 
@@ -64,7 +58,7 @@ describe("ServiceCard (src/components/layout/ServiceCard.tsx)", () => {
     renderCard({ readOnly: true });
 
     expect(
-      screen.getByRole("heading", { name: /Serviço de Pulverização/i })
+      screen.getByRole("heading", { name: /Serviço de Pulverização/i }),
     ).toBeInTheDocument();
 
     expect(screen.getByText(/Cargo:/i)).toBeInTheDocument();
@@ -102,14 +96,16 @@ describe("ServiceCard (src/components/layout/ServiceCard.tsx)", () => {
   it("não exibe bloco de avaliação quando rating não existe (negativo)", () => {
     render(
       <ServiceCard
-        servico={{ ...baseServico, rating_avg: null, rating_count: null } as any}
+        servico={
+          { ...baseServico, rating_avg: null, rating_count: null } as any
+        }
         readOnly
-      />
+      />,
     );
 
     // Sem ⭐ no DOM quando não há rating (ajuste se seu componente ainda renderiza estrela vazia).
     expect(
-      screen.queryByText((_, el) => (el?.textContent ?? "").includes("⭐"))
+      screen.queryByText((_, el) => (el?.textContent ?? "").includes("⭐")),
     ).not.toBeInTheDocument();
   });
 
@@ -124,14 +120,18 @@ describe("ServiceCard (src/components/layout/ServiceCard.tsx)", () => {
     renderCard({ readOnly: false });
 
     expect(screen.getByRole("button", { name: /Editar/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Remover/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Remover/i }),
+    ).toBeInTheDocument();
   });
 
   it("não renderiza CTA de WhatsApp quando o componente não expõe link (controle)", () => {
     renderCard({ readOnly: true });
 
     // Pelo DOM atual, não há nenhum <a> com WhatsApp.
-    expect(screen.queryByRole("link", { name: /WhatsApp/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /WhatsApp/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("não renderiza contador de fotos quando o componente não expõe esse badge (controle)", () => {
@@ -142,7 +142,7 @@ describe("ServiceCard (src/components/layout/ServiceCard.tsx)", () => {
       screen.queryByText((_, el) => {
         const t = (el?.textContent ?? "").replace(/\s+/g, " ").toLowerCase();
         return t.includes("foto");
-      })
+      }),
     ).not.toBeInTheDocument();
   });
 });

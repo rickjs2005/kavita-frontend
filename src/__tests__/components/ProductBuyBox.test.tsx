@@ -26,7 +26,9 @@ vi.mock("@/components/ui/QuantityInput", () => ({
           disabled={disabled}
           value={value}
           max={max}
-          onChange={(e) => onChange(Number((e.target as HTMLInputElement).value))}
+          onChange={(e) =>
+            onChange(Number((e.target as HTMLInputElement).value))
+          }
         />
         <span data-testid="qty-max">{String(max)}</span>
       </div>
@@ -77,8 +79,12 @@ describe("ProductBuyBox", () => {
   it("renderiza textos informativos fixos (positivo/semântica)", () => {
     render(<ProductBuyBox product={makeProduct()} stock={5} />);
 
-    expect(screen.getByText(/Envio rápido para MG\/ES\/RJ\/BA/i)).toBeInTheDocument();
-    expect(screen.getByText(/Troca\/devolução em até 7 dias/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Envio rápido para MG\/ES\/RJ\/BA/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Troca\/devolução em até 7 dias/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Suporte pelo WhatsApp/i)).toBeInTheDocument();
   });
 
@@ -147,7 +153,9 @@ describe("ProductBuyBox", () => {
     expect(lastCartProps.product).toEqual(product);
 
     expect(
-      screen.getByRole("button", { name: /Adicionar Adubo Premium ao carrinho/i })
+      screen.getByRole("button", {
+        name: /Adicionar Adubo Premium ao carrinho/i,
+      }),
     ).toBeInTheDocument();
   });
 

@@ -30,10 +30,7 @@ function maskCNPJ(value: string): string {
   if (v.length <= 12)
     return v.replace(/(\d{2})(\d{3})(\d{3})(\d+)/, "$1.$2.$3/$4");
 
-  return v.replace(
-    /(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/,
-    "$1.$2.$3/$4-$5"
-  );
+  return v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, "$1.$2.$3/$4-$5");
 }
 
 /** Telefone/WhatsApp: (00) 00000-0000 */
@@ -51,11 +48,10 @@ function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export interface FormattedInputProps
-  extends Omit<
-    React.InputHTMLAttributes<HTMLInputElement>,
-    "onChange" | "value" | "name"
-  > {
+export interface FormattedInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "onChange" | "value" | "name"
+> {
   label: string;
   name: string;
   value: string;

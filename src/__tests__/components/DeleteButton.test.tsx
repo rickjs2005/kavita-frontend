@@ -21,7 +21,9 @@ describe("DeleteButton", () => {
   it("renderiza o botão com label customizado quando fornecido (positivo)", () => {
     render(<DeleteButton onConfirm={vi.fn()} label="Remover item" />);
 
-    expect(screen.getByRole("button", { name: /remover item/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /remover item/i }),
+    ).toBeInTheDocument();
   });
 
   it("não executa onConfirm quando o usuário cancela a confirmação (negativo)", async () => {
@@ -58,7 +60,7 @@ describe("DeleteButton", () => {
       () =>
         new Promise<void>((resolve) => {
           resolveConfirm = resolve;
-        })
+        }),
     );
 
     vi.spyOn(window, "confirm").mockReturnValueOnce(true);
@@ -78,7 +80,9 @@ describe("DeleteButton", () => {
 
     // Aguarda sair do loading
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /excluir/i })).not.toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /excluir/i }),
+      ).not.toBeDisabled();
     });
   });
 
@@ -90,7 +94,7 @@ describe("DeleteButton", () => {
       () =>
         new Promise<void>((resolve) => {
           resolveConfirm = resolve;
-        })
+        }),
     );
 
     vi.spyOn(window, "confirm").mockReturnValueOnce(true);
@@ -116,7 +120,7 @@ describe("DeleteButton", () => {
       () =>
         new Promise<void>((resolve) => {
           resolveConfirm = resolve;
-        })
+        }),
     );
 
     vi.spyOn(window, "confirm").mockReturnValue(true);

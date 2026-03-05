@@ -36,8 +36,18 @@ export interface ProductsPage {
 /**
  * List products with optional filters and pagination.
  */
-export async function getProducts(params: GetProductsParams = {}): Promise<ProductsPage | Product[]> {
-  const { q, category, subcategory, page = 1, limit = 12, sort = "id", order = "desc" } = params;
+export async function getProducts(
+  params: GetProductsParams = {},
+): Promise<ProductsPage | Product[]> {
+  const {
+    q,
+    category,
+    subcategory,
+    page = 1,
+    limit = 12,
+    sort = "id",
+    order = "desc",
+  } = params;
 
   const qs = new URLSearchParams();
   qs.set("page", String(page));
@@ -63,9 +73,13 @@ export async function getProductById(id: number | string): Promise<Product> {
  * Get the active promotion for a product, if any.
  * Returns null if no promotion exists (404).
  */
-export async function getProductPromotion(id: number | string): Promise<ProductPromotion | null> {
+export async function getProductPromotion(
+  id: number | string,
+): Promise<ProductPromotion | null> {
   try {
-    return await apiClient.get<ProductPromotion>(ENDPOINTS.PRODUCTS.PROMOTIONS(id));
+    return await apiClient.get<ProductPromotion>(
+      ENDPOINTS.PRODUCTS.PROMOTIONS(id),
+    );
   } catch {
     return null;
   }
@@ -77,6 +91,8 @@ type FavoritesApiResponse = Product[] | { data: Product[] };
  * Get the list of favorites for the authenticated user.
  */
 export async function getFavorites(): Promise<Product[]> {
-  const json = await apiClient.get<FavoritesApiResponse>(ENDPOINTS.FAVORITES.LIST);
+  const json = await apiClient.get<FavoritesApiResponse>(
+    ENDPOINTS.FAVORITES.LIST,
+  );
   return Array.isArray(json) ? json : (json.data ?? []);
 }

@@ -9,7 +9,6 @@ import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { formatCurrency } from "@/utils/formatters";
 
-
 type ProdutoMaisVendido = {
   id: number;
   name: string;
@@ -41,7 +40,7 @@ export default function RelatorioProdutosPage() {
         setError(null);
 
         const res = await apiClient.get<ProdutosResponse>(
-          '/api/admin/relatorios/produtos-mais-vendidos'
+          "/api/admin/relatorios/produtos-mais-vendidos",
         );
 
         setData(res.rows ?? []);
@@ -49,11 +48,10 @@ export default function RelatorioProdutosPage() {
         console.error(err);
 
         let msg = "Não foi possível carregar o relatório de produtos.";
-          if (err?.status === 401 || err?.status === 403) {
-            msg =
-              "Sessão expirada ou sem permissão. Faça login novamente no admin.";
-          }
-        
+        if (err?.status === 401 || err?.status === 403) {
+          msg =
+            "Sessão expirada ou sem permissão. Faça login novamente no admin.";
+        }
 
         setError(msg);
         toast.error(msg);
@@ -69,23 +67,23 @@ export default function RelatorioProdutosPage() {
 
   const totalVendidosGeral = useMemo(
     () => data.reduce((acc, p) => acc + Number(p.vendidos || 0), 0),
-    [data]
+    [data],
   );
 
   const totalFaturadoGeral = useMemo(
     () => data.reduce((acc, p) => acc + Number(p.total_faturado || 0), 0),
-    [data]
+    [data],
   );
 
   const ticketMedioProduto = useMemo(
     () => (totalProdutos ? totalFaturadoGeral / totalProdutos : 0),
-    [totalProdutos, totalFaturadoGeral]
+    [totalProdutos, totalFaturadoGeral],
   );
 
   const produtoDestaque = useMemo(() => {
     if (!data.length) return null;
     return data.reduce((prev, curr) =>
-      Number(curr.total_faturado) > Number(prev.total_faturado) ? curr : prev
+      Number(curr.total_faturado) > Number(prev.total_faturado) ? curr : prev,
     );
   }, [data]);
 
@@ -98,9 +96,7 @@ export default function RelatorioProdutosPage() {
     // ordenação
     result.sort((a, b) => {
       if (sortMode === "faturado") {
-        return (
-          Number(b.total_faturado || 0) - Number(a.total_faturado || 0)
-        );
+        return Number(b.total_faturado || 0) - Number(a.total_faturado || 0);
       }
       return Number(b.vendidos || 0) - Number(a.vendidos || 0);
     });
@@ -121,16 +117,13 @@ export default function RelatorioProdutosPage() {
 
   const visibleTotalVendidos = useMemo(
     () => filteredData.reduce((acc, p) => acc + Number(p.vendidos || 0), 0),
-    [filteredData]
+    [filteredData],
   );
 
   const visibleTotalFaturado = useMemo(
     () =>
-      filteredData.reduce(
-        (acc, p) => acc + Number(p.total_faturado || 0),
-        0
-      ),
-    [filteredData]
+      filteredData.reduce((acc, p) => acc + Number(p.total_faturado || 0), 0),
+    [filteredData],
   );
 
   const visibleProdutos = filteredData.length;
@@ -148,12 +141,7 @@ export default function RelatorioProdutosPage() {
       return;
     }
 
-    const header = [
-      "posicao",
-      "produto",
-      "vendidos",
-      "total_faturado_numero",
-    ];
+    const header = ["posicao", "produto", "vendidos", "total_faturado_numero"];
 
     const rows = filteredData.map((p, index) => {
       const safeName = p.name.replace(/"/g, '""');
@@ -254,8 +242,7 @@ export default function RelatorioProdutosPage() {
         {!loading && !error && data.length === 0 && (
           <section className="flex min-h-[40vh] items-center justify-center">
             <div className="max-w-md rounded-2xl border border-dashed border-slate-600 bg-slate-950/50 px-5 py-6 text-center text-sm text-slate-300">
-              Ainda não há vendas suficientes para montar o ranking de
-              produtos.
+              Ainda não há vendas suficientes para montar o ranking de produtos.
               <p className="mt-2 text-[11px] text-slate-400">
                 Assim que os pedidos começarem a entrar, você verá aqui os
                 produtos campeões, como nos grandes marketplaces.
@@ -421,9 +408,7 @@ export default function RelatorioProdutosPage() {
                           setLimit(
                             e.target.value === "all"
                               ? "all"
-                              : (Number(
-                                  e.target.value
-                                ) as LimitOption)
+                              : (Number(e.target.value) as LimitOption),
                           )
                         }
                         className="
@@ -480,9 +465,7 @@ export default function RelatorioProdutosPage() {
                       <table className="min-w-full text-left text-xs text-slate-200 sm:text-sm">
                         <thead>
                           <tr className="border-b border-slate-800 bg-slate-900/80">
-                            <th className="px-4 py-3 font-semibold">
-                              Posição
-                            </th>
+                            <th className="px-4 py-3 font-semibold">Posição</th>
                             <th className="px-4 py-3 font-semibold">Produto</th>
                             <th className="px-4 py-3 text-right font-semibold">
                               Vendidos
@@ -506,10 +489,10 @@ export default function RelatorioProdutosPage() {
                                       index === 0
                                         ? "bg-amber-500/20 text-amber-100"
                                         : index === 1
-                                        ? "bg-slate-700/60 text-slate-100"
-                                        : index === 2
-                                        ? "bg-orange-500/15 text-orange-100"
-                                        : "bg-slate-900/80 text-slate-100"
+                                          ? "bg-slate-700/60 text-slate-100"
+                                          : index === 2
+                                            ? "bg-orange-500/15 text-orange-100"
+                                            : "bg-slate-900/80 text-slate-100"
                                     }
                                   `}
                                 >
@@ -526,16 +509,13 @@ export default function RelatorioProdutosPage() {
                               </td>
                               <td className="px-4 py-2.5 text-right align-middle">
                                 {formatCurrency(
-                                  Number(produto.total_faturado || 0)
+                                  Number(produto.total_faturado || 0),
                                 )}
                               </td>
                             </tr>
                           ))}
                           <tr className="bg-slate-900/90">
-                            <td
-                              className="px-4 py-3 font-semibold"
-                              colSpan={2}
-                            >
+                            <td className="px-4 py-3 font-semibold" colSpan={2}>
                               Totais do resultado filtrado
                             </td>
                             <td className="px-4 py-3 text-right font-semibold text-slate-100">
@@ -567,10 +547,10 @@ export default function RelatorioProdutosPage() {
                                     index === 0
                                       ? "bg-amber-500/25 text-amber-100"
                                       : index === 1
-                                      ? "bg-slate-700/70 text-slate-100"
-                                      : index === 2
-                                      ? "bg-orange-500/20 text-orange-100"
-                                      : "bg-slate-800 text-slate-100"
+                                        ? "bg-slate-700/70 text-slate-100"
+                                        : index === 2
+                                          ? "bg-orange-500/20 text-orange-100"
+                                          : "bg-slate-800 text-slate-100"
                                   }
                                 `}
                               >
@@ -593,7 +573,7 @@ export default function RelatorioProdutosPage() {
                             </p>
                             <p className="text-[11px] font-semibold text-[#35c2c4]">
                               {formatCurrency(
-                                Number(produto.total_faturado || 0)
+                                Number(produto.total_faturado || 0),
                               )}
                             </p>
                           </div>

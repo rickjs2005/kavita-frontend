@@ -71,14 +71,18 @@ describe("fetchPublicCategories (src/server/data/categories.ts)", () => {
       expect.objectContaining({
         next: { revalidate: 60 },
         headers: { Accept: "application/json" },
-      })
+      }),
     );
   });
 
   it("positivo: fallback de rota: primeira falha (res.ok=false) e segunda funciona", async () => {
     // Arrange
     Object.defineProperty(process, "env", {
-      value: { ...process.env, NEXT_PUBLIC_API_URL: "http://api.test", NODE_ENV: "test" },
+      value: {
+        ...process.env,
+        NEXT_PUBLIC_API_URL: "http://api.test",
+        NODE_ENV: "test",
+      },
       writable: true,
     });
     vi.resetModules();
@@ -94,7 +98,15 @@ describe("fetchPublicCategories (src/server/data/categories.ts)", () => {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue({
-          categories: [{ id: 10, name: "Ativa", slug: "ativa", is_active: 1, sort_order: 0 }],
+          categories: [
+            {
+              id: 10,
+              name: "Ativa",
+              slug: "ativa",
+              is_active: 1,
+              sort_order: 0,
+            },
+          ],
         }),
         text: vi.fn(),
       });
@@ -108,17 +120,25 @@ describe("fetchPublicCategories (src/server/data/categories.ts)", () => {
 
     // Assert
     expect(result).toHaveLength(1);
-    expect(result[0]).toEqual(expect.objectContaining({ id: 10, name: "Ativa", slug: "ativa" }));
+    expect(result[0]).toEqual(
+      expect.objectContaining({ id: 10, name: "Ativa", slug: "ativa" }),
+    );
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[0][0]).toBe("http://api.test/api/public/categorias");
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "http://api.test/api/public/categorias",
+    );
     expect(fetchMock.mock.calls[1][0]).toBe("http://api.test/api/categorias");
   });
 
   it("positivo: aceita payload em data[] quando API responde { data: [...] }", async () => {
     // Arrange
     Object.defineProperty(process, "env", {
-      value: { ...process.env, NEXT_PUBLIC_API_BASE: "http://api.test", NODE_ENV: "test" },
+      value: {
+        ...process.env,
+        NEXT_PUBLIC_API_BASE: "http://api.test",
+        NODE_ENV: "test",
+      },
       writable: true,
     });
     vi.resetModules();
@@ -147,7 +167,11 @@ describe("fetchPublicCategories (src/server/data/categories.ts)", () => {
   it("negativo: todas as rotas falham e NODE_ENV !== production => lança erro", async () => {
     // Arrange
     Object.defineProperty(process, "env", {
-      value: { ...process.env, NEXT_PUBLIC_API_URL: "http://api.test", NODE_ENV: "test" },
+      value: {
+        ...process.env,
+        NEXT_PUBLIC_API_URL: "http://api.test",
+        NODE_ENV: "test",
+      },
       writable: true,
     });
     vi.resetModules();
@@ -162,14 +186,20 @@ describe("fetchPublicCategories (src/server/data/categories.ts)", () => {
     const { fetchPublicCategories } = await importModule();
 
     // Act + Assert
-    await expect(fetchPublicCategories()).rejects.toThrow(/Erro ao carregar categorias \(500\):/);
+    await expect(fetchPublicCategories()).rejects.toThrow(
+      /Erro ao carregar categorias \(500\):/,
+    );
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it("negativo: todas as rotas falham e NODE_ENV === production => retorna []", async () => {
     // Arrange
     Object.defineProperty(process, "env", {
-      value: { ...process.env, NEXT_PUBLIC_API_URL: "http://api.test", NODE_ENV: "production" },
+      value: {
+        ...process.env,
+        NEXT_PUBLIC_API_URL: "http://api.test",
+        NODE_ENV: "production",
+      },
       writable: true,
     });
     vi.resetModules();
@@ -209,7 +239,7 @@ describe("fetchPublicCategories (src/server/data/categories.ts)", () => {
 
     // Act + Assert
     await expect(fetchPublicCategories()).rejects.toThrow(
-      /Erro ao carregar categorias \(400\):/
+      /Erro ao carregar categorias \(400\):/,
     );
   });
 
@@ -227,7 +257,9 @@ describe("fetchPublicCategories (src/server/data/categories.ts)", () => {
     const { fetchPublicCategories } = await importModule();
 
     // Act + Assert
-    await expect(fetchPublicCategories()).rejects.toThrow("Falha ao buscar categorias.");
+    await expect(fetchPublicCategories()).rejects.toThrow(
+      "Falha ao buscar categorias.",
+    );
     expect(global.fetch).toHaveBeenCalledTimes(4);
   });
 });

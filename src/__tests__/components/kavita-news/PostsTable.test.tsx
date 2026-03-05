@@ -45,7 +45,7 @@ describe("PostsTable", () => {
         page={1}
         totalPages={1}
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     // Assert
@@ -67,7 +67,7 @@ describe("PostsTable", () => {
         page={1}
         totalPages={1}
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     // Assert
@@ -87,7 +87,7 @@ describe("PostsTable", () => {
         page={1}
         totalPages={1}
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     // Assert
@@ -99,7 +99,9 @@ describe("PostsTable", () => {
 
     expect(screen.getByRole("button", { name: "Prévia" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Publicar" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Publicar" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Excluir" })).toBeInTheDocument();
   });
 
@@ -123,7 +125,7 @@ describe("PostsTable", () => {
         page={1}
         totalPages={1}
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     // Assert
@@ -151,7 +153,7 @@ describe("PostsTable", () => {
         page={1}
         totalPages={1}
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     // Assert: não amarremos no locale completo; basta confirmar que existe uma data “dd/mm/aaaa”
@@ -176,7 +178,7 @@ describe("PostsTable", () => {
         page={1}
         totalPages={1}
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     // Assert
@@ -198,7 +200,7 @@ describe("PostsTable", () => {
         page={1}
         totalPages={1}
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     // Act
@@ -229,7 +231,7 @@ describe("PostsTable", () => {
         page={1}
         totalPages={1}
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     // Assert
@@ -251,12 +253,12 @@ describe("PostsTable", () => {
         page={999}
         totalPages={0} // deve virar 1 internamente
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     // Assert: matcher flexível porque “Página ... de ...” tem spans no meio
     expect(
-      screen.getByText((text) => text.includes("Página"))
+      screen.getByText((text) => text.includes("Página")),
     ).toBeInTheDocument();
 
     // Em página 1 de 1, ambos disabled
@@ -277,7 +279,7 @@ describe("PostsTable", () => {
         page={2}
         totalPages={3}
         onPageChange={onPageChange}
-      />
+      />,
     );
 
     const prev = screen.getByRole("button", { name: "Anterior" });

@@ -4,7 +4,8 @@ import type { NextRequest } from "next/server";
 const PUBLIC_ADMIN_PATHS = ["/admin/login"];
 
 // Static assets that must never be blocked (images, scripts, styles, fonts, etc.)
-const STATIC_ASSET_RE = /\.(?:ico|png|jpg|jpeg|gif|svg|webp|avif|woff2?|ttf|otf|eot|css|js|map|json|txt|xml)$/i;
+const STATIC_ASSET_RE =
+  /\.(?:ico|png|jpg|jpeg|gif|svg|webp|avif|woff2?|ttf|otf|eot|css|js|map|json|txt|xml)$/i;
 
 export function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
@@ -31,7 +32,8 @@ export function middleware(req: NextRequest) {
       url.pathname = "/admin/login";
       url.searchParams.set(
         "from",
-        pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "")
+        pathname +
+          (searchParams.toString() ? `?${searchParams.toString()}` : ""),
       );
       return NextResponse.redirect(url);
     }

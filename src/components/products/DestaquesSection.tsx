@@ -16,8 +16,7 @@ type PromoProduct = Product & {
 };
 
 const SLIDE_INTERVAL = 6000; // 6s
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 const PLACEHOLDER =
   "https://via.placeholder.com/600x400?text=Produto+sem+imagem";
 
@@ -54,15 +53,15 @@ export default function PromocoesHero() {
               item.promo_price ??
               item.price ??
               item.original_price ??
-              0
+              0,
           );
 
           const discountNum =
             item.discount_percent != null
               ? Number(item.discount_percent)
               : originalNum > 0
-              ? ((originalNum - finalNum) / originalNum) * 100
-              : 0;
+                ? ((originalNum - finalNum) / originalNum) * 100
+                : 0;
 
           return {
             ...(item as Product),
@@ -93,11 +92,8 @@ export default function PromocoesHero() {
     if (promocoes.length <= 1) return;
 
     const id = setInterval(
-      () =>
-        setCurrent((prev) =>
-          prev + 1 >= promocoes.length ? 0 : prev + 1
-        ),
-      SLIDE_INTERVAL
+      () => setCurrent((prev) => (prev + 1 >= promocoes.length ? 0 : prev + 1)),
+      SLIDE_INTERVAL,
     );
 
     return () => clearInterval(id);
@@ -107,17 +103,15 @@ export default function PromocoesHero() {
 
   const produto = promocoes[current];
 
-  const original = Number(
-    produto.original_price ?? produto.price ?? 0
-  );
+  const original = Number(produto.original_price ?? produto.price ?? 0);
   const final = Number(produto.final_price ?? produto.price ?? 0);
 
   const desconto =
     produto.discount_percent != null
       ? Number(produto.discount_percent)
       : original > 0
-      ? ((original - final) / original) * 100
-      : 0;
+        ? ((original - final) / original) * 100
+        : 0;
 
   const endsAt = produto.ends_at;
   const imageUrl = getImageUrl(produto.image as string | null);
@@ -150,9 +144,7 @@ export default function PromocoesHero() {
               <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">
                 Oferta em destaque
               </p>
-              <p className="mt-1 text-lg font-semibold">
-                {produto.name}
-              </p>
+              <p className="mt-1 text-lg font-semibold">{produto.name}</p>
 
               {produto.description && (
                 <p className="mt-1 line-clamp-2 text-xs text-emerald-100/90 sm:text-sm">
@@ -212,9 +204,7 @@ export default function PromocoesHero() {
               </div>
 
               <div className="border-t border-emerald-100/60 px-4 py-3 text-xs text-emerald-900/90 sm:px-5 sm:py-4">
-                <p className="line-clamp-1 font-semibold">
-                  {produto.name}
-                </p>
+                <p className="line-clamp-1 font-semibold">{produto.name}</p>
               </div>
 
               {desconto > 0 && (

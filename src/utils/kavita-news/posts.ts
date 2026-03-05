@@ -83,7 +83,7 @@ const BASE_ADMIN_POSTS = "/api/admin/news/posts";
  * ========================= */
 // POST /api/admin/news/upload/cover (field: "file")
 export async function uploadNewsCover(
-  file: File
+  file: File,
 ): Promise<{ url: string; filename?: string }> {
   const form = new FormData();
   form.append("file", file);
@@ -114,9 +114,7 @@ function normalizeUpsert(input: NewsPostUpsertInput) {
 
   // aceita tanto cover_url quanto cover_image_url
   const cover_image_url =
-    anyInput.cover_image_url ??
-    anyInput.cover_url ??
-    null;
+    anyInput.cover_image_url ?? anyInput.cover_url ?? null;
 
   return {
     title: anyInput.title,
@@ -135,7 +133,7 @@ function normalizeUpsert(input: NewsPostUpsertInput) {
  * Posts (CRUD)
  * ========================= */
 export async function listNewsPosts(
-  params: NewsPostsListParams = {}
+  params: NewsPostsListParams = {},
 ): Promise<NewsPostsListResponse> {
   // backend aceita status draft/published/archived
   const normalizedStatus =
@@ -191,7 +189,7 @@ export async function getNewsPost(id: number): Promise<NewsPostDetail> {
 }
 
 export async function createNewsPost(
-  input: NewsPostUpsertInput
+  input: NewsPostUpsertInput,
 ): Promise<NewsPostDetail> {
   const payload = normalizeUpsert(input);
 
@@ -216,7 +214,7 @@ export async function createNewsPost(
 
 export async function updateNewsPost(
   id: number,
-  input: NewsPostUpsertInput
+  input: NewsPostUpsertInput,
 ): Promise<NewsPostDetail> {
   const payload = normalizeUpsert(input);
 

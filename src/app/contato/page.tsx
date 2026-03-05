@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import topics from '../../data/topics';
-import Form from '../../components/layout/form';
+import { useState } from "react";
+import topics from "../../data/topics";
+import Form from "../../components/layout/form";
 
 type Topic = {
   title: string;
@@ -32,8 +32,12 @@ const AtendimentoPage = () => {
                 onClick={() => setSelectedTopic(topic.title)}
                 className="bg-white shadow-md rounded-lg p-6 text-center hover:shadow-lg hover:scale-105 transition cursor-pointer w-full"
               >
-                <h2 className="text-lg font-semibold text-[#359293]">{topic.title}</h2>
-                <p className="text-sm text-gray-600 mt-2">{topic.description}</p>
+                <h2 className="text-lg font-semibold text-[#359293]">
+                  {topic.title}
+                </h2>
+                <p className="text-sm text-gray-600 mt-2">
+                  {topic.description}
+                </p>
               </button>
             ))}
           </div>
@@ -49,7 +53,9 @@ const AtendimentoPage = () => {
               ← Voltar
             </button>
 
-            <h2 className="text-2xl font-bold text-[#359293] mb-4">{selectedTopic}</h2>
+            <h2 className="text-2xl font-bold text-[#359293] mb-4">
+              {selectedTopic}
+            </h2>
 
             <div className="text-gray-700 space-y-4">
               {topics

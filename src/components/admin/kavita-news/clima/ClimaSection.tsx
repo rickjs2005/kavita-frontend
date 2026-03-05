@@ -89,9 +89,9 @@ export default function ClimaSection(props: {
         rows={clima.sorted}
         loading={clima.loading}
         errorMsg={clima.errorMsg}
-        onReload={handleReload}         // mantém (não é o botão principal)
-        onSyncAll={handleSyncAll}       // NOVO: botão Atualizar = Sync All
-        syncingAll={syncingAll}         // NOVO: estado do botão
+        onReload={handleReload} // mantém (não é o botão principal)
+        onSyncAll={handleSyncAll} // NOVO: botão Atualizar = Sync All
+        syncingAll={syncingAll} // NOVO: estado do botão
         onEdit={clima.startEdit}
         onDelete={clima.remove}
         onSync={clima.sync}

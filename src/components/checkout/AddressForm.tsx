@@ -30,7 +30,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
 
   const tipoLocalidade = useMemo(
     () => normalizeTipoLocalidade((endereco as any)?.tipo_localidade),
-    [endereco]
+    [endereco],
   );
 
   const isRural = tipoLocalidade === "RURAL";
@@ -84,7 +84,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
     (async () => {
       try {
         const res = await fetch(
-          `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`
+          `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`,
         );
         if (!res.ok) return;
         const data = await res.json();
@@ -108,19 +108,25 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
   };
 
   const handleFieldChange =
-    (field: keyof Endereco | string): React.ChangeEventHandler<HTMLInputElement> =>
+    (
+      field: keyof Endereco | string,
+    ): React.ChangeEventHandler<HTMLInputElement> =>
     (e) => {
       onChange(`endereco.${field}` as any, e.target.value);
     };
 
-  const handleEstadoChange: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
+  const handleEstadoChange: React.ChangeEventHandler<HTMLSelectElement> = (
+    e,
+  ) => {
     const value = e.target.value;
     onChange("endereco.estado", value);
     // limpamos cidade quando troca estado
     onChange("endereco.cidade", "");
   };
 
-  const handleCidadeChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+  const handleCidadeChange: React.ChangeEventHandler<HTMLInputElement> = (
+    e,
+  ) => {
     onChange("endereco.cidade", e.target.value);
   };
 
@@ -183,9 +189,9 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
               Aviso importante
             </p>
             <p className="mt-1 text-[13px] leading-relaxed text-amber-900/90">
-              Em área rural, podem ocorrer chuvas e estradas muito precárias. Isso
-              pode dificultar nossa entrega e, eventualmente, não conseguiremos
-              entregar dentro do prazo informado.
+              Em área rural, podem ocorrer chuvas e estradas muito precárias.
+              Isso pode dificultar nossa entrega e, eventualmente, não
+              conseguiremos entregar dentro do prazo informado.
             </p>
           </div>
         )}

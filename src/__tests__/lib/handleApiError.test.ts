@@ -23,7 +23,12 @@ describe("src/lib/handleApiError.ts -> handleApiError()", () => {
   it("deve chamar formatApiError(err, fallback default) e retornar o ui", () => {
     // Arrange
     const err = new Error("boom");
-    const ui = { message: "Ocorreu um erro.", code: "X", status: 500, requestId: "r1" };
+    const ui = {
+      message: "Ocorreu um erro.",
+      code: "X",
+      status: 500,
+      requestId: "r1",
+    };
 
     (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
@@ -39,7 +44,12 @@ describe("src/lib/handleApiError.ts -> handleApiError()", () => {
   it("deve usar opts.fallback quando fornecido", () => {
     // Arrange
     const err = { any: true };
-    const ui = { message: "Falhou", code: undefined, status: undefined, requestId: undefined };
+    const ui = {
+      message: "Falhou",
+      code: undefined,
+      status: undefined,
+      requestId: undefined,
+    };
 
     (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
@@ -54,7 +64,12 @@ describe("src/lib/handleApiError.ts -> handleApiError()", () => {
   it("deve usar opts.fallbackMessage quando fallback não existir (compat)", () => {
     // Arrange
     const err = "x";
-    const ui = { message: "Compat", code: undefined, status: undefined, requestId: undefined };
+    const ui = {
+      message: "Compat",
+      code: undefined,
+      status: undefined,
+      requestId: undefined,
+    };
 
     (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
@@ -69,7 +84,12 @@ describe("src/lib/handleApiError.ts -> handleApiError()", () => {
   it("fallback deve priorizar opts.fallback sobre opts.fallbackMessage", () => {
     // Arrange
     const err = "x";
-    const ui = { message: "A", code: undefined, status: undefined, requestId: undefined };
+    const ui = {
+      message: "A",
+      code: undefined,
+      status: undefined,
+      requestId: undefined,
+    };
 
     (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
@@ -84,7 +104,12 @@ describe("src/lib/handleApiError.ts -> handleApiError()", () => {
   it("quando opts.debug=true, deve logar no console.error e ainda retornar ui", () => {
     // Arrange
     const err = new Error("boom");
-    const ui = { message: "Ocorreu um erro.", code: "X", status: 500, requestId: "r1" };
+    const ui = {
+      message: "Ocorreu um erro.",
+      code: "X",
+      status: 500,
+      requestId: "r1",
+    };
 
     (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
@@ -102,7 +127,12 @@ describe("src/lib/handleApiError.ts -> handleApiError()", () => {
   it("quando opts.debug=false/undefined, NÃO deve logar no console.error", () => {
     // Arrange
     const err = new Error("boom");
-    const ui = { message: "Ocorreu um erro.", code: "X", status: 500, requestId: "r1" };
+    const ui = {
+      message: "Ocorreu um erro.",
+      code: "X",
+      status: 500,
+      requestId: "r1",
+    };
 
     (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 
@@ -119,7 +149,12 @@ describe("src/lib/handleApiError.ts -> handleApiError()", () => {
   it("opts.silent não deve afetar o resultado (apenas compat), continua chamando formatApiError", () => {
     // Arrange
     const err = new Error("boom");
-    const ui = { message: "ok", code: undefined, status: undefined, requestId: undefined };
+    const ui = {
+      message: "ok",
+      code: undefined,
+      status: undefined,
+      requestId: undefined,
+    };
 
     (formatApiError as unknown as FormatMock).mockReturnValueOnce(ui);
 

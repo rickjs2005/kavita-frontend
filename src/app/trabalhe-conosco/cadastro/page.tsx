@@ -5,8 +5,7 @@ import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { FormattedInput } from "@/components/layout/FormattedInput";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type Especialidade = {
   id: number;
@@ -45,9 +44,7 @@ export default function CadastroColaboradorPage() {
   useEffect(() => {
     async function loadEspecialidades() {
       try {
-        const res = await fetch(
-          `${API_URL}/api/admin/especialidades/public`,
-        );
+        const res = await fetch(`${API_URL}/api/admin/especialidades/public`);
 
         if (!res.ok) {
           throw new Error("Erro ao buscar especialidades");
@@ -58,10 +55,10 @@ export default function CadastroColaboradorPage() {
       } catch (err) {
         console.error(err);
         setErrorMessage(
-          "Não foi possível carregar a lista de especialidades. Tente novamente mais tarde."
+          "Não foi possível carregar a lista de especialidades. Tente novamente mais tarde.",
         );
         toast.error(
-          "Erro ao carregar especialidades. Tente novamente mais tarde."
+          "Erro ao carregar especialidades. Tente novamente mais tarde.",
         );
       } finally {
         setLoadingEspecialidades(false);
@@ -74,7 +71,7 @@ export default function CadastroColaboradorPage() {
   function handleChange(
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -120,13 +117,10 @@ export default function CadastroColaboradorPage() {
         formData.append("imagem", imagemFile);
       }
 
-      const res = await fetch(
-        `${API_URL}/api/admin/colaboradores/public`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const res = await fetch(`${API_URL}/api/admin/colaboradores/public`, {
+        method: "POST",
+        body: formData,
+      });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -150,8 +144,7 @@ export default function CadastroColaboradorPage() {
       setImagemPreview(null);
     } catch (err: any) {
       console.error(err);
-      const msg =
-        err.message || "Erro ao enviar cadastro. Tente novamente.";
+      const msg = err.message || "Erro ao enviar cadastro. Tente novamente.";
       setErrorMessage(msg);
       toast.error(msg);
     } finally {
@@ -183,8 +176,8 @@ export default function CadastroColaboradorPage() {
               </h1>
               <p className="mt-3 text-sm text-emerald-50/90 sm:text-base">
                 Preencha seus dados para entrar na fila de análise. Depois de
-                aprovado, seu perfil passa a aparecer na página de serviços
-                da Kavita e produtores poderão encontrar você com facilidade.
+                aprovado, seu perfil passa a aparecer na página de serviços da
+                Kavita e produtores poderão encontrar você com facilidade.
               </p>
             </div>
           </header>
@@ -199,14 +192,11 @@ export default function CadastroColaboradorPage() {
 
             {errorMessage && (
               <div className="mb-4 rounded-xl border border-red-500 bg-red-50 px-3 py-2 text-sm text-red-800">
-              {errorMessage}
+                {errorMessage}
               </div>
             )}
 
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-5 sm:space-y-6"
-            >
+            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
               {/* Nome + Cargo */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormattedInput
@@ -312,8 +302,8 @@ export default function CadastroColaboradorPage() {
                 )}
 
                 <span className="text-xs text-gray-500">
-                  Ex: Veterinário de grandes animais, Agrônomo de café,
-                  Mecânico de máquinas agrícolas...
+                  Ex: Veterinário de grandes animais, Agrônomo de café, Mecânico
+                  de máquinas agrícolas...
                 </span>
               </div>
 
@@ -334,8 +324,8 @@ export default function CadastroColaboradorPage() {
 
               <p className="text-xs text-gray-500">
                 *Seu cadastro passa por uma análise simples para manter a
-                qualidade da rede. Você poderá ser contatado pela equipe
-                da Kavita para confirmar algumas informações.
+                qualidade da rede. Você poderá ser contatado pela equipe da
+                Kavita para confirmar algumas informações.
               </p>
 
               {/* Footer do formulário */}

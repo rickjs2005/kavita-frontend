@@ -43,10 +43,7 @@ function formatCpf(v?: string | null) {
   if (digits.length <= 6) return digits.replace(/(\d{3})(\d{0,3})/, "$1.$2");
   if (digits.length <= 9)
     return digits.replace(/(\d{3})(\d{3})(\d{0,3})/, "$1.$2.$3");
-  return digits.replace(
-    /(\d{3})(\d{3})(\d{3})(\d{0,2})/,
-    "$1.$2.$3-$4"
-  );
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4");
 }
 
 export default function AdminClientesPage() {
@@ -85,8 +82,7 @@ export default function AdminClientesPage() {
     const q = search.toLowerCase();
     return list.filter((u) => {
       return (
-        u.nome.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q)
+        u.nome.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
       );
     });
   }, [list, search]);
@@ -160,7 +156,7 @@ export default function AdminClientesPage() {
 
             const waLink = telDigits
               ? `https://wa.me/55${telDigits}?text=${encodeURIComponent(
-                  `Olá ${u.nome}, tudo bem?`
+                  `Olá ${u.nome}, tudo bem?`,
                 )}`
               : null;
 
@@ -195,15 +191,13 @@ export default function AdminClientesPage() {
                         <span className="font-medium">{telFormatted}</span>
                       </span>
                       <span>
-                        CPF:{" "}
-                        <span className="font-medium">{cpfFormatted}</span>
+                        CPF: <span className="font-medium">{cpfFormatted}</span>
                       </span>
                       {(u.cidade || u.estado) && (
                         <span>
                           Local:{" "}
                           <span className="font-medium">
-                            {u.cidade || "-"}{" "}
-                            {u.estado ? `/ ${u.estado}` : ""}
+                            {u.cidade || "-"} {u.estado ? `/ ${u.estado}` : ""}
                           </span>
                         </span>
                       )}

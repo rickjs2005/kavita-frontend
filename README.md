@@ -1,30 +1,32 @@
 Documentação de Frontend e Especificação para kavita-frontend
 
 Sumário executivo
-Este repositório implementa um frontend em Next.js (App Router) + React + TypeScript + Tailwind, com uma área pública (loja/conteúdo) e uma área administrativa em /admin. O consumo do backend é feito majoritariamente via fetch/axios com cookies enviados automaticamente (credentials: "include" / withCredentials: true), e a base do backend é configurável por variável de ambiente, com fallback para http://localhost:5000. 
+Este repositório implementa um frontend em Next.js (App Router) + React + TypeScript + Tailwind, com uma área pública (loja/conteúdo) e uma área administrativa em /admin. O consumo do backend é feito majoritariamente via fetch/axios com cookies enviados automaticamente (credentials: "include" / withCredentials: true), e a base do backend é configurável por variável de ambiente, com fallback para http://localhost:5000.
 
-O cookie de autenticação do Admin é explicitamente checado no middleware do Next como adminToken. Já o cookie de sessão do usuário (cliente) não aparece com nome explícito no código do frontend (o frontend apenas envia cookies “da origem” via credentials: "include"), então o nome/flags exatos ficam indeterminados pelo frontend e precisam ser alinhados com o backend. 
+O cookie de autenticação do Admin é explicitamente checado no middleware do Next como adminToken. Já o cookie de sessão do usuário (cliente) não aparece com nome explícito no código do frontend (o frontend apenas envia cookies “da origem” via credentials: "include"), então o nome/flags exatos ficam indeterminados pelo frontend e precisam ser alinhados com o backend.
 
-Há também um ponto importante para a documentação: o README atual menciona JWT em localStorage para usuários, mas o fluxo implementado no AuthContext utiliza chamadas autenticadas por cookie (sem persistir token no localStorage), então a documentação precisa ser corrigida para refletir o comportamento real. 
+Há também um ponto importante para a documentação: o README atual menciona JWT em localStorage para usuários, mas o fluxo implementado no AuthContext utiliza chamadas autenticadas por cookie (sem persistir token no localStorage), então a documentação precisa ser corrigida para refletir o comportamento real.
 
 Evidências do repositório e inventário técnico
-O package.json confirma o stack de build/test e scripts principais: next dev/build/start, lint e vitest (incluindo test:run e test:coverage). 
+O package.json confirma o stack de build/test e scripts principais: next dev/build/start, lint e vitest (incluindo test:run e test:coverage).
 
-A configuração do TypeScript usa baseUrl: "./src" e alias @/* -> ["*"], o que impacta a forma como caminhos são documentados e como exemplos de import devem aparecer no README/contribuição. 
+A configuração do TypeScript usa baseUrl: "./src" e alias @/_ -> ["_"], o que impacta a forma como caminhos são documentados e como exemplos de import devem aparecer no README/contribuição.
 
-O consumo do backend parte de uma URL base configurável; o helper api() concatena NEXT_PUBLIC_API_URL com o path e sempre envia cookies (credentials: "include"). Isso padroniza erros (tentando ler mensagem/message no JSON) e deve ser refletido na especificação OpenAPI (erros e autenticação por cookie). 
+O consumo do backend parte de uma URL base configurável; o helper api() concatena NEXT_PUBLIC_API_URL com o path e sempre envia cookies (credentials: "include"). Isso padroniza erros (tentando ler mensagem/message no JSON) e deve ser refletido na especificação OpenAPI (erros e autenticação por cookie).
 
-A área Admin tem autenticação em duas camadas: (a) o middleware do Next bloqueia /admin/* se não houver cookie adminToken; (b) no client, há um AdminAuthContext que sincroniza sessão via GET /api/admin/me e encerra sessão chamando POST /api/admin/logout. 
+A área Admin tem autenticação em duas camadas: (a) o middleware do Next bloqueia /admin/\* se não houver cookie adminToken; (b) no client, há um AdminAuthContext que sincroniza sessão via GET /api/admin/me e encerra sessão chamando POST /api/admin/logout.
 
-No checkout, o frontend chama endpoints de promoções, cupom, frete, criação de pedido e início de pagamento (ex.: POST /api/payment/start retornando init_point/sandbox_init_point para redirecionamento). 
+No checkout, o frontend chama endpoints de promoções, cupom, frete, criação de pedido e início de pagamento (ex.: POST /api/payment/start retornando init_point/sandbox_init_point para redirecionamento).
 
 md
 Copiar
+
 # Kavita Frontend
 
 Frontend da plataforma **Kavita** (e-commerce + conteúdo “Kavita News”), construído com **Next.js (App Router)**, **React**, **TypeScript** e **Tailwind CSS**.
 
 > **Importante (autenticação real do frontend):**
+>
 > - O frontend **envia cookies automaticamente** para o backend (via `credentials: "include"` / `withCredentials: true`).
 > - O cookie do Admin é validado no middleware como **`adminToken`** (rota `/admin/*`).
 > - O nome do cookie de sessão do usuário (cliente) **não é explicitado no frontend** — depende do backend.
@@ -32,6 +34,7 @@ Frontend da plataforma **Kavita** (e-commerce + conteúdo “Kavita News”), co
 ## Visão geral
 
 O projeto cobre:
+
 - Área pública: navegação por categorias, carrinho, checkout, promoções, conteúdo informativo.
 - Área administrativa (`/admin`): dashboard e módulos de gestão (produtos, pedidos, etc. — variam conforme backend).
 
@@ -55,7 +58,7 @@ O projeto cobre:
 
 Crie `.env.local` (não versionar) com:
 
-```bash
+````bash
 # URL base do backend (HTTP API)
 NEXT_PUBLIC_API_URL=http://localhost:5000
 
@@ -162,9 +165,9 @@ yaml
 Copiar
 
 **Notas técnicas que o README deve refletir (por consistência com o código):**
-- `NEXT_PUBLIC_API_URL` é a base principal para as chamadas client-side (`fetch`/`axios`). citeturn51view3turn55view0turn58view0  
-- O build ignora ESLint via `next.config.ts`, então lint precisa ser tratado no fluxo de PR/CI. citeturn51view1  
-- Admin é protegido por cookie `adminToken` no middleware. citeturn51view2  
+- `NEXT_PUBLIC_API_URL` é a base principal para as chamadas client-side (`fetch`/`axios`). citeturn51view3turn55view0turn58view0
+- O build ignora ESLint via `next.config.ts`, então lint precisa ser tratado no fluxo de PR/CI. citeturn51view1
+- Admin é protegido por cookie `adminToken` no middleware. citeturn51view2
 
 ## Especificação OpenAPI e Swagger
 
@@ -1199,51 +1202,51 @@ paths:
                 additionalProperties: true
 Mapa de rotas do frontend para endpoints e fluxo de autenticação
 Mapeamento (arquivo/componente → método → path → propósito)
-Os endpoints abaixo foram coletados diretamente das chamadas no código-fonte (incluindo hooks/contextos e páginas). 
+Os endpoints abaixo foram coletados diretamente das chamadas no código-fonte (incluindo hooks/contextos e páginas).
 
 Frontend (arquivo)	Método HTTP	Path	Propósito/uso observado
-src/lib/api.ts	(wrapper)	{BASE}{path}	Helper que injeta Content-Type: application/json e credentials: include e normaliza erros. 
-src/context/AuthContext.tsx	GET	/api/users/me	Carregar/atualizar usuário logado pelo cookie (refresh inicial). 
-src/context/AuthContext.tsx	POST	/api/login	Login do usuário; o backend deve setar cookie; frontend lê data.user ou data. 
-src/context/AuthContext.tsx	POST	/api/users/register	Registro de usuário (payload inclui cpf?). 
-src/context/AuthContext.tsx	POST	/api/logout	Logout do usuário (frontend faz “best-effort”, zera estado). 
-src/context/CartContext.tsx	GET	/api/cart	Buscar carrinho do usuário autenticado (fonte da verdade no modo logado). 
-src/context/CartContext.tsx	POST	/api/cart/items	Adicionar item ao carrinho no backend. (Trata 409 STOCK_LIMIT). 
-src/context/CartContext.tsx	PATCH	/api/cart/items	Atualizar quantidade no backend. (Trata 409 STOCK_LIMIT). 
-src/context/CartContext.tsx	DELETE	/api/cart/items/{id}	Remover item do carrinho no backend. 
-src/context/CartContext.tsx	DELETE	/api/cart	Limpar carrinho no backend. 
-src/server/data/categories.ts	GET	/api/public/categorias	Buscar categorias públicas (primeira tentativa). 
-src/server/data/categories.ts	GET	/api/categorias	Fallback de rota de categorias. 
-src/server/data/categories.ts	GET	/api/public/categories	Fallback EN. 
-src/server/data/categories.ts	GET	/api/categories	Fallback EN. 
-src/server/data/shopSettings.ts	GET	/api/config	Config pública da loja (sem cache). 
-src/app/checkout/page.tsx	GET	/api/public/promocoes/{id}	Buscar promoções por produto do carrinho (tolerando 404). 
-src/app/checkout/page.tsx	POST	/api/checkout/preview-cupom	Validar/aplicar cupom e obter desconto antes do checkout. 
-src/app/checkout/page.tsx	GET	/api/users/addresses	Endereços salvos do usuário (checkout). 
-src/app/checkout/page.tsx	GET	/api/shipping/quote	Cotar frete (passa cep + items como JSON em query). 
-src/app/checkout/page.tsx	POST	/api/checkout	Criar pedido (ENTREGA ou RETIRADA), com payload normalizado. 
-src/app/checkout/page.tsx	POST	/api/payment/start	Iniciar pagamento e redirecionar para init_point/sandbox_init_point. 
-src/app/admin/login/page.tsx	POST	/api/admin/logout	Ao abrir login do admin, tenta encerrar sessão anterior. 
-src/app/admin/login/page.tsx	POST	/api/admin/login	Login do admin (recebe cookie HttpOnly do backend). 
-src/context/AdminAuthContext.tsx	GET	/api/admin/me	Sincroniza sessão admin real (role/permissões) via cookie. 
-src/context/AdminAuthContext.tsx	POST	/api/admin/logout	Logout do admin (limpa cookie no backend e estado/localStorage). 
-src/app/admin/page.tsx	GET	/api/admin/stats/resumo	KPIs do painel admin. 
-src/app/admin/page.tsx	GET	/api/admin/stats/vendas?range=7	Série para gráfico de vendas. 
-src/app/admin/page.tsx	GET	/api/admin/logs?limit=20	Atividade recente / auditoria. 
-src/app/admin/page.tsx	GET	/api/admin/relatorios/clientes-top	Top clientes (retorno rows). 
-src/app/admin/page.tsx	GET	/api/admin/stats/produtos-mais-vendidos?limit=5	Top produtos vendidos. 
-src/app/admin/page.tsx	GET	/api/admin/relatorios/servicos-ranking	Ranking serviços. 
-src/app/admin/page.tsx	GET	/api/admin/stats/alertas	Alertas do painel (frontend tolera 404). 
+src/lib/api.ts	(wrapper)	{BASE}{path}	Helper que injeta Content-Type: application/json e credentials: include e normaliza erros.
+src/context/AuthContext.tsx	GET	/api/users/me	Carregar/atualizar usuário logado pelo cookie (refresh inicial).
+src/context/AuthContext.tsx	POST	/api/login	Login do usuário; o backend deve setar cookie; frontend lê data.user ou data.
+src/context/AuthContext.tsx	POST	/api/users/register	Registro de usuário (payload inclui cpf?).
+src/context/AuthContext.tsx	POST	/api/logout	Logout do usuário (frontend faz “best-effort”, zera estado).
+src/context/CartContext.tsx	GET	/api/cart	Buscar carrinho do usuário autenticado (fonte da verdade no modo logado).
+src/context/CartContext.tsx	POST	/api/cart/items	Adicionar item ao carrinho no backend. (Trata 409 STOCK_LIMIT).
+src/context/CartContext.tsx	PATCH	/api/cart/items	Atualizar quantidade no backend. (Trata 409 STOCK_LIMIT).
+src/context/CartContext.tsx	DELETE	/api/cart/items/{id}	Remover item do carrinho no backend.
+src/context/CartContext.tsx	DELETE	/api/cart	Limpar carrinho no backend.
+src/server/data/categories.ts	GET	/api/public/categorias	Buscar categorias públicas (primeira tentativa).
+src/server/data/categories.ts	GET	/api/categorias	Fallback de rota de categorias.
+src/server/data/categories.ts	GET	/api/public/categories	Fallback EN.
+src/server/data/categories.ts	GET	/api/categories	Fallback EN.
+src/server/data/shopSettings.ts	GET	/api/config	Config pública da loja (sem cache).
+src/app/checkout/page.tsx	GET	/api/public/promocoes/{id}	Buscar promoções por produto do carrinho (tolerando 404).
+src/app/checkout/page.tsx	POST	/api/checkout/preview-cupom	Validar/aplicar cupom e obter desconto antes do checkout.
+src/app/checkout/page.tsx	GET	/api/users/addresses	Endereços salvos do usuário (checkout).
+src/app/checkout/page.tsx	GET	/api/shipping/quote	Cotar frete (passa cep + items como JSON em query).
+src/app/checkout/page.tsx	POST	/api/checkout	Criar pedido (ENTREGA ou RETIRADA), com payload normalizado.
+src/app/checkout/page.tsx	POST	/api/payment/start	Iniciar pagamento e redirecionar para init_point/sandbox_init_point.
+src/app/admin/login/page.tsx	POST	/api/admin/logout	Ao abrir login do admin, tenta encerrar sessão anterior.
+src/app/admin/login/page.tsx	POST	/api/admin/login	Login do admin (recebe cookie HttpOnly do backend).
+src/context/AdminAuthContext.tsx	GET	/api/admin/me	Sincroniza sessão admin real (role/permissões) via cookie.
+src/context/AdminAuthContext.tsx	POST	/api/admin/logout	Logout do admin (limpa cookie no backend e estado/localStorage).
+src/app/admin/page.tsx	GET	/api/admin/stats/resumo	KPIs do painel admin.
+src/app/admin/page.tsx	GET	/api/admin/stats/vendas?range=7	Série para gráfico de vendas.
+src/app/admin/page.tsx	GET	/api/admin/logs?limit=20	Atividade recente / auditoria.
+src/app/admin/page.tsx	GET	/api/admin/relatorios/clientes-top	Top clientes (retorno rows).
+src/app/admin/page.tsx	GET	/api/admin/stats/produtos-mais-vendidos?limit=5	Top produtos vendidos.
+src/app/admin/page.tsx	GET	/api/admin/relatorios/servicos-ranking	Ranking serviços.
+src/app/admin/page.tsx	GET	/api/admin/stats/alertas	Alertas do painel (frontend tolera 404).
 
 Cookies e flags (o que o frontend permite concluir)
 Admin
 
-Cookie nomeado: adminToken (checado no middleware). 
-O login do admin usa credentials: "include" e há comentário indicando que o cookie é HttpOnly e setado pelo backend (o frontend não grava token em JS). 
+Cookie nomeado: adminToken (checado no middleware).
+O login do admin usa credentials: "include" e há comentário indicando que o cookie é HttpOnly e setado pelo backend (o frontend não grava token em JS).
 domain, secure, sameSite: não identificáveis pelo frontend (dependem do backend / infra).
 Usuário
 
-Cookie: nome não especificado no frontend. O frontend apenas envia cookies ao backend (credentials: "include"). 
+Cookie: nome não especificado no frontend. O frontend apenas envia cookies ao backend (credentials: "include").
 domain, secure, httpOnly, sameSite: não identificáveis a partir deste repo.
 Diagrama de autenticação (usuário e admin)
 mermaid
@@ -1301,11 +1304,11 @@ flowchart TD
   J -- prazo/outro --> N[Confirmação local + clearCart]
 Arquivos a adicionar/alterar, snippets e checklist de PR/release
 Arquivos recomendados
-Com base no estado atual do repo (README detalhado, mas sem documentação operacional e sem OpenAPI versionado), a entrega “completa” tende a incluir os seguintes arquivos. 
+Com base no estado atual do repo (README detalhado, mas sem documentação operacional e sem OpenAPI versionado), a entrega “completa” tende a incluir os seguintes arquivos.
 
 Modificar
 
-README.md (substituir pelo draft acima; corrigir especialmente autenticação de usuário vs admin). 
+README.md (substituir pelo draft acima; corrigir especialmente autenticação de usuário vs admin).
 Adicionar
 
 .env.example (para padronizar setup de dev/prod e reduzir onboarding).
@@ -1324,7 +1327,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 # Opcional (usado em fallbacks em código server-side)
 API_BASE=http://localhost:5000
 NEXT_PUBLIC_API_BASE=http://localhost:5000
-(As variáveis acima aparecem como base/fallback no código de chamadas ao backend.) 
+(As variáveis acima aparecem como base/fallback no código de chamadas ao backend.)
 
 docs/openapi.yaml
 
@@ -1366,7 +1369,7 @@ Copiar
 ## Segurança
 - Não registrar tokens/cookies em logs
 - Não persistir tokens em localStorage (admin já segue isso)
-(O alias @/ é definido no tsconfig.json.) 
+(O alias @/ é definido no tsconfig.json.)
 
 LICENSE (recomendação: MIT; SPDX MIT)
 
@@ -1384,16 +1387,17 @@ Baseado no que o código realmente faz (cookies, endpoints, e riscos comuns), um
 
 Build & qualidade
 
-npm run build passa (atenção: ESLint é ignorado no build). 
-npm run lint passa. 
-npm run test:run (e idealmente test:coverage) passa. 
+npm run build passa (atenção: ESLint é ignorado no build).
+npm run lint passa.
+npm run test:run (e idealmente test:coverage) passa.
 Autenticação e segurança
 
 Nenhum PR adiciona token (admin ou user) em localStorage/logs por conveniência.
-Admin continua dependendo de cookie adminToken (middleware) e credentials: include. 
-Endpoint changes: se alterar /api/*, atualizar docs/openapi.yaml e o mapa de rotas. 
+Admin continua dependendo de cookie adminToken (middleware) e credentials: include.
+Endpoint changes: se alterar /api/*, atualizar docs/openapi.yaml e o mapa de rotas.
 Compatibilidade backend
 
-Mudanças em payload de checkout mantêm compatibilidade com entrega/retirada e campos rurais/urbanos. 
-Carrinho continua tratando 409 STOCK_LIMIT sem quebrar UX. 
+Mudanças em payload de checkout mantêm compatibilidade com entrega/retirada e campos rurais/urbanos.
+Carrinho continua tratando 409 STOCK_LIMIT sem quebrar UX.
 Docs
+````

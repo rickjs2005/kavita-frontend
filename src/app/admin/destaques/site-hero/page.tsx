@@ -37,12 +37,12 @@ export default function SiteHeroAdminPage() {
 
   const videoPreview = useMemo(
     () => (videoFile ? URL.createObjectURL(videoFile) : config.hero_video_url),
-    [videoFile, config.hero_video_url]
+    [videoFile, config.hero_video_url],
   );
 
   const imagePreview = useMemo(
     () => (imageFile ? URL.createObjectURL(imageFile) : config.hero_image_url),
-    [imageFile, config.hero_image_url]
+    [imageFile, config.hero_image_url],
   );
 
   useEffect(() => {
@@ -57,7 +57,9 @@ export default function SiteHeroAdminPage() {
     async function load() {
       try {
         setLoading(true);
-        const data = await apiClient.get<Partial<HeroConfig>>("/api/admin/site-hero");
+        const data = await apiClient.get<Partial<HeroConfig>>(
+          "/api/admin/site-hero",
+        );
 
         setConfig({
           hero_video_url: data.hero_video_url || "",
@@ -100,7 +102,9 @@ export default function SiteHeroAdminPage() {
       fd.append("button_label", config.button_label || "");
       fd.append("button_href", config.button_href || "");
 
-      const payload = await apiClient.put<any>("/api/admin/site-hero", fd, { skipContentType: true });
+      const payload = await apiClient.put<any>("/api/admin/site-hero", fd, {
+        skipContentType: true,
+      });
 
       toast.success("Hero atualizado com sucesso!");
       setVideoFile(null);
@@ -255,7 +259,9 @@ export default function SiteHeroAdminPage() {
                   <div className="relative z-10 flex h-full items-end p-4 sm:p-6">
                     <div className="max-w-xl">
                       <h2 className="text-lg sm:text-2xl font-bold leading-tight">
-                        {config.title?.trim() ? config.title : "Seu título aqui"}
+                        {config.title?.trim()
+                          ? config.title
+                          : "Seu título aqui"}
                       </h2>
                       <p className="mt-1 sm:mt-2 text-sm sm:text-base text-white/80">
                         {config.subtitle?.trim()
@@ -272,7 +278,9 @@ export default function SiteHeroAdminPage() {
                         </a>
 
                         <div className="text-xs text-white/55">
-                          {hasAnyMedia ? "Preview do CTA ativo" : "Defina uma mídia"}
+                          {hasAnyMedia
+                            ? "Preview do CTA ativo"
+                            : "Defina uma mídia"}
                         </div>
                       </div>
                     </div>
@@ -334,8 +342,8 @@ export default function SiteHeroAdminPage() {
                   </div>
 
                   <p className="text-xs text-white/50">
-                    Se deixar vazio, o site pode mostrar um texto padrão (ou nada)
-                    no Hero.
+                    Se deixar vazio, o site pode mostrar um texto padrão (ou
+                    nada) no Hero.
                   </p>
                 </div>
 
@@ -367,13 +375,15 @@ export default function SiteHeroAdminPage() {
                     >
                       <div className="min-w-0">
                         <p className="text-sm text-white/80">
-                          {videoFile ? videoFile.name : "Clique para enviar o vídeo"}
+                          {videoFile
+                            ? videoFile.name
+                            : "Clique para enviar o vídeo"}
                         </p>
                         <p className="text-xs text-white/50 truncate">
                           {videoFile
                             ? `${Math.max(
                                 1,
-                                Math.round(videoFile.size / 1024 / 1024)
+                                Math.round(videoFile.size / 1024 / 1024),
                               )} MB`
                             : "video/*"}
                         </p>
@@ -425,13 +435,15 @@ export default function SiteHeroAdminPage() {
                     >
                       <div className="min-w-0">
                         <p className="text-sm text-white/80">
-                          {imageFile ? imageFile.name : "Clique para enviar a imagem"}
+                          {imageFile
+                            ? imageFile.name
+                            : "Clique para enviar a imagem"}
                         </p>
                         <p className="text-xs text-white/50 truncate">
                           {imageFile
                             ? `${Math.max(
                                 1,
-                                Math.round(imageFile.size / 1024 / 1024)
+                                Math.round(imageFile.size / 1024 / 1024),
                               )} MB`
                             : "image/*"}
                         </p>
@@ -500,7 +512,8 @@ export default function SiteHeroAdminPage() {
                       placeholder="/drones ou https://..."
                     />
                     <p className="text-xs text-white/50 mt-2">
-                      Aceita rota interna (/drones) ou link externo (https://...).
+                      Aceita rota interna (/drones) ou link externo
+                      (https://...).
                     </p>
                   </div>
                 </div>
@@ -515,8 +528,8 @@ export default function SiteHeroAdminPage() {
                 </button>
 
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
-                  Dica: se quiser ainda mais “pro”, dá pra adicionar validação de
-                  tamanho (ex: vídeo até 30MB / imagem até 5MB) e barra de
+                  Dica: se quiser ainda mais “pro”, dá pra adicionar validação
+                  de tamanho (ex: vídeo até 30MB / imagem até 5MB) e barra de
                   progresso no upload — sem mexer no seu backend.
                 </div>
               </div>

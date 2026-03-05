@@ -18,7 +18,8 @@ function defaultShop(): PublicShopSettings {
   return {
     store_name: "Kavita",
     logo_url: "/logo.png",
-    footer_tagline: "Conectando você ao melhor da agropecuária com qualidade e tradição.",
+    footer_tagline:
+      "Conectando você ao melhor da agropecuária com qualidade e tradição.",
     contact_whatsapp: "(31) 99999-9999",
     contact_email: "contato@kavita.com.br",
     social_instagram_url: "https://instagram.com/kavita",
@@ -35,7 +36,8 @@ function defaultShop(): PublicShopSettings {
     ],
     // compat legado (o Footer.tsx também aceita)
     footer: {
-      tagline: "Conectando você ao melhor da agropecuária com qualidade e tradição.",
+      tagline:
+        "Conectando você ao melhor da agropecuária com qualidade e tradição.",
       contact_whatsapp: "(31) 99999-9999",
       contact_email: "contato@kavita.com.br",
       social_instagram_url: "https://instagram.com/kavita",
@@ -43,8 +45,7 @@ function defaultShop(): PublicShopSettings {
       partner_cta: {
         enabled: true,
         title: "É profissional do campo?",
-        text:
-          "Veterinário, agrônomo, mecânico de máquinas, consultor ou prestador de serviços rurais. Trabalhe conosco e entre para a rede de parceiros Kavita.",
+        text: "Veterinário, agrônomo, mecânico de máquinas, consultor ou prestador de serviços rurais. Trabalhe conosco e entre para a rede de parceiros Kavita.",
         href: "/trabalhe-conosco",
       },
       links: [

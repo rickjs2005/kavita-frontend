@@ -47,10 +47,7 @@ type AdminAuthContextValue = {
    * Mantido por compatibilidade com fluxos antigos (ex.: login page marcando admin).
    * Recomendação: usar loadSession() após login (server-truth).
    */
-  markAsAdmin: (data?: {
-    user: AdminUser;
-    permissions?: string[];
-  }) => void;
+  markAsAdmin: (data?: { user: AdminUser; permissions?: string[] }) => void;
 
   logout: (opts?: { redirectTo?: string }) => Promise<void>;
 };
@@ -80,7 +77,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       if (role === "master") return true;
       return permissions.includes(perm);
     },
-    [permissions, role]
+    [permissions, role],
   );
 
   const hasRole = useCallback(
@@ -89,7 +86,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       if (Array.isArray(rolesToCheck)) return rolesToCheck.includes(role);
       return role === rolesToCheck;
     },
-    [role]
+    [role],
   );
 
   const markAsAdmin = useCallback(
@@ -98,7 +95,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       setAdminUser(data.user);
       setPermissions(Array.isArray(data.permissions) ? data.permissions : []);
     },
-    []
+    [],
   );
 
   const loadSession = useCallback(
@@ -133,7 +130,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           };
 
           setAdminUser(user);
-          setPermissions(Array.isArray(data.permissions) ? data.permissions : []);
+          setPermissions(
+            Array.isArray(data.permissions) ? data.permissions : [],
+          );
           return user;
         } catch (err) {
           // 401/403 é esperado quando não logado
@@ -162,7 +161,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       inflightRef.current = p;
       return p;
     },
-    [clearState]
+    [clearState],
   );
 
   const logout = useCallback(
@@ -190,7 +189,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         window.location.assign(opts.redirectTo);
       }
     },
-    [clearState]
+    [clearState],
   );
 
   const value = useMemo<AdminAuthContextValue>(
@@ -222,14 +221,19 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       hasRole,
       markAsAdmin,
       logout,
-    ]
+    ],
   );
 
-  return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
+  return (
+    <AdminAuthContext.Provider value={value}>
+      {children}
+    </AdminAuthContext.Provider>
+  );
 }
 
 export function useAdminAuth() {
   const ctx = useContext(AdminAuthContext);
-  if (!ctx) throw new Error("useAdminAuth deve ser usado dentro de AdminAuthProvider");
+  if (!ctx)
+    throw new Error("useAdminAuth deve ser usado dentro de AdminAuthProvider");
   return ctx;
 }

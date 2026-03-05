@@ -51,7 +51,7 @@ function isViaCepUrl(url: string) {
 }
 function isIbgeUrl(url: string) {
   return url.startsWith(
-    "https://servicodados.ibge.gov.br/api/v1/localidades/estados/"
+    "https://servicodados.ibge.gov.br/api/v1/localidades/estados/",
   );
 }
 
@@ -89,7 +89,9 @@ function renderWithHarness(opts?: {
       setEndereco((prev) => ({ ...prev, [key]: value }));
     };
 
-    return <AddressForm endereco={endereco as any} onChange={handleChange as any} />;
+    return (
+      <AddressForm endereco={endereco as any} onChange={handleChange as any} />
+    );
   }
 
   const view = render(<Harness />);
@@ -113,7 +115,7 @@ function renderForm(opts?: {
   };
 
   const view = render(
-    <AddressForm endereco={endereco as any} onChange={onChange as any} />
+    <AddressForm endereco={endereco as any} onChange={onChange as any} />,
   );
 
   return { ...view, onChange };
@@ -146,11 +148,11 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
     expect(screen.getByLabelText(/^número$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/rua \/ avenida/i)).toBeInTheDocument();
     expect(
-      screen.getByLabelText(/complemento \/ referência/i)
+      screen.getByLabelText(/complemento \/ referência/i),
     ).toBeInTheDocument();
 
     expect(
-      screen.queryByLabelText(/córrego \/ comunidade/i)
+      screen.queryByLabelText(/córrego \/ comunidade/i),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/aviso importante/i)).not.toBeInTheDocument();
   });
@@ -179,12 +181,12 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
           } as any
         }
         onChange={onChange as any}
-      />
+      />,
     );
 
     expect(screen.getByRole("button", { name: /zona rural/i })).toHaveAttribute(
       "aria-pressed",
-      "true"
+      "true",
     );
 
     expect(screen.getByText(/aviso importante/i)).toBeInTheDocument();
@@ -192,7 +194,7 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
 
     expect(screen.getByLabelText(/córrego \/ comunidade/i)).toBeInTheDocument();
     expect(
-      screen.getByLabelText(/referência \/ descrição de acesso/i)
+      screen.getByLabelText(/referência \/ descrição de acesso/i),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/número \(se houver\)/i)).toBeInTheDocument();
 
@@ -246,7 +248,7 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "https://viacep.com.br/ws/12345678/json/"
+        "https://viacep.com.br/ws/12345678/json/",
       );
     });
 
@@ -285,7 +287,7 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "https://viacep.com.br/ws/30130010/json/"
+        "https://viacep.com.br/ws/30130010/json/",
       );
     });
 
@@ -321,7 +323,7 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "https://viacep.com.br/ws/12345678/json/"
+        "https://viacep.com.br/ws/12345678/json/",
       );
     });
 
@@ -356,15 +358,17 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "https://servicodados.ibge.gov.br/api/v1/localidades/estados/SP/municipios"
+        "https://servicodados.ibge.gov.br/api/v1/localidades/estados/SP/municipios",
       );
     });
 
-    const dl = document.querySelector("#checkout-cidades") as HTMLDataListElement;
+    const dl = document.querySelector(
+      "#checkout-cidades",
+    ) as HTMLDataListElement;
     expect(dl).toBeTruthy();
 
     const values = Array.from(dl.querySelectorAll("option")).map(
-      (opt) => (opt as HTMLOptionElement).value
+      (opt) => (opt as HTMLOptionElement).value,
     );
     expect(values).toEqual(["Alpha", "Médio", "Zeta"]);
 
@@ -399,7 +403,7 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "https://servicodados.ibge.gov.br/api/v1/localidades/estados/SP/municipios"
+        "https://servicodados.ibge.gov.br/api/v1/localidades/estados/SP/municipios",
       );
     });
 
@@ -413,7 +417,9 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
     const calls = onChangeSpy.mock.calls.map((c) => [c[0], c[1]]);
     expect(calls).toContainEqual(["endereco.cidade", "Minha Cidade"]);
 
-    const dl = document.querySelector("#checkout-cidades") as HTMLDataListElement;
+    const dl = document.querySelector(
+      "#checkout-cidades",
+    ) as HTMLDataListElement;
     expect(dl).toBeTruthy();
     expect(dl.querySelectorAll("option").length).toBe(0);
   });

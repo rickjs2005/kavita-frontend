@@ -51,7 +51,7 @@ function renderWithProvider() {
   return render(
     <AuthProvider>
       <Consumer />
-    </AuthProvider>
+    </AuthProvider>,
   );
 }
 
@@ -68,7 +68,7 @@ describe("AuthContext (AuthProvider + useAuth)", () => {
     }
 
     expect(() => render(<BadConsumer />)).toThrow(
-      "useAuth deve ser usado dentro de <AuthProvider>"
+      "useAuth deve ser usado dentro de <AuthProvider>",
     );
   });
 
@@ -87,7 +87,9 @@ describe("AuthContext (AuthProvider + useAuth)", () => {
     await waitFor(() => expect(apiMock).toHaveBeenCalledTimes(1));
     expect(apiMock).toHaveBeenCalledWith("/api/users/me");
 
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false"),
+    );
     expect(screen.getByTestId("userId").textContent).toBe("10");
     expect(screen.getByTestId("userNome").textContent).toBe("Rick");
     expect(screen.getByTestId("userEmail").textContent).toBe("rick@kavita.com");
@@ -104,7 +106,9 @@ describe("AuthContext (AuthProvider + useAuth)", () => {
     await waitFor(() => expect(apiMock).toHaveBeenCalledTimes(1));
     expect(apiMock).toHaveBeenCalledWith("/api/users/me");
 
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false"),
+    );
     expect(screen.getByTestId("userId").textContent).toBe("");
     expect(screen.getByTestId("userNome").textContent).toBe("");
     expect(screen.getByTestId("userEmail").textContent).toBe("");
@@ -133,7 +137,7 @@ describe("AuthContext (AuthProvider + useAuth)", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ email: "user@kavita.com", senha: "123" }),
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -142,7 +146,9 @@ describe("AuthContext (AuthProvider + useAuth)", () => {
 
     expect(screen.getByTestId("userId").textContent).toBe("1");
     expect(screen.getByTestId("userNome").textContent).toBe("Cliente");
-    expect(screen.getByTestId("userEmail").textContent).toBe("cliente@kavita.com");
+    expect(screen.getByTestId("userEmail").textContent).toBe(
+      "cliente@kavita.com",
+    );
   });
 
   it("login: sucesso quando backend retorna o user direto (sem { user }) (positivo)", async () => {
@@ -169,7 +175,9 @@ describe("AuthContext (AuthProvider + useAuth)", () => {
 
     expect(screen.getByTestId("userId").textContent).toBe("2");
     expect(screen.getByTestId("userNome").textContent).toBe("Direto");
-    expect(screen.getByTestId("userEmail").textContent).toBe("direto@kavita.com");
+    expect(screen.getByTestId("userEmail").textContent).toBe(
+      "direto@kavita.com",
+    );
   });
 
   it("login: se backend não retornar user válido (sem id), deve retornar ok=false e msg 'Credenciais inválidas.' e setUser(null) (negativo)", async () => {
@@ -260,14 +268,18 @@ describe("AuthContext (AuthProvider + useAuth)", () => {
 
     renderWithProvider();
 
-    await waitFor(() => expect(screen.getByTestId("userId").textContent).toBe("55"));
+    await waitFor(() =>
+      expect(screen.getByTestId("userId").textContent).toBe("55"),
+    );
 
     // Act
     fireEvent.click(screen.getByText("logout"));
 
     // Assert
     await waitFor(() => expect(apiMock).toHaveBeenCalledTimes(2));
-    expect(apiMock).toHaveBeenNthCalledWith(2, "/api/logout", { method: "POST" });
+    expect(apiMock).toHaveBeenNthCalledWith(2, "/api/logout", {
+      method: "POST",
+    });
 
     expect(screen.getByTestId("userId").textContent).toBe("");
     expect(screen.getByTestId("userNome").textContent).toBe("");
@@ -285,14 +297,18 @@ describe("AuthContext (AuthProvider + useAuth)", () => {
     apiMock.mockRejectedValueOnce(new Error("logout failed"));
 
     renderWithProvider();
-    await waitFor(() => expect(screen.getByTestId("userId").textContent).toBe("55"));
+    await waitFor(() =>
+      expect(screen.getByTestId("userId").textContent).toBe("55"),
+    );
 
     // Act
     fireEvent.click(screen.getByText("logout"));
 
     // Assert
     await waitFor(() => expect(apiMock).toHaveBeenCalledTimes(2));
-    expect(apiMock).toHaveBeenNthCalledWith(2, "/api/logout", { method: "POST" });
+    expect(apiMock).toHaveBeenNthCalledWith(2, "/api/logout", {
+      method: "POST",
+    });
 
     expect(screen.getByTestId("userId").textContent).toBe("");
   });
@@ -319,7 +335,9 @@ describe("AuthContext (AuthProvider + useAuth)", () => {
     await waitFor(() => expect(apiMock).toHaveBeenCalledTimes(2));
     expect(apiMock).toHaveBeenNthCalledWith(2, "/api/users/me");
 
-    await waitFor(() => expect(screen.getByTestId("userId").textContent).toBe("77"));
+    await waitFor(() =>
+      expect(screen.getByTestId("userId").textContent).toBe("77"),
+    );
     expect(screen.getByTestId("userNome").textContent).toBe("Atualizado");
   });
 });

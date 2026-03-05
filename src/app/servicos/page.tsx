@@ -28,19 +28,19 @@ export default function ServicosPage() {
 
   // lista de especialidades únicas (id + nome)
   const especialidades = useMemo(() => {
-  const map = new Map<number, string>();
+    const map = new Map<number, string>();
 
-  services.forEach((s) => {
-    // força para number com segurança
-    const espId = Number(s.especialidade_id);
+    services.forEach((s) => {
+      // força para number com segurança
+      const espId = Number(s.especialidade_id);
 
-    if (!Number.isNaN(espId) && espId > 0 && s.especialidade_nome) {
-      map.set(espId, s.especialidade_nome);
-    }
-  });
+      if (!Number.isNaN(espId) && espId > 0 && s.especialidade_nome) {
+        map.set(espId, s.especialidade_nome);
+      }
+    });
 
-  return Array.from(map, ([id, nome]) => ({ id, nome }));
-}, [services]);
+    return Array.from(map, ([id, nome]) => ({ id, nome }));
+  }, [services]);
 
   // nome da especialidade selecionada (para mostrar no header)
   const selectedEspecialidadeNome = useMemo(() => {

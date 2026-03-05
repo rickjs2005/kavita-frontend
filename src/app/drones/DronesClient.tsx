@@ -1,6 +1,14 @@
 "use client";
 
-import { JSX, Key, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  JSX,
+  Key,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import HeroSection from "@/components/drones/HeroSection";
@@ -55,7 +63,9 @@ function fallbackModels(): DroneModel[] {
 
 function sortModels(models: DroneModel[]) {
   return [...models].sort(
-    (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.label.localeCompare(b.label)
+    (a, b) =>
+      (a.sort_order ?? 0) - (b.sort_order ?? 0) ||
+      a.label.localeCompare(b.label),
   );
 }
 
@@ -99,7 +109,9 @@ function detectMediaTypeByUrl(url: string): MediaTypeLower | "" {
 }
 
 function normalizeMediaTypeToLower(v: any, url?: string): MediaTypeLower | "" {
-  const s = String(v || "").toLowerCase().trim();
+  const s = String(v || "")
+    .toLowerCase()
+    .trim();
   if (s.includes("video")) return "video";
   if (s.includes("image")) return "image";
   const byUrl = detectMediaTypeByUrl(String(url || ""));
@@ -140,8 +152,13 @@ function resolveCardMedia(model: DroneModel) {
   const url = absUrl(candidates[0] || "");
 
   const type = normalizeMediaTypeToLower(
-    model.card_media_type ?? raw.card_media_type ?? raw.media_type ?? raw.type ?? raw.kind ?? raw.file_type,
-    url
+    model.card_media_type ??
+    raw.card_media_type ??
+    raw.media_type ??
+    raw.type ??
+    raw.kind ??
+    raw.file_type,
+    url,
   );
 
   return { url, type: type as MediaTypeLower | "" };
@@ -164,7 +181,13 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ModelCard({ model, onOpen }: { model: DroneModel; onOpen: (key: string) => void }) {
+function ModelCard({
+  model,
+  onOpen,
+}: {
+  model: DroneModel;
+  onOpen: (key: string) => void;
+}) {
   const { url, type } = resolveCardMedia(model);
 
   return (
@@ -180,16 +203,30 @@ function ModelCard({ model, onOpen }: { model: DroneModel; onOpen: (key: string)
         <div className="relative">
           <div className="relative aspect-[16/10] bg-gradient-to-br from-white/10 via-white/5 to-transparent">
             {url && type === "video" ? (
-              <video className="h-full w-full object-cover" src={url} muted playsInline autoPlay loop />
+              <video
+                className="h-full w-full object-cover"
+                src={url}
+                muted
+                playsInline
+                autoPlay
+                loop
+              />
             ) : url && type === "image" ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img className="h-full w-full object-cover" src={url} alt={model.label} />
+              <img
+                className="h-full w-full object-cover"
+                src={url}
+                alt={model.label}
+              />
             ) : (
               <div className="h-full w-full flex items-center justify-center">
                 <div className="text-center px-6">
-                  <div className="text-sm text-slate-200 font-extrabold">Mídia do modelo</div>
+                  <div className="text-sm text-slate-200 font-extrabold">
+                    Mídia do modelo
+                  </div>
                   <div className="text-xs text-slate-400 mt-1">
-                    Selecione uma imagem/vídeo no admin (Card) para aparecer aqui.
+                    Selecione uma imagem/vídeo no admin (Card) para aparecer
+                    aqui.
                   </div>
                 </div>
               </div>
@@ -227,7 +264,9 @@ function ModelCard({ model, onOpen }: { model: DroneModel; onOpen: (key: string)
         <div className="relative p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-white">{model.label}</h3>
+              <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
+                {model.label}
+              </h3>
               <p className="mt-1 text-xs sm:text-sm text-slate-300">
                 Especificações • Funcionalidades • Benefícios • Galeria
               </p>
@@ -295,7 +334,7 @@ function ModelsCarouselSection({
 
   return (
     <section className="py-10 sm:py-14">
-      <style jsx global>{`
+      <style>{`
         .no-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
@@ -308,10 +347,13 @@ function ModelsCarouselSection({
       <div className="max-w-6xl mx-auto px-5">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight">Modelos disponíveis</h2>
+            <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight">
+              Modelos disponíveis
+            </h2>
             <p className="mt-2 text-sm text-slate-300 max-w-2xl">
-              Escolha um modelo para ver <b>especificações</b>, <b>funcionalidades</b>,{" "}
-              <b>benefícios</b> e a <b>galeria</b> completa.
+              Escolha um modelo para ver <b>especificações</b>,{" "}
+              <b>funcionalidades</b>, <b>benefícios</b> e a <b>galeria</b>{" "}
+              completa.
             </p>
           </div>
 
@@ -352,7 +394,9 @@ function ModelsCarouselSection({
           </div>
 
           <div className="relative mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-            <div className="text-xs text-slate-400">No celular, arraste para o lado. No desktop, use as setas.</div>
+            <div className="text-xs text-slate-400">
+              No celular, arraste para o lado. No desktop, use as setas.
+            </div>
 
             <button
               onClick={onTalkToRep}
@@ -382,7 +426,9 @@ export default function DronesPublicPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchModels = useCallback(async (): Promise<DroneModel[]> => {
-    const res = await fetch(`${API_BASE}/api/public/drones/models`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/public/drones/models`, {
+      cache: "no-store",
+    });
     if (!res.ok) return fallbackModels();
 
     const json = await res.json();
@@ -390,13 +436,16 @@ export default function DronesPublicPage() {
 
     const normalized = raw
       .map((m: any) => {
-        const key = String(m.key || m.model_key || "").trim().toLowerCase();
+        const key = String(m.key || m.model_key || "")
+          .trim()
+          .toLowerCase();
         const label = String(m.label || m.name || "").trim();
 
         // ✅ backend ideal: já manda a mídia do card resolvida pela seleção (models_json)
         const cardMediaUrl = m.card_media_url || "";
         const cardMediaPath = m.card_media_path || m.card_media || ""; // tolerante
-        const cardMediaType = m.card_media_type || m.card_media_kind || m.media_type || undefined;
+        const cardMediaType =
+          m.card_media_type || m.card_media_kind || m.media_type || undefined;
 
         // fallback compat antigo (se ainda existir)
         const legacyUrl =
@@ -429,9 +478,13 @@ export default function DronesPublicPage() {
 
           // ✅ ids (opcionais)
           current_card_media_id:
-            m.current_card_media_id != null ? Number(m.current_card_media_id) : null,
+            m.current_card_media_id != null
+              ? Number(m.current_card_media_id)
+              : null,
           current_hero_media_id:
-            m.current_hero_media_id != null ? Number(m.current_hero_media_id) : null,
+            m.current_hero_media_id != null
+              ? Number(m.current_hero_media_id)
+              : null,
 
           _raw: m,
         } as DroneModel;
@@ -442,7 +495,9 @@ export default function DronesPublicPage() {
   }, []);
 
   const fetchPage = useCallback(async (modelKey?: string) => {
-    const url = modelKey ? `${API_BASE}/api/public/drones?model=${modelKey}` : `${API_BASE}/api/public/drones`;
+    const url = modelKey
+      ? `${API_BASE}/api/public/drones?model=${modelKey}`
+      : `${API_BASE}/api/public/drones`;
 
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return null;
@@ -450,7 +505,9 @@ export default function DronesPublicPage() {
   }, []);
 
   const fetchRepresentatives = useCallback(async () => {
-    const res = await fetch(`${API_BASE}/api/public/drones/representantes`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/public/drones/representantes`, {
+      cache: "no-store",
+    });
     if (!res.ok) return [];
     const json = await res.json();
     return extractArray(json);
@@ -460,7 +517,10 @@ export default function DronesPublicPage() {
     (async () => {
       setLoading(true);
 
-      const [modelsDb, reps] = await Promise.all([fetchModels(), fetchRepresentatives()]);
+      const [modelsDb, reps] = await Promise.all([
+        fetchModels(),
+        fetchRepresentatives(),
+      ]);
       setModels(modelsDb);
       setRepresentatives(reps);
 
@@ -493,21 +553,26 @@ export default function DronesPublicPage() {
     setLoading(false);
   }
 
-  const mergedPage = useMemo(() => ({ ...(landing || {}), ...(modelData || {}) }), [landing, modelData]);
+  const mergedPage = useMemo(
+    () => ({ ...(landing || {}), ...(modelData || {}) }),
+    [landing, modelData],
+  );
 
   const sectionsOrder = useMemo(() => {
-    const raw =
-      mergedPage?.sections_order_json || [
-        "hero",
-        "specs",
-        "features",
-        "benefits",
-        "gallery",
-        "representatives",
-        "comments",
-      ];
+    const raw = mergedPage?.sections_order_json || [
+      "hero",
+      "specs",
+      "features",
+      "benefits",
+      "gallery",
+      "representatives",
+      "comments",
+    ];
 
-    const filtered = raw.filter((k: any) => !["specs", "features", "benefits", "gallery"].includes(String(k)));
+    const filtered = raw.filter(
+      (k: any) =>
+        !["specs", "features", "benefits", "gallery"].includes(String(k)),
+    );
 
     if (!filtered.includes("models")) {
       const heroIndex = filtered.indexOf("hero");
@@ -534,12 +599,19 @@ export default function DronesPublicPage() {
 
     representatives: (
       <div id="drones-representatives">
-        <RepresentativesSection page={mergedPage} representatives={representatives} />
+        <RepresentativesSection
+          page={mergedPage}
+          representatives={representatives}
+        />
       </div>
     ),
 
     comments: (
-      <CommentsSection comments={comments} modelKey={selectedModel} onCreated={() => changeModel(selectedModel)} />
+      <CommentsSection
+        comments={comments}
+        modelKey={selectedModel}
+        onCreated={() => changeModel(selectedModel)}
+      />
     ),
   };
 
@@ -555,7 +627,9 @@ export default function DronesPublicPage() {
     <div className="min-h-svh bg-[#070A0E] text-slate-100">
       <div className="sticky top-0 z-40 bg-black/60 backdrop-blur border-b border-white/10">
         <div className="max-w-6xl mx-auto px-5 py-3 flex gap-3 items-center">
-          <span className="text-xs font-semibold text-slate-300 shrink-0">Modelo:</span>
+          <span className="text-xs font-semibold text-slate-300 shrink-0">
+            Modelo:
+          </span>
 
           <select
             className="sm:hidden w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm"

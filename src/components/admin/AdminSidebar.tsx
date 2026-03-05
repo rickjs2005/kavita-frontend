@@ -134,7 +134,7 @@ export default function AdminSidebar({
 
   // Filtra por permissão no momento da renderização
   const itemsVisiveis = navItems.filter((item) =>
-    item.href === "/admin" ? true : hasPermission(item.permission)
+    item.href === "/admin" ? true : hasPermission(item.permission),
   );
 
   return (

@@ -53,11 +53,15 @@ describe("useCotacoesAdmin", () => {
       { id: 2, name: "Soja", slug: "soja", type: "CEPEA", ativo: 1 },
       { id: 1, name: "Milho", slug: "milho", type: "CEPEA", ativo: 1 },
     ];
-    mockFetchOnce(200, { ok: true, data: rows, meta: { allowed_slugs: ["soja", "milho"] } });
+    mockFetchOnce(200, {
+      ok: true,
+      data: rows,
+      meta: { allowed_slugs: ["soja", "milho"] },
+    });
 
     // Act
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized })
+      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
     );
 
     // Assert
@@ -68,7 +72,7 @@ describe("useCotacoesAdmin", () => {
     const getCall = findCall(
       (url, init) =>
         url === `${apiBase}/api/admin/news/cotacoes` &&
-        (init?.method ?? "GET") === "GET"
+        (init?.method ?? "GET") === "GET",
     );
     expect(getCall).toBeTruthy();
   });
@@ -79,7 +83,7 @@ describe("useCotacoesAdmin", () => {
 
     // Act
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized })
+      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
     );
 
     // Assert
@@ -94,7 +98,7 @@ describe("useCotacoesAdmin", () => {
 
     // Act
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized })
+      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
     );
 
     // Assert
@@ -108,7 +112,7 @@ describe("useCotacoesAdmin", () => {
     mockFetchOnce(200, { ok: true, data: [] });
 
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized })
+      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -143,7 +147,7 @@ describe("useCotacoesAdmin", () => {
     const postCall = findCall(
       (url, init) =>
         url === `${apiBase}/api/admin/news/cotacoes` &&
-        String(init?.method).toUpperCase() === "POST"
+        String(init?.method).toUpperCase() === "POST",
     );
     expect(postCall).toBeTruthy();
 
@@ -161,8 +165,8 @@ describe("useCotacoesAdmin", () => {
       countCalls(
         (url, init) =>
           url === `${apiBase}/api/admin/news/cotacoes` &&
-          (init?.method ?? "GET") === "GET"
-      )
+          (init?.method ?? "GET") === "GET",
+      ),
     ).toBeGreaterThanOrEqual(1);
 
     // volta para create
@@ -174,7 +178,7 @@ describe("useCotacoesAdmin", () => {
     mockFetchOnce(200, { ok: true, data: [] });
 
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized })
+      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -211,7 +215,7 @@ describe("useCotacoesAdmin", () => {
     mockFetchOnce(200, { ok: true, data: [] });
 
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized })
+      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -232,7 +236,7 @@ describe("useCotacoesAdmin", () => {
     const delCall = findCall(
       (url, init) =>
         url === `${apiBase}/api/admin/news/cotacoes/9` &&
-        String(init?.method).toUpperCase() === "DELETE"
+        String(init?.method).toUpperCase() === "DELETE",
     );
     expect(delCall).toBeTruthy();
 
@@ -241,8 +245,8 @@ describe("useCotacoesAdmin", () => {
       countCalls(
         (url, init) =>
           url === `${apiBase}/api/admin/news/cotacoes` &&
-          (init?.method ?? "GET") === "GET"
-      )
+          (init?.method ?? "GET") === "GET",
+      ),
     ).toBeGreaterThanOrEqual(1);
   });
 
@@ -251,7 +255,7 @@ describe("useCotacoesAdmin", () => {
     mockFetchOnce(200, { ok: true, data: [] });
 
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized })
+      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -275,7 +279,7 @@ describe("useCotacoesAdmin", () => {
     mockFetchOnce(200, { ok: true, data: [] });
 
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized })
+      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -296,7 +300,7 @@ describe("useCotacoesAdmin", () => {
     const syncCall = findCall(
       (url, init) =>
         url === `${apiBase}/api/admin/news/cotacoes/3/sync` &&
-        String(init?.method).toUpperCase() === "POST"
+        String(init?.method).toUpperCase() === "POST",
     );
     expect(syncCall).toBeTruthy();
 
@@ -304,8 +308,8 @@ describe("useCotacoesAdmin", () => {
       countCalls(
         (url, init) =>
           url === `${apiBase}/api/admin/news/cotacoes` &&
-          (init?.method ?? "GET") === "GET"
-      )
+          (init?.method ?? "GET") === "GET",
+      ),
     ).toBeGreaterThanOrEqual(1);
   });
 
@@ -314,7 +318,7 @@ describe("useCotacoesAdmin", () => {
     mockFetchOnce(200, { ok: true, data: [] });
 
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized })
+      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -335,7 +339,7 @@ describe("useCotacoesAdmin", () => {
     const syncAllCall = findCall(
       (url, init) =>
         url === `${apiBase}/api/admin/news/cotacoes/sync-all` &&
-        String(init?.method).toUpperCase() === "POST"
+        String(init?.method).toUpperCase() === "POST",
     );
     expect(syncAllCall).toBeTruthy();
 
@@ -343,8 +347,8 @@ describe("useCotacoesAdmin", () => {
       countCalls(
         (url, init) =>
           url === `${apiBase}/api/admin/news/cotacoes` &&
-          (init?.method ?? "GET") === "GET"
-      )
+          (init?.method ?? "GET") === "GET",
+      ),
     ).toBeGreaterThanOrEqual(1);
   });
 });

@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import { newsPublicApi } from "@/lib/newsPublicApi";
 import { EmptyState } from "@/components/news/EmptyState";
@@ -44,7 +43,7 @@ export default async function ClimaDetailPage({ params }: PageProps) {
           </div>
         </div>
       </main>
-    );     
+    );
   }
 
   const updated = formatDateSafe(item.last_update_at);
@@ -63,20 +62,30 @@ export default async function ClimaDetailPage({ params }: PageProps) {
 
         <article className="rounded-2xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
           <header className="border-b border-zinc-100 p-6 md:p-8">
-            <p className="text-xs font-semibold tracking-widest text-zinc-500">KAVITA NEWS • CLIMA</p>
+            <p className="text-xs font-semibold tracking-widest text-zinc-500">
+              KAVITA NEWS • CLIMA
+            </p>
 
             {/* Exatamente 1 H1 */}
             <h1 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight text-zinc-900">
-              {item.city_name} <span className="text-zinc-400" aria-hidden>•</span> {item.uf}
+              {item.city_name}{" "}
+              <span className="text-zinc-400" aria-hidden>
+                •
+              </span>{" "}
+              {item.uf}
             </h1>
 
             <p className="mt-2 text-sm text-zinc-600">
-              Acumulado de chuva e atualização mais recente para a cidade monitorada.
+              Acumulado de chuva e atualização mais recente para a cidade
+              monitorada.
             </p>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs text-zinc-600">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
+                <span
+                  className="h-2 w-2 rounded-full bg-emerald-500"
+                  aria-hidden
+                />
                 Atualização contínua
               </span>
 
@@ -91,24 +100,37 @@ export default async function ClimaDetailPage({ params }: PageProps) {
               <div className="rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50 p-5">
                 <p className="text-sm text-zinc-600">Chuva (últimas 24h)</p>
                 <p className="mt-1 text-2xl font-semibold text-zinc-900">
-                  {item.mm_24h ?? "-"} <span className="text-base font-medium text-zinc-600">mm</span>
+                  {item.mm_24h ?? "-"}{" "}
+                  <span className="text-base font-medium text-zinc-600">
+                    mm
+                  </span>
                 </p>
-                <p className="mt-2 text-xs text-zinc-500">Acumulado nas últimas 24 horas.</p>
+                <p className="mt-2 text-xs text-zinc-500">
+                  Acumulado nas últimas 24 horas.
+                </p>
               </div>
 
               <div className="rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50 p-5">
                 <p className="text-sm text-zinc-600">Chuva (últimos 7 dias)</p>
                 <p className="mt-1 text-2xl font-semibold text-zinc-900">
-                  {item.mm_7d ?? "-"} <span className="text-base font-medium text-zinc-600">mm</span>
+                  {item.mm_7d ?? "-"}{" "}
+                  <span className="text-base font-medium text-zinc-600">
+                    mm
+                  </span>
                 </p>
-                <p className="mt-2 text-xs text-zinc-500">Acumulado nos últimos 7 dias.</p>
+                <p className="mt-2 text-xs text-zinc-500">
+                  Acumulado nos últimos 7 dias.
+                </p>
               </div>
             </div>
 
             <footer className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-700">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-zinc-600">
-                  Atualizado em: <span className="font-medium text-zinc-900">{updated || "-"}</span>
+                  Atualizado em:{" "}
+                  <span className="font-medium text-zinc-900">
+                    {updated || "-"}
+                  </span>
                 </p>
                 <p className="text-zinc-500">Dados públicos • Kavita News</p>
               </div>

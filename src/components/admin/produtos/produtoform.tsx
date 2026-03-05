@@ -43,7 +43,8 @@ export default function ProdutoForm({
   onLimparEdicao,
 }: Props) {
   // ✅ fallback seguro: se esquecer de passar API_BASE, não cai no Next (3000)
-  const BASE = API_BASE || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const BASE =
+    API_BASE || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   const isEditing = !!produtoEditado;
 
@@ -65,7 +66,8 @@ export default function ProdutoForm({
 
   // frete por produto
   const [shippingFree, setShippingFree] = useState<boolean>(false);
-  const [shippingFreeFromQtyStr, setShippingFreeFromQtyStr] = useState<string>("");
+  const [shippingFreeFromQtyStr, setShippingFreeFromQtyStr] =
+    useState<string>("");
 
   // ✅ NOVO: prazo do produto (dias)
   const [shippingPrazoDiasStr, setShippingPrazoDiasStr] = useState<string>("");
@@ -88,8 +90,12 @@ export default function ProdutoForm({
       setQuantityStr(String(produtoEditado.quantity ?? ""));
       setCategoryId(produtoEditado.category_id || "");
 
-      const extras = Array.isArray(produtoEditado.images) ? produtoEditado.images : [];
-      const allRel = [produtoEditado.image, ...extras].filter(Boolean) as string[];
+      const extras = Array.isArray(produtoEditado.images)
+        ? produtoEditado.images
+        : [];
+      const allRel = [produtoEditado.image, ...extras].filter(
+        Boolean,
+      ) as string[];
       const uniqueRel = Array.from(new Set(allRel));
       const urlsAbs = uniqueRel.map((p) => absUrl(BASE, p)!).filter(Boolean);
 
@@ -106,12 +112,16 @@ export default function ProdutoForm({
 
       setShippingFree(freeBool);
       setShippingFreeFromQtyStr(
-        produtoEditado.shipping_free_from_qty ? String(produtoEditado.shipping_free_from_qty) : ""
+        produtoEditado.shipping_free_from_qty
+          ? String(produtoEditado.shipping_free_from_qty)
+          : "",
       );
 
       // ✅ NOVO: carrega prazo do produto (dias)
       setShippingPrazoDiasStr(
-        produtoEditado.shipping_prazo_dias ? String(produtoEditado.shipping_prazo_dias) : ""
+        produtoEditado.shipping_prazo_dias
+          ? String(produtoEditado.shipping_prazo_dias)
+          : "",
       );
     } else {
       resetForm();
@@ -147,7 +157,7 @@ export default function ProdutoForm({
   const price = useMemo(() => normalizeNumber(priceStr), [priceStr]);
   const quantity = useMemo(
     () => Math.max(0, Math.floor(Number(quantityStr) || 0)),
-    [quantityStr]
+    [quantityStr],
   );
 
   function resetForm() {
@@ -267,19 +277,22 @@ export default function ProdutoForm({
         if (res.status === 401 || res.status === 403) {
           const txt = await safeText(res);
           throw new Error(
-            txt || "Você não tem permissão para salvar este produto. Faça login novamente."
+            txt ||
+              "Você não tem permissão para salvar este produto. Faça login novamente.",
           );
         }
 
         const txt = await safeText(res);
         throw new Error(
-          `Falha ao ${isEditing ? "atualizar" : "salvar"} (${res.status}). ${txt || ""}`
+          `Falha ao ${isEditing ? "atualizar" : "salvar"} (${res.status}). ${txt || ""}`,
         );
       }
 
       setMsg({
         type: "success",
-        text: isEditing ? "Produto atualizado com sucesso." : "Produto salvo com sucesso.",
+        text: isEditing
+          ? "Produto atualizado com sucesso."
+          : "Produto salvo com sucesso.",
       });
 
       resetForm();
@@ -509,7 +522,11 @@ export default function ProdutoForm({
           className="rounded-full bg-[#2F7E7F] px-5 py-2 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
           disabled={loading}
         >
-          {loading ? "Salvando..." : isEditing ? "Salvar alterações" : "Adicionar Produto"}
+          {loading
+            ? "Salvando..."
+            : isEditing
+              ? "Salvar alterações"
+              : "Adicionar Produto"}
         </button>
       </div>
     </form>

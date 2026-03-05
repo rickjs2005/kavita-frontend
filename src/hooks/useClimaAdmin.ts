@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ClimaFormState, ClimaItem, NewsOk } from "@/types/kavita-news";
-import { normalizeSlug, toNumberOrNull, parseIbgeId, parseStationCode } from "@/utils/kavita-news/clima";
+import {
+  normalizeSlug,
+  toNumberOrNull,
+  parseIbgeId,
+  parseStationCode,
+} from "@/utils/kavita-news/clima";
 
 type Params = {
   apiBase: string;
@@ -44,14 +49,20 @@ function mergeHeaders(a?: HeadersInit, b?: HeadersInit): HeadersInit {
 
 function isAbortError(e: any) {
   const msg = String(e?.message || e || "").toLowerCase();
-  return e?.name === "AbortError" || msg.includes("aborted") || msg.includes("abort");
+  return (
+    e?.name === "AbortError" || msg.includes("aborted") || msg.includes("abort")
+  );
 }
 
 function toUpperUF(v: string) {
   return (v || "").trim().toUpperCase();
 }
 
-export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) {
+export function useClimaAdmin({
+  apiBase,
+  authOptions,
+  onUnauthorized,
+}: Params) {
   const [rows, setRows] = useState<ClimaItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -85,7 +96,7 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
   const abortAllRef = useRef<AbortController | null>(null);
 
   const request = useCallback(
-    async <T,>(path: string, init?: RequestInit): Promise<T> => {
+    async <T>(path: string, init?: RequestInit): Promise<T> => {
       // controlador geral do hook (para abort no unmount)
       if (!abortAllRef.current) abortAllRef.current = new AbortController();
 
@@ -137,7 +148,10 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
       // padrão: { ok: true, data: ... }
       if (payload && typeof payload === "object" && "ok" in payload) {
         if (payload.ok === false) {
-          const msg = pickMessage(payload as ApiErrorShape, "Erro na operação.");
+          const msg = pickMessage(
+            payload as ApiErrorShape,
+            "Erro na operação.",
+          );
           throw new Error(msg);
         }
         return (payload as NewsOk<T>).data as T;
@@ -146,7 +160,7 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
       // tolerância: endpoint retornando direto
       return payload as T;
     },
-    [apiBase, authOptions, onUnauthorized]
+    [apiBase, authOptions, onUnauthorized],
   );
 
   const resetForm = useCallback(() => {
@@ -185,10 +199,18 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
       uf: item.uf || "",
       ibge_id: item.ibge_id == null ? "" : String(item.ibge_id),
       station_code: item.station_code ?? "",
-      station_lat: (item as any).station_lat == null ? ("" as any) : (String((item as any).station_lat) as any),
-      station_lon: (item as any).station_lon == null ? ("" as any) : (String((item as any).station_lon) as any),
+      station_lat:
+        (item as any).station_lat == null
+          ? ("" as any)
+          : (String((item as any).station_lat) as any),
+      station_lon:
+        (item as any).station_lon == null
+          ? ("" as any)
+          : (String((item as any).station_lon) as any),
       station_distance:
-        (item as any).station_distance == null ? ("" as any) : (String((item as any).station_distance) as any),
+        (item as any).station_distance == null
+          ? ("" as any)
+          : (String((item as any).station_distance) as any),
       mm_24h: item.mm_24h == null ? "" : String(item.mm_24h),
       mm_7d: item.mm_7d == null ? "" : String(item.mm_7d),
       source: item.source ?? "",
@@ -204,11 +226,14 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
       setLoading(true);
       setErrorMsg(null);
 
-      const data = await request<ClimaItem[]>("/api/admin/news/clima", { method: "GET" });
+      const data = await request<ClimaItem[]>("/api/admin/news/clima", {
+        method: "GET",
+      });
       setRows(Array.isArray(data) ? data : []);
     } catch (e: any) {
       if (isAbortError(e)) return;
-      if (String(e?.message) !== "UNAUTHORIZED") setErrorMsg(e?.message || "Erro ao listar clima.");
+      if (String(e?.message) !== "UNAUTHORIZED")
+        setErrorMsg(e?.message || "Erro ao listar clima.");
     } finally {
       setLoading(false);
     }
@@ -234,7 +259,8 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
       const slug = normalizeSlug(form.slug);
 
       if (!city_name) return setErrorMsg("Preencha o nome da cidade.");
-      if (!uf || uf.length !== 2) return setErrorMsg("UF inválida (use 2 letras).");
+      if (!uf || uf.length !== 2)
+        return setErrorMsg("UF inválida (use 2 letras).");
       if (!slug) return setErrorMsg("Slug inválido.");
 
       const ibge_id = parseIbgeId(form.ibge_id);
@@ -242,7 +268,9 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
       // station_code fica legado/optional (Open-Meteo não depende disso)
       const station_code =
         parseStationCode(form.station_code) ??
-        (form.station_code.trim() ? form.station_code.trim().toUpperCase() : null);
+        (form.station_code.trim()
+          ? form.station_code.trim().toUpperCase()
+          : null);
 
       // Open-Meteo: coordenadas
       const station_lat = toNumberOrNull((form as any).station_lat);
@@ -253,7 +281,9 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
       const latRaw = String((form as any).station_lat ?? "").trim();
       const lonRaw = String((form as any).station_lon ?? "").trim();
       if ((latRaw && !lonRaw) || (!latRaw && lonRaw)) {
-        return setErrorMsg("Preencha station_lat e station_lon (ambos) ou deixe ambos vazios para geocoding automático.");
+        return setErrorMsg(
+          "Preencha station_lat e station_lon (ambos) ou deixe ambos vazios para geocoding automático.",
+        );
       }
 
       const payload = {
@@ -268,12 +298,16 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
         mm_24h: toNumberOrNull(form.mm_24h),
         mm_7d: toNumberOrNull(form.mm_7d),
         source: form.source.trim() ? form.source.trim() : null,
-        last_update_at: form.last_update_at.trim() ? form.last_update_at.trim() : null,
+        last_update_at: form.last_update_at.trim()
+          ? form.last_update_at.trim()
+          : null,
         ativo: form.ativo ? 1 : 0,
       };
 
       const isEdit = mode === "edit" && editing?.id;
-      const path = isEdit ? `/api/admin/news/clima/${editing!.id}` : `/api/admin/news/clima`;
+      const path = isEdit
+        ? `/api/admin/news/clima/${editing!.id}`
+        : `/api/admin/news/clima`;
 
       await request<any>(path, {
         method: isEdit ? "PUT" : "POST",
@@ -285,7 +319,8 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
       startCreate();
     } catch (e: any) {
       if (isAbortError(e)) return;
-      if (String(e?.message) !== "UNAUTHORIZED") setErrorMsg(e?.message || "Erro ao salvar clima.");
+      if (String(e?.message) !== "UNAUTHORIZED")
+        setErrorMsg(e?.message || "Erro ao salvar clima.");
     } finally {
       setSaving(false);
     }
@@ -304,12 +339,13 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
         await load();
       } catch (e: any) {
         if (isAbortError(e)) return;
-        if (String(e?.message) !== "UNAUTHORIZED") setErrorMsg(e?.message || "Erro ao excluir clima.");
+        if (String(e?.message) !== "UNAUTHORIZED")
+          setErrorMsg(e?.message || "Erro ao excluir clima.");
       } finally {
         setDeletingId(null);
       }
     },
-    [load, request]
+    [load, request],
   );
 
   const sync = useCallback(
@@ -318,16 +354,19 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
         setSyncingId(id);
         setErrorMsg(null);
 
-        await request<ClimaItem>(`/api/admin/news/clima/${id}/sync`, { method: "POST" });
+        await request<ClimaItem>(`/api/admin/news/clima/${id}/sync`, {
+          method: "POST",
+        });
         await load();
       } catch (e: any) {
         if (isAbortError(e)) return;
-        if (String(e?.message) !== "UNAUTHORIZED") setErrorMsg(e?.message || "Erro ao sincronizar clima.");
+        if (String(e?.message) !== "UNAUTHORIZED")
+          setErrorMsg(e?.message || "Erro ao sincronizar clima.");
       } finally {
         setSyncingId(null);
       }
     },
-    [load, request]
+    [load, request],
   );
 
   /**
@@ -343,9 +382,9 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
 
         const data = await request<InmetStation[]>(
           `/api/admin/news/clima/stations?uf=${encodeURIComponent(UF)}&q=${encodeURIComponent(Q)}&limit=${encodeURIComponent(
-            String(limit)
+            String(limit),
           )}`,
-          { method: "GET" }
+          { method: "GET" },
         );
 
         return Array.isArray(data) ? data : [];
@@ -356,11 +395,13 @@ export function useClimaAdmin({ apiBase, authOptions, onUnauthorized }: Params) 
         return [];
       }
     },
-    [request]
+    [request],
   );
 
   const sorted = useMemo(() => {
-    return [...rows].sort((a, b) => a.city_name.localeCompare(b.city_name, "pt-BR"));
+    return [...rows].sort((a, b) =>
+      a.city_name.localeCompare(b.city_name, "pt-BR"),
+    );
   }, [rows]);
 
   return {

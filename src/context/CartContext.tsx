@@ -266,14 +266,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           after.push(() =>
             typeof stock === "number"
               ? toast.error(`Limite de estoque atingido (máx. ${stock}).`)
-              : toast.error("Quantidade máxima atingida.")
+              : toast.error("Quantidade máxima atingida."),
           );
           return prev;
         }
 
         after.push(() => toast.success("Quantidade atualizada no carrinho."));
         return prev.map((i) =>
-          i.id === product.id ? { ...found, quantity: clamped, _stock: stock } : i
+          i.id === product.id
+            ? { ...found, quantity: clamped, _stock: stock }
+            : i,
         );
       }
 
@@ -309,12 +311,13 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         .post(
           `${API_BASE}/api/cart/items`,
           { produto_id: product.id, quantidade: increment },
-          { withCredentials: true }
+          { withCredentials: true },
         )
         .catch((err) => {
           // Tratamento específico para STOCK_LIMIT (409)
           const status = err?.response?.status;
-          const code = err?.response?.data?.code || err?.response?.data?.error?.code;
+          const code =
+            err?.response?.data?.code || err?.response?.data?.error?.code;
 
           if (status === 409 && code === "STOCK_LIMIT") {
             toast.error("Limite de estoque atingido.");
@@ -348,12 +351,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       finalQty = clamped;
 
       if (clamped === 0) {
-        after.push(() => toast.error("Produto esgotado. Removemos do carrinho."));
+        after.push(() =>
+          toast.error("Produto esgotado. Removemos do carrinho."),
+        );
         return prev.filter((i) => i.id !== id);
       }
 
       if (clamped !== desired) {
-        after.push(() => toast.error(`Ajustamos para ${clamped} por limite de estoque.`));
+        after.push(() =>
+          toast.error(`Ajustamos para ${clamped} por limite de estoque.`),
+        );
       }
 
       return prev.map((i) => (i.id === id ? { ...i, quantity: clamped } : i));
@@ -366,18 +373,19 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           .catch((err) =>
             handleApiError(err, {
               fallbackMessage: "Erro ao remover item do carrinho no servidor.",
-            })
+            }),
           );
       } else {
         axios
           .patch(
             `${API_BASE}/api/cart/items`,
             { produto_id: id, quantidade: finalQty },
-            { withCredentials: true }
+            { withCredentials: true },
           )
           .catch((err) => {
             const status = err?.response?.status;
-            const code = err?.response?.data?.code || err?.response?.data?.error?.code;
+            const code =
+              err?.response?.data?.code || err?.response?.data?.error?.code;
 
             if (status === 409 && code === "STOCK_LIMIT") {
               toast.error("Limite de estoque atingido.");
@@ -404,7 +412,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         .catch((err) =>
           handleApiError(err, {
             fallbackMessage: "Erro ao remover item do carrinho no servidor.",
-          })
+          }),
         );
     }
 
@@ -414,25 +422,30 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const syncStock = (productId: number, newStock: number) => {
     const after: AfterFn[] = [];
 
-    setCartItems((prev) =>
-      prev
-        .map((it) => {
-          if (it.id !== productId) return it;
-          const stock = Math.max(0, toNum(newStock, 0));
-          const clamped = clampByStock({ ...it, _stock: stock }, it.quantity);
+    setCartItems(
+      (prev) =>
+        prev
+          .map((it) => {
+            if (it.id !== productId) return it;
+            const stock = Math.max(0, toNum(newStock, 0));
+            const clamped = clampByStock({ ...it, _stock: stock }, it.quantity);
 
-          if (stock === 0) {
-            after.push(() => toast.error("Um item esgotou e foi removido do carrinho."));
-            return null;
-          }
+            if (stock === 0) {
+              after.push(() =>
+                toast.error("Um item esgotou e foi removido do carrinho."),
+              );
+              return null;
+            }
 
-          if (clamped !== it.quantity) {
-            after.push(() => toast.error(`Estoque atualizado. Ajustamos para ${clamped}.`));
-          }
+            if (clamped !== it.quantity) {
+              after.push(() =>
+                toast.error(`Estoque atualizado. Ajustamos para ${clamped}.`),
+              );
+            }
 
-          return { ...it, _stock: stock, quantity: clamped };
-        })
-        .filter(Boolean) as CartItem[]
+            return { ...it, _stock: stock, quantity: clamped };
+          })
+          .filter(Boolean) as CartItem[],
     );
 
     after.forEach((fn) => fn());
@@ -456,7 +469,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         .catch((err) =>
           handleApiError(err, {
             fallbackMessage: "Erro ao limpar o carrinho no servidor.",
-          })
+          }),
         );
     }
 
@@ -467,9 +480,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     () =>
       cartItems.reduce(
         (sum, it) => sum + toNum(it.price, 0) * toNum(it.quantity, 1),
-        0
+        0,
       ),
-    [cartItems]
+    [cartItems],
   );
 
   const value: CartContextProps = {

@@ -16,14 +16,13 @@ export default function DronesTabs() {
   const [tab, setTab] = useState<TabId>("landing");
 
   const tabs = useMemo(
-    () =>
-      [
-        { id: "landing" as const, label: "Config Landing" },
-        { id: "modelos" as const, label: "Modelos" },
-        { id: "representantes" as const, label: "Representantes" },
-        { id: "comentarios" as const, label: "Comentários" },
-      ],
-    []
+    () => [
+      { id: "landing" as const, label: "Config Landing" },
+      { id: "modelos" as const, label: "Modelos" },
+      { id: "representantes" as const, label: "Representantes" },
+      { id: "comentarios" as const, label: "Comentários" },
+    ],
+    [],
   );
 
   return (
@@ -42,7 +41,7 @@ export default function DronesTabs() {
                 "focus:outline-none focus:ring-2 focus:ring-white/10",
                 active
                   ? "border-emerald-400 bg-emerald-500 text-black"
-                  : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                  : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10",
               )}
             >
               {t.label}

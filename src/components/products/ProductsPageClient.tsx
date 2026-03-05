@@ -13,7 +13,9 @@ export default function ProductsPageClient() {
   const content = useMemo(() => {
     if (loading) {
       return (
-        <p className="text-gray-500 col-span-full text-center">Carregando produtos...</p>
+        <p className="text-gray-500 col-span-full text-center">
+          Carregando produtos...
+        </p>
       );
     }
 
@@ -33,7 +35,9 @@ export default function ProductsPageClient() {
       );
     }
 
-    return products.map(product => <ProductCard key={product.id} product={product} />);
+    return products.map((product) => (
+      <ProductCard key={product.id} product={product} />
+    ));
   }, [error, loading, products]);
 
   return (

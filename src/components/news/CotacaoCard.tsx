@@ -42,13 +42,16 @@ function formatDatePtBR(value?: string | null) {
  * Preferencialmente no título do ativo.
  */
 function getMarketEmoji(item: PublicCotacao): string {
-  const hay = `${item.slug ?? ""} ${item.name ?? ""} ${item.group_key ?? ""} ${item.market ?? ""} ${item.type ?? ""}`.toLowerCase();
+  const hay =
+    `${item.slug ?? ""} ${item.name ?? ""} ${item.group_key ?? ""} ${item.market ?? ""} ${item.type ?? ""}`.toLowerCase();
 
   if (hay.includes("cafe") || hay.includes("café")) return "☕";
   if (hay.includes("milho")) return "🌽";
   if (hay.includes("soja")) return "🫘";
-  if (hay.includes("boi") || hay.includes("arroba") || hay.includes("gordo")) return "🐂";
-  if (hay.includes("dolar") || hay.includes("dólar") || hay.includes("usd")) return "💵";
+  if (hay.includes("boi") || hay.includes("arroba") || hay.includes("gordo"))
+    return "🐂";
+  if (hay.includes("dolar") || hay.includes("dólar") || hay.includes("usd"))
+    return "💵";
 
   return "🏷";
 }
@@ -90,13 +93,18 @@ export function CotacaoCard({ item }: { item: PublicCotacao }) {
           </p>
 
           <p className="mt-1 text-xs text-zinc-500">
-            {item.group_key ? item.group_key : "Mercado"} • {item.type ?? "Tipo -"}
+            {item.group_key ? item.group_key : "Mercado"} •{" "}
+            {item.type ?? "Tipo -"}
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${variationTone}`}>
+            <span
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${variationTone}`}
+            >
               <span className="sr-only">Variação do dia</span>
-              {variationEmoji ? <span aria-hidden>{variationEmoji}</span> : null}
+              {variationEmoji ? (
+                <span aria-hidden>{variationEmoji}</span>
+              ) : null}
               Dia: {varLabel}
             </span>
 
@@ -109,11 +117,15 @@ export function CotacaoCard({ item }: { item: PublicCotacao }) {
 
         <div className="shrink-0 text-right">
           {/* Preço = elemento mais forte */}
-          <p className="text-[11px] uppercase tracking-wide text-zinc-500">Preço</p>
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+            Preço
+          </p>
           <p className="mt-0.5 text-2xl font-bold tracking-tight text-zinc-900">
             {formatPrice(item.price)}
           </p>
-          <p className="mt-0.5 text-sm font-medium text-zinc-600">{item.unit ?? ""}</p>
+          <p className="mt-0.5 text-sm font-medium text-zinc-600">
+            {item.unit ?? ""}
+          </p>
         </div>
       </div>
 
@@ -130,7 +142,10 @@ export function CotacaoCard({ item }: { item: PublicCotacao }) {
 
         <span className="inline-flex items-center gap-2 font-medium text-emerald-700">
           Ver detalhes
-          <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>
+          <span
+            className="transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          >
             →
           </span>
         </span>
@@ -138,7 +153,9 @@ export function CotacaoCard({ item }: { item: PublicCotacao }) {
 
       {/* Leitura rápida extra em mobile (sem “poluir” o topo) */}
       {isFlat ? (
-        <p className="mt-3 text-xs text-zinc-500">Sem variação relevante no dia.</p>
+        <p className="mt-3 text-xs text-zinc-500">
+          Sem variação relevante no dia.
+        </p>
       ) : null}
     </Link>
   );

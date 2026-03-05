@@ -93,9 +93,14 @@ export default function CotacoesTable({
       <header className="px-5 py-4 border-b bg-gradient-to-r from-slate-50 to-white">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h4 className="text-base font-semibold text-slate-900">Cotações cadastradas</h4>
+            <h4 className="text-base font-semibold text-slate-900">
+              Cotações cadastradas
+            </h4>
             <p className="text-sm text-slate-500">
-              Total: <span className="font-semibold text-slate-800">{filtered.length}</span>{" "}
+              Total:{" "}
+              <span className="font-semibold text-slate-800">
+                {filtered.length}
+              </span>{" "}
               <span className="text-slate-400">/ {rows.length}</span>
             </p>
           </div>
@@ -165,7 +170,9 @@ export default function CotacoesTable({
         {loading && filtered.length === 0 ? (
           <div className="text-sm text-slate-500">Carregando...</div>
         ) : filtered.length === 0 ? (
-          <div className="text-sm text-slate-500">Nenhuma cotação encontrada.</div>
+          <div className="text-sm text-slate-500">
+            Nenhuma cotação encontrada.
+          </div>
         ) : (
           filtered.map((r: any) => {
             const ativo = Number(r.ativo ?? 1) === 1;
@@ -174,15 +181,26 @@ export default function CotacoesTable({
             const sk = syncKind(r);
 
             return (
-              <div key={r.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div
+                key={r.id}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 truncate">{r.name}</p>
+                    <p className="font-semibold text-slate-900 truncate">
+                      {r.name}
+                    </p>
                     <p className="text-xs text-slate-500">
                       {r.type} • {r.slug}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500 truncate" title={r.source || ""}>
-                      Fonte: <span className="font-medium text-slate-700">{r.source ?? "—"}</span>
+                    <p
+                      className="mt-1 text-xs text-slate-500 truncate"
+                      title={r.source || ""}
+                    >
+                      Fonte:{" "}
+                      <span className="font-medium text-slate-700">
+                        {r.source ?? "—"}
+                      </span>
                     </p>
                   </div>
 
@@ -194,17 +212,25 @@ export default function CotacoesTable({
                           : "bg-slate-50 text-slate-600 border-slate-200"
                       }`}
                     >
-                      <span className={`h-2 w-2 rounded-full ${ativo ? "bg-emerald-500" : "bg-slate-400"}`} />
+                      <span
+                        className={`h-2 w-2 rounded-full ${ativo ? "bg-emerald-500" : "bg-slate-400"}`}
+                      />
                       {ativo ? "Ativo" : "Inativo"}
                     </span>
 
                     <span
-                      title={r.last_sync_status === "error" ? (r.last_sync_message || "Erro ao sincronizar") : "Status do Sync"}
+                      title={
+                        r.last_sync_status === "error"
+                          ? r.last_sync_message || "Erro ao sincronizar"
+                          : "Status do Sync"
+                      }
                       className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border ${badgeClass(
-                        sk
+                        sk,
                       )}`}
                     >
-                      <span className={`h-2 w-2 rounded-full ${dotClass(sk)}`} />
+                      <span
+                        className={`h-2 w-2 rounded-full ${dotClass(sk)}`}
+                      />
                       Sync: {syncLabel(r)}
                     </span>
                   </div>
@@ -219,11 +245,15 @@ export default function CotacoesTable({
                   </div>
                   <div className="rounded-xl bg-slate-50 p-2">
                     <p className="text-slate-500">Variação</p>
-                    <p className="font-medium text-slate-900">{fmtNum(r.variation_day, 4)}</p>
+                    <p className="font-medium text-slate-900">
+                      {fmtNum(r.variation_day, 4)}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-slate-50 p-2 col-span-2">
                     <p className="text-slate-500">Atualizado</p>
-                    <p className="font-medium text-slate-900">{formatDateTimeBR(r.last_update_at ?? null)}</p>
+                    <p className="font-medium text-slate-900">
+                      {formatDateTimeBR(r.last_update_at ?? null)}
+                    </p>
                   </div>
                 </div>
 
@@ -275,12 +305,20 @@ export default function CotacoesTable({
               <th className="px-5 py-3 font-semibold text-slate-700">Tipo</th>
               <th className="px-5 py-3 font-semibold text-slate-700">Slug</th>
               <th className="px-5 py-3 font-semibold text-slate-700">Preço</th>
-              <th className="px-5 py-3 font-semibold text-slate-700">Unidade</th>
-              <th className="px-5 py-3 font-semibold text-slate-700">Variação</th>
+              <th className="px-5 py-3 font-semibold text-slate-700">
+                Unidade
+              </th>
+              <th className="px-5 py-3 font-semibold text-slate-700">
+                Variação
+              </th>
               <th className="px-5 py-3 font-semibold text-slate-700">Fonte</th>
-              <th className="px-5 py-3 font-semibold text-slate-700">Atualizado</th>
+              <th className="px-5 py-3 font-semibold text-slate-700">
+                Atualizado
+              </th>
               <th className="px-5 py-3 font-semibold text-slate-700">Sync</th>
-              <th className="px-5 py-3 font-semibold text-slate-700 text-right">Ações</th>
+              <th className="px-5 py-3 font-semibold text-slate-700 text-right">
+                Ações
+              </th>
             </tr>
           </thead>
 
@@ -308,30 +346,45 @@ export default function CotacoesTable({
                   r.last_sync_status === "error"
                     ? r.last_sync_message || "Erro ao sincronizar"
                     : r.last_sync_status === "ok"
-                    ? "Sincronizado com sucesso"
-                    : "Sem sincronização recente";
+                      ? "Sincronizado com sucesso"
+                      : "Sem sincronização recente";
 
                 return (
                   <tr key={r.id} className="hover:bg-slate-50/70 transition">
-                    <td className="px-5 py-3 font-semibold text-slate-900">{r.name}</td>
+                    <td className="px-5 py-3 font-semibold text-slate-900">
+                      {r.name}
+                    </td>
                     <td className="px-5 py-3 text-slate-700">{r.type}</td>
                     <td className="px-5 py-3 text-slate-700">{r.slug}</td>
-                    <td className="px-5 py-3 text-slate-700">{fmtNum(r.price, 4)}</td>
-                    <td className="px-5 py-3 text-slate-700">{r.unit ?? "—"}</td>
-                    <td className="px-5 py-3 text-slate-700">{fmtNum(r.variation_day, 4)}</td>
-                    <td className="px-5 py-3 text-slate-700" title={r.source || ""}>
+                    <td className="px-5 py-3 text-slate-700">
+                      {fmtNum(r.price, 4)}
+                    </td>
+                    <td className="px-5 py-3 text-slate-700">
+                      {r.unit ?? "—"}
+                    </td>
+                    <td className="px-5 py-3 text-slate-700">
+                      {fmtNum(r.variation_day, 4)}
+                    </td>
+                    <td
+                      className="px-5 py-3 text-slate-700"
+                      title={r.source || ""}
+                    >
                       {r.source ?? "—"}
                     </td>
-                    <td className="px-5 py-3 text-slate-700">{formatDateTimeBR(r.last_update_at ?? null)}</td>
+                    <td className="px-5 py-3 text-slate-700">
+                      {formatDateTimeBR(r.last_update_at ?? null)}
+                    </td>
 
                     <td className="px-5 py-3">
                       <span
                         title={syncTitle}
                         className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border ${badgeClass(
-                          sk
+                          sk,
                         )}`}
                       >
-                        <span className={`h-2 w-2 rounded-full ${dotClass(sk)}`} />
+                        <span
+                          className={`h-2 w-2 rounded-full ${dotClass(sk)}`}
+                        />
                         {syncLabel(r)}
                       </span>
                     </td>
@@ -344,7 +397,9 @@ export default function CotacoesTable({
                             onClick={() => onSync(r.id)}
                             disabled={disabledRowActions || isSyncing || !ativo}
                             className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-60"
-                            title={!ativo ? "Cotação inativa" : "Sincronizar agora"}
+                            title={
+                              !ativo ? "Cotação inativa" : "Sincronizar agora"
+                            }
                           >
                             {isSyncing ? "Sincronizando..." : "Sync"}
                           </button>

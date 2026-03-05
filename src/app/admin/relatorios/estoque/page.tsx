@@ -8,7 +8,6 @@ import CloseButton from "@/components/buttons/CloseButton";
 import CustomButton from "@/components/buttons/CustomButton";
 import { formatCurrency } from "@/utils/formatters";
 
-
 interface ProdutoEstoque {
   id: number;
   name: string;
@@ -36,7 +35,7 @@ export default function RelatorioEstoquePage() {
         setError(null);
 
         const res = await apiClient.get<ProdutoEstoque[]>(
-          '/api/admin/relatorios/estoque'
+          "/api/admin/relatorios/estoque",
         );
 
         setRows(res ?? []);
@@ -44,11 +43,10 @@ export default function RelatorioEstoquePage() {
         console.error(err);
 
         let msg = "Não foi possível carregar o relatório de estoque.";
-          if (err?.status === 401 || err?.status === 403) {
-            msg =
-              "Sessão expirada ou sem permissão. Faça login novamente no admin.";
-          }
-        
+        if (err?.status === 401 || err?.status === 403) {
+          msg =
+            "Sessão expirada ou sem permissão. Faça login novamente no admin.";
+        }
 
         setError(msg);
         toast.error(msg);
@@ -70,7 +68,7 @@ export default function RelatorioEstoquePage() {
 
   const totalValorEstoque = useMemo(
     () => rows.reduce((acc, p) => acc + getTotalProduto(p), 0),
-    [rows]
+    [rows],
   );
 
   const hasData = !loading && !error && rows.length > 0;
@@ -109,7 +107,7 @@ export default function RelatorioEstoquePage() {
 
   const visibleValorEstoque = useMemo(
     () => filteredRows.reduce((acc, p) => acc + getTotalProduto(p), 0),
-    [filteredRows]
+    [filteredRows],
   );
 
   const resetFilters = () => {
@@ -239,8 +237,8 @@ export default function RelatorioEstoquePage() {
             <div className="max-w-md rounded-2xl border border-dashed border-slate-600 bg-slate-950/50 px-5 py-6 text-center text-sm text-slate-300">
               Nenhum produto cadastrado no momento.
               <p className="mt-2 text-[11px] text-slate-400">
-                Assim que houver produtos com estoque registrado, eles aparecerão
-                aqui.
+                Assim que houver produtos com estoque registrado, eles
+                aparecerão aqui.
               </p>
             </div>
           </section>
@@ -265,9 +263,7 @@ export default function RelatorioEstoquePage() {
               </div>
 
               <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-                <p className="text-xs text-slate-400">
-                  Valor total em estoque
-                </p>
+                <p className="text-xs text-slate-400">Valor total em estoque</p>
                 <p className="mt-1 text-2xl font-bold text-teal-300">
                   {formatCurrency(totalValorEstoque)}
                 </p>
@@ -371,9 +367,7 @@ export default function RelatorioEstoquePage() {
                           setLimit(
                             e.target.value === "all"
                               ? "all"
-                              : (Number(
-                                  e.target.value
-                                ) as LimitOption)
+                              : (Number(e.target.value) as LimitOption),
                           )
                         }
                         className="
@@ -429,9 +423,7 @@ export default function RelatorioEstoquePage() {
                       <table className="min-w-full text-left text-sm text-slate-200">
                         <thead>
                           <tr className="border-b border-slate-800 bg-slate-900/80">
-                            <th className="px-4 py-3 font-semibold">
-                              Produto
-                            </th>
+                            <th className="px-4 py-3 font-semibold">Produto</th>
                             <th className="px-4 py-3 font-semibold">Risco</th>
                             <th className="px-4 py-3 text-right font-semibold">
                               Quantidade
@@ -534,9 +526,7 @@ export default function RelatorioEstoquePage() {
 
                           <div className="mt-2 flex items-center justify-between">
                             <span className="text-slate-400">Qtd:</span>
-                            <span className="font-semibold">
-                              {p.quantity}
-                            </span>
+                            <span className="font-semibold">{p.quantity}</span>
                           </div>
 
                           <div className="mt-1 flex items-center justify-between border-t border-slate-800 pt-2">

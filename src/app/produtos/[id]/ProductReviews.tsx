@@ -40,7 +40,7 @@ export default function ProductReviews({
             // ✅ ESSENCIAL p/ cookie HttpOnly ir junto
             credentials: "include",
             cache: "no-store",
-          }
+          },
         );
 
         if (!res.ok) {
@@ -49,7 +49,9 @@ export default function ProductReviews({
         }
 
         const data = await res.json();
-        setReviews(Array.isArray(data) ? (data as ProductReviewWithUser[]) : []);
+        setReviews(
+          Array.isArray(data) ? (data as ProductReviewWithUser[]) : [],
+        );
       } catch (err) {
         console.error("Erro ao carregar avaliações:", err);
       } finally {
@@ -109,7 +111,7 @@ export default function ProductReviews({
         {
           credentials: "include",
           cache: "no-store",
-        }
+        },
       );
 
       const data = await resList.json();
@@ -127,14 +129,14 @@ export default function ProductReviews({
     ratingAvg && ratingAvg > 0
       ? Number(ratingAvg)
       : reviews.length
-      ? reviews.reduce((acc, r) => acc + Number(r.nota || 0), 0) /
-        reviews.length
-      : 0;
+        ? reviews.reduce((acc, r) => acc + Number(r.nota || 0), 0) /
+          reviews.length
+        : 0;
 
   const totalAval = ratingCount ?? reviews.length;
 
   const totalComentarios = reviews.filter(
-    (r) => r.comentario && r.comentario.trim() !== ""
+    (r) => r.comentario && r.comentario.trim() !== "",
   ).length;
 
   // distribuição 5★ → 1★
@@ -149,7 +151,7 @@ export default function ProductReviews({
       <div className="rounded-2xl border border-gray-200 bg-white/90 p-4 sm:p-6 space-y-6">
         {/* ===== RESUMO GERAL ===== */}
         <div className="grid gap-6 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] items-center">
-          {/* Esquerda: nota grande + contadores */ }
+          {/* Esquerda: nota grande + contadores */}
           <div className="flex flex-col items-start md:items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
               Avaliações dos clientes
@@ -166,8 +168,8 @@ export default function ProductReviews({
                       {media >= i + 1
                         ? "★"
                         : media > i && media < i + 1
-                        ? "★"
-                        : "☆"}
+                          ? "★"
+                          : "☆"}
                     </span>
                   ))}
                 </div>
@@ -184,7 +186,7 @@ export default function ProductReviews({
             </p>
           </div>
 
-          {/* Direita: barras 5★ → 1★ */ }
+          {/* Direita: barras 5★ → 1★ */}
           <div className="space-y-2">
             {dist.map(({ star, count, percent }) => (
               <div
@@ -207,7 +209,7 @@ export default function ProductReviews({
           </div>
         </div>
 
-        {/* Filtros visuais simples */ }
+        {/* Filtros visuais simples */}
         <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3 text-xs sm:text-sm">
           <span className="text-gray-600 font-medium">Filtrar:</span>
           <button className="rounded-full border border-emerald-500/60 bg-emerald-50 px-3 py-1 text-emerald-700 text-xs font-medium">
@@ -218,9 +220,9 @@ export default function ProductReviews({
           </button>
         </div>
 
-        {/* Form + lista */ }
+        {/* Form + lista */}
         <div className="mt-2 grid gap-4 border-t border-gray-100 pt-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-          {/* Formulário */ }
+          {/* Formulário */}
           <div className="space-y-2">
             <p className="text-xs font-medium text-gray-700">
               Deixe sua avaliação:
@@ -260,7 +262,7 @@ export default function ProductReviews({
             </p>
           </div>
 
-          {/* Lista de avaliações */ }
+          {/* Lista de avaliações */}
           <div className="space-y-3">
             {loadingReviews ? (
               <p className="text-sm text-gray-500">Carregando avaliações...</p>
@@ -285,7 +287,8 @@ export default function ProductReviews({
                     </div>
 
                     {/* ✅ Nome do usuário (vindo do backend como usuario_nome) */}
-                    {"usuario_nome" in rev && (rev as ProductReviewWithUser).usuario_nome ? (
+                    {"usuario_nome" in rev &&
+                    (rev as ProductReviewWithUser).usuario_nome ? (
                       <p className="text-xs font-medium text-gray-700">
                         {(rev as ProductReviewWithUser).usuario_nome}
                       </p>

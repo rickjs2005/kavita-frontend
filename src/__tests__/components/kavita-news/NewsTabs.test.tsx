@@ -4,7 +4,9 @@ import userEvent from "@testing-library/user-event";
 
 // Ajuste o import se o seu caminho real for diferente.
 // Recomendado: manter o componente em src/components/news/NewsTabs.tsx
-import NewsTabs, { type NewsTabKey } from "@/components/admin/kavita-news/NewsTabs";
+import NewsTabs, {
+  type NewsTabKey,
+} from "@/components/admin/kavita-news/NewsTabs";
 
 describe("NewsTabs", () => {
   it("renderiza título, subtítulo e instrução", () => {
@@ -15,7 +17,7 @@ describe("NewsTabs", () => {
     expect(screen.getByText("Kavita News")).toBeInTheDocument();
     expect(screen.getByText("Gestão de conteúdo")).toBeInTheDocument();
     expect(
-      screen.getByText("Use as abas para alternar entre os módulos.")
+      screen.getByText("Use as abas para alternar entre os módulos."),
     ).toBeInTheDocument();
 
     expect(onChange).not.toHaveBeenCalled();
@@ -74,7 +76,10 @@ describe("NewsTabs", () => {
     await user.click(posts);
 
     expect(onChange).toHaveBeenCalledTimes(2);
-    expect(onChange).toHaveBeenNthCalledWith(1, "cotacoes" satisfies NewsTabKey);
+    expect(onChange).toHaveBeenNthCalledWith(
+      1,
+      "cotacoes" satisfies NewsTabKey,
+    );
     expect(onChange).toHaveBeenNthCalledWith(2, "posts" satisfies NewsTabKey);
   });
 

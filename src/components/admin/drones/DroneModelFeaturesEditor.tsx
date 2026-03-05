@@ -57,17 +57,24 @@ function ToastView({ toast }: { toast: Toast }) {
     toast.type === "success"
       ? "border-emerald-200/20 bg-emerald-500/10 text-emerald-100"
       : toast.type === "error"
-      ? "border-amber-200/20 bg-amber-500/10 text-amber-100"
-      : "border-white/10 bg-white/5 text-white/80";
+        ? "border-amber-200/20 bg-amber-500/10 text-amber-100"
+        : "border-white/10 bg-white/5 text-white/80";
 
-  return <div className={cx("rounded-2xl border px-4 py-3 text-sm", cls)}>{toast.text}</div>;
+  return (
+    <div className={cx("rounded-2xl border px-4 py-3 text-sm", cls)}>
+      {toast.text}
+    </div>
+  );
 }
 
 type Props = {
   modelKey: string;
   initialTitle?: string | null;
   initialItems?: TextItem[] | null;
-  onSaved?: (payload: { features_title: string | null; features_items_json: TextItem[] }) => void;
+  onSaved?: (payload: {
+    features_title: string | null;
+    features_items_json: TextItem[];
+  }) => void;
 };
 
 export default function DroneModelFeaturesEditor({
@@ -79,7 +86,9 @@ export default function DroneModelFeaturesEditor({
   const [toast, setToast] = useState<Toast>(null);
   const [saving, setSaving] = useState(false);
 
-  const [title, setTitle] = useState<string>(initialTitle?.trim() || "Funcionalidades");
+  const [title, setTitle] = useState<string>(
+    initialTitle?.trim() || "Funcionalidades",
+  );
   const [items, setItems] = useState<TextItem[]>(normalizeItems(initialItems));
 
   useEffect(() => {
@@ -99,7 +108,9 @@ export default function DroneModelFeaturesEditor({
   }
 
   function updateItem(idx: number, patch: Partial<TextItem>) {
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+    setItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)),
+    );
   }
 
   function sanitizePayload() {
@@ -110,7 +121,9 @@ export default function DroneModelFeaturesEditor({
         title: (it.title || "").trim() || undefined,
         text: (it.text || "").trim() || undefined,
       }))
-      .filter((it) => (it.title && it.title.trim()) || (it.text && it.text.trim()));
+      .filter(
+        (it) => (it.title && it.title.trim()) || (it.text && it.text.trim()),
+      );
 
     return { features_title: cleanTitle, features_items_json: cleanItems };
   }
@@ -124,12 +137,15 @@ export default function DroneModelFeaturesEditor({
     try {
       const payload = sanitizePayload();
 
-      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `${API_BASE}/api/admin/drones/models/${modelKey}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
       if (isAuthError(res)) return redirectToLogin();
 
@@ -138,7 +154,10 @@ export default function DroneModelFeaturesEditor({
         throw new Error(data?.message || "Erro ao salvar funcionalidades.");
       }
 
-      setToast({ type: "success", text: "Funcionalidades salvas com sucesso." });
+      setToast({
+        type: "success",
+        text: "Funcionalidades salvas com sucesso.",
+      });
       onSaved?.(payload);
     } catch (e: any) {
       setToast({ type: "error", text: e?.message || "Falha ao salvar." });
@@ -174,7 +193,7 @@ export default function DroneModelFeaturesEditor({
               "rounded-xl px-4 py-2 text-sm font-medium text-white transition active:scale-[0.99]",
               saving || !canSave
                 ? "bg-white/10 text-white/50"
-                : "bg-emerald-500 hover:bg-emerald-400"
+                : "bg-emerald-500 hover:bg-emerald-400",
             )}
           >
             {saving ? "Salvando..." : "Salvar"}
@@ -185,7 +204,9 @@ export default function DroneModelFeaturesEditor({
       <ToastView toast={toast} />
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-white/60">Título da seção</label>
+        <label className="text-xs font-medium text-white/60">
+          Título da seção
+        </label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -221,7 +242,9 @@ export default function DroneModelFeaturesEditor({
 
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-white/60">Título (opcional)</label>
+                  <label className="text-xs font-medium text-white/60">
+                    Título (opcional)
+                  </label>
                   <input
                     value={it.title || ""}
                     onChange={(e) => updateItem(idx, { title: e.target.value })}
@@ -231,7 +254,9 @@ export default function DroneModelFeaturesEditor({
                 </div>
 
                 <div className="space-y-1 lg:col-span-2">
-                  <label className="text-xs font-medium text-white/60">Descrição</label>
+                  <label className="text-xs font-medium text-white/60">
+                    Descrição
+                  </label>
                   <textarea
                     value={it.text || ""}
                     onChange={(e) => updateItem(idx, { text: e.target.value })}

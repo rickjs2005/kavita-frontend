@@ -193,9 +193,7 @@ export default function ServicosSection() {
 
             {/* ERRO */}
             {!loading && errorMsg && (
-              <div className="py-6 text-sm text-red-600">
-                {errorMsg}
-              </div>
+              <div className="py-6 text-sm text-red-600">{errorMsg}</div>
             )}
 
             {/* SEM RESULTADOS */}

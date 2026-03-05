@@ -15,11 +15,7 @@ describe("KpiCard", () => {
   it("renderiza helper quando fornecido (positivo)", () => {
     // Arrange
     render(
-      <KpiCard
-        label="Faturamento"
-        value="R$ 2.500"
-        helper="Últimos 30 dias"
-      />
+      <KpiCard label="Faturamento" value="R$ 2.500" helper="Últimos 30 dias" />,
     );
 
     // Assert
@@ -31,9 +27,7 @@ describe("KpiCard", () => {
     render(<KpiCard label="Usuários" value={42} />);
 
     // Assert
-    expect(
-      screen.queryByText(/últimos/i)
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/últimos/i)).not.toBeInTheDocument();
   });
 
   it("renderiza ícone quando icon é passado (positivo)", () => {
@@ -43,7 +37,7 @@ describe("KpiCard", () => {
         label="Alertas"
         value={3}
         icon={<span data-testid="kpi-icon">⚠️</span>}
-      />
+      />,
     );
 
     // Assert
@@ -52,9 +46,7 @@ describe("KpiCard", () => {
 
   it("não renderiza container de ícone quando icon não é passado (negativo)", () => {
     // Arrange
-    const { container } = render(
-      <KpiCard label="Produtos" value={10} />
-    );
+    const { container } = render(<KpiCard label="Produtos" value={10} />);
 
     // Assert
     // Não deve existir nenhum badge de ícone
@@ -63,9 +55,7 @@ describe("KpiCard", () => {
 
   it("aplica estilos da variante default por padrão (positivo/controle)", () => {
     // Arrange
-    const { container } = render(
-      <KpiCard label="Pedidos" value={99} />
-    );
+    const { container } = render(<KpiCard label="Pedidos" value={99} />);
 
     // Assert
     const root = container.firstElementChild;
@@ -76,11 +66,7 @@ describe("KpiCard", () => {
   it("aplica estilos da variante success corretamente (positivo)", () => {
     // Arrange
     const { container } = render(
-      <KpiCard
-        label="Pedidos Concluídos"
-        value={80}
-        variant="success"
-      />
+      <KpiCard label="Pedidos Concluídos" value={80} variant="success" />,
     );
 
     // Assert
@@ -92,11 +78,7 @@ describe("KpiCard", () => {
   it("aplica estilos da variante warning corretamente (positivo)", () => {
     // Arrange
     const { container } = render(
-      <KpiCard
-        label="Pedidos Pendentes"
-        value={12}
-        variant="warning"
-      />
+      <KpiCard label="Pedidos Pendentes" value={12} variant="warning" />,
     );
 
     // Assert
@@ -108,11 +90,7 @@ describe("KpiCard", () => {
   it("aplica estilos da variante danger corretamente (positivo)", () => {
     // Arrange
     const { container } = render(
-      <KpiCard
-        label="Pedidos Cancelados"
-        value={4}
-        variant="danger"
-      />
+      <KpiCard label="Pedidos Cancelados" value={4} variant="danger" />,
     );
 
     // Assert
@@ -124,11 +102,7 @@ describe("KpiCard", () => {
   it("aplica className customizado junto aos estilos base (positivo)", () => {
     // Arrange
     const { container } = render(
-      <KpiCard
-        label="Clientes"
-        value={150}
-        className="custom-class"
-      />
+      <KpiCard label="Clientes" value={150} className="custom-class" />,
     );
 
     // Assert

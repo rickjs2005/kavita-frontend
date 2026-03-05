@@ -182,7 +182,9 @@ describe("CartContext (CartProvider/useCart)", () => {
       useCart();
       return null;
     }
-    expect(() => render(<Bad />)).toThrow(/useCart deve ser usado dentro de CartProvider/i);
+    expect(() => render(<Bad />)).toThrow(
+      /useCart deve ser usado dentro de CartProvider/i,
+    );
   });
 
   it("visitante: addToCart adiciona item (estado) e NÃO chama API", async () => {
@@ -191,14 +193,16 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
     expect(screen.getByTestId("count").textContent).toBe("0");
 
     await user.click(screen.getByRole("button", { name: "add1" }));
 
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
     expect(screen.getByTestId("qty").textContent).toBe("1");
     expect(screen.getByTestId("stock").textContent).toBe("3");
 
@@ -214,7 +218,12 @@ describe("CartContext (CartProvider/useCart)", () => {
     function ConsumerStock0() {
       const { addToCart, cartItems } = useCart();
       const [r, setR] = useState<any>(null);
-      const product0 = { id: 77, name: "Produto Zero", price: 10, quantity: 0 } as any;
+      const product0 = {
+        id: 77,
+        name: "Produto Zero",
+        price: 10,
+        quantity: 0,
+      } as any;
 
       return (
         <div>
@@ -235,13 +244,15 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <ConsumerStock0 />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await user.click(screen.getByRole("button", { name: "add" }));
 
     // O estado é o que importa e é garantido
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("0"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("0"),
+    );
 
     // O retorno {ok:false,...} NÃO é estável no padrão atual do código (React 19).
     // Então não testamos "OUT_OF_STOCK" via return; testamos via estado.
@@ -253,16 +264,20 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await user.click(screen.getByRole("button", { name: "add1" }));
-    await waitFor(() => expect(screen.getByTestId("qty").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(screen.getByTestId("qty").textContent).toBe("1"),
+    );
 
     await user.click(screen.getByRole("button", { name: "add10" }));
 
     // clamp para 3 (stock)
-    await waitFor(() => expect(screen.getByTestId("qty").textContent).toBe("3"));
+    await waitFor(() =>
+      expect(screen.getByTestId("qty").textContent).toBe("3"),
+    );
   });
 
   it("efeito: fecha automaticamente quando carrinho fica vazio (abrindo manualmente antes)", async () => {
@@ -271,19 +286,25 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await user.click(screen.getByRole("button", { name: "add1" }));
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
 
     await user.click(screen.getByRole("button", { name: "open" }));
     expect(screen.getByTestId("open").textContent).toBe("open");
 
     await user.click(screen.getByRole("button", { name: "remove" }));
 
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("0"));
-    await waitFor(() => expect(screen.getByTestId("open").textContent).toBe("closed"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("0"),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("open").textContent).toBe("closed"),
+    );
   });
 
   it("pathname /admin: não chama API e carrega do localStorage (logado)", async () => {
@@ -297,18 +318,22 @@ describe("CartContext (CartProvider/useCart)", () => {
     // user => cartItems_<id>
     localStorage.setItem(
       "cartItems_1",
-      JSON.stringify([{ id: 10, name: "X", price: 2, quantity: 2, image: null, _stock: 5 }])
+      JSON.stringify([
+        { id: 10, name: "X", price: 2, quantity: 2, image: null, _stock: 5 },
+      ]),
     );
 
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
     expect(hoisted.axios.get).not.toHaveBeenCalled();
 
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
     expect(screen.getByTestId("qty").textContent).toBe("2");
     expect(screen.getByTestId("stock").textContent).toBe("5");
   });
@@ -338,11 +363,13 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await waitFor(() => expect(hoisted.axios.get).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
 
     expect(screen.getByTestId("qty").textContent).toBe("1");
     expect(screen.getByTestId("stock").textContent).toBe("3");
@@ -361,7 +388,16 @@ describe("CartContext (CartProvider/useCart)", () => {
 
     localStorage.setItem(
       "cartItems_5",
-      JSON.stringify([{ id: 10, name: "Cache", price: 1, quantity: 2, image: null, _stock: 9 }])
+      JSON.stringify([
+        {
+          id: 10,
+          name: "Cache",
+          price: 1,
+          quantity: 2,
+          image: null,
+          _stock: 9,
+        },
+      ]),
     );
 
     hoisted.axios.get.mockRejectedValueOnce(new Error("boom"));
@@ -369,11 +405,15 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
-    await waitFor(() => expect(hoisted.handleApiError).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(hoisted.handleApiError).toHaveBeenCalledTimes(1),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
     expect(screen.getByTestId("qty").textContent).toBe("2");
     expect(screen.getByTestId("stock").textContent).toBe("9");
   });
@@ -392,7 +432,15 @@ describe("CartContext (CartProvider/useCart)", () => {
 
     hoisted.axios.get.mockResolvedValueOnce({
       data: {
-        items: [{ produto_id: 10, nome: "Servidor", valor_unitario: 12.5, quantidade: 3, stock: 3 }],
+        items: [
+          {
+            produto_id: 10,
+            nome: "Servidor",
+            valor_unitario: 12.5,
+            quantidade: 3,
+            stock: 3,
+          },
+        ],
       },
     });
 
@@ -402,7 +450,7 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await waitFor(() => expect(hoisted.axios.get).toHaveBeenCalledTimes(1));
@@ -423,7 +471,17 @@ describe("CartContext (CartProvider/useCart)", () => {
     hoisted.state.user = { id: 11 };
 
     hoisted.axios.get.mockResolvedValueOnce({
-      data: { items: [{ produto_id: 10, nome: "A", valor_unitario: 10, quantidade: 1, stock: 2 }] },
+      data: {
+        items: [
+          {
+            produto_id: 10,
+            nome: "A",
+            valor_unitario: 10,
+            quantidade: 1,
+            stock: 2,
+          },
+        ],
+      },
     });
 
     hoisted.axios.patch.mockResolvedValueOnce({ data: { ok: true } });
@@ -434,15 +492,19 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
 
     await user.click(screen.getByRole("button", { name: "setQty99" }));
 
     // Estado deve clamped para 2
-    await waitFor(() => expect(screen.getByTestId("qty").textContent).toBe("2"));
+    await waitFor(() =>
+      expect(screen.getByTestId("qty").textContent).toBe("2"),
+    );
 
     // NÃO validamos toast aqui (padrão after[]), e NÃO validamos patch porque depende do finalQty setado no updater.
   });
@@ -454,7 +516,17 @@ describe("CartContext (CartProvider/useCart)", () => {
     hoisted.state.user = { id: 12 };
 
     hoisted.axios.get.mockResolvedValueOnce({
-      data: { items: [{ produto_id: 10, nome: "A", valor_unitario: 10, quantidade: 1, stock: 0 }] },
+      data: {
+        items: [
+          {
+            produto_id: 10,
+            nome: "A",
+            valor_unitario: 10,
+            quantidade: 1,
+            stock: 0,
+          },
+        ],
+      },
     });
 
     hoisted.axios.delete.mockResolvedValueOnce({ data: { ok: true } });
@@ -465,14 +537,18 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
 
     await user.click(screen.getByRole("button", { name: "setQty0" }));
 
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("0"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("0"),
+    );
   });
 
   it("syncStock: estoque 0 remove item; reduzir estoque clampa qty no estado", async () => {
@@ -481,23 +557,33 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await user.click(screen.getByRole("button", { name: "add1" }));
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
 
     await user.click(screen.getByRole("button", { name: "stock0" }));
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("0"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("0"),
+    );
 
     await user.click(screen.getByRole("button", { name: "add1" }));
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
 
     await user.click(screen.getByRole("button", { name: "add10" }));
-    await waitFor(() => expect(screen.getByTestId("qty").textContent).toBe("3"));
+    await waitFor(() =>
+      expect(screen.getByTestId("qty").textContent).toBe("3"),
+    );
 
     await user.click(screen.getByRole("button", { name: "stock2" }));
-    await waitFor(() => expect(screen.getByTestId("qty").textContent).toBe("2"));
+    await waitFor(() =>
+      expect(screen.getByTestId("qty").textContent).toBe("2"),
+    );
   });
 
   it("clearCart: zera itens, fecha carrinho e (logado) faz DELETE /api/cart", async () => {
@@ -516,28 +602,34 @@ describe("CartContext (CartProvider/useCart)", () => {
     render(
       <Wrapper>
         <TestConsumer />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await waitFor(() => expect(hoisted.axios.get).toHaveBeenCalledTimes(1));
 
     await user.click(screen.getByRole("button", { name: "add1" }));
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("1"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
 
     await user.click(screen.getByRole("button", { name: "open" }));
     expect(screen.getByTestId("open").textContent).toBe("open");
 
     await user.click(screen.getByRole("button", { name: "clear" }));
 
-    await waitFor(() => expect(screen.getByTestId("count").textContent).toBe("0"));
-    await waitFor(() => expect(screen.getByTestId("open").textContent).toBe("closed"));
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("0"),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("open").textContent).toBe("closed"),
+    );
 
     // removeItem é spy no helper local.storage.removeItem
     expect(local.storage.removeItem).toHaveBeenCalledWith("cartItems_33");
 
     expect(hoisted.axios.delete).toHaveBeenCalledWith(
       expect.stringMatching(/\/api\/cart$/),
-      { withCredentials: true }
+      { withCredentials: true },
     );
 
     // toast("Carrinho limpo.") é uma chamada na função principal toast()

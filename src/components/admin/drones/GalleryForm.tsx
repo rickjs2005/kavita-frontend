@@ -101,7 +101,7 @@ function GalleryLikeCard({
       className={cx(
         "group overflow-hidden rounded-3xl border text-left transition",
         "border-white/10 bg-white/5 hover:bg-white/10",
-        selected && "ring-2 ring-emerald-400/80"
+        selected && "ring-2 ring-emerald-400/80",
       )}
       title="Clique para selecionar"
     >
@@ -144,7 +144,13 @@ function GalleryLikeCard({
   );
 }
 
-function PreviewBlock({ item, title }: { item: DroneGalleryItem; title: string }) {
+function PreviewBlock({
+  item,
+  title,
+}: {
+  item: DroneGalleryItem;
+  title: string;
+}) {
   const src = absUrl(item.media_path);
 
   return (
@@ -201,11 +207,21 @@ export default function GalleryForm({
   const [tab, setTab] = useState<"PICK" | "MANAGE">("PICK");
   const [pickTarget, setPickTarget] = useState<PickTarget>("HERO");
 
-  const [pickedCardId, setPickedCardId] = useState<number | null>(currentCardMediaId ?? null);
-  const [pickedHeroId, setPickedHeroId] = useState<number | null>(currentHeroMediaId ?? null);
+  const [pickedCardId, setPickedCardId] = useState<number | null>(
+    currentCardMediaId ?? null,
+  );
+  const [pickedHeroId, setPickedHeroId] = useState<number | null>(
+    currentHeroMediaId ?? null,
+  );
 
-  useEffect(() => setPickedCardId(currentCardMediaId ?? null), [currentCardMediaId]);
-  useEffect(() => setPickedHeroId(currentHeroMediaId ?? null), [currentHeroMediaId]);
+  useEffect(
+    () => setPickedCardId(currentCardMediaId ?? null),
+    [currentCardMediaId],
+  );
+  useEffect(
+    () => setPickedHeroId(currentHeroMediaId ?? null),
+    [currentHeroMediaId],
+  );
 
   const [items, setItems] = useState<DroneGalleryItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -225,7 +241,7 @@ export default function GalleryForm({
     copy.sort(
       (a, b) =>
         (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0) ||
-        (Number(a.id) || 0) - (Number(b.id) || 0)
+        (Number(a.id) || 0) - (Number(b.id) || 0),
     );
     return copy;
   }, [items]);
@@ -252,9 +268,12 @@ export default function GalleryForm({
     setMsg(null);
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery`, {
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery`,
+        {
+          credentials: "include",
+        },
+      );
 
       if (isAuthError(res)) return redirectToLogin();
 
@@ -285,7 +304,7 @@ export default function GalleryForm({
           sort_order: Number(it.sort_order) || 0,
           is_active: it.is_active ?? it.active ?? 1,
         }))
-        .filter((x: { id: any; media_path: any; }) => x.id && x.media_path);
+        .filter((x: { id: any; media_path: any }) => x.id && x.media_path);
 
       setItems(normalized);
     } catch (e: any) {
@@ -310,10 +329,16 @@ export default function GalleryForm({
 
   // ✅ se o item selecionado não existir mais (ex: deletou), limpa local
   useEffect(() => {
-    if (pickedHeroId && !items.some((x) => Number(x.id) === Number(pickedHeroId))) {
+    if (
+      pickedHeroId &&
+      !items.some((x) => Number(x.id) === Number(pickedHeroId))
+    ) {
       setPickedHeroId(null);
     }
-    if (pickedCardId && !items.some((x) => Number(x.id) === Number(pickedCardId))) {
+    if (
+      pickedCardId &&
+      !items.some((x) => Number(x.id) === Number(pickedCardId))
+    ) {
       setPickedCardId(null);
     }
   }, [items, pickedHeroId, pickedCardId]);
@@ -322,7 +347,10 @@ export default function GalleryForm({
     if (!files || files.length === 0) return;
 
     const baseSort = (() => {
-      const maxSort = sortedItems.reduce((acc, it) => Math.max(acc, Number(it.sort_order) || 0), 0);
+      const maxSort = sortedItems.reduce(
+        (acc, it) => Math.max(acc, Number(it.sort_order) || 0),
+        0,
+      );
       return (maxSort || 0) + 10;
     })();
 
@@ -350,7 +378,9 @@ export default function GalleryForm({
   }
 
   function updatePending(id: string, patch: Partial<PendingUpload>) {
-    setPending((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    setPending((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+    );
   }
 
   async function uploadAllPending() {
@@ -367,11 +397,14 @@ export default function GalleryForm({
         fd.append("sort_order", String(Number(p.sort_order) || 0));
         fd.append("is_active", p.is_active ? "1" : "0");
 
-        const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery`, {
-          method: "POST",
-          credentials: "include",
-          body: fd,
-        });
+        const res = await fetch(
+          `${API_BASE}/api/admin/drones/models/${modelKey}/gallery`,
+          {
+            method: "POST",
+            credentials: "include",
+            body: fd,
+          },
+        );
 
         if (isAuthError(res)) return redirectToLogin();
 
@@ -386,7 +419,9 @@ export default function GalleryForm({
 
       setPending((prev) => {
         const keep = prev.filter((p) => p.error);
-        prev.filter((p) => !p.error).forEach((p) => URL.revokeObjectURL(p.previewUrl));
+        prev
+          .filter((p) => !p.error)
+          .forEach((p) => URL.revokeObjectURL(p.previewUrl));
         return keep;
       });
 
@@ -399,7 +434,9 @@ export default function GalleryForm({
   }
 
   function setItemLocal(id: number, patch: Partial<DroneGalleryItem>) {
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, ...patch } : it)),
+    );
   }
 
   async function saveItem(it: DroneGalleryItem) {
@@ -412,11 +449,14 @@ export default function GalleryForm({
       fd.append("sort_order", String(Number(it.sort_order) || 0));
       fd.append("is_active", toBool(it.is_active) ? "1" : "0");
 
-      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${it.id}`, {
-        method: "PUT",
-        credentials: "include",
-        body: fd,
-      });
+      const res = await fetch(
+        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${it.id}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          body: fd,
+        },
+      );
 
       if (isAuthError(res)) return redirectToLogin();
 
@@ -445,11 +485,14 @@ export default function GalleryForm({
       fd.append("sort_order", String(Number(current.sort_order) || 0));
       fd.append("is_active", toBool(current.is_active) ? "1" : "0");
 
-      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`, {
-        method: "PUT",
-        credentials: "include",
-        body: fd,
-      });
+      const res = await fetch(
+        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          body: fd,
+        },
+      );
 
       if (isAuthError(res)) return redirectToLogin();
 
@@ -471,10 +514,13 @@ export default function GalleryForm({
     setMsg(null);
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
 
       if (isAuthError(res)) return redirectToLogin();
 
@@ -541,7 +587,8 @@ export default function GalleryForm({
           <div>
             <div className="text-sm font-semibold text-white">Galeria</div>
             <div className="mt-0.5 text-xs text-white/60">
-              Selecione a mídia do <b>Card</b> ou do <b>Destaque</b>. E gerencie uploads/edições.
+              Selecione a mídia do <b>Card</b> ou do <b>Destaque</b>. E gerencie
+              uploads/edições.
             </div>
           </div>
 
@@ -553,7 +600,7 @@ export default function GalleryForm({
                 "rounded-xl px-4 py-2 text-sm font-semibold border transition",
                 tab === "PICK"
                   ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
-                  : "border-white/15 bg-white/5 text-white hover:bg-white/10"
+                  : "border-white/15 bg-white/5 text-white hover:bg-white/10",
               )}
             >
               Seleção rápida
@@ -566,7 +613,7 @@ export default function GalleryForm({
                 "rounded-xl px-4 py-2 text-sm font-semibold border transition",
                 tab === "MANAGE"
                   ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
-                  : "border-white/15 bg-white/5 text-white hover:bg-white/10"
+                  : "border-white/15 bg-white/5 text-white hover:bg-white/10",
               )}
             >
               Gerenciar (CRUD)
@@ -579,7 +626,7 @@ export default function GalleryForm({
               className={cx(
                 "rounded-xl px-4 py-2 text-sm font-medium border transition",
                 "border-white/15 bg-white/5 text-white hover:bg-white/10",
-                "disabled:opacity-60"
+                "disabled:opacity-60",
               )}
             >
               {loading ? "Carregando..." : "Recarregar"}
@@ -590,7 +637,8 @@ export default function GalleryForm({
         {tab === "PICK" ? (
           <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="text-xs text-white/60">
-              Clique em uma mídia para definir como <b className="text-white">Card</b> ou{" "}
+              Clique em uma mídia para definir como{" "}
+              <b className="text-white">Card</b> ou{" "}
               <b className="text-white">Destaque</b>.
             </div>
 
@@ -604,7 +652,7 @@ export default function GalleryForm({
                   "rounded-xl px-3 py-2 text-xs font-semibold border transition",
                   pickTarget === "HERO"
                     ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
-                    : "border-white/15 bg-white/5 text-white hover:bg-white/10"
+                    : "border-white/15 bg-white/5 text-white hover:bg-white/10",
                 )}
               >
                 Destaque (Hero)
@@ -617,7 +665,7 @@ export default function GalleryForm({
                   "rounded-xl px-3 py-2 text-xs font-semibold border transition",
                   pickTarget === "CARD"
                     ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
-                    : "border-white/15 bg-white/5 text-white hover:bg-white/10"
+                    : "border-white/15 bg-white/5 text-white hover:bg-white/10",
                 )}
               >
                 Card (Lista)
@@ -633,17 +681,27 @@ export default function GalleryForm({
         </div>
       ) : null}
 
-      {(heroPickedItem || cardPickedItem) ? (
+      {heroPickedItem || cardPickedItem ? (
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <div className="text-sm font-semibold text-white">Prévia do cliente (Destaque + Card)</div>
-              <div className="text-xs text-white/60">Atualiza na hora quando você seleciona.</div>
+              <div className="text-sm font-semibold text-white">
+                Prévia do cliente (Destaque + Card)
+              </div>
+              <div className="text-xs text-white/60">
+                Atualiza na hora quando você seleciona.
+              </div>
             </div>
 
             <div className="hidden sm:block text-xs text-white/50">
-              Card: <b className="text-white/80">{pickedCardId ? `#${pickedCardId}` : "—"}</b> •
-              Destaque: <b className="text-white/80">{pickedHeroId ? `#${pickedHeroId}` : "—"}</b>
+              Card:{" "}
+              <b className="text-white/80">
+                {pickedCardId ? `#${pickedCardId}` : "—"}
+              </b>{" "}
+              • Destaque:{" "}
+              <b className="text-white/80">
+                {pickedHeroId ? `#${pickedHeroId}` : "—"}
+              </b>
             </div>
           </div>
 
@@ -671,15 +729,24 @@ export default function GalleryForm({
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <div className="text-sm font-semibold text-white">Prévia igual ao cliente</div>
+              <div className="text-sm font-semibold text-white">
+                Prévia igual ao cliente
+              </div>
               <div className="text-xs text-white/60">
-                Mostrando itens ativos (se nenhum estiver ativo, mostramos todos).
+                Mostrando itens ativos (se nenhum estiver ativo, mostramos
+                todos).
               </div>
             </div>
 
             <div className="hidden sm:block text-xs text-white/50">
-              Card: <b className="text-white/80">{pickedCardId ? `#${pickedCardId}` : "—"}</b> •
-              Destaque: <b className="text-white/80">{pickedHeroId ? `#${pickedHeroId}` : "—"}</b>
+              Card:{" "}
+              <b className="text-white/80">
+                {pickedCardId ? `#${pickedCardId}` : "—"}
+              </b>{" "}
+              • Destaque:{" "}
+              <b className="text-white/80">
+                {pickedHeroId ? `#${pickedHeroId}` : "—"}
+              </b>
             </div>
           </div>
 
@@ -691,7 +758,9 @@ export default function GalleryForm({
             <div className="mt-6 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {activeItems.map((it) => {
                 const selected =
-                  pickTarget === "CARD" ? it.id === pickedCardId : it.id === pickedHeroId;
+                  pickTarget === "CARD"
+                    ? it.id === pickedCardId
+                    : it.id === pickedHeroId;
                 return (
                   <GalleryLikeCard
                     key={it.id}
@@ -715,7 +784,9 @@ export default function GalleryForm({
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <div className="text-sm font-semibold text-white">Adicionar mídias</div>
+                <div className="text-sm font-semibold text-white">
+                  Adicionar mídias
+                </div>
                 <div className="mt-0.5 text-xs text-white/60">
                   Aceita <b>jpg/png/webp</b> e <b>mp4</b>.
                 </div>
@@ -725,7 +796,7 @@ export default function GalleryForm({
                 <label
                   className={cx(
                     "cursor-pointer rounded-xl px-4 py-2 text-sm font-medium",
-                    "border border-white/15 bg-white/5 text-white hover:bg-white/10 transition"
+                    "border border-white/15 bg-white/5 text-white hover:bg-white/10 transition",
                   )}
                 >
                   Selecionar arquivos
@@ -746,7 +817,7 @@ export default function GalleryForm({
                   className={cx(
                     "rounded-xl px-4 py-2 text-sm font-semibold",
                     "bg-emerald-500 text-emerald-950 hover:bg-emerald-400 transition",
-                    "disabled:opacity-60 disabled:hover:bg-emerald-500"
+                    "disabled:opacity-60 disabled:hover:bg-emerald-500",
                   )}
                 >
                   {uploading ? "Enviando..." : `Enviar (${pending.length})`}
@@ -763,9 +834,17 @@ export default function GalleryForm({
                   >
                     <div className="aspect-video w-full overflow-hidden bg-black/40">
                       {p.inferredType === "VIDEO" ? (
-                        <video className="h-full w-full object-cover" src={p.previewUrl} controls />
+                        <video
+                          className="h-full w-full object-cover"
+                          src={p.previewUrl}
+                          controls
+                        />
                       ) : (
-                        <img className="h-full w-full object-cover" src={p.previewUrl} alt="preview" />
+                        <img
+                          className="h-full w-full object-cover"
+                          src={p.previewUrl}
+                          alt="preview"
+                        />
                       )}
                     </div>
 
@@ -786,7 +865,11 @@ export default function GalleryForm({
 
                       <input
                         value={p.caption}
-                        onChange={(e) => updatePending(p.id, { caption: clampCaption(e.target.value) })}
+                        onChange={(e) =>
+                          updatePending(p.id, {
+                            caption: clampCaption(e.target.value),
+                          })
+                        }
                         placeholder="Legenda (opcional)"
                         className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-white/20"
                       />
@@ -794,7 +877,11 @@ export default function GalleryForm({
                       <div className="flex items-center gap-2">
                         <input
                           value={p.sort_order}
-                          onChange={(e) => updatePending(p.id, { sort_order: Number(e.target.value) || 0 })}
+                          onChange={(e) =>
+                            updatePending(p.id, {
+                              sort_order: Number(e.target.value) || 0,
+                            })
+                          }
                           type="number"
                           className="w-28 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-white/20"
                           title="Ordem"
@@ -804,7 +891,11 @@ export default function GalleryForm({
                           <input
                             type="checkbox"
                             checked={p.is_active}
-                            onChange={(e) => updatePending(p.id, { is_active: e.target.checked })}
+                            onChange={(e) =>
+                              updatePending(p.id, {
+                                is_active: e.target.checked,
+                              })
+                            }
                             className="h-4 w-4"
                           />
                           Ativo
@@ -830,7 +921,9 @@ export default function GalleryForm({
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="text-sm font-semibold text-white">Itens cadastrados</div>
+                <div className="text-sm font-semibold text-white">
+                  Itens cadastrados
+                </div>
                 <div className="text-xs text-white/60">
                   Total: <b className="text-white">{sortedItems.length}</b>
                 </div>
@@ -842,12 +935,18 @@ export default function GalleryForm({
                 Carregando...
               </div>
             ) : sortedItems.length === 0 ? (
-              <div className="mt-3 text-sm text-white/60">Ainda não há mídias para este modelo.</div>
+              <div className="mt-3 text-sm text-white/60">
+                Ainda não há mídias para este modelo.
+              </div>
             ) : (
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {sortedItems.map((it) => {
                   const active = toBool(it.is_active);
-                  const busy = Boolean(savingIds[it.id] || deletingIds[it.id] || replacingIds[it.id]);
+                  const busy = Boolean(
+                    savingIds[it.id] ||
+                    deletingIds[it.id] ||
+                    replacingIds[it.id],
+                  );
 
                   return (
                     <div
@@ -856,17 +955,30 @@ export default function GalleryForm({
                     >
                       <div className="aspect-video w-full overflow-hidden bg-black/40">
                         {it.media_type === "VIDEO" ? (
-                          <video className="h-full w-full object-cover" src={absUrl(it.media_path)} controls />
+                          <video
+                            className="h-full w-full object-cover"
+                            src={absUrl(it.media_path)}
+                            controls
+                          />
                         ) : (
-                          <img className="h-full w-full object-cover" src={absUrl(it.media_path)} alt={it.caption || "mídia"} />
+                          <img
+                            className="h-full w-full object-cover"
+                            src={absUrl(it.media_path)}
+                            alt={it.caption || "mídia"}
+                          />
                         )}
                       </div>
 
                       <div className="space-y-2 p-3">
                         <div className="flex items-center justify-between gap-2">
                           <div className="text-xs text-white/70">
-                            #{it.id} • {it.media_type === "VIDEO" ? "Vídeo" : "Imagem"} •{" "}
-                            <span className={active ? "text-emerald-300" : "text-zinc-300"}>
+                            #{it.id} •{" "}
+                            {it.media_type === "VIDEO" ? "Vídeo" : "Imagem"} •{" "}
+                            <span
+                              className={
+                                active ? "text-emerald-300" : "text-zinc-300"
+                              }
+                            >
                               {active ? "Ativo" : "Inativo"}
                             </span>
                           </div>
@@ -895,7 +1007,11 @@ export default function GalleryForm({
 
                         <input
                           value={it.caption || ""}
-                          onChange={(e) => setItemLocal(it.id, { caption: clampCaption(e.target.value) })}
+                          onChange={(e) =>
+                            setItemLocal(it.id, {
+                              caption: clampCaption(e.target.value),
+                            })
+                          }
                           placeholder="Legenda (opcional)"
                           className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-white/20"
                           disabled={busy}
@@ -904,7 +1020,11 @@ export default function GalleryForm({
                         <div className="flex flex-wrap items-center gap-2">
                           <input
                             value={Number(it.sort_order) || 0}
-                            onChange={(e) => setItemLocal(it.id, { sort_order: Number(e.target.value) || 0 })}
+                            onChange={(e) =>
+                              setItemLocal(it.id, {
+                                sort_order: Number(e.target.value) || 0,
+                              })
+                            }
                             type="number"
                             className="w-28 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-white/20"
                             disabled={busy}
@@ -915,7 +1035,11 @@ export default function GalleryForm({
                             <input
                               type="checkbox"
                               checked={active}
-                              onChange={(e) => setItemLocal(it.id, { is_active: e.target.checked })}
+                              onChange={(e) =>
+                                setItemLocal(it.id, {
+                                  is_active: e.target.checked,
+                                })
+                              }
                               className="h-4 w-4"
                               disabled={busy}
                             />
@@ -932,11 +1056,13 @@ export default function GalleryForm({
                                 it.id === pickedHeroId
                                   ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
                                   : "border-white/15 bg-white/5 text-white hover:bg-white/10",
-                                "disabled:opacity-60"
+                                "disabled:opacity-60",
                               )}
                               title="Selecionar para Destaque (Hero)"
                             >
-                              {it.id === pickedHeroId ? "Destaque ✓" : "Selecionar p/ Destaque"}
+                              {it.id === pickedHeroId
+                                ? "Destaque ✓"
+                                : "Selecionar p/ Destaque"}
                             </button>
 
                             <button
@@ -948,22 +1074,26 @@ export default function GalleryForm({
                                 it.id === pickedCardId
                                   ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
                                   : "border-white/15 bg-white/5 text-white hover:bg-white/10",
-                                "disabled:opacity-60"
+                                "disabled:opacity-60",
                               )}
                               title="Selecionar para Card (Lista)"
                             >
-                              {it.id === pickedCardId ? "Card ✓" : "Selecionar p/ Card"}
+                              {it.id === pickedCardId
+                                ? "Card ✓"
+                                : "Selecionar p/ Card"}
                             </button>
 
                             <label
                               className={cx(
                                 "cursor-pointer rounded-xl px-3 py-2 text-xs font-semibold",
                                 "border border-white/15 bg-white/5 text-white hover:bg-white/10 transition",
-                                busy && "opacity-60 cursor-not-allowed"
+                                busy && "opacity-60 cursor-not-allowed",
                               )}
                               title="Trocar arquivo (imagem/vídeo)"
                             >
-                              {replacingIds[it.id] ? "Trocando..." : "Trocar mídia"}
+                              {replacingIds[it.id]
+                                ? "Trocando..."
+                                : "Trocar mídia"}
                               <input
                                 type="file"
                                 accept="image/jpeg,image/png,image/webp,video/mp4"
@@ -984,7 +1114,7 @@ export default function GalleryForm({
                               className={cx(
                                 "rounded-xl px-3 py-2 text-xs font-semibold",
                                 "bg-emerald-500 text-emerald-950 hover:bg-emerald-400 transition",
-                                "disabled:opacity-60 disabled:hover:bg-emerald-500"
+                                "disabled:opacity-60 disabled:hover:bg-emerald-500",
                               )}
                             >
                               {savingIds[it.id] ? "Salvando..." : "Salvar"}
@@ -1002,7 +1132,10 @@ export default function GalleryForm({
                         </div>
 
                         <div className="text-[11px] text-white/45">
-                          model_key: <b className="text-white/70">{String(it.model_key || "")}</b>
+                          model_key:{" "}
+                          <b className="text-white/70">
+                            {String(it.model_key || "")}
+                          </b>
                         </div>
                       </div>
 

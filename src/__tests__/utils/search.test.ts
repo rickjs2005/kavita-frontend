@@ -139,7 +139,12 @@ describe("utils/search", () => {
 
     it("inclui promo e sort quando fornecidos", () => {
       // Arrange
-      const qs = buildQueryString({ promo: true, sort: "price_asc", page: 2, limit: 24 });
+      const qs = buildQueryString({
+        promo: true,
+        sort: "price_asc",
+        page: 2,
+        limit: 24,
+      });
 
       // Assert
       expect(qs).toContain("promo=true");

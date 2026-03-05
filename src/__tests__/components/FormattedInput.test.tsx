@@ -19,7 +19,7 @@ describe("FormattedInput (src/components/FormattedInput.tsx)", () => {
         value=""
         onChange={onChange}
         {...props}
-      />
+      />,
     );
 
     const input = screen.getByLabelText("Documento") as HTMLInputElement;
@@ -73,7 +73,7 @@ describe("FormattedInput (src/components/FormattedInput.tsx)", () => {
           name: "documento",
           value: "123.456.789-01",
         }),
-      })
+      }),
     );
   });
 
@@ -90,7 +90,7 @@ describe("FormattedInput (src/components/FormattedInput.tsx)", () => {
         target: expect.objectContaining({
           value: "12.345.678/0001-99",
         }),
-      })
+      }),
     );
   });
 
@@ -107,7 +107,7 @@ describe("FormattedInput (src/components/FormattedInput.tsx)", () => {
         target: expect.objectContaining({
           value: "(31) 99999-8888",
         }),
-      })
+      }),
     );
   });
 
@@ -126,7 +126,7 @@ describe("FormattedInput (src/components/FormattedInput.tsx)", () => {
         target: expect.objectContaining({
           value: "rick@kavita.com.br",
         }),
-      })
+      }),
     );
   });
 
@@ -143,7 +143,7 @@ describe("FormattedInput (src/components/FormattedInput.tsx)", () => {
         target: expect.objectContaining({
           value: "ABC123",
         }),
-      })
+      }),
     );
   });
 
@@ -163,7 +163,7 @@ describe("FormattedInput (src/components/FormattedInput.tsx)", () => {
         target: expect.objectContaining({
           name: "telefone",
         }),
-      })
+      }),
     );
   });
 

@@ -12,7 +12,9 @@ import {
 describe("utils/kavita-news/clima", () => {
   describe("normalizeSlug", () => {
     it("gera slug básico (trim, lower, espaços -> hífen)", () => {
-      expect(normalizeSlug("  Minha Cidade Legal  ")).toBe("minha-cidade-legal");
+      expect(normalizeSlug("  Minha Cidade Legal  ")).toBe(
+        "minha-cidade-legal",
+      );
     });
 
     it("remove caracteres inválidos e colapsa hífens", () => {

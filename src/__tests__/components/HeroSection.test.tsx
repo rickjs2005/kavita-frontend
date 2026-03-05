@@ -92,7 +92,7 @@ describe("HeroSection (layout/HeroSection.tsx)", () => {
 
     await waitFor(() => {
       const bg = document.querySelector(
-        'div[style*="background-image"]'
+        'div[style*="background-image"]',
       ) as HTMLDivElement | null;
 
       expect(bg).toBeTruthy();

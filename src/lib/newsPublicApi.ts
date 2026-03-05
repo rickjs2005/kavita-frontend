@@ -78,7 +78,9 @@ async function climaList() {
 }
 
 async function climaBySlug(slug: string) {
-  return apiPublic<PublicOk<PublicClima>>(`/api/news/clima/${encodeURIComponent(slug)}`);
+  return apiPublic<PublicOk<PublicClima>>(
+    `/api/news/clima/${encodeURIComponent(slug)}`,
+  );
 }
 
 async function cotacoesList(groupKey?: string) {
@@ -87,21 +89,30 @@ async function cotacoesList(groupKey?: string) {
 }
 
 async function cotacaoBySlug(slug: string) {
-  return apiPublic<PublicOk<PublicCotacao>>(`/api/news/cotacoes/${encodeURIComponent(slug)}`);
+  return apiPublic<PublicOk<PublicCotacao>>(
+    `/api/news/cotacoes/${encodeURIComponent(slug)}`,
+  );
 }
 
 async function postsList(limit = 10, offset = 0) {
-  return apiPublic<PublicOk<PublicPost[]>>(`/api/news/posts?limit=${limit}&offset=${offset}`);
+  return apiPublic<PublicOk<PublicPost[]>>(
+    `/api/news/posts?limit=${limit}&offset=${offset}`,
+  );
 }
 
 async function postBySlug(slug: string) {
-  return apiPublic<PublicOk<PublicPost>>(`/api/news/posts/${encodeURIComponent(slug)}`);
+  return apiPublic<PublicOk<PublicPost>>(
+    `/api/news/posts/${encodeURIComponent(slug)}`,
+  );
 }
 
 /**
  * Overview para página /news (agrega clima + cotacoes + posts)
  */
-async function overview(limit = 6, groupKey?: string): Promise<PublicOk<PublicOverview>> {
+async function overview(
+  limit = 6,
+  groupKey?: string,
+): Promise<PublicOk<PublicOverview>> {
   const [climaRes, cotacoesRes, postsRes] = await Promise.all([
     climaList(),
     cotacoesList(groupKey),

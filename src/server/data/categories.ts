@@ -24,7 +24,9 @@ async function fetchJson<T>(url: string): Promise<T> {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Erro ao carregar categorias (${res.status}): ${text.slice(0, 200)}`);
+    throw new Error(
+      `Erro ao carregar categorias (${res.status}): ${text.slice(0, 200)}`,
+    );
   }
 
   return (await res.json()) as T;
@@ -56,7 +58,10 @@ export async function fetchPublicCategories(): Promise<PublicCategory[]> {
             : [];
 
       const onlyActive = arr.filter(
-        (c) => c?.is_active === undefined || c?.is_active === 1 || c?.is_active === true
+        (c) =>
+          c?.is_active === undefined ||
+          c?.is_active === 1 ||
+          c?.is_active === true,
       );
 
       onlyActive.sort((a, b) => {
@@ -76,7 +81,9 @@ export async function fetchPublicCategories(): Promise<PublicCategory[]> {
   }
 
   if (process.env.NODE_ENV !== "production") {
-    throw lastErr instanceof Error ? lastErr : new Error("Falha ao buscar categorias.");
+    throw lastErr instanceof Error
+      ? lastErr
+      : new Error("Falha ao buscar categorias.");
   }
   return [];
 }

@@ -8,9 +8,9 @@ type Props = {
   loading: boolean;
   errorMsg: string | null;
 
-  onReload: () => void | Promise<void>;     // mantém (não precisa remover)
-  onSyncAll?: () => void | Promise<void>;   // NOVO
-  syncingAll?: boolean;                    // NOVO
+  onReload: () => void | Promise<void>; // mantém (não precisa remover)
+  onSyncAll?: () => void | Promise<void>; // NOVO
+  syncingAll?: boolean; // NOVO
 
   onEdit: (item: ClimaItem) => void;
   onDelete: (id: number) => void;
@@ -52,9 +52,14 @@ export default function ClimaTable({
       <header className="px-5 py-4 border-b bg-gradient-to-r from-slate-50 to-white">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h4 className="text-base font-semibold text-slate-900">Cidades cadastradas</h4>
+            <h4 className="text-base font-semibold text-slate-900">
+              Cidades cadastradas
+            </h4>
             <p className="text-sm text-slate-500">
-              Total: <span className="font-semibold text-slate-800">{rows.length}</span>
+              Total:{" "}
+              <span className="font-semibold text-slate-800">
+                {rows.length}
+              </span>
             </p>
           </div>
 
@@ -82,7 +87,9 @@ export default function ClimaTable({
         {loading && rows.length === 0 ? (
           <div className="text-sm text-slate-500">Carregando...</div>
         ) : rows.length === 0 ? (
-          <div className="text-sm text-slate-500">Nenhuma cidade cadastrada.</div>
+          <div className="text-sm text-slate-500">
+            Nenhuma cidade cadastrada.
+          </div>
         ) : (
           rows.map((r: any) => {
             const ativo = Number(r.ativo ?? 1) === 1;
@@ -91,13 +98,19 @@ export default function ClimaTable({
 
             const lat = r.station_lat ?? null;
             const lon = r.station_lon ?? null;
-            const coords = lat != null && lon != null ? `${fmt(lat)}, ${fmt(lon)}` : "—";
+            const coords =
+              lat != null && lon != null ? `${fmt(lat)}, ${fmt(lon)}` : "—";
 
             return (
-              <div key={r.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div
+                key={r.id}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 truncate">{r.city_name}</p>
+                    <p className="font-semibold text-slate-900 truncate">
+                      {r.city_name}
+                    </p>
                     <p className="text-xs text-slate-500">
                       {r.uf} • {r.slug}
                     </p>
@@ -110,7 +123,9 @@ export default function ClimaTable({
                         : "bg-slate-50 text-slate-600 border-slate-200"
                     }`}
                   >
-                    <span className={`h-2 w-2 rounded-full ${ativo ? "bg-emerald-500" : "bg-slate-400"}`} />
+                    <span
+                      className={`h-2 w-2 rounded-full ${ativo ? "bg-emerald-500" : "bg-slate-400"}`}
+                    />
                     {ativo ? "Ativo" : "Inativo"}
                   </span>
                 </div>
@@ -118,23 +133,33 @@ export default function ClimaTable({
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-xl bg-slate-50 p-2">
                     <p className="text-slate-500">IBGE</p>
-                    <p className="font-medium text-slate-900">{r.ibge_id ?? "—"}</p>
+                    <p className="font-medium text-slate-900">
+                      {r.ibge_id ?? "—"}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-slate-50 p-2">
                     <p className="text-slate-500">Coords</p>
-                    <p className="font-medium text-slate-900 break-words">{coords}</p>
+                    <p className="font-medium text-slate-900 break-words">
+                      {coords}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-slate-50 p-2">
                     <p className="text-slate-500">mm 24h</p>
-                    <p className="font-medium text-slate-900">{r.mm_24h ?? "—"}</p>
+                    <p className="font-medium text-slate-900">
+                      {r.mm_24h ?? "—"}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-slate-50 p-2">
                     <p className="text-slate-500">mm 7d</p>
-                    <p className="font-medium text-slate-900">{r.mm_7d ?? "—"}</p>
+                    <p className="font-medium text-slate-900">
+                      {r.mm_7d ?? "—"}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-slate-50 p-2 col-span-2">
                     <p className="text-slate-500">Atualizado</p>
-                    <p className="font-medium text-slate-900">{formatDateTimeBR(r.last_update_at ?? null)}</p>
+                    <p className="font-medium text-slate-900">
+                      {formatDateTimeBR(r.last_update_at ?? null)}
+                    </p>
                   </div>
                 </div>
 
@@ -188,9 +213,13 @@ export default function ClimaTable({
               <th className="px-5 py-3 font-semibold text-slate-700">Coords</th>
               <th className="px-5 py-3 font-semibold text-slate-700">mm 24h</th>
               <th className="px-5 py-3 font-semibold text-slate-700">mm 7d</th>
-              <th className="px-5 py-3 font-semibold text-slate-700">Atualizado</th>
+              <th className="px-5 py-3 font-semibold text-slate-700">
+                Atualizado
+              </th>
               <th className="px-5 py-3 font-semibold text-slate-700">Status</th>
-              <th className="px-5 py-3 font-semibold text-slate-700 text-right">Ações</th>
+              <th className="px-5 py-3 font-semibold text-slate-700 text-right">
+                Ações
+              </th>
             </tr>
           </thead>
 
@@ -215,18 +244,29 @@ export default function ClimaTable({
 
                 const lat = r.station_lat ?? null;
                 const lon = r.station_lon ?? null;
-                const coords = lat != null && lon != null ? `${fmt(lat)}, ${fmt(lon)}` : "—";
+                const coords =
+                  lat != null && lon != null ? `${fmt(lat)}, ${fmt(lon)}` : "—";
 
                 return (
                   <tr key={r.id} className="hover:bg-slate-50/70 transition">
-                    <td className="px-5 py-3 font-semibold text-slate-900">{r.city_name}</td>
+                    <td className="px-5 py-3 font-semibold text-slate-900">
+                      {r.city_name}
+                    </td>
                     <td className="px-5 py-3 text-slate-700">{r.uf}</td>
                     <td className="px-5 py-3 text-slate-700">{r.slug}</td>
-                    <td className="px-5 py-3 text-slate-700">{r.ibge_id ?? "—"}</td>
+                    <td className="px-5 py-3 text-slate-700">
+                      {r.ibge_id ?? "—"}
+                    </td>
                     <td className="px-5 py-3 text-slate-700">{coords}</td>
-                    <td className="px-5 py-3 text-slate-700">{r.mm_24h ?? "—"}</td>
-                    <td className="px-5 py-3 text-slate-700">{r.mm_7d ?? "—"}</td>
-                    <td className="px-5 py-3 text-slate-700">{formatDateTimeBR(r.last_update_at ?? null)}</td>
+                    <td className="px-5 py-3 text-slate-700">
+                      {r.mm_24h ?? "—"}
+                    </td>
+                    <td className="px-5 py-3 text-slate-700">
+                      {r.mm_7d ?? "—"}
+                    </td>
+                    <td className="px-5 py-3 text-slate-700">
+                      {formatDateTimeBR(r.last_update_at ?? null)}
+                    </td>
 
                     <td className="px-5 py-3">
                       <span
@@ -236,7 +276,9 @@ export default function ClimaTable({
                             : "bg-slate-50 text-slate-600 border-slate-200"
                         }`}
                       >
-                        <span className={`h-2 w-2 rounded-full ${ativo ? "bg-emerald-500" : "bg-slate-400"}`} />
+                        <span
+                          className={`h-2 w-2 rounded-full ${ativo ? "bg-emerald-500" : "bg-slate-400"}`}
+                        />
                         {ativo ? "Ativo" : "Inativo"}
                       </span>
                     </td>

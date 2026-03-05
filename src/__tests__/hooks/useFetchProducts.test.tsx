@@ -55,7 +55,7 @@ describe("useFetchProducts (hook)", () => {
         limit: 24,
         sort: "id",
         order: "desc",
-      } as any)
+      } as any),
     );
 
     await act(async () => {
@@ -88,7 +88,10 @@ describe("useFetchProducts (hook)", () => {
 
   it("AAA: suporta compatibilidade com categorySlug (quando category não é passado)", async () => {
     // Arrange
-    getProductsMock.mockResolvedValueOnce({ data: [], meta: { total: 0, totalPages: 1, page: 1 } });
+    getProductsMock.mockResolvedValueOnce({
+      data: [],
+      meta: { total: 0, totalPages: 1, page: 1 },
+    });
 
     const { useFetchProducts } = await import("@/hooks/useFetchProducts");
 
@@ -98,7 +101,7 @@ describe("useFetchProducts (hook)", () => {
         categorySlug: "pets",
         page: 1,
         limit: 12,
-      } as any)
+      } as any),
     );
 
     await act(async () => {
@@ -129,7 +132,7 @@ describe("useFetchProducts (hook)", () => {
         enabled: false,
         category: "medicamentos",
         page: 1,
-      } as any)
+      } as any),
     );
 
     await act(async () => {
@@ -159,7 +162,7 @@ describe("useFetchProducts (hook)", () => {
       useFetchProducts({
         category: "medicamentos",
         page: 1,
-      } as any)
+      } as any),
     );
 
     await act(async () => {
@@ -185,8 +188,14 @@ describe("useFetchProducts (hook)", () => {
   it("AAA: refetch incrementa gatilho e chama getProducts novamente", async () => {
     // Arrange
     getProductsMock
-      .mockResolvedValueOnce({ data: [{ id: 1 }], meta: { total: 1, totalPages: 1, page: 1 } })
-      .mockResolvedValueOnce({ data: [{ id: 2 }], meta: { total: 1, totalPages: 1, page: 1 } });
+      .mockResolvedValueOnce({
+        data: [{ id: 1 }],
+        meta: { total: 1, totalPages: 1, page: 1 },
+      })
+      .mockResolvedValueOnce({
+        data: [{ id: 2 }],
+        meta: { total: 1, totalPages: 1, page: 1 },
+      });
 
     const { useFetchProducts } = await import("@/hooks/useFetchProducts");
 
@@ -196,7 +205,7 @@ describe("useFetchProducts (hook)", () => {
         category: "medicamentos",
         page: 1,
         limit: 12,
-      } as any)
+      } as any),
     );
 
     await act(async () => {

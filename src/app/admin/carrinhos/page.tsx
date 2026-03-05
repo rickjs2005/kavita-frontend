@@ -63,7 +63,10 @@ function resumoItens(itens: AbandonedCartItem[]) {
     const i = itens[0];
     return `${Number(i.quantidade || 0)}x ${i.produto}`;
   }
-  const totalQtd = itens.reduce((acc, i) => acc + (Number(i.quantidade) || 0), 0);
+  const totalQtd = itens.reduce(
+    (acc, i) => acc + (Number(i.quantidade) || 0),
+    0,
+  );
   return `${totalQtd} itens (${itens.length} produtos)`;
 }
 
@@ -154,7 +157,8 @@ function normalizeCart(c: any): AbandonedCart {
 }
 
 function extractCartsFromResponseData(data: any): any[] {
-  if (data && typeof data === "object" && Array.isArray(data.carrinhos)) return data.carrinhos;
+  if (data && typeof data === "object" && Array.isArray(data.carrinhos))
+    return data.carrinhos;
   if (Array.isArray(data)) return data;
   return [];
 }
@@ -177,7 +181,9 @@ async function notifyCart(id: number, tipo: "whatsapp" | "email") {
 }
 
 async function getWhatsAppLink(id: number): Promise<WhatsAppLinkResponse> {
-  const data = await apiClient.get<WhatsAppLinkResponse>(`/api/admin/carrinhos/${id}/whatsapp-link`);
+  const data = await apiClient.get<WhatsAppLinkResponse>(
+    `/api/admin/carrinhos/${id}/whatsapp-link`,
+  );
   return data;
 }
 
@@ -191,7 +197,10 @@ function Blockable({
   children: React.ReactNode;
 }) {
   return (
-    <div className={blocked ? "pointer-events-none opacity-50 select-none" : ""} aria-disabled={blocked}>
+    <div
+      className={blocked ? "pointer-events-none opacity-50 select-none" : ""}
+      aria-disabled={blocked}
+    >
       {children}
     </div>
   );
@@ -222,12 +231,24 @@ function ItemsTable({ itens }: { itens: AbandonedCartItem[] }) {
             className="grid grid-cols-[1fr_80px_120px_120px] gap-2 px-3 py-2 text-xs text-slate-200"
           >
             <div className="min-w-0">
-              <div className="truncate font-medium text-slate-100">{i.produto}</div>
-              {i.produto_id ? <div className="text-[11px] text-slate-500">ID: {i.produto_id}</div> : null}
+              <div className="truncate font-medium text-slate-100">
+                {i.produto}
+              </div>
+              {i.produto_id ? (
+                <div className="text-[11px] text-slate-500">
+                  ID: {i.produto_id}
+                </div>
+              ) : null}
             </div>
-            <div className="text-right text-slate-200">{Number(i.quantidade || 0)}</div>
-            <div className="text-right text-slate-200">{money(i.preco_unitario || 0)}</div>
-            <div className="text-right font-semibold text-slate-50">{money(itemSubtotal(i))}</div>
+            <div className="text-right text-slate-200">
+              {Number(i.quantidade || 0)}
+            </div>
+            <div className="text-right text-slate-200">
+              {money(i.preco_unitario || 0)}
+            </div>
+            <div className="text-right font-semibold text-slate-50">
+              {money(itemSubtotal(i))}
+            </div>
           </div>
         ))}
       </div>
@@ -290,11 +311,17 @@ export default function AdminCarrinhosAbandonadosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const naoRecuperados = useMemo(() => carrinhos.filter((c) => !c.recuperado), [carrinhos]);
-  const recuperados = useMemo(() => carrinhos.filter((c) => c.recuperado), [carrinhos]);
+  const naoRecuperados = useMemo(
+    () => carrinhos.filter((c) => !c.recuperado),
+    [carrinhos],
+  );
+  const recuperados = useMemo(
+    () => carrinhos.filter((c) => c.recuperado),
+    [carrinhos],
+  );
   const totalNaoRecuperados = useMemo(
     () => naoRecuperados.reduce((acc, c) => acc + (c.total_estimado || 0), 0),
-    [naoRecuperados]
+    [naoRecuperados],
   );
 
   const handleNotificar = async (id: number, tipo: "whatsapp" | "email") => {
@@ -305,7 +332,7 @@ export default function AdminCarrinhosAbandonadosPage() {
       toast.success(
         tipo === "whatsapp"
           ? "Notificação WhatsApp registrada. Agora gere o link e envie."
-          : "E-mail registrado (o worker envia automaticamente)."
+          : "E-mail registrado (o worker envia automaticamente).",
       );
     } catch (err: any) {
       console.error("Erro ao notificar carrinho abandonado:", err);
@@ -316,7 +343,9 @@ export default function AdminCarrinhosAbandonadosPage() {
         return;
       }
 
-      const msg = err?.response?.data?.message || "Erro ao registrar lembrete. Tente novamente.";
+      const msg =
+        err?.response?.data?.message ||
+        "Erro ao registrar lembrete. Tente novamente.";
       toast.error(String(msg));
     } finally {
       setNotificandoId(null);
@@ -343,7 +372,9 @@ export default function AdminCarrinhosAbandonadosPage() {
         return;
       }
 
-      const msg = err?.response?.data?.message || "Erro ao gerar link do WhatsApp. Tente novamente.";
+      const msg =
+        err?.response?.data?.message ||
+        "Erro ao gerar link do WhatsApp. Tente novamente.";
       toast.error(String(msg));
     } finally {
       setWppLoadingId(null);
@@ -369,8 +400,12 @@ export default function AdminCarrinhosAbandonadosPage() {
           </div>
 
           <div>
-            <h1 className="text-lg font-semibold text-slate-50 sm:text-xl">Carrinhos abandonados</h1>
-            <p className="mt-1 text-sm text-slate-400">Carregando carrinhos...</p>
+            <h1 className="text-lg font-semibold text-slate-50 sm:text-xl">
+              Carrinhos abandonados
+            </h1>
+            <p className="mt-1 text-sm text-slate-400">
+              Carregando carrinhos...
+            </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -401,9 +436,12 @@ export default function AdminCarrinhosAbandonadosPage() {
           </div>
 
           <div>
-            <h1 className="text-lg font-semibold text-slate-50 sm:text-xl">Carrinhos abandonados</h1>
+            <h1 className="text-lg font-semibold text-slate-50 sm:text-xl">
+              Carrinhos abandonados
+            </h1>
             <p className="mt-1 text-sm text-slate-400">
-              Visualize carrinhos não concluídos e envie lembretes para recuperação.
+              Visualize carrinhos não concluídos e envie lembretes para
+              recuperação.
             </p>
           </div>
 
@@ -448,9 +486,12 @@ export default function AdminCarrinhosAbandonadosPage() {
 
         <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-lg font-semibold text-slate-50 sm:text-xl">Carrinhos abandonados</h1>
+            <h1 className="text-lg font-semibold text-slate-50 sm:text-xl">
+              Carrinhos abandonados
+            </h1>
             <p className="mt-1 text-sm text-slate-400">
-              Visualize carrinhos não concluídos e envie lembretes para recuperação.
+              Visualize carrinhos não concluídos e envie lembretes para
+              recuperação.
             </p>
           </div>
 
@@ -490,7 +531,12 @@ export default function AdminCarrinhosAbandonadosPage() {
             helper="Prioridade para contato"
             variant="warning"
           />
-          <KpiCard label="Recuperados" value={recuperados.length} helper="Marcados como recuperados" variant="success" />
+          <KpiCard
+            label="Recuperados"
+            value={recuperados.length}
+            helper="Marcados como recuperados"
+            variant="success"
+          />
           <KpiCard
             label="Total estimado (não recuperados)"
             value={money(totalNaoRecuperados)}
@@ -553,7 +599,9 @@ export default function AdminCarrinhosAbandonadosPage() {
                                       {c.usuario_email}
                                     </a>
                                   ) : (
-                                    <div className="mt-1 text-xs text-slate-500">E-mail não cadastrado</div>
+                                    <div className="mt-1 text-xs text-slate-500">
+                                      E-mail não cadastrado
+                                    </div>
                                   )}
 
                                   {c.usuario_telefone ? (
@@ -570,11 +618,15 @@ export default function AdminCarrinhosAbandonadosPage() {
                                           {phoneFormatted || c.usuario_telefone}
                                         </a>
                                       ) : (
-                                        <span>{phoneFormatted || c.usuario_telefone}</span>
+                                        <span>
+                                          {phoneFormatted || c.usuario_telefone}
+                                        </span>
                                       )}
                                     </div>
                                   ) : (
-                                    <div className="mt-1 text-xs text-slate-500">WhatsApp não cadastrado</div>
+                                    <div className="mt-1 text-xs text-slate-500">
+                                      WhatsApp não cadastrado
+                                    </div>
                                   )}
 
                                   {c.recuperado && (
@@ -589,9 +641,12 @@ export default function AdminCarrinhosAbandonadosPage() {
                             <div className="px-4 py-4">
                               <div className="flex items-center justify-between gap-3">
                                 <div className="min-w-0">
-                                  <div className="text-xs font-medium text-slate-100">{resumoItens(c.itens)}</div>
+                                  <div className="text-xs font-medium text-slate-100">
+                                    {resumoItens(c.itens)}
+                                  </div>
                                   <div className="mt-1 text-[11px] text-slate-500">
-                                    Clique em “Ver itens” para detalhes completos.
+                                    Clique em “Ver itens” para detalhes
+                                    completos.
                                   </div>
                                 </div>
 
@@ -605,16 +660,22 @@ export default function AdminCarrinhosAbandonadosPage() {
                               </div>
                             </div>
 
-                            <div className="px-4 py-4 text-xs text-slate-400">{formatDate(c.criado_em)}</div>
+                            <div className="px-4 py-4 text-xs text-slate-400">
+                              {formatDate(c.criado_em)}
+                            </div>
 
                             <div className="px-4 py-4 text-right">
-                              <div className="text-sm font-semibold text-slate-50">{money(c.total_estimado)}</div>
+                              <div className="text-sm font-semibold text-slate-50">
+                                {money(c.total_estimado)}
+                              </div>
 
                               <div className="mt-3 flex flex-col items-end gap-2">
                                 <Blockable blocked={blockAll}>
                                   <CustomButton
                                     label="Registrar WhatsApp"
-                                    onClick={() => handleNotificar(c.id, "whatsapp")}
+                                    onClick={() =>
+                                      handleNotificar(c.id, "whatsapp")
+                                    }
                                     variant="primary"
                                     size="small"
                                     isLoading={isNotificando}
@@ -634,7 +695,9 @@ export default function AdminCarrinhosAbandonadosPage() {
                                 <Blockable blocked={blockEmail}>
                                   <CustomButton
                                     label="Registrar e-mail"
-                                    onClick={() => handleNotificar(c.id, "email")}
+                                    onClick={() =>
+                                      handleNotificar(c.id, "email")
+                                    }
                                     variant="secondary"
                                     size="small"
                                     isLoading={isNotificando}
@@ -654,7 +717,9 @@ export default function AdminCarrinhosAbandonadosPage() {
                                   </div>
                                   <div className="mt-1 text-xs text-slate-400">
                                     Total estimado:{" "}
-                                    <span className="font-semibold text-slate-200">{money(c.total_estimado)}</span>
+                                    <span className="font-semibold text-slate-200">
+                                      {money(c.total_estimado)}
+                                    </span>
                                   </div>
                                 </div>
 
@@ -706,8 +771,12 @@ export default function AdminCarrinhosAbandonadosPage() {
                         </div>
 
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-50">{c.usuario_nome || "Visitante"}</p>
-                          <p className="mt-0.5 text-[11px] text-slate-400">{formatDate(c.criado_em)}</p>
+                          <p className="truncate text-sm font-semibold text-slate-50">
+                            {c.usuario_nome || "Visitante"}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-slate-400">
+                            {formatDate(c.criado_em)}
+                          </p>
 
                           {c.usuario_telefone ? (
                             <p className="mt-1 text-[11px] text-slate-400">
@@ -722,17 +791,23 @@ export default function AdminCarrinhosAbandonadosPage() {
                                   {phoneFormatted || c.usuario_telefone}
                                 </a>
                               ) : (
-                                <span>{phoneFormatted || c.usuario_telefone}</span>
+                                <span>
+                                  {phoneFormatted || c.usuario_telefone}
+                                </span>
                               )}
                             </p>
                           ) : (
-                            <p className="mt-1 text-[11px] text-slate-500">WhatsApp não cadastrado</p>
+                            <p className="mt-1 text-[11px] text-slate-500">
+                              WhatsApp não cadastrado
+                            </p>
                           )}
                         </div>
                       </div>
 
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-slate-50">{money(c.total_estimado)}</p>
+                        <p className="text-sm font-semibold text-slate-50">
+                          {money(c.total_estimado)}
+                        </p>
                         {c.recuperado && (
                           <span className="mt-1 inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
                             Recuperado
@@ -743,7 +818,9 @@ export default function AdminCarrinhosAbandonadosPage() {
 
                     <div className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-[11px] text-slate-300">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="font-medium text-slate-100">{resumoItens(c.itens)}</p>
+                        <p className="font-medium text-slate-100">
+                          {resumoItens(c.itens)}
+                        </p>
 
                         <button
                           type="button"

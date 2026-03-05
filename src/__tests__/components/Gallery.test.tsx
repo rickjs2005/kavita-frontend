@@ -66,7 +66,9 @@ describe("Gallery (src/components/Gallery.tsx)", () => {
     const mainImg = screen.getByAltText(alt) as HTMLImageElement;
 
     // Act
-    const secondThumbButton = screen.getByRole("button", { name: "Ver imagem 2" });
+    const secondThumbButton = screen.getByRole("button", {
+      name: "Ver imagem 2",
+    });
     fireEvent.click(secondThumbButton);
 
     // Assert
@@ -117,14 +119,21 @@ describe("Gallery (src/components/Gallery.tsx)", () => {
     expect(mainImg.getAttribute("src")).toBe(PLACEHOLDER);
 
     // thumbs só aparecem se safeImages.length > 1 (aqui é 1: placeholder)
-    expect(screen.queryByRole("button", { name: /Ver imagem/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Ver imagem/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("aplica className no container raiz e respeita thumbSize nas dimensões do botão (positivo)", () => {
     // Arrange
     const thumbSize = 64; // width/height do botão = thumbSize + 4
     const { container } = render(
-      <Gallery images={["/a.jpg", "/b.jpg"]} alt="Produto" className="minha-classe" thumbSize={thumbSize} />
+      <Gallery
+        images={["/a.jpg", "/b.jpg"]}
+        alt="Produto"
+        className="minha-classe"
+        thumbSize={thumbSize}
+      />,
     );
 
     // Assert: raiz é o primeiro elemento renderizado
@@ -133,7 +142,10 @@ describe("Gallery (src/components/Gallery.tsx)", () => {
     expect(root).toHaveClass("minha-classe");
 
     const btn1 = screen.getByRole("button", { name: "Ver imagem 1" });
-    expect(btn1).toHaveStyle({ width: `${thumbSize + 4}px`, height: `${thumbSize + 4}px` });
+    expect(btn1).toHaveStyle({
+      width: `${thumbSize + 4}px`,
+      height: `${thumbSize + 4}px`,
+    });
   });
 
   it("se der erro numa thumb, o src do <img> da thumb vira placeholder (negativo)", () => {

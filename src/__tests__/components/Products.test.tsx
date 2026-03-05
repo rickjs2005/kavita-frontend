@@ -38,7 +38,7 @@ describe("Produtos (Products.tsx)", () => {
 
     // Semântica do título
     expect(
-      screen.getByRole("heading", { name: /produtos/i, level: 1 })
+      screen.getByRole("heading", { name: /produtos/i, level: 1 }),
     ).toBeInTheDocument();
 
     // Assert da chamada (AAA)

@@ -82,9 +82,8 @@ export default function TrabalheConoscoPage() {
               Rede de serviços do campo • Kavita
             </span>
             <h1 className="text-3xl font-extrabold leading-tight text-white sm:text-4xl md:text-5xl">
-              Trabalhe com a{" "}
-              <span className="text-emerald-300">Kavita</span> e seja
-              referência na sua região.
+              Trabalhe com a <span className="text-emerald-300">Kavita</span> e
+              seja referência na sua região.
             </h1>
             <p className="max-w-xl text-sm text-emerald-50/90 sm:text-base">
               Se você é veterinário, agrônomo, mecânico de máquinas ou presta
@@ -108,8 +107,8 @@ export default function TrabalheConoscoPage() {
             </div>
 
             <p className="pt-1 text-xs text-emerald-100/80">
-              Cadastro sujeito a análise simples para manter a qualidade da
-              rede de serviços.
+              Cadastro sujeito a análise simples para manter a qualidade da rede
+              de serviços.
             </p>
           </div>
 
@@ -120,8 +119,8 @@ export default function TrabalheConoscoPage() {
                 Quem pode se cadastrar?
               </p>
               <p className="mt-1 text-xs text-emerald-50/80">
-                Profissionais e empresas que prestam serviços diretamente para
-                o produtor rural.
+                Profissionais e empresas que prestam serviços diretamente para o
+                produtor rural.
               </p>
               <ul className="mt-4 space-y-2 text-xs text-gray-100">
                 {bullets.map((b) => (
@@ -213,8 +212,8 @@ export default function TrabalheConoscoPage() {
           <div className="mt-8 flex flex-col gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-xs text-emerald-50 sm:flex-row sm:items-center sm:justify-between sm:text-sm">
             <p>
               Quer acelerar? Você já pode mandar seus dados agora mesmo pelo
-              formulário de contato. Nossa equipe entra em contato para finalizar
-              seu cadastro.
+              formulário de contato. Nossa equipe entra em contato para
+              finalizar seu cadastro.
             </p>
             <Link
               href="/trabalhe-conosco/cadastro"

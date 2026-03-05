@@ -2,7 +2,12 @@
 
 import { useMemo } from "react";
 
-type Category = { id: number; name: string; slug?: string; total_products?: number };
+type Category = {
+  id: number;
+  name: string;
+  slug?: string;
+  total_products?: number;
+};
 
 export type FiltersState = {
   q: string;
@@ -63,10 +68,13 @@ export function FiltersPanel({
           <h2 className="text-sm font-semibold text-zinc-900">Filtros</h2>
           {selectedCount > 0 ? (
             <p className="mt-0.5 text-xs text-zinc-500">
-              {selectedCount} filtro{selectedCount > 1 ? "s" : ""} ativo{selectedCount > 1 ? "s" : ""}
+              {selectedCount} filtro{selectedCount > 1 ? "s" : ""} ativo
+              {selectedCount > 1 ? "s" : ""}
             </p>
           ) : (
-            <p className="mt-0.5 text-xs text-zinc-500">Ajuste para refinar os resultados</p>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Ajuste para refinar os resultados
+            </p>
           )}
         </div>
 
@@ -106,8 +114,12 @@ export function FiltersPanel({
         {/* Categoria (igual admin) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <label className="text-xs font-semibold text-zinc-700">Categoria</label>
-            {categoriesLoading ? <span className="text-xs text-zinc-500">Carregando…</span> : null}
+            <label className="text-xs font-semibold text-zinc-700">
+              Categoria
+            </label>
+            {categoriesLoading ? (
+              <span className="text-xs text-zinc-500">Carregando…</span>
+            ) : null}
           </div>
 
           <select
@@ -128,28 +140,38 @@ export function FiltersPanel({
               ? categories.map((cat) => (
                   <option key={cat.id} value={String(cat.id)}>
                     {cat.name}
-                    {typeof cat.total_products === "number" ? ` (${cat.total_products})` : ""}
+                    {typeof cat.total_products === "number"
+                      ? ` (${cat.total_products})`
+                      : ""}
                   </option>
                 ))
               : null}
           </select>
 
           {!categoriesLoading && !hasCategories ? (
-            <p className="text-xs text-zinc-500">Nenhuma categoria encontrada.</p>
+            <p className="text-xs text-zinc-500">
+              Nenhuma categoria encontrada.
+            </p>
           ) : null}
         </div>
 
         {/* Preço */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-zinc-700">Faixa de preço</label>
+          <label className="text-xs font-semibold text-zinc-700">
+            Faixa de preço
+          </label>
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <span className="text-[11px] font-medium text-zinc-500">Mínimo</span>
+              <span className="text-[11px] font-medium text-zinc-500">
+                Mínimo
+              </span>
               <input
                 inputMode="decimal"
                 value={minStr}
-                onChange={(e) => onChange({ minPrice: safeNumberOrNull(e.target.value) })}
+                onChange={(e) =>
+                  onChange({ minPrice: safeNumberOrNull(e.target.value) })
+                }
                 placeholder="0"
                 className="
                   h-11 w-full rounded-xl border border-zinc-200 bg-white
@@ -160,11 +182,15 @@ export function FiltersPanel({
             </div>
 
             <div className="space-y-1">
-              <span className="text-[11px] font-medium text-zinc-500">Máximo</span>
+              <span className="text-[11px] font-medium text-zinc-500">
+                Máximo
+              </span>
               <input
                 inputMode="decimal"
                 value={maxStr}
-                onChange={(e) => onChange({ maxPrice: safeNumberOrNull(e.target.value) })}
+                onChange={(e) =>
+                  onChange({ maxPrice: safeNumberOrNull(e.target.value) })
+                }
                 placeholder="9999"
                 className="
                   h-11 w-full rounded-xl border border-zinc-200 bg-white
@@ -180,8 +206,12 @@ export function FiltersPanel({
         <div className="rounded-xl border border-zinc-200 bg-white p-3">
           <label className="flex cursor-pointer items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-zinc-900">Somente promoções</p>
-              <p className="text-xs text-zinc-500">Exibe apenas produtos com desconto ativo</p>
+              <p className="text-sm font-semibold text-zinc-900">
+                Somente promoções
+              </p>
+              <p className="text-xs text-zinc-500">
+                Exibe apenas produtos com desconto ativo
+              </p>
             </div>
 
             <input

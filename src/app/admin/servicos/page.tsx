@@ -42,7 +42,8 @@ export default function ServicosPage() {
         const txt = await res.text().catch(() => "");
         if (res.status === 401 || res.status === 403) {
           throw new Error(
-            txt || "Você não tem permissão para listar serviços. Faça login novamente."
+            txt ||
+              "Você não tem permissão para listar serviços. Faça login novamente.",
           );
         }
         throw new Error(`Falha ao buscar serviços (${res.status}). ${txt}`);
@@ -53,10 +54,10 @@ export default function ServicosPage() {
       const lista: Service[] = Array.isArray(data)
         ? (data as ServiceApiItem[]).map((s) => ({
             ...(s as Service),
-            images: Array.isArray(s.images) ? (s.images as Service["images"]) : [],
-            verificado:
-              s.verificado === true ||
-              s.verificado === 1,
+            images: Array.isArray(s.images)
+              ? (s.images as Service["images"])
+              : [],
+            verificado: s.verificado === true || s.verificado === 1,
           }))
         : [];
 
@@ -74,7 +75,6 @@ export default function ServicosPage() {
 
   useEffect(() => {
     carregarServicos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ==========================
@@ -105,7 +105,8 @@ export default function ServicosPage() {
       setServicos((prev) => prev.filter((s) => s.id !== id));
     } catch (err: unknown) {
       console.error("Erro ao remover:", err);
-      const msg = err instanceof Error ? err.message : "Erro ao remover serviço.";
+      const msg =
+        err instanceof Error ? err.message : "Erro ao remover serviço.";
       alert(msg);
     }
   };
@@ -148,7 +149,7 @@ export default function ServicosPage() {
       }
 
       setServicos((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, verificado: novoValor } : s))
+        prev.map((s) => (s.id === id ? { ...s, verificado: novoValor } : s)),
       );
     } catch (err: unknown) {
       console.error("Erro ao atualizar verificação:", err);
@@ -211,7 +212,10 @@ export default function ServicosPage() {
           </div>
 
           {/* Botão Voltar – mobile */}
-          <Link href="/admin" className="absolute -right-1 -top-3 z-10 block sm:hidden">
+          <Link
+            href="/admin"
+            className="absolute -right-1 -top-3 z-10 block sm:hidden"
+          >
             <CustomButton
               label="Voltar"
               variant="secondary"
@@ -237,7 +241,9 @@ export default function ServicosPage() {
           className="mb-6 rounded-2xl bg-white p-4 shadow sm:mb-8 sm:p-6 md:p-8"
         >
           <h2 className="mb-4 text-lg font-semibold text-gray-900 sm:text-xl">
-            {servicoEditado ? "Editar Serviço" : "Adicionar Serviço e Colaborador"}
+            {servicoEditado
+              ? "Editar Serviço"
+              : "Adicionar Serviço e Colaborador"}
           </h2>
 
           <ServiceFormUnificado
@@ -266,7 +272,9 @@ export default function ServicosPage() {
         ) : (
           <section className="mt-4">
             <div className="mb-3 flex items-center justify-between sm:mb-4">
-              <h3 className="text-lg font-semibold text-gray-50">Lista de serviços</h3>
+              <h3 className="text-lg font-semibold text-gray-50">
+                Lista de serviços
+              </h3>
               <span className="text-sm text-gray-300">
                 {servicosAprovados.length}{" "}
                 {servicosAprovados.length === 1 ? "item" : "itens"}

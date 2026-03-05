@@ -4,6 +4,9 @@
 
 import { apiClient } from "./apiClient";
 
-export async function api<T = any>(path: string, init?: RequestInit): Promise<T> {
+export async function api<T = any>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
   return apiClient.request<T>(path, { ...(init || {}) });
 }

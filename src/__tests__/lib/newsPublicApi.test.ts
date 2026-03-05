@@ -36,9 +36,7 @@ describe("src/lib/api/newsPublicApi.ts", () => {
 
     await newsPublicApi.climaBySlug("são paulo");
 
-    expect(apiPublic).toHaveBeenCalledWith(
-      "/api/news/clima/s%C3%A3o%20paulo"
-    );
+    expect(apiPublic).toHaveBeenCalledWith("/api/news/clima/s%C3%A3o%20paulo");
   });
 
   // ===============================
@@ -65,7 +63,7 @@ describe("src/lib/api/newsPublicApi.ts", () => {
     await newsPublicApi.cotacoesList("soja futura");
 
     expect(apiPublic).toHaveBeenCalledWith(
-      "/api/news/cotacoes?group_key=soja%20futura"
+      "/api/news/cotacoes?group_key=soja%20futura",
     );
   });
 
@@ -77,9 +75,7 @@ describe("src/lib/api/newsPublicApi.ts", () => {
 
     await newsPublicApi.cotacaoBySlug("milho-2025");
 
-    expect(apiPublic).toHaveBeenCalledWith(
-      "/api/news/cotacoes/milho-2025"
-    );
+    expect(apiPublic).toHaveBeenCalledWith("/api/news/cotacoes/milho-2025");
   });
 
   // ===============================
@@ -94,9 +90,7 @@ describe("src/lib/api/newsPublicApi.ts", () => {
 
     await newsPublicApi.postsList(20, 5);
 
-    expect(apiPublic).toHaveBeenCalledWith(
-      "/api/news/posts?limit=20&offset=5"
-    );
+    expect(apiPublic).toHaveBeenCalledWith("/api/news/posts?limit=20&offset=5");
   });
 
   it("postBySlug deve fazer encode", async () => {
@@ -108,7 +102,7 @@ describe("src/lib/api/newsPublicApi.ts", () => {
     await newsPublicApi.postBySlug("notícia especial");
 
     expect(apiPublic).toHaveBeenCalledWith(
-      "/api/news/posts/not%C3%ADcia%20especial"
+      "/api/news/posts/not%C3%ADcia%20especial",
     );
   });
 

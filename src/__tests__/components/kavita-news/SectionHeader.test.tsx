@@ -39,11 +39,11 @@ describe("SectionHeader", () => {
       <SectionHeader
         title="Cotações"
         subtitle="Preços atualizados diariamente."
-      />
+      />,
     );
 
     expect(
-      screen.getByText("Preços atualizados diariamente.")
+      screen.getByText("Preços atualizados diariamente."),
     ).toBeInTheDocument();
   });
 
@@ -51,7 +51,7 @@ describe("SectionHeader", () => {
     render(<SectionHeader title="Notícias" />);
 
     expect(
-      screen.queryByText("Preços atualizados diariamente.")
+      screen.queryByText("Preços atualizados diariamente."),
     ).not.toBeInTheDocument();
   });
 
@@ -61,7 +61,7 @@ describe("SectionHeader", () => {
         title="Posts"
         href="/news/posts"
         actionLabel="Ver todos"
-      />
+      />,
     );
 
     const link = screen.getByRole("link", {
@@ -73,12 +73,7 @@ describe("SectionHeader", () => {
   });
 
   it("deve usar actionLabel padrão 'Ver mais' quando não fornecido (controle)", () => {
-    render(
-      <SectionHeader
-        title="Clima"
-        href="/news/clima"
-      />
-    );
+    render(<SectionHeader title="Clima" href="/news/clima" />);
 
     const link = screen.getByRole("link", {
       name: "Ver mais",
@@ -98,8 +93,9 @@ describe("SectionHeader", () => {
     render(<SectionHeader title="Agro" />);
 
     // A barra verde é puramente decorativa
-    const decorative = screen.getByRole("heading", { name: "Agro" })
-      .previousSibling;
+    const decorative = screen.getByRole("heading", {
+      name: "Agro",
+    }).previousSibling;
 
     // Garante que existe um elemento com aria-hidden no header
     const hiddenEls = document.querySelectorAll("[aria-hidden]");
@@ -112,19 +108,17 @@ describe("SectionHeader", () => {
         title="Economia Rural"
         subtitle="Análises e dados do agronegócio."
         href="/news/economia"
-      />
+      />,
     );
 
     expect(
-      screen.getByRole("heading", { name: "Economia Rural" })
+      screen.getByRole("heading", { name: "Economia Rural" }),
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText("Análises e dados do agronegócio.")
+      screen.getByText("Análises e dados do agronegócio."),
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByRole("link", { name: "Ver mais" })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver mais" })).toBeInTheDocument();
   });
 });
