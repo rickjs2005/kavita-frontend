@@ -3,13 +3,11 @@ import React, { useState } from "react";
 import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import ClimaForm from "@/components/admin/kavita-news/clima/ClimaForm";
-import type {
-  ClimaEditMode,
-  ClimaFormState,
-  ClimaItem,
-} from "@/types/kavita-news";
+import CotacoesForm from "@/components/admin/kavita-news/cotacoes/CotacoesForm";
+import type { CotacaoFormState, CotacaoItem } from "@/types/kavita-news";
+import apiClient from "@/lib/apiClient";
 
+// Mock do LoadingButton (vira um <button/> simples)
 vi.mock("@/components/buttons/LoadingButton", () => {
   return {
     default: (props: any) => {
@@ -28,62 +26,50 @@ vi.mock("@/components/buttons/LoadingButton", () => {
   };
 });
 
-// normalizeSlug determinístico
-vi.mock("@/utils/kavita-news/clima", async () => {
-  const actual = await vi.importActual<any>("@/utils/kavita-news/clima");
+// Mock do apiClient (vamos controlar o .get no meta)
+vi.mock("@/lib/apiClient", () => {
   return {
-    ...actual,
-    normalizeSlug: (s: string) => {
-      const base = String(s || "").trim();
-      if (!base) return "";
-      return "slug-normalizado";
+    default: {
+      get: vi.fn(),
     },
   };
 });
 
 type WrapperProps = {
-  initialEditMode?: ClimaEditMode;
+  allowedSlugs?: string[];
   mode?: "create" | "edit";
-  editing?: ClimaItem | null;
+  editing?: CotacaoItem | null;
   saving?: boolean;
   onSubmit?: () => void;
   onCancelEdit?: () => void;
   onStartCreate?: () => void;
-  onBuscarIbge?: (q: { uf: string; city: string }) => void;
-  onSuggestStations?: (uf: string, q: string, limit?: number) => Promise<any[]>;
+  initialForm?: Partial<CotacaoFormState>;
 };
 
-function makeInitialForm(): ClimaFormState {
+function makeInitialForm(): CotacaoFormState {
   return {
-    city_name: "",
-    uf: "",
-    slug: "",
-    mm_24h: "",
-    mm_7d: "",
+    name: "",
+    slug: "" as any,
+    type: "",
+    price: "",
+    unit: "",
+    variation_day: "",
+    market: "",
     source: "",
     last_update_at: "",
     ativo: true,
-    ...({
-      ibge_id: "",
-      station_code: "",
-      station_lat: "",
-      station_lon: "",
-      station_distance: "",
-      station_source: "",
-    } as any),
   };
 }
 
 function Wrapper(props: WrapperProps) {
-  const [editMode, setEditMode] = useState<ClimaEditMode>(
-    props.initialEditMode ?? "manual",
-  );
-  const [form, setForm] = useState<ClimaFormState>(makeInitialForm());
+  const [form, setForm] = useState<CotacaoFormState>({
+    ...makeInitialForm(),
+    ...(props.initialForm || {}),
+  });
 
   return (
-    <ClimaForm
-      editMode={editMode}
-      setEditMode={setEditMode}
+    <CotacoesForm
+      allowedSlugs={props.allowedSlugs ?? ["dolar", "cafe"]}
       mode={props.mode ?? "create"}
       editing={props.editing ?? null}
       form={form}
@@ -92,30 +78,42 @@ function Wrapper(props: WrapperProps) {
       onSubmit={props.onSubmit ?? vi.fn()}
       onCancelEdit={props.onCancelEdit ?? vi.fn()}
       onStartCreate={props.onStartCreate ?? vi.fn()}
-      onBuscarIbge={props.onBuscarIbge}
-      onSuggestStations={props.onSuggestStations}
     />
   );
 }
 
-function mockFetchOkJson(data: any) {
-  return {
-    ok: true,
-    status: 200,
-    json: async () => data,
-  };
-}
-
-// Espera controlada para cobrir debounce do componente sem fake timers
 async function sleep(ms: number) {
   await new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-describe("ClimaForm", () => {
+describe("CotacoesForm", () => {
+  const mockedApi = apiClient as unknown as { get: ReturnType<typeof vi.fn> };
+
   beforeEach(() => {
-    // fetch padrão sempre resolve
-    global.fetch = vi.fn().mockResolvedValue(mockFetchOkJson([]));
     vi.useRealTimers();
+
+    // ✅ meta padrão com preset do slug "dolar"
+    mockedApi.get = mockedApi.get || (vi.fn() as any);
+    mockedApi.get.mockResolvedValue({
+      ok: true,
+      data: {
+        presets: {
+          dolar: {
+            name: "Dólar",
+            type: "cambio",
+            unit: "R$",
+            market: "BCB",
+            source: "PTAX",
+          },
+        },
+        suggestions: {
+          markets: ["BCB"],
+          sources: ["PTAX"],
+          units: ["R$"],
+          types: ["cambio"],
+        },
+      },
+    });
   });
 
   afterEach(() => {
@@ -124,222 +122,197 @@ describe("ClimaForm", () => {
     vi.useRealTimers();
   });
 
-  it("renderiza layout base e alterna entre modos Manual e IBGE", async () => {
-    const user = userEvent.setup();
+  it("renderiza layout base", async () => {
+    render(<Wrapper />);
 
-    render(<Wrapper initialEditMode="manual" />);
+    expect(screen.getByText("Cotações")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Limpar dados/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Salvar$/i })).toBeInTheDocument();
 
-    expect(screen.getByText("Clima")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Manual" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "IBGE" })).toBeInTheDocument();
-
-    const slug = screen.getByPlaceholderText(
-      "Ex: uberlandia",
-    ) as HTMLInputElement;
-    expect(slug).not.toBeDisabled();
-
-    await user.click(screen.getByRole("button", { name: "IBGE" }));
-
-    expect(slug).toBeDisabled();
-    expect(
-      screen.getByText(
-        /Digite o nome da cidade .* preencher automaticamente\./i,
-      ),
-    ).toBeInTheDocument();
-
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    // aguarda o meta carregar (não é obrigatório pro layout, mas estabiliza)
+    await waitFor(() => expect(mockedApi.get).toHaveBeenCalled());
   });
 
-  it("Limpar dados: reseta campos e chama onStartCreate (compatibilidade)", async () => {
+  it("Limpar dados: reseta formulário e chama onStartCreate", async () => {
     const user = userEvent.setup();
     const onStartCreate = vi.fn();
 
-    render(<Wrapper onStartCreate={onStartCreate} />);
+    render(
+      <Wrapper
+        onStartCreate={onStartCreate}
+        initialForm={{
+          name: "Teste",
+          slug: "dolar" as any,
+          type: "cambio",
+          unit: "R$",
+          market: "BCB",
+          source: "PTAX",
+          price: "5.10",
+          variation_day: "0.1",
+          last_update_at: "2026-01-01 10:00:00",
+          ativo: false,
+        }}
+      />,
+    );
 
-    const cidade = screen.getByPlaceholderText(
-      "Ex: Uberlândia",
-    ) as HTMLInputElement;
-    await user.type(cidade, "Caratinga");
-    expect(cidade.value).toBe("Caratinga");
+    await waitFor(() => expect(mockedApi.get).toHaveBeenCalled());
 
     await user.click(screen.getByRole("button", { name: /Limpar dados/i }));
 
-    // o componente usa setTimeout(0). Com timers reais, aguardamos um tick.
+    // clearForm é síncrono; só damos um tick pra React aplicar state
     await sleep(10);
 
     expect(
-      (screen.getByPlaceholderText("Ex: Uberlândia") as HTMLInputElement).value,
+      (screen.getByPlaceholderText(
+        "Ex: Dólar comercial, Soja CEPEA, Boi Gordo...",
+      ) as HTMLInputElement).value,
     ).toBe("");
+
+    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("");
+
     expect(
-      (screen.getByPlaceholderText("Ex: MG") as HTMLInputElement).value,
+      (screen.getByPlaceholderText(
+        "Ex: cambio, graos, pecuaria, cafe...",
+      ) as HTMLInputElement).value,
     ).toBe("");
+
     expect(
-      (screen.getByPlaceholderText("Ex: uberlandia") as HTMLInputElement).value,
+      (screen.getByPlaceholderText("Ex: R$/saca, R$/@, R$") as HTMLInputElement)
+        .value,
+    ).toBe("");
+
+    expect(
+      (screen.getByPlaceholderText("Ex: CEPEA, B3...") as HTMLInputElement).value,
+    ).toBe("");
+
+    expect(
+      (screen.getByPlaceholderText("Ex: BCB PTAX, CEPEA, B3...") as HTMLInputElement)
+        .value,
     ).toBe("");
 
     expect(onStartCreate).toHaveBeenCalledTimes(1);
   });
 
-  it("Modo IBGE: carrega base e sugere municípios por nome (debounce)", async () => {
+  it("ao selecionar slug com preset, auto-preenche campos vazios", async () => {
     const user = userEvent.setup();
 
-    (global.fetch as any).mockResolvedValueOnce(
-      mockFetchOkJson([
-        {
-          "municipio-id": "3106200",
-          "municipio-nome": "Belo Horizonte",
-          "UF-sigla": "MG",
-        },
-        {
-          "municipio-id": "3118601",
-          "municipio-nome": "Contagem",
-          "UF-sigla": "MG",
-        },
-        {
-          "municipio-id": "3110000",
-          "municipio-nome": "Caratinga",
-          "UF-sigla": "MG",
-        },
-      ]),
+    render(
+      <Wrapper
+        initialForm={{
+          // campos vazios: devem ser preenchidos pelo preset
+          name: "",
+          type: "",
+          unit: "",
+          market: "",
+          source: "",
+        }}
+      />,
     );
 
-    render(<Wrapper initialEditMode="ibge" />);
+    // ✅ garante que metaPresets já foi carregado
+    await waitFor(() => expect(mockedApi.get).toHaveBeenCalled());
 
-    // espera o effect carregar a base
-    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    // select "Slug (padrão)" não tem aria-label, então pegamos o único combobox
+    const slugSelect = screen.getByRole("combobox") as HTMLSelectElement;
 
-    const cidade = screen.getByPlaceholderText(
-      "Ex: Uberlândia",
-    ) as HTMLInputElement;
-    await user.type(cidade, "cara");
-
-    // debounce do componente (250ms ou similar). Usa folga pequena.
-    await sleep(350);
-
-    const sugestao = screen.getByRole("button", { name: /Caratinga/i });
-    await user.click(sugestao);
-
-    const uf = screen.getByPlaceholderText("Ex: MG") as HTMLInputElement;
-    expect(uf.value).toBe("MG");
-
-    const slug = screen.getByPlaceholderText(
-      "Ex: uberlandia",
-    ) as HTMLInputElement;
-    expect(slug.value).toBe("slug-normalizado");
-  });
-
-  it("Modo IBGE: ao digitar IBGE ID válido (6-8 dígitos), busca município por ID e aplica", async () => {
-    const user = userEvent.setup();
-
-    // 1) base
-    (global.fetch as any).mockResolvedValueOnce(mockFetchOkJson([]));
-
-    // 2) fetch por ID
-    (global.fetch as any).mockResolvedValueOnce(
-      mockFetchOkJson({
-        id: 3170206,
-        nome: "Uberlândia",
-        microrregiao: { mesorregiao: { UF: { sigla: "MG" } } },
-      }),
-    );
-
-    render(<Wrapper initialEditMode="ibge" />);
-
-    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
-
-    const ibgeId = screen.getByPlaceholderText(
-      "Ex: 3170206",
-    ) as HTMLInputElement;
-    await user.type(ibgeId, "3170206");
-
-    await sleep(350);
+    await user.selectOptions(slugSelect, "dolar");
 
     await waitFor(() => {
-      const cidade = screen.getByPlaceholderText(
-        "Ex: Uberlândia",
-      ) as HTMLInputElement;
-      expect(cidade.value).toBe("Uberlândia");
+      expect(
+        (screen.getByPlaceholderText(
+          "Ex: Dólar comercial, Soja CEPEA, Boi Gordo...",
+        ) as HTMLInputElement).value,
+      ).toBe("Dólar");
     });
 
-    const uf = screen.getByPlaceholderText("Ex: MG") as HTMLInputElement;
-    const slug = screen.getByPlaceholderText(
-      "Ex: uberlandia",
-    ) as HTMLInputElement;
-
-    expect(uf.value).toBe("MG");
-    expect(slug.value).toBe("slug-normalizado");
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-  });
-
-  it("Buscar coordenadas: quando UF/cidade inválidos, mostra hint e não chama provider", async () => {
-    const user = userEvent.setup();
-    const onSuggestStations = vi.fn().mockResolvedValue([]);
-
-    render(<Wrapper onSuggestStations={onSuggestStations} />);
-
-    await user.click(
-      screen.getByRole("button", { name: /Buscar coordenadas/i }),
-    );
-
-    expect(onSuggestStations).not.toHaveBeenCalled();
     expect(
-      screen.getByText(
-        /Preencha UF \(2 letras\) e cidade para buscar coordenadas\./i,
-      ),
+      (screen.getByPlaceholderText(
+        "Ex: cambio, graos, pecuaria, cafe...",
+      ) as HTMLInputElement).value,
+    ).toBe("cambio");
+
+    expect(
+      (screen.getByPlaceholderText("Ex: R$/saca, R$/@, R$") as HTMLInputElement)
+        .value,
+    ).toBe("R$");
+
+    expect(
+      (screen.getByPlaceholderText("Ex: CEPEA, B3...") as HTMLInputElement).value,
+    ).toBe("BCB");
+
+    expect(
+      (screen.getByPlaceholderText("Ex: BCB PTAX, CEPEA, B3...") as HTMLInputElement)
+        .value,
+    ).toBe("PTAX");
+
+    // ✅ e como existe preset, o botão aparece
+    expect(
+      screen.getByRole("button", { name: /Aplicar preset do slug/i }),
     ).toBeInTheDocument();
   });
 
-  it("Buscar coordenadas: aplica automaticamente lat/lon quando retorna lista com coords e o form não tem coords", async () => {
+  it("Aplicar preset sobrescreve campos manualmente", async () => {
     const user = userEvent.setup();
 
-    const onSuggestStations = vi.fn().mockResolvedValue([
-      { name: "Caratinga", uf: "MG", lat: -19.78901, lon: -42.14123 },
-      { name: "Caratinga (Centro)", uf: "MG", lat: -19.78, lon: -42.14 },
-    ]);
-
-    render(<Wrapper onSuggestStations={onSuggestStations} />);
-
-    await user.type(screen.getByPlaceholderText("Ex: Uberlândia"), "Caratinga");
-    await user.type(screen.getByPlaceholderText("Ex: MG"), "mg");
-
-    await user.click(
-      screen.getByRole("button", { name: /Buscar coordenadas/i }),
+    render(
+      <Wrapper
+        initialForm={{
+          // usuário digitou coisas diferentes do preset
+          name: "Nome manual",
+          type: "tipo-manual",
+          unit: "unid-manual",
+          market: "market-manual",
+          source: "source-manual",
+        }}
+      />,
     );
 
-    expect(onSuggestStations).toHaveBeenCalledWith("MG", "Caratinga", 10);
+    await waitFor(() => expect(mockedApi.get).toHaveBeenCalled());
+
+    const slugSelect = screen.getByRole("combobox") as HTMLSelectElement;
+
+    // seleciona slug: applySlugPreset NÃO sobrescreve (porque já tem conteúdo)
+    await user.selectOptions(slugSelect, "dolar");
 
     expect(
-      await screen.findByText(/Coordenadas sugeridas automaticamente:/i),
-    ).toBeInTheDocument();
+      (screen.getByPlaceholderText(
+        "Ex: Dólar comercial, Soja CEPEA, Boi Gordo...",
+      ) as HTMLInputElement).value,
+    ).toBe("Nome manual");
 
-    const lat = screen.getByPlaceholderText(
-      "Ex: -18.920000",
-    ) as HTMLInputElement;
-    const lon = screen.getByPlaceholderText(
-      "Ex: -48.260000",
-    ) as HTMLInputElement;
+    // agora força sobrescrever via botão
+    const btn = await screen.findByRole("button", {
+      name: /Aplicar preset do slug/i,
+    });
 
-    expect(lat.value).toMatch(/-19\.7890/);
-    expect(lon.value).toMatch(/-42\.1412/);
-  });
+    await user.click(btn);
 
-  it("Buscar coordenadas: se provider falhar, mostra mensagem de falha", async () => {
-    const user = userEvent.setup();
-
-    const onSuggestStations = vi.fn().mockRejectedValue(new Error("boom"));
-    render(<Wrapper onSuggestStations={onSuggestStations} />);
-
-    await user.type(screen.getByPlaceholderText("Ex: Uberlândia"), "Caratinga");
-    await user.type(screen.getByPlaceholderText("Ex: MG"), "MG");
-
-    await user.click(
-      screen.getByRole("button", { name: /Buscar coordenadas/i }),
-    );
+    await waitFor(() => {
+      expect(
+        (screen.getByPlaceholderText(
+          "Ex: Dólar comercial, Soja CEPEA, Boi Gordo...",
+        ) as HTMLInputElement).value,
+      ).toBe("Dólar");
+    });
 
     expect(
-      screen.getByText(
-        /Falha ao buscar coordenadas\. Você pode preencher latitude\/longitude manualmente\./i,
-      ),
-    ).toBeInTheDocument();
+      (screen.getByPlaceholderText(
+        "Ex: cambio, graos, pecuaria, cafe...",
+      ) as HTMLInputElement).value,
+    ).toBe("cambio");
+
+    expect(
+      (screen.getByPlaceholderText("Ex: R$/saca, R$/@, R$") as HTMLInputElement)
+        .value,
+    ).toBe("R$");
+
+    expect(
+      (screen.getByPlaceholderText("Ex: CEPEA, B3...") as HTMLInputElement).value,
+    ).toBe("BCB");
+
+    expect(
+      (screen.getByPlaceholderText("Ex: BCB PTAX, CEPEA, B3...") as HTMLInputElement)
+        .value,
+    ).toBe("PTAX");
   });
 });
