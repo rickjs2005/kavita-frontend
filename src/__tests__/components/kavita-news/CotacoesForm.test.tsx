@@ -54,18 +54,16 @@ function Wrapper(props: {
 
 /**
  * No seu form existem vários "combobox" por causa de <input list="...">.
- * Então aqui pegamos explicitamente o <select> do slug.
+ * Após adicionar id/htmlFor no componente, buscamos pelo rótulo acessível.
  */
 function getSlugSelect(): HTMLSelectElement {
-  const all = screen.getAllByRole("combobox") as HTMLElement[];
-  const select = all.find((el) => el.tagName === "SELECT");
-  if (!select) throw new Error("Não encontrei o <select> do Slug (padrão).");
-  return select as HTMLSelectElement;
+  return screen.getByRole("combobox", { name: /Slug \(padrão\)/i }) as HTMLSelectElement;
 }
 
 beforeEach(() => {
   global.fetch = vi.fn().mockResolvedValue({
     ok: true,
+    headers: { get: (h: string) => (h.toLowerCase() === "content-type" ? "application/json" : null) },
     json: async () => ({
       ok: true,
       data: {

@@ -455,8 +455,9 @@ export default function ClimaForm({
       <div className="p-5 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <label className={labelBase}>Cidade</label>
+            <label htmlFor="clima-cidade" className={labelBase}>Cidade</label>
             <input
+              id="clima-cidade"
               value={form.city_name}
               onChange={(e) => {
                 setGeoHint(null);
@@ -499,8 +500,9 @@ export default function ClimaForm({
           </div>
 
           <div className="space-y-2">
-            <label className={labelBase}>UF</label>
+            <label htmlFor="clima-uf" className={labelBase}>UF</label>
             <input
+              id="clima-uf"
               value={form.uf}
               onChange={(e) => {
                 setGeoHint(null);
@@ -514,8 +516,9 @@ export default function ClimaForm({
           </div>
 
           <div className="space-y-2">
-            <label className={labelBase}>Slug</label>
+            <label htmlFor="clima-slug" className={labelBase}>Slug</label>
             <input
+              id="clima-slug"
               value={form.slug}
               onChange={(e) => set("slug", e.target.value)}
               className={inputBase}
@@ -590,8 +593,9 @@ export default function ClimaForm({
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <label className={labelBase}>Latitude</label>
+              <label htmlFor="clima-lat" className={labelBase}>Latitude</label>
               <input
+                id="clima-lat"
                 value={(form as any).station_lat ?? ""}
                 onChange={(e) => setForm((p: any) => ({ ...p, station_lat: e.target.value }))}
                 className={inputBase}
@@ -601,8 +605,9 @@ export default function ClimaForm({
             </div>
 
             <div className="space-y-2">
-              <label className={labelBase}>Longitude</label>
+              <label htmlFor="clima-lon" className={labelBase}>Longitude</label>
               <input
+                id="clima-lon"
                 value={(form as any).station_lon ?? ""}
                 onChange={(e) => setForm((p: any) => ({ ...p, station_lon: e.target.value }))}
                 className={inputBase}
@@ -612,8 +617,9 @@ export default function ClimaForm({
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <label className={labelBase}>IBGE ID (opcional)</label>
+              <label htmlFor="clima-ibge-id" className={labelBase}>IBGE ID (opcional)</label>
               <input
+                id="clima-ibge-id"
                 value={(form as any).ibge_id ?? ""}
                 onChange={(e) => {
                   setGeoHint(null);
@@ -630,8 +636,9 @@ export default function ClimaForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className={labelBase}>Station Code (legado / opcional)</label>
+              <label htmlFor="clima-station-code" className={labelBase}>Station Code (legado / opcional)</label>
               <input
+                id="clima-station-code"
                 value={(form as any).station_code ?? ""}
                 onChange={(e) => setForm((p: any) => ({ ...p, station_code: e.target.value.toUpperCase() }))}
                 className={inputBase}
@@ -642,24 +649,24 @@ export default function ClimaForm({
             </div>
 
             <div className="space-y-2">
-              <label className={labelBase}>Source (opcional)</label>
-              <input value={form.source} onChange={(e) => set("source", e.target.value)} className={inputBase} placeholder="Ex: OPEN_METEO" />
+              <label htmlFor="clima-source" className={labelBase}>Source (opcional)</label>
+              <input id="clima-source" value={form.source} onChange={(e) => set("source", e.target.value)} className={inputBase} placeholder="Ex: OPEN_METEO" />
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
-            <label className={labelBase}>mm 24h</label>
-            <input value={form.mm_24h} onChange={(e) => set("mm_24h", e.target.value)} className={inputBase} placeholder="Ex: 12.3" inputMode="decimal" />
+            <label htmlFor="clima-mm24h" className={labelBase}>mm 24h</label>
+            <input id="clima-mm24h" value={form.mm_24h} onChange={(e) => set("mm_24h", e.target.value)} className={inputBase} placeholder="Ex: 12.3" inputMode="decimal" />
           </div>
           <div className="space-y-2">
-            <label className={labelBase}>mm 7d</label>
-            <input value={form.mm_7d} onChange={(e) => set("mm_7d", e.target.value)} className={inputBase} placeholder="Ex: 55.7" inputMode="decimal" />
+            <label htmlFor="clima-mm7d" className={labelBase}>mm 7d</label>
+            <input id="clima-mm7d" value={form.mm_7d} onChange={(e) => set("mm_7d", e.target.value)} className={inputBase} placeholder="Ex: 55.7" inputMode="decimal" />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <label className={labelBase}>Last update (opcional)</label>
-            <input value={form.last_update_at} onChange={(e) => set("last_update_at", e.target.value)} className={inputBase} placeholder="YYYY-MM-DD HH:mm:ss" />
+            <label htmlFor="clima-last-update" className={labelBase}>Last update (opcional)</label>
+            <input id="clima-last-update" value={form.last_update_at} onChange={(e) => set("last_update_at", e.target.value)} className={inputBase} placeholder="YYYY-MM-DD HH:mm:ss" />
           </div>
         </div>
 
