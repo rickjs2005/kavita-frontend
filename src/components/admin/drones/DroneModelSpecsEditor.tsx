@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import apiClient from "@/lib/apiClient";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type SpecsGroup = { title?: string; items?: string[] };
 
@@ -9,6 +10,23 @@ type Toast = { type: "success" | "error" | "info"; text: string } | null;
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+function isAuthError(res: Response) {
+  return res.status === 401 || res.status === 403;
+}
+
+function redirectToLogin() {
+  if (typeof window !== "undefined") window.location.assign("/admin/login");
+}
+
+async function readSafe(res: Response) {
+  const txt = await res.text();
+  try {
+    return { txt, data: JSON.parse(txt) };
+  } catch {
+    return { txt, data: null as any };
+  }
 }
 
 function normalizeGroups(v: any): SpecsGroup[] {
@@ -131,10 +149,19 @@ export default function DroneModelSpecsEditor({
     try {
       const payload = sanitizePayload();
 
-      await apiClient.put(
-        `/api/admin/drones/models/${modelKey}`,
-        payload
-      );
+      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (isAuthError(res)) return redirectToLogin();
+
+      const { data } = await readSafe(res);
+      if (!res.ok) {
+        throw new Error(data?.message || "Erro ao salvar especificações.");
+      }
 
       setToast({ type: "success", text: "Especificações salvas com sucesso." });
       onSaved?.(payload);

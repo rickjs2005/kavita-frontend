@@ -3,7 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import LoadingButton from "../../buttons/LoadingButton";
-import apiClient from "@/lib/apiClient";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /**
  * ✅ Config Landing (Admin)
@@ -30,6 +31,19 @@ type AnyJson = Record<string, any> | any[] | null;
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+function safeJson<T = any>(text: string): T | null {
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function readJsonOrText(res: Response): Promise<{ json: AnyJson; text: string }> {
+  const text = await res.text();
+  return { json: safeJson(text), text };
 }
 
 function sanitizeString(v: unknown, fallback = ""): string {
@@ -132,16 +146,20 @@ export default function PageSettingsForm() {
   const [currentHeroImagePath, setCurrentHeroImagePath] = useState<string | null>(null);
 
   async function fetchWithFallback(paths: string[]) {
-    let lastError: any = null;
+    if (paths.length === 0) return new Response(null, { status: 500 });
+    let last: Response | null = null;
     for (const p of paths) {
-      try {
-        return await apiClient.get(p);
-      } catch (err: any) {
-        lastError = err;
-        if (err?.status !== 404) throw err;
-      }
+      const res = await fetch(`${API_BASE}${p}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      last = res;
+      if (res.ok) return res;
+
+      // Se for 404, tenta o próximo endpoint de compatibilidade
+      if (res.status !== 404) return res;
     }
-    throw lastError;
+    return last as Response;
   }
 
   useEffect(() => {
@@ -150,7 +168,13 @@ export default function PageSettingsForm() {
       setLoading(true);
       try {
         // compat: /page-settings (novo) e /page (legado)
-        const json = await fetchWithFallback(["/api/admin/drones/page-settings", "/api/admin/drones/page"]);
+        const res = await fetchWithFallback(["/api/admin/drones/page-settings", "/api/admin/drones/page"]);
+        const { json } = await readJsonOrText(res);
+
+        if (!res.ok) {
+          setMsg((json as any)?.message || "Falha ao carregar Config Landing.");
+          return;
+        }
 
         const data = (json && typeof json === "object" && "page" in json ? (json as any).page : json) as Partial<
           PageSettingsDTO
@@ -218,15 +242,25 @@ export default function PageSettingsForm() {
       // compat PUT:
       // - tenta page-settings
       // - se 404, tenta /page
-      let targetPath = "/api/admin/drones/page";
-      try {
-        await apiClient.request("/api/admin/drones/page-settings", { method: "OPTIONS" });
-        targetPath = "/api/admin/drones/page-settings";
-      } catch {
-        // use legacy endpoint
-      }
+      const probe = await fetch(`${API_BASE}/api/admin/drones/page-settings`, {
+        method: "OPTIONS",
+        credentials: "include",
+      }).catch(() => null);
 
-      const json = await apiClient.put(targetPath, fd, { skipContentType: true });
+      const targetPath = probe && probe.ok ? "/api/admin/drones/page-settings" : "/api/admin/drones/page";
+
+      const res = await fetch(`${API_BASE}${targetPath}`, {
+        method: "PUT",
+        credentials: "include",
+        body: fd,
+      });
+
+      const { json } = await readJsonOrText(res);
+
+      if (!res.ok) {
+        setMsg((json as any)?.message || "Falha ao salvar Config Landing.");
+        return;
+      }
 
       const page = (json && typeof json === "object" && "page" in json ? (json as any).page : json) as Partial<
         PageSettingsDTO
