@@ -1,11 +1,9 @@
 "use client";
 
-import axios from "axios";
 import toast from "react-hot-toast";
 import CustomButton from "@/components/buttons/CustomButton";
 import { useState } from "react";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 type PedidoAcoesProps = {
   pedidoId: number;
@@ -17,19 +15,11 @@ export default function PedidoAcoes({ pedidoId }: PedidoAcoesProps) {
   const sendEmail = async (template: string) => {
     try {
       setIsLoading(true);
-      // 🔐 sem localStorage / Authorization, só cookie HttpOnly
-      await axios.post(
-        `${API_BASE}/api/admin/comunicacao/email`,
-        { template, pedidoId },
-        {
-          withCredentials: true,
-        }
-      );
+      await apiClient.post("/api/admin/comunicacao/email", { template, pedidoId });
       toast.success("E-mail enviado/registrado com sucesso.");
     } catch (err: any) {
       console.error(err);
-      const msg =
-        err?.response?.data?.message || "Erro ao enviar e-mail de comunicação.";
+      const msg = err?.message || "Erro ao enviar e-mail de comunicação.";
       toast.error(msg);
     } finally {
       setIsLoading(false);
@@ -39,20 +29,11 @@ export default function PedidoAcoes({ pedidoId }: PedidoAcoesProps) {
   const sendWhatsapp = async (template: string) => {
     try {
       setIsLoading(true);
-      // 🔐 sem localStorage / Authorization, só cookie HttpOnly
-      await axios.post(
-        `${API_BASE}/api/admin/comunicacao/whatsapp`,
-        { template, pedidoId },
-        {
-          withCredentials: true,
-        }
-      );
+      await apiClient.post("/api/admin/comunicacao/whatsapp", { template, pedidoId });
       toast.success("WhatsApp enviado/registrado com sucesso.");
     } catch (err: any) {
       console.error(err);
-      const msg =
-        err?.response?.data?.message ||
-        "Erro ao enviar mensagem de WhatsApp.";
+      const msg = err?.message || "Erro ao enviar mensagem de WhatsApp.";
       toast.error(msg);
     } finally {
       setIsLoading(false);

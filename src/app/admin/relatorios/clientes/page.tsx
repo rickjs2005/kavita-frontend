@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import toast from "react-hot-toast";
 
 import CustomButton from "@/components/buttons/CustomButton";
@@ -9,7 +9,6 @@ import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { formatCurrency } from "@/utils/formatters";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type ClienteTop = {
   id: number;
@@ -42,19 +41,16 @@ export default function RelatorioClientesPage() {
         setLoading(true);
         setError(null);
 
-        const res = await axios.get<ClientesResponse>(
-          `${API_BASE}/api/admin/relatorios/clientes-top`,
-          {
-            withCredentials: true, // ✅ envia cookie HttpOnly
-          }
+        const res = await apiClient.get<ClientesResponse>(
+          '/api/admin/relatorios/clientes-top'
         );
 
-        setData(res.data.rows ?? []);
+        setData(res.rows ?? []);
       } catch (err: any) {
         console.error(err);
 
         let msg = "Não foi possível carregar o relatório de clientes.";
-          if (err.response.status === 401 || err.response.status === 403) {
+          if (err?.status === 401 || err?.status === 403) {
             msg =
               "Sessão expirada ou sem permissão. Faça login novamente no admin.";
           }

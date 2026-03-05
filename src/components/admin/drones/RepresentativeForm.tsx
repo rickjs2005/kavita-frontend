@@ -8,8 +8,7 @@ import {
   formatPhoneMask,
 } from "@/utils/formatters";
 import { ESTADOS_BR } from "@/utils/brasil";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 type Rep = {
   id: number;
@@ -33,28 +32,6 @@ type Rep = {
   created_at: string;
   updated_at: string;
 };
-
-function safeJson(text: string) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
-function isAuthError(res: Response) {
-  return res.status === 401 || res.status === 403;
-}
-
-function redirectToLogin() {
-  if (typeof window !== "undefined") window.location.assign("/admin/login");
-}
-
-async function readSafe(res: Response) {
-  const txt = await res.text();
-  const data = safeJson(txt);
-  return { txt, data };
-}
 
 function normalizeUF(value: string) {
   return (value || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2);
@@ -148,19 +125,9 @@ export default function RepresentativeForm() {
       params.set("orderBy", "sort_order");
       params.set("orderDir", "asc");
 
-      const res = await fetch(`${API_BASE}/api/admin/drones/representantes?${params.toString()}`, {
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) {
-        setMsg(data?.message || "Falha ao carregar representantes.");
-        setData(null);
-        return;
-      }
+      const data = await apiClient.get<any>(
+        `/api/admin/drones/representantes?${params.toString()}`
+      );
 
       setData({
         items: Array.isArray(data?.items) ? data.items : [],
@@ -168,8 +135,12 @@ export default function RepresentativeForm() {
         totalPages: Number(data?.totalPages || 1),
       });
       setPage(Number(data?.page || p));
-    } catch {
-      setMsg("Erro de rede ao carregar representantes.");
+    } catch (err: any) {
+      if (err?.status === 401 || err?.status === 403) {
+        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        return;
+      }
+      setMsg(err?.message || "Erro de rede ao carregar representantes.");
       setData(null);
     } finally {
       setLoading(false);
@@ -237,32 +208,21 @@ export default function RepresentativeForm() {
         is_active: isActive ? 1 : 0,
       };
 
-      const url = editing
-        ? `${API_BASE}/api/admin/drones/representantes/${editing.id}`
-        : `${API_BASE}/api/admin/drones/representantes`;
-
-      const method = editing ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) {
-        setMsg(data?.message || "Falha ao salvar representante.");
-        return;
+      if (editing) {
+        await apiClient.put(`/api/admin/drones/representantes/${editing.id}`, payload);
+      } else {
+        await apiClient.post('/api/admin/drones/representantes', payload);
       }
 
       setMsg(editing ? "Representante atualizado." : "Representante criado.");
       resetForm();
       await load(1);
-    } catch {
-      setMsg("Erro de rede ao salvar representante.");
+    } catch (err: any) {
+      if (err?.status === 401 || err?.status === 403) {
+        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        return;
+      }
+      setMsg(err?.message || "Erro de rede ao salvar representante.");
     } finally {
       setSaving(false);
     }
@@ -272,23 +232,15 @@ export default function RepresentativeForm() {
     setMsg(null);
     setDeletingId(id);
     try {
-      const res = await fetch(`${API_BASE}/api/admin/drones/representantes/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) {
-        setMsg(data?.message || "Falha ao remover representante.");
-        return;
-      }
-
+      await apiClient.del(`/api/admin/drones/representantes/${id}`);
       setMsg("Representante removido.");
       await load(1);
-    } catch {
-      setMsg("Erro de rede ao remover representante.");
+    } catch (err: any) {
+      if (err?.status === 401 || err?.status === 403) {
+        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        return;
+      }
+      setMsg(err?.message || "Erro de rede ao remover representante.");
     } finally {
       setDeletingId(null);
     }

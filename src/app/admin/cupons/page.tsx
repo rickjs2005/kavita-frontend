@@ -3,13 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
-
+import apiClient from "@/lib/apiClient";
 import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 import type { Coupon } from "@/types/coupon";
 import { emptyCoupon } from "@/types/coupon";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function CuponsPage() {
   const [cupons, setCupons] = useState<Coupon[]>([]);
@@ -61,29 +59,18 @@ export default function CuponsPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/cupons`, {
-        credentials: "include", // 🔐 usa cookie HttpOnly
-        cache: "no-store",
-      });
-
-      if (res.status === 401 || res.status === 403) {
+      const data = await apiClient.get<Coupon[]>('/api/admin/cupons');
+      setCupons(data);
+    } catch (err: any) {
+      console.error(err);
+      if (err?.status === 401 || err?.status === 403) {
         const msg = "Sessão expirada ou sem permissão. Faça login no admin.";
         setError(msg);
         toast.error(msg);
         setCupons([]);
         return;
       }
-
-      if (!res.ok) {
-        const msg = await res.text().catch(() => "");
-        throw new Error(msg || `Erro HTTP ${res.status}`);
-      }
-
-      const data = (await res.json()) as Coupon[];
-      setCupons(data);
-    } catch (err: any) {
-      console.error(err);
-      const msg = err.message || "Erro ao carregar cupons.";
+      const msg = err?.message || "Erro ao carregar cupons.";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -114,32 +101,10 @@ export default function CuponsPage() {
         ativo: !!form.ativo,
       };
 
-      const isEdit = !!editing;
-      const url = isEdit
-        ? `${API_BASE}/api/admin/cupons/${editing!.id}`
-        : `${API_BASE}/api/admin/cupons`;
-      const method = isEdit ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        credentials: "include", // 🔐 cookie HttpOnly
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        const msg = "Sessão expirada ou sem permissão. Faça login no admin.";
-        setError(msg);
-        toast.error(msg);
-        return;
-      }
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        const msg = data?.message || data?.mensagem || `HTTP ${res.status}`;
-        throw new Error(msg);
+      if (editing) {
+        await apiClient.put(`/api/admin/cupons/${editing.id}`, payload);
+      } else {
+        await apiClient.post('/api/admin/cupons', payload);
       }
 
       await carregarCupons();
@@ -150,7 +115,13 @@ export default function CuponsPage() {
       );
     } catch (err: any) {
       console.error(err);
-      const msg = err.message || "Erro ao salvar o cupom.";
+      if (err?.status === 401 || err?.status === 403) {
+        const msg = "Sessão expirada ou sem permissão. Faça login no admin.";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+      const msg = err?.message || "Erro ao salvar o cupom.";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -162,27 +133,17 @@ export default function CuponsPage() {
     if (!confirm("Deseja realmente remover este cupom?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/cupons/${id}`, {
-        method: "DELETE",
-        credentials: "include", // 🔐 cookie HttpOnly
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        toast.error("Sessão expirada ou sem permissão. Faça login no admin.");
-        return;
-      }
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        const msg = data?.message || data?.mensagem || `HTTP ${res.status}`;
-        throw new Error(msg);
-      }
+      await apiClient.del(`/api/admin/cupons/${id}`);
 
       setCupons((prev) => prev.filter((c) => c.id !== id));
       toast.success("Cupom removido com sucesso.");
     } catch (err: any) {
       console.error(err);
-      const msg = err.message || "Erro ao remover o cupom.";
+      if (err?.status === 401 || err?.status === 403) {
+        toast.error("Sessão expirada ou sem permissão. Faça login no admin.");
+        return;
+      }
+      const msg = err?.message || "Erro ao remover o cupom.";
       setError(msg);
       toast.error(msg);
     }

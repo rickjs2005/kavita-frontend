@@ -31,16 +31,23 @@ async function fetchCsrfToken(baseUrl: string): Promise<string | null> {
     try {
       const url = joinUrl(baseUrl, "/api/csrf-token");
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.warn(`[apiClient] CSRF token fetch falhou: HTTP ${res.status}`);
+        return null;
+      }
       const json = await res.json();
       const token = typeof json?.token === "string" ? json.token : null;
       if (token) {
         _csrfToken = token;
         _csrfFetchedAt = Date.now();
+      } else {
+        console.warn("[apiClient] CSRF token endpoint não retornou token válido.");
       }
       return token;
-    } catch {
+    } catch (err) {
       // backend ainda não implementou; não quebra o fluxo
+      const msg = err instanceof Error ? err.message : "erro desconhecido";
+      console.warn(`[apiClient] CSRF token indisponível (endpoint ausente ou erro de rede). ${msg}`);
       return null;
     } finally {
       _csrfInflight = null;

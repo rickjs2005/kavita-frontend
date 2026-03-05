@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import CloseButton from "@/components/buttons/CloseButton";
 import CustomButton from "@/components/buttons/CustomButton";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type Categoria = {
   id: number;
@@ -38,17 +37,14 @@ export default function AdminCategoriasPage() {
   async function loadCategorias() {
     try {
       setLoading(true);
-      const res = await axios.get<Categoria[]>(
-        `${API_BASE}/api/admin/categorias`,
-        {
-          withCredentials: true, // 🔐 usa apenas cookie HttpOnly
-        }
+      const res = await apiClient.get<Categoria[]>(
+        '/api/admin/categorias'
       );
-      setCategorias(res.data);
+      setCategorias(res);
     } catch (err: any) {
       console.error(err);
 
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
+      if (err?.status === 401 || err?.status === 403) {
         toast.error("Sessão expirada. Faça login no painel admin.");
         router.push("/admin/login");
         return;
@@ -93,28 +89,22 @@ export default function AdminCategoriasPage() {
       setSaving(true);
 
       if (editingId) {
-        await axios.put(
-          `${API_BASE}/api/admin/categorias/${editingId}`,
+        await apiClient.put(
+          `/api/admin/categorias/${editingId}`,
           {
             name: form.name.trim(),
             slug: form.slug.trim() || undefined,
             sort_order: Number(form.sort_order) || 0,
-          },
-          {
-            withCredentials: true, // 🔐 cookie HttpOnly
           }
         );
         toast.success("Categoria atualizada.");
       } else {
-        await axios.post(
-          `${API_BASE}/api/admin/categorias`,
+        await apiClient.post(
+          '/api/admin/categorias',
           {
             name: form.name.trim(),
             slug: form.slug.trim() || undefined,
             sort_order: Number(form.sort_order) || 0,
-          },
-          {
-            withCredentials: true, // 🔐 cookie HttpOnly
           }
         );
         toast.success("Categoria criada.");
@@ -125,14 +115,14 @@ export default function AdminCategoriasPage() {
     } catch (err: any) {
       console.error(err);
 
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
+      if (err?.status === 401 || err?.status === 403) {
         toast.error("Sessão expirada. Faça login no painel admin.");
         router.push("/admin/login");
         return;
       }
 
       const msg =
-        err?.response?.data?.message || "Erro ao salvar categoria.";
+        err?.message || "Erro ao salvar categoria.";
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -141,12 +131,9 @@ export default function AdminCategoriasPage() {
 
   async function toggleAtivo(cat: Categoria) {
     try {
-      await axios.patch(
-        `${API_BASE}/api/admin/categorias/${cat.id}/status`,
-        { is_active: !cat.is_active },
-        {
-          withCredentials: true, // 🔐 cookie HttpOnly
-        }
+      await apiClient.patch(
+        `/api/admin/categorias/${cat.id}/status`,
+        { is_active: !cat.is_active }
       );
       toast.success(
         !cat.is_active ? "Categoria ativada." : "Categoria desativada."
@@ -155,7 +142,7 @@ export default function AdminCategoriasPage() {
     } catch (err: any) {
       console.error(err);
 
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
+      if (err?.status === 401 || err?.status === 403) {
         toast.error("Sessão expirada. Faça login no painel admin.");
         router.push("/admin/login");
         return;
@@ -169,22 +156,20 @@ export default function AdminCategoriasPage() {
     if (!window.confirm(`Remover categoria "${cat.name}"?`)) return;
 
     try {
-      await axios.delete(`${API_BASE}/api/admin/categorias/${cat.id}`, {
-        withCredentials: true, // 🔐 cookie HttpOnly
-      });
+      await apiClient.del(`/api/admin/categorias/${cat.id}`);
       toast.success("Categoria removida.");
       await loadCategorias();
     } catch (err: any) {
       console.error(err);
 
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
+      if (err?.status === 401 || err?.status === 403) {
         toast.error("Sessão expirada. Faça login no painel admin.");
         router.push("/admin/login");
         return;
       }
 
       const msg =
-        err?.response?.data?.message || "Erro ao remover categoria.";
+        err?.message || "Erro ao remover categoria.";
       toast.error(msg);
     }
   }

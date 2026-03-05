@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState, ChangeEvent } from "react";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import CustomButton from "@/components/buttons/CustomButton";
 import DeleteButton from "@/components/buttons/DeleteButton";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type StatusConta = "ativo" | "bloqueado" | null;
 
@@ -43,18 +42,15 @@ export default function AdminClienteEditPage() {
       try {
         setLoading(true);
 
-        const res = await axios.get<AdminUserDetail>(
-          `${API_BASE}/api/users/admin/${userId}`,
-          {
-            withCredentials: true, // 🔐 Cookie HttpOnly
-          }
+        const res = await apiClient.get<AdminUserDetail>(
+          `/api/users/admin/${userId}`
         );
 
-        setUser(res.data);
+        setUser(res);
       } catch (err: any) {
         console.error(err);
 
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
+        if (err?.status === 401 || err?.status === 403) {
           toast.error("Sessão expirada. Faça login novamente.");
           router.push("/admin/login");
           return;
@@ -83,22 +79,20 @@ export default function AdminClienteEditPage() {
     try {
       const { id, email, status_conta, ...body } = user;
 
-      await axios.put(`${API_BASE}/api/users/admin/${userId}`, body, {
-        withCredentials: true, // 🔐 Cookie HttpOnly
-      });
+      await apiClient.put(`/api/users/admin/${userId}`, body);
 
       toast.success("Dados do cliente atualizados com sucesso.");
     } catch (err: any) {
       console.error(err);
 
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
+      if (err?.status === 401 || err?.status === 403) {
         toast.error("Sessão expirada. Faça login novamente.");
         router.push("/admin/login");
         return;
       }
 
       const msg =
-        err?.response?.data?.mensagem ||
+        err?.message ||
         "Erro ao salvar dados do cliente.";
       toast.error(msg);
     } finally {
@@ -114,12 +108,9 @@ export default function AdminClienteEditPage() {
       const novoStatus: StatusConta =
         user.status_conta === "bloqueado" ? "ativo" : "bloqueado";
 
-      await axios.put(
-        `${API_BASE}/api/admin/users/${userId}/block`,
-        { status_conta: novoStatus },
-        {
-          withCredentials: true, // 🔐 Cookie HttpOnly
-        }
+      await apiClient.put(
+        `/api/admin/users/${userId}/block`,
+        { status_conta: novoStatus }
       );
 
       setUser((prev) =>
@@ -134,14 +125,14 @@ export default function AdminClienteEditPage() {
     } catch (err: any) {
       console.error(err);
 
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
+      if (err?.status === 401 || err?.status === 403) {
         toast.error("Sessão expirada. Faça login novamente.");
         router.push("/admin/login");
         return;
       }
 
       const msg =
-        err?.response?.data?.message ||
+        err?.message ||
         "Erro ao atualizar status da conta.";
       toast.error(msg);
     } finally {
@@ -151,16 +142,14 @@ export default function AdminClienteEditPage() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`${API_BASE}/api/admin/users/${userId}`, {
-        withCredentials: true, // 🔐 Cookie HttpOnly
-      });
+      await apiClient.del(`/api/admin/users/${userId}`);
 
       toast.success("Cliente removido com sucesso.");
       router.push("/admin/clientes");
     } catch (err: any) {
       console.error(err);
 
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
+      if (err?.status === 401 || err?.status === 403) {
         toast.error("Sessão expirada. Faça login novamente.");
         router.push("/admin/login");
         return;

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import apiClient from "@/lib/apiClient";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -32,23 +33,6 @@ type PickTarget = "HERO" | "CARD";
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(" ");
-}
-
-function isAuthError(res: Response) {
-  return res.status === 401 || res.status === 403;
-}
-
-function redirectToLogin() {
-  if (typeof window !== "undefined") window.location.assign("/admin/login");
-}
-
-async function readSafe(res: Response) {
-  const txt = await res.text();
-  try {
-    return { data: JSON.parse(txt) };
-  } catch {
-    return { data: null as any };
-  }
 }
 
 function absUrl(path?: string | null) {
@@ -252,17 +236,9 @@ export default function GalleryForm({
     setMsg(null);
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery`, {
-        credentials: "include",
-      });
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Erro ao listar galeria.");
-      }
+      const data = await apiClient.get<any>(
+        `/api/admin/drones/models/${modelKey}/gallery`
+      );
 
       const raw = Array.isArray(data)
         ? data
@@ -289,6 +265,10 @@ export default function GalleryForm({
 
       setItems(normalized);
     } catch (e: any) {
+      if (e?.status === 401 || e?.status === 403) {
+        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        return;
+      }
       setMsg(e?.message || "Falha ao carregar galeria.");
       setItems([]);
     } finally {
@@ -367,20 +347,19 @@ export default function GalleryForm({
         fd.append("sort_order", String(Number(p.sort_order) || 0));
         fd.append("is_active", p.is_active ? "1" : "0");
 
-        const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery`, {
-          method: "POST",
-          credentials: "include",
-          body: fd,
-        });
-
-        if (isAuthError(res)) return redirectToLogin();
-
-        const { data } = await readSafe(res);
-
-        if (!res.ok) {
-          updatePending(p.id, { error: data?.message || "Falha no upload." });
-        } else {
+        try {
+          await apiClient.post(
+            `/api/admin/drones/models/${modelKey}/gallery`,
+            fd,
+            { skipContentType: true }
+          );
           updatePending(p.id, { error: null });
+        } catch (uploadErr: any) {
+          if (uploadErr?.status === 401 || uploadErr?.status === 403) {
+            if (typeof window !== "undefined") window.location.assign("/admin/login");
+            return;
+          }
+          updatePending(p.id, { error: uploadErr?.message || "Falha no upload." });
         }
       }
 
@@ -412,19 +391,18 @@ export default function GalleryForm({
       fd.append("sort_order", String(Number(it.sort_order) || 0));
       fd.append("is_active", toBool(it.is_active) ? "1" : "0");
 
-      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${it.id}`, {
-        method: "PUT",
-        credentials: "include",
-        body: fd,
-      });
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) throw new Error(data?.message || "Erro ao salvar item.");
+      await apiClient.put(
+        `/api/admin/drones/models/${modelKey}/gallery/${it.id}`,
+        fd,
+        { skipContentType: true }
+      );
 
       await fetchList();
     } catch (e: any) {
+      if (e?.status === 401 || e?.status === 403) {
+        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        return;
+      }
       setMsg(e?.message || "Falha ao salvar item.");
     } finally {
       setSavingIds((m) => ({ ...m, [it.id]: false }));
@@ -445,20 +423,19 @@ export default function GalleryForm({
       fd.append("sort_order", String(Number(current.sort_order) || 0));
       fd.append("is_active", toBool(current.is_active) ? "1" : "0");
 
-      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`, {
-        method: "PUT",
-        credentials: "include",
-        body: fd,
-      });
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) throw new Error(data?.message || "Erro ao trocar mídia.");
+      await apiClient.put(
+        `/api/admin/drones/models/${modelKey}/gallery/${id}`,
+        fd,
+        { skipContentType: true }
+      );
 
       toast.success("Mídia trocada com sucesso.");
       await fetchList();
     } catch (e: any) {
+      if (e?.status === 401 || e?.status === 403) {
+        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        return;
+      }
       setMsg(e?.message || "Falha ao trocar mídia.");
       toast.error(e?.message || "Falha ao trocar mídia.");
     } finally {
@@ -471,15 +448,7 @@ export default function GalleryForm({
     setMsg(null);
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) throw new Error(data?.message || "Erro ao remover item.");
+      await apiClient.del(`/api/admin/drones/models/${modelKey}/gallery/${id}`);
 
       toast.success("Mídia removida com sucesso.");
 
@@ -488,6 +457,10 @@ export default function GalleryForm({
 
       await fetchList();
     } catch (e: any) {
+      if (e?.status === 401 || e?.status === 403) {
+        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        return;
+      }
       setMsg(e?.message || "Falha ao remover item.");
       toast.error(e?.message || "Falha ao remover item.");
     } finally {
