@@ -7,7 +7,6 @@ import toast from "react-hot-toast";
 import CustomButton from "@/components/buttons/CustomButton";
 import DeleteButton from "@/components/buttons/DeleteButton";
 
-
 type StatusConta = "ativo" | "bloqueado" | null;
 
 type AdminUserDetail = {
@@ -43,7 +42,7 @@ export default function AdminClienteEditPage() {
         setLoading(true);
 
         const res = await apiClient.get<AdminUserDetail>(
-          `/api/users/admin/${userId}`
+          `/api/users/admin/${userId}`,
         );
 
         setUser(res);
@@ -91,9 +90,7 @@ export default function AdminClienteEditPage() {
         return;
       }
 
-      const msg =
-        err?.message ||
-        "Erro ao salvar dados do cliente.";
+      const msg = err?.message || "Erro ao salvar dados do cliente.";
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -108,19 +105,16 @@ export default function AdminClienteEditPage() {
       const novoStatus: StatusConta =
         user.status_conta === "bloqueado" ? "ativo" : "bloqueado";
 
-      await apiClient.put(
-        `/api/admin/users/${userId}/block`,
-        { status_conta: novoStatus }
-      );
+      await apiClient.put(`/api/admin/users/${userId}/block`, {
+        status_conta: novoStatus,
+      });
 
-      setUser((prev) =>
-        prev ? { ...prev, status_conta: novoStatus } : prev
-      );
+      setUser((prev) => (prev ? { ...prev, status_conta: novoStatus } : prev));
 
       toast.success(
         novoStatus === "bloqueado"
           ? "Cliente bloqueado para compras."
-          : "Conta ativada com sucesso."
+          : "Conta ativada com sucesso.",
       );
     } catch (err: any) {
       console.error(err);
@@ -131,9 +125,7 @@ export default function AdminClienteEditPage() {
         return;
       }
 
-      const msg =
-        err?.message ||
-        "Erro ao atualizar status da conta.";
+      const msg = err?.message || "Erro ao atualizar status da conta.";
       toast.error(msg);
     } finally {
       setBlocking(false);
@@ -162,9 +154,7 @@ export default function AdminClienteEditPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <p className="text-sm text-gray-500">
-          Carregando dados do cliente…
-        </p>
+        <p className="text-sm text-gray-500">Carregando dados do cliente…</p>
       </div>
     );
   }
@@ -172,9 +162,7 @@ export default function AdminClienteEditPage() {
   if (!user) {
     return (
       <div className="p-6">
-        <p className="text-sm text-red-500">
-          Cliente não encontrado.
-        </p>
+        <p className="text-sm text-red-500">Cliente não encontrado.</p>
       </div>
     );
   }
@@ -241,8 +229,8 @@ export default function AdminClienteEditPage() {
                 {blocking
                   ? "Atualizando..."
                   : isBlocked
-                  ? "Ativar conta"
-                  : "Bloquear cliente"}
+                    ? "Ativar conta"
+                    : "Bloquear cliente"}
               </button>
             </div>
           </div>
@@ -251,8 +239,9 @@ export default function AdminClienteEditPage() {
           {isBlocked && (
             <div className="rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-3 text-xs text-red-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p>
-                Este cliente está <span className="font-semibold">bloqueado</span>{" "}
-                e não poderá finalizar compras até a conta ser ativada.
+                Este cliente está{" "}
+                <span className="font-semibold">bloqueado</span> e não poderá
+                finalizar compras até a conta ser ativada.
               </p>
               <button
                 type="button"

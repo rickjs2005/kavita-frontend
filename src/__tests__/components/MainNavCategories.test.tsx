@@ -7,8 +7,9 @@ import MainNavCategoriesRaw, {
   type PublicCategory,
 } from "../../components/layout/MainNavCategories";
 
-const MainNavCategories =
-  MainNavCategoriesRaw as React.ComponentType<{ categories: PublicCategory[] }>;
+const MainNavCategories = MainNavCategoriesRaw as React.ComponentType<{
+  categories: PublicCategory[];
+}>;
 
 vi.mock("next/link", () => ({
   __esModule: true,
@@ -49,13 +50,14 @@ describe("MainNavCategories (props-driven)", () => {
 
     render(<MainNavCategories categories={categories} />);
 
-    expect(
-      screen.getByRole("link", { name: "Medicamentos" })
-    ).toHaveAttribute("href", "/categorias/medicamentos");
+    expect(screen.getByRole("link", { name: "Medicamentos" })).toHaveAttribute(
+      "href",
+      "/categorias/medicamentos",
+    );
 
     expect(screen.getByRole("link", { name: "Pets" })).toHaveAttribute(
       "href",
-      "/categorias/pets"
+      "/categorias/pets",
     );
   });
 
@@ -68,12 +70,12 @@ describe("MainNavCategories (props-driven)", () => {
 
     expect(screen.getByRole("link", { name: "Serviços" })).toHaveAttribute(
       "href",
-      "/servicos"
+      "/servicos",
     );
 
     expect(screen.getByRole("link", { name: "Kavita Drone" })).toHaveAttribute(
       "href",
-      "/drones"
+      "/drones",
     );
   });
 });

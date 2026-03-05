@@ -69,15 +69,21 @@ export default function GallerySection({
   cardItemId?: number | null;
 }) {
   const heroItem =
-    heroItemId != null ? items.find((x) => Number(x.id) === Number(heroItemId)) : undefined;
+    heroItemId != null
+      ? items.find((x) => Number(x.id) === Number(heroItemId))
+      : undefined;
 
   const cardItem =
-    cardItemId != null ? items.find((x) => Number(x.id) === Number(cardItemId)) : undefined;
+    cardItemId != null
+      ? items.find((x) => Number(x.id) === Number(cardItemId))
+      : undefined;
 
   return (
     <section className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
       <div className="flex items-end justify-between gap-4">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-white">Galeria</h2>
+        <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+          Galeria
+        </h2>
         <span className="hidden sm:inline text-xs text-slate-400">
           Fotos e vídeos reais
         </span>
@@ -97,8 +103,10 @@ export default function GallerySection({
           {items.map((it) => {
             const src = buildSrc(it.media_path);
 
-            const isHero = heroItemId != null && Number(it.id) === Number(heroItemId);
-            const isCard = cardItemId != null && Number(it.id) === Number(cardItemId);
+            const isHero =
+              heroItemId != null && Number(it.id) === Number(heroItemId);
+            const isCard =
+              cardItemId != null && Number(it.id) === Number(cardItemId);
 
             return (
               <div

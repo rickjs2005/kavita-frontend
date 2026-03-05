@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { ALLOWED_SLUGS, formatDateTimeBR, fmtNum } from "@/utils/kavita-news/cotacoes";
+import {
+  ALLOWED_SLUGS,
+  formatDateTimeBR,
+  fmtNum,
+} from "@/utils/kavita-news/cotacoes";
 
 describe("utils/kavita-news/cotacoes", () => {
   describe("ALLOWED_SLUGS", () => {

@@ -35,7 +35,10 @@ function makeService(overrides: Partial<Service> = {}): Service {
 describe("ServiceCard", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.stubGlobal("confirm", vi.fn(() => true));
+    vi.stubGlobal(
+      "confirm",
+      vi.fn(() => true),
+    );
   });
 
   afterEach(() => {
@@ -58,7 +61,7 @@ describe("ServiceCard", () => {
     render(<ServiceCard servico={servico as any} />);
 
     expect(
-      screen.getByRole("heading", { name: /joão da silva/i })
+      screen.getByRole("heading", { name: /joão da silva/i }),
     ).toBeInTheDocument();
 
     expect(screen.getByText(/Cargo:/i)).toBeInTheDocument();
@@ -70,7 +73,7 @@ describe("ServiceCard", () => {
     const link = screen.getByRole("link", { name: /WhatsApp:/i });
     expect(link).toHaveAttribute("href", "https://wa.me/31999991111");
     expect(
-      screen.getByText(/WhatsApp:\s*\(31\)\s*99999-1111/i)
+      screen.getByText(/WhatsApp:\s*\(31\)\s*99999-1111/i),
     ).toBeInTheDocument();
   });
 
@@ -88,8 +91,12 @@ describe("ServiceCard", () => {
 
     expect(screen.getByText(/2 foto\(s\)/i)).toBeInTheDocument();
 
-    const thumb1 = screen.getByRole("img", { name: /Miniatura 1/i }) as HTMLImageElement;
-    const thumb2 = screen.getByRole("img", { name: /Miniatura 2/i }) as HTMLImageElement;
+    const thumb1 = screen.getByRole("img", {
+      name: /Miniatura 1/i,
+    }) as HTMLImageElement;
+    const thumb2 = screen.getByRole("img", {
+      name: /Miniatura 2/i,
+    }) as HTMLImageElement;
 
     const btnThumb2 = thumb2.closest("button");
     expect(btnThumb2).toBeTruthy();
@@ -126,8 +133,12 @@ describe("ServiceCard", () => {
 
     render(<ServiceCard servico={servico as any} readOnly />);
 
-    expect(screen.queryByRole("button", { name: /Editar/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Remover/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Editar/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Remover/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("ao clicar em Editar deve chamar onEditar com o serviço", () => {
@@ -139,14 +150,19 @@ describe("ServiceCard", () => {
     fireEvent.click(screen.getByRole("button", { name: /Editar/i }));
 
     expect(onEditar).toHaveBeenCalledTimes(1);
-    expect(onEditar).toHaveBeenCalledWith(expect.objectContaining({ id: servico.id }));
+    expect(onEditar).toHaveBeenCalledWith(
+      expect.objectContaining({ id: servico.id }),
+    );
   });
 
   it("não deve remover se window.confirm retornar false", () => {
     const servico = makeService();
     const onRemover = vi.fn().mockResolvedValue(undefined);
 
-    vi.stubGlobal("confirm", vi.fn(() => false));
+    vi.stubGlobal(
+      "confirm",
+      vi.fn(() => false),
+    );
 
     render(<ServiceCard servico={servico as any} onRemover={onRemover} />);
 
@@ -176,7 +192,9 @@ describe("ServiceCard", () => {
     resolvePromise();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Remover/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Remover/i }),
+      ).toBeInTheDocument();
     });
   });
 

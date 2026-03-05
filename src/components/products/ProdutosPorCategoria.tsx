@@ -55,7 +55,7 @@ export default function ProdutosPorCategoria({ categoria, limit = 12 }: Props) {
         setList([]);
 
         const url = `${API}/api/products?category=${encodeURIComponent(
-          categoria
+          categoria,
         )}`;
         const res = await fetch(url, {
           signal: ctrl.signal,
@@ -81,7 +81,7 @@ export default function ProdutosPorCategoria({ categoria, limit = 12 }: Props) {
 
   const skeletons = useMemo(
     () => new Array(Math.min(5, limit)).fill(0),
-    [limit]
+    [limit],
   );
 
   const handleScroll = (direction: "left" | "right") => {

@@ -15,7 +15,7 @@ describe("Pagination", () => {
 
     // Act
     const { container } = render(
-      <Pagination page={1} totalPages={1} onPageChange={onPageChange} />
+      <Pagination page={1} totalPages={1} onPageChange={onPageChange} />,
     );
 
     // Assert
@@ -28,7 +28,9 @@ describe("Pagination", () => {
     render(<Pagination page={2} totalPages={5} onPageChange={vi.fn()} />);
 
     // Assert
-    expect(screen.getByRole("button", { name: "Anterior" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Anterior" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Próxima" })).toBeInTheDocument();
   });
 

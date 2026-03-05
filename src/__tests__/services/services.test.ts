@@ -21,7 +21,7 @@ describe("services/services", () => {
 
       expect(apiFetchMock).toHaveBeenCalledWith(
         "/api/servicos?page=1&limit=12&sort=id&order=desc",
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
     });
 
@@ -30,7 +30,7 @@ describe("services/services", () => {
 
       expect(apiFetchMock).toHaveBeenCalledWith(
         "/api/servicos?page=1&limit=12&sort=id&order=desc&q=consulta",
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
     });
 
@@ -40,7 +40,7 @@ describe("services/services", () => {
       // URLSearchParams vai encodear acentos
       expect(apiFetchMock).toHaveBeenCalledWith(
         "/api/servicos?page=1&limit=12&sort=id&order=desc&especialidade=veterin%C3%A1rio",
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
     });
 
@@ -49,7 +49,7 @@ describe("services/services", () => {
 
       expect(apiFetchMock).toHaveBeenCalledWith(
         "/api/servicos?page=1&limit=12&sort=id&order=desc",
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
     });
 
@@ -58,7 +58,7 @@ describe("services/services", () => {
 
       expect(apiFetchMock).toHaveBeenCalledWith(
         "/api/servicos?page=2&limit=24&sort=nome&order=asc",
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
     });
 
@@ -117,20 +117,22 @@ describe("services/services", () => {
 
     it("lança erro limpo quando id inválido", async () => {
       await expect(getServiceById(undefined as any)).rejects.toThrow(
-        "Service id is required"
+        "Service id is required",
       );
       await expect(getServiceById(null as any)).rejects.toThrow(
-        "Service id is required"
+        "Service id is required",
       );
       await expect(getServiceById("" as any)).rejects.toThrow(
-        "Service id is required"
+        "Service id is required",
       );
     });
 
     it("quando apiFetch falha, lança erro limpo (não vaza mensagem original)", async () => {
       apiFetchMock.mockRejectedValueOnce(new Error("Internal Server Error"));
 
-      await expect(getServiceById(1)).rejects.toThrow("Failed to fetch service");
+      await expect(getServiceById(1)).rejects.toThrow(
+        "Failed to fetch service",
+      );
     });
   });
 });

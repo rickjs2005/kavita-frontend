@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import type { Service } from "@/types/service";
 import ServicoContent from "./ServicoContent";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -31,8 +30,8 @@ async function fetchService(id: string): Promise<Service | null> {
       images: Array.isArray(data.images)
         ? data.images
         : typeof data.images === "string" && data.images
-        ? [data.images]
-        : [],
+          ? [data.images]
+          : [],
     };
 
     return normalizado;

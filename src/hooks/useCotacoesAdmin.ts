@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import type { CotacaoFormState, CotacaoItem, CotacaoSlug } from "@/types/kavita-news";
+import type {
+  CotacaoFormState,
+  CotacaoItem,
+  CotacaoSlug,
+} from "@/types/kavita-news";
 import { ALLOWED_SLUGS } from "@/utils/kavita-news/cotacoes";
 
 type Props = {
@@ -25,7 +29,11 @@ function toNumString(v: any) {
   return s;
 }
 
-export function useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }: Props) {
+export function useCotacoesAdmin({
+  apiBase,
+  authOptions,
+  onUnauthorized,
+}: Props) {
   const [rows, setRows] = useState<CotacaoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -35,7 +43,9 @@ export function useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }: Props
   const [mode, setMode] = useState<"create" | "edit">("create");
   const [editing, setEditing] = useState<CotacaoItem | null>(null);
 
-  const [allowedSlugs, setAllowedSlugs] = useState<string[]>([...ALLOWED_SLUGS]);
+  const [allowedSlugs, setAllowedSlugs] = useState<string[]>([
+    ...ALLOWED_SLUGS,
+  ]);
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [syncingId, setSyncingId] = useState<number | null>(null);
@@ -81,7 +91,7 @@ export function useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }: Props
 
       return data;
     },
-    [apiBase, authOptions, onUnauthorized]
+    [apiBase, authOptions, onUnauthorized],
   );
 
   const load = useCallback(async () => {
@@ -93,7 +103,8 @@ export function useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }: Props
       setRows(Array.isArray(list) ? list : []);
 
       const metaSlugs = j?.meta?.allowed_slugs;
-      if (Array.isArray(metaSlugs) && metaSlugs.length > 0) setAllowedSlugs(metaSlugs);
+      if (Array.isArray(metaSlugs) && metaSlugs.length > 0)
+        setAllowedSlugs(metaSlugs);
     } catch (e: any) {
       setErrorMsg(e?.message || "Erro ao carregar cotações.");
     } finally {
@@ -112,7 +123,10 @@ export function useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }: Props
       const aa = Number(a?.ativo ?? 1);
       const bb = Number(b?.ativo ?? 1);
       if (aa !== bb) return bb - aa;
-      return String(a?.type || "").localeCompare(String(b?.type || "")) || String(a?.name || "").localeCompare(String(b?.name || ""));
+      return (
+        String(a?.type || "").localeCompare(String(b?.type || "")) ||
+        String(a?.name || "").localeCompare(String(b?.name || ""))
+      );
     });
   }, [rows]);
 
@@ -217,7 +231,7 @@ export function useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }: Props
         setDeletingId(null);
       }
     },
-    [fetchJson, load]
+    [fetchJson, load],
   );
 
   const sync = useCallback(
@@ -225,7 +239,9 @@ export function useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }: Props
       setSyncingId(id);
       setErrorMsg(null);
       try {
-        await fetchJson(`/api/admin/news/cotacoes/${id}/sync`, { method: "POST" });
+        await fetchJson(`/api/admin/news/cotacoes/${id}/sync`, {
+          method: "POST",
+        });
         toast.success("Sync concluído.");
         await load();
       } catch (e: any) {
@@ -236,7 +252,7 @@ export function useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }: Props
         setSyncingId(null);
       }
     },
-    [fetchJson, load]
+    [fetchJson, load],
   );
 
   const syncAll = useCallback(async () => {

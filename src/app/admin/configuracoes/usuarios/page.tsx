@@ -112,7 +112,7 @@ export default function AdminUserPermissionsConfigPage() {
         }
         setErrorMsg(
           err?.message ||
-            "Não foi possível carregar papéis e permissões no momento."
+            "Não foi possível carregar papéis e permissões no momento.",
         );
       } finally {
         setLoading(false);
@@ -190,7 +190,8 @@ export default function AdminUserPermissionsConfigPage() {
       const newRole: Role = {
         id: created.id,
         name: created.name ?? created.nome ?? nome,
-        description: created.description ?? created.descricao ?? (descricao || ""),
+        description:
+          created.description ?? created.descricao ?? (descricao || ""),
         slug: created.slug ?? slug,
         permissions: Array.isArray(created.permissions)
           ? created.permissions
@@ -231,11 +232,14 @@ export default function AdminUserPermissionsConfigPage() {
 
     setCreatingPerm(true);
     try {
-      const created: Permission = await apiClient.post<Permission>("/api/admin/permissions", {
-        chave,
-        grupo,
-        descricao: descricao || undefined,
-      });
+      const created: Permission = await apiClient.post<Permission>(
+        "/api/admin/permissions",
+        {
+          chave,
+          grupo,
+          descricao: descricao || undefined,
+        },
+      );
 
       setPermissions((prev) => [...prev, created]);
       setNewPermKey("");
@@ -259,7 +263,7 @@ export default function AdminUserPermissionsConfigPage() {
   async function handleToggleRolePermission(
     roleId: number,
     permKey: string,
-    checked: boolean
+    checked: boolean,
   ) {
     const previousRoles = roles;
 
@@ -271,7 +275,10 @@ export default function AdminUserPermissionsConfigPage() {
         return { ...role, permissions: [...role.permissions, permKey] };
       }
       if (!checked && alreadyHas) {
-        return { ...role, permissions: role.permissions.filter((p) => p !== permKey) };
+        return {
+          ...role,
+          permissions: role.permissions.filter((p) => p !== permKey),
+        };
       }
       return role;
     });
@@ -282,7 +289,9 @@ export default function AdminUserPermissionsConfigPage() {
       const roleToUpdate = updatedRoles.find((r) => r.id === roleId);
       if (!roleToUpdate) return;
 
-      await apiClient.put(`/api/admin/roles/${roleId}`, { permissions: roleToUpdate.permissions });
+      await apiClient.put(`/api/admin/roles/${roleId}`, {
+        permissions: roleToUpdate.permissions,
+      });
 
       toast.success("Permissões do papel atualizadas.");
     } catch (err: any) {
@@ -305,7 +314,7 @@ export default function AdminUserPermissionsConfigPage() {
     }
 
     const ok = confirm(
-      `Tem certeza que deseja excluir esta permissão?\n\n${perm.chave}\nGrupo: ${perm.grupo}\n\nIsso pode afetar o acesso de usuários no admin.`
+      `Tem certeza que deseja excluir esta permissão?\n\n${perm.chave}\nGrupo: ${perm.grupo}\n\nIsso pode afetar o acesso de usuários no admin.`,
     );
     if (!ok) return;
 
@@ -318,7 +327,7 @@ export default function AdminUserPermissionsConfigPage() {
       rs.map((r) => ({
         ...r,
         permissions: r.permissions.filter((k) => k !== perm.chave),
-      }))
+      })),
     );
 
     try {
@@ -363,10 +372,12 @@ export default function AdminUserPermissionsConfigPage() {
           <p className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300">
             Configurações • Usuários & Permissões
           </p>
-          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">Papéis e permissões</h1>
+          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">
+            Papéis e permissões
+          </h1>
           <p className="max-w-2xl text-sm text-slate-400">
-            Defina os papéis administrativos (master, gerente, suporte, leitura, etc.)
-            e quais permissões cada um deles possui dentro do painel.
+            Defina os papéis administrativos (master, gerente, suporte, leitura,
+            etc.) e quais permissões cada um deles possui dentro do painel.
           </p>
         </div>
 
@@ -412,7 +423,9 @@ export default function AdminUserPermissionsConfigPage() {
                   {newRoleName.trim() && (
                     <p className="mt-1 text-[11px] text-slate-500">
                       Slug gerado:{" "}
-                      <span className="font-mono">{slugify(newRoleName.trim())}</span>
+                      <span className="font-mono">
+                        {slugify(newRoleName.trim())}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -497,7 +510,11 @@ export default function AdminUserPermissionsConfigPage() {
                   <div className="flex justify-end">
                     <button
                       type="button"
-                      disabled={creatingPerm || !newPermKey.trim() || !newPermGroup.trim()}
+                      disabled={
+                        creatingPerm ||
+                        !newPermKey.trim() ||
+                        !newPermGroup.trim()
+                      }
                       onClick={handleCreatePermission}
                       className="inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
                     >
@@ -514,7 +531,9 @@ export default function AdminUserPermissionsConfigPage() {
             <div className="border-b border-slate-800 px-4 py-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold">Matriz de papéis x permissões</h2>
+                  <h2 className="text-sm font-semibold">
+                    Matriz de papéis x permissões
+                  </h2>
                   <p className="text-[11px] text-slate-400">
                     Marque quais permissões cada papel administrativo possui.
                   </p>
@@ -552,7 +571,8 @@ export default function AdminUserPermissionsConfigPage() {
 
             {roles.length === 0 || permissions.length === 0 ? (
               <div className="p-4 text-sm text-slate-300">
-                Cadastre ao menos um papel e uma permissão para começar a configurar a matriz.
+                Cadastre ao menos um papel e uma permissão para começar a
+                configurar a matriz.
               </div>
             ) : filteredPermissions.length === 0 ? (
               <div className="p-4 text-sm text-slate-300">
@@ -598,10 +618,16 @@ export default function AdminUserPermissionsConfigPage() {
                                 className="h-4 w-4 accent-emerald-500"
                                 checked={checked}
                                 onChange={(e) =>
-                                  handleToggleRolePermission(role.id, perm.chave, e.target.checked)
+                                  handleToggleRolePermission(
+                                    role.id,
+                                    perm.chave,
+                                    e.target.checked,
+                                  )
                                 }
                               />
-                              <span className="text-slate-100">{role.name}</span>
+                              <span className="text-slate-100">
+                                {role.name}
+                              </span>
                             </label>
                           );
                         })}
@@ -633,12 +659,18 @@ export default function AdminUserPermissionsConfigPage() {
                       {filteredPermissions.map((perm, index) => (
                         <tr
                           key={perm.id}
-                          className={index % 2 === 0 ? "bg-slate-950/60" : "bg-slate-900/40"}
+                          className={
+                            index % 2 === 0
+                              ? "bg-slate-950/60"
+                              : "bg-slate-900/40"
+                          }
                         >
                           <td className="border-b border-slate-900/80 px-3 py-2 align-top">
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex flex-col gap-1">
-                                <span className="font-medium text-slate-50">{perm.chave}</span>
+                                <span className="font-medium text-slate-50">
+                                  {perm.chave}
+                                </span>
                                 <span className="text-[11px] text-emerald-300">
                                   Grupo: {perm.grupo}
                                 </span>
@@ -654,7 +686,9 @@ export default function AdminUserPermissionsConfigPage() {
                           </td>
 
                           {roles.map((role) => {
-                            const checked = role.permissions.includes(perm.chave);
+                            const checked = role.permissions.includes(
+                              perm.chave,
+                            );
                             return (
                               <td
                                 key={role.id}
@@ -665,7 +699,11 @@ export default function AdminUserPermissionsConfigPage() {
                                   className="h-4 w-4 accent-emerald-500"
                                   checked={checked}
                                   onChange={(e) =>
-                                    handleToggleRolePermission(role.id, perm.chave, e.target.checked)
+                                    handleToggleRolePermission(
+                                      role.id,
+                                      perm.chave,
+                                      e.target.checked,
+                                    )
                                   }
                                 />
                               </td>

@@ -5,7 +5,8 @@ import DroneModelSpecsEditor from "./DroneModelSpecsEditor";
 import DroneModelFeaturesEditor from "./DroneModelFeaturesEditor";
 import DroneModelBenefitsEditor from "./DroneModelBenefitsEditor";
 import GalleryForm from "./GalleryForm";
-import apiClient from "@/lib/apiClient";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type DroneModelRow = {
   key: string;
@@ -39,6 +40,23 @@ type AdminModelAggregateResponse = {
   data?: ModelData | null; // models_json[modelKey]
   gallery?: any[]; // galeria do modelo (array)
 };
+
+function isAuthError(res: Response) {
+  return res.status === 401 || res.status === 403;
+}
+
+function redirectToLogin() {
+  if (typeof window !== "undefined") window.location.assign("/admin/login");
+}
+
+async function readSafe(res: Response) {
+  const txt = await res.text();
+  try {
+    return { txt, data: JSON.parse(txt) };
+  } catch {
+    return { txt, data: null as any };
+  }
+}
 
 function extractItemsArray<T>(payload: any): T[] {
   if (Array.isArray(payload)) return payload as T[];
@@ -91,8 +109,12 @@ function SectionShell({
     <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-white/[0.03] shadow-[0_10px_30px_-18px_rgba(0,0,0,0.6)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 border-b border-white/10 px-5 py-4 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-white">{title}</h2>
-          {subtitle ? <p className="mt-0.5 text-sm text-white/60">{subtitle}</p> : null}
+          <h2 className="truncate text-base font-semibold text-white">
+            {title}
+          </h2>
+          {subtitle ? (
+            <p className="mt-0.5 text-sm text-white/60">{subtitle}</p>
+          ) : null}
         </div>
         {right ? <div className="flex items-center gap-2">{right}</div> : null}
       </div>
@@ -103,6 +125,35 @@ function SectionShell({
       <div className="pointer-events-none absolute -left-24 -bottom-24 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
     </div>
   );
+}
+
+/**
+ * ✅ Helper único pro admin:
+ * - sempre manda cookies (credentials: include)
+ * - redireciona no 401/403
+ * - padroniza leitura de erro
+ */
+async function adminFetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    credentials: "include",
+    cache: "no-store",
+    ...init,
+    headers: {
+      ...(init?.headers || {}),
+    },
+  });
+
+  if (isAuthError(res)) {
+    redirectToLogin();
+    throw new Error("AUTH");
+  }
+
+  const { data } = await readSafe(res);
+  if (!res.ok) {
+    throw new Error(data?.message || "Falha na requisição.");
+  }
+
+  return data as T;
 }
 
 export default function DroneModelContentPanel() {
@@ -119,7 +170,7 @@ export default function DroneModelContentPanel() {
 
   const selected = useMemo(
     () => models.find((m) => m.key === selectedKey) || null,
-    [models, selectedKey]
+    [models, selectedKey],
   );
 
   const selectedIsActive = String(selected?.is_active ?? 1) === "1";
@@ -130,23 +181,27 @@ export default function DroneModelContentPanel() {
     setMsg(null);
 
     try {
-      const data = await apiClient.get<any>("/api/admin/drones/models?includeInactive=1");
+      const data = await adminFetchJson<any>(
+        "/api/admin/drones/models?includeInactive=1",
+      );
       const items = extractItemsArray<DroneModelRow>(data);
 
       const sorted = [...items].sort(
         (a, b) =>
           (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0) ||
-          a.label.localeCompare(b.label)
+          a.label.localeCompare(b.label),
       );
 
       setModels(sorted);
 
       const keep = opts?.keepSelection ?? true;
       if (!keep || !selectedKey || !sorted.some((x) => x.key === selectedKey)) {
-        const firstActive = sorted.find((x) => String(x.is_active ?? 1) === "1") || sorted[0];
+        const firstActive =
+          sorted.find((x) => String(x.is_active ?? 1) === "1") || sorted[0];
         if (firstActive?.key) setSelectedKey(firstActive.key);
       }
     } catch (e: any) {
+      if (e?.message === "AUTH") return;
       setMsg(e?.message || "Falha ao carregar modelos.");
     } finally {
       setLoadingModels(false);
@@ -160,15 +215,17 @@ export default function DroneModelContentPanel() {
     setMsg(null);
 
     try {
-      const agg = await apiClient.get<AdminModelAggregateResponse>(
-        `/api/admin/drones/models/${selectedKey}`
+      const agg = await adminFetchJson<AdminModelAggregateResponse>(
+        `/api/admin/drones/models/${selectedKey}`,
       );
 
-      const label = agg?.model?.label || selected?.label || selectedKey.toUpperCase();
+      const label =
+        agg?.model?.label || selected?.label || selectedKey.toUpperCase();
       setModelLabel(label);
 
       setModelData((agg?.data ?? null) as any);
     } catch (e: any) {
+      if (e?.message === "AUTH") return;
       setMsg(e?.message || "Falha ao carregar dados do modelo.");
       setModelData(null);
       setModelLabel("");
@@ -183,7 +240,11 @@ export default function DroneModelContentPanel() {
    * - Persiste via endpoint
    * - Recarrega aggregate como fonte da verdade
    */
-  async function savePick(modelKey: string, target: "HERO" | "CARD", mediaId: number) {
+  async function savePick(
+    modelKey: string,
+    target: "HERO" | "CARD",
+    mediaId: number,
+  ) {
     setMsg(null);
 
     // optimistic update (UI responde na hora)
@@ -194,9 +255,13 @@ export default function DroneModelContentPanel() {
     });
 
     try {
-      const resp = await apiClient.put<any>(
+      const resp = await adminFetchJson<any>(
         `/api/admin/drones/models/${modelKey}/media-selection`,
-        { target, media_id: mediaId }
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target, media_id: mediaId }),
+        },
       );
 
       // se o backend devolver algo útil, aplica também (tolerante)
@@ -215,8 +280,12 @@ export default function DroneModelContentPanel() {
           const base = prev || {};
           return {
             ...base,
-            ...(nextHero !== undefined ? { current_hero_media_id: Number(nextHero) } : null),
-            ...(nextCard !== undefined ? { current_card_media_id: Number(nextCard) } : null),
+            ...(nextHero !== undefined
+              ? { current_hero_media_id: Number(nextHero) }
+              : null),
+            ...(nextCard !== undefined
+              ? { current_card_media_id: Number(nextCard) }
+              : null),
           };
         });
       }
@@ -261,7 +330,8 @@ export default function DroneModelContentPanel() {
               </h1>
 
               <p className="mt-1 max-w-2xl text-sm text-white/60">
-                Configure por modelo: <span className="text-white/80">especificações</span>,{" "}
+                Configure por modelo:{" "}
+                <span className="text-white/80">especificações</span>,{" "}
                 <span className="text-white/80">funcionalidades</span>,{" "}
                 <span className="text-white/80">benefícios</span> e{" "}
                 <span className="text-white/80">galeria</span>.
@@ -318,10 +388,15 @@ export default function DroneModelContentPanel() {
             ) : selectedKey ? (
               <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div className="text-sm text-white/70">
-                  Editando: <b className="text-white">{modelLabel || selectedKey.toUpperCase()}</b>
+                  Editando:{" "}
+                  <b className="text-white">
+                    {modelLabel || selectedKey.toUpperCase()}
+                  </b>
                 </div>
                 {lastUpdate ? (
-                  <div className="text-xs text-white/45">Última atualização: {lastUpdate}</div>
+                  <div className="text-xs text-white/45">
+                    Última atualização: {lastUpdate}
+                  </div>
                 ) : null}
               </div>
             ) : null}
@@ -331,34 +406,52 @@ export default function DroneModelContentPanel() {
 
       {selectedKey ? (
         <div className="flex flex-col gap-5">
-          <SectionShell title="Especificações" subtitle={`Por modelo: ${selectedKey.toUpperCase()}`}>
+          <SectionShell
+            title="Especificações"
+            subtitle={`Por modelo: ${selectedKey.toUpperCase()}`}
+          >
             <DroneModelSpecsEditor
               modelKey={selectedKey}
               initialTitle={modelData?.specs_title ?? "Especificações"}
               initialGroups={modelData?.specs_items_json ?? []}
-              onSaved={(p) => setModelData((prev) => ({ ...(prev || {}), ...p }))}
+              onSaved={(p) =>
+                setModelData((prev) => ({ ...(prev || {}), ...p }))
+              }
             />
           </SectionShell>
 
-          <SectionShell title="Funcionalidades" subtitle={`Por modelo: ${selectedKey.toUpperCase()}`}>
+          <SectionShell
+            title="Funcionalidades"
+            subtitle={`Por modelo: ${selectedKey.toUpperCase()}`}
+          >
             <DroneModelFeaturesEditor
               modelKey={selectedKey}
               initialTitle={modelData?.features_title ?? "Funcionalidades"}
               initialItems={modelData?.features_items_json ?? []}
-              onSaved={(p) => setModelData((prev) => ({ ...(prev || {}), ...p }))}
+              onSaved={(p) =>
+                setModelData((prev) => ({ ...(prev || {}), ...p }))
+              }
             />
           </SectionShell>
 
-          <SectionShell title="Benefícios" subtitle={`Por modelo: ${selectedKey.toUpperCase()}`}>
+          <SectionShell
+            title="Benefícios"
+            subtitle={`Por modelo: ${selectedKey.toUpperCase()}`}
+          >
             <DroneModelBenefitsEditor
               modelKey={selectedKey}
               initialTitle={modelData?.benefits_title ?? "Benefícios"}
               initialItems={modelData?.benefits_items_json ?? []}
-              onSaved={(p) => setModelData((prev) => ({ ...(prev || {}), ...p }))}
+              onSaved={(p) =>
+                setModelData((prev) => ({ ...(prev || {}), ...p }))
+              }
             />
           </SectionShell>
 
-          <SectionShell title="Galeria" subtitle={`Por modelo: ${selectedKey.toUpperCase()}`}>
+          <SectionShell
+            title="Galeria"
+            subtitle={`Por modelo: ${selectedKey.toUpperCase()}`}
+          >
             <GalleryForm
               modelKey={selectedKey}
               currentCardMediaId={modelData?.current_card_media_id ?? null}

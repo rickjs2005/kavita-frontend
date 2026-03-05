@@ -22,7 +22,7 @@ vi.mock("@/components/products/ProductCard", () => ({
     >
       <span>
         {String(
-          product?.name ?? product?.title ?? `Produto ${product?.id ?? ""}`
+          product?.name ?? product?.title ?? `Produto ${product?.id ?? ""}`,
         )}
       </span>
       <span data-testid="third-category">
@@ -42,7 +42,11 @@ function makeProduct(partial: Partial<Product> & { id: number }): Product {
   } as Product;
 }
 
-function setFetchReturn(opts: { data?: unknown; loading?: boolean; error?: unknown }) {
+function setFetchReturn(opts: {
+  data?: unknown;
+  loading?: boolean;
+  error?: unknown;
+}) {
   mockUseFetchProducts.mockImplementation((_args: any) => ({
     data: opts.data,
     loading: opts.loading ?? false,
@@ -74,7 +78,9 @@ describe("CategoryPage", () => {
 
     expect(screen.getByText(/Carregando produtos/i)).toBeInTheDocument();
     expect(screen.queryByTestId("product-card")).not.toBeInTheDocument();
-    expect(screen.queryByText(/Nenhum item encontrado/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Nenhum item encontrado/i),
+    ).not.toBeInTheDocument();
   });
 
   it("renderiza estado de erro com mensagem e detalhes (negativo)", () => {
@@ -125,7 +131,9 @@ describe("CategoryPage", () => {
 
     const cards = screen.getAllByTestId("product-card");
     expect(cards).toHaveLength(2);
-    expect(screen.queryByText(/Nenhum item encontrado/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Nenhum item encontrado/i),
+    ).not.toBeInTheDocument();
   });
 
   it("aceita data no formato { data: [] } e renderiza corretamente (positivo)", () => {
@@ -168,7 +176,7 @@ describe("CategoryPage", () => {
     expect(select).toBeInTheDocument();
 
     expect(
-      screen.getByRole("option", { name: /Todas as Subcategorias/i })
+      screen.getByRole("option", { name: /Todas as Subcategorias/i }),
     ).toBeInTheDocument();
 
     expect(screen.getByRole("option", { name: "Bovinos" })).toBeInTheDocument();
@@ -233,7 +241,7 @@ describe("CategoryPage", () => {
 
     // A opção antiga ("Bovinos") some porque subcategorias deriva de products atuais
     expect(
-      screen.queryByRole("option", { name: "Bovinos" })
+      screen.queryByRole("option", { name: "Bovinos" }),
     ).not.toBeInTheDocument();
 
     // Como o state `selected` permanece "Bovinos", o filtro fica sem resultados => empty-state

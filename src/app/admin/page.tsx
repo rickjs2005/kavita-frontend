@@ -172,7 +172,9 @@ function SalesTooltip({ active, payload, label }: any) {
       <div className="font-medium text-emerald-300">{label}</div>
       <div className="mt-1 text-[11px] text-slate-300">
         Faturamento:{" "}
-        <span className="font-semibold text-emerald-400">{formatMoney(value)}</span>
+        <span className="font-semibold text-emerald-400">
+          {formatMoney(value)}
+        </span>
       </div>
     </div>
   );
@@ -303,8 +305,10 @@ export default function AdminDashboardPage() {
 
       try {
         const [resumoJson, vendasJson] = await Promise.all([
-          apiClient.get<AdminResumo>('/api/admin/stats/resumo'),
-          apiClient.get<{ rangeDays: number; points: VendaPoint[] }>('/api/admin/stats/vendas?range=7'),
+          apiClient.get<AdminResumo>("/api/admin/stats/resumo"),
+          apiClient.get<{ rangeDays: number; points: VendaPoint[] }>(
+            "/api/admin/stats/vendas?range=7",
+          ),
         ]);
 
         if (cancelado) return;
@@ -319,7 +323,8 @@ export default function AdminDashboardPage() {
         }
         console.error("Erro ao carregar dashboard:", err);
         const msg =
-          err?.message || "Não foi possível carregar o painel. Tente novamente.";
+          err?.message ||
+          "Não foi possível carregar o painel. Tente novamente.";
         setErrorMsg(msg);
         toast.error(msg);
       } finally {
@@ -344,7 +349,7 @@ export default function AdminDashboardPage() {
       setLogsError(null);
 
       try {
-        const data = await apiClient.get<any[]>('/api/admin/logs?limit=20');
+        const data = await apiClient.get<any[]>("/api/admin/logs?limit=20");
         if (cancelado) return;
 
         const parsed: AdminLog[] = data.map((log) => ({
@@ -364,7 +369,7 @@ export default function AdminDashboardPage() {
         }
         console.warn("Erro ao carregar logs de auditoria:", err);
         setLogsError(
-          "Não foi possível carregar a atividade recente. Tente novamente mais tarde."
+          "Não foi possível carregar a atividade recente. Tente novamente mais tarde.",
         );
       } finally {
         if (!cancelado) setLogsLoading(false);
@@ -387,15 +392,22 @@ export default function AdminDashboardPage() {
 
       try {
         const [resCli, resProd, resServ] = await Promise.allSettled([
-          apiClient.get<{ rows: any[] }>('/api/admin/relatorios/clientes-top'),
-          apiClient.get<any[]>('/api/admin/stats/produtos-mais-vendidos?limit=5'),
-          apiClient.get<{ rows: any[] }>('/api/admin/relatorios/servicos-ranking'),
+          apiClient.get<{ rows: any[] }>("/api/admin/relatorios/clientes-top"),
+          apiClient.get<any[]>(
+            "/api/admin/stats/produtos-mais-vendidos?limit=5",
+          ),
+          apiClient.get<{ rows: any[] }>(
+            "/api/admin/relatorios/servicos-ranking",
+          ),
         ]);
 
         if (cancelado) return;
 
         for (const result of [resCli, resProd, resServ]) {
-          if (result.status === 'rejected' && (result.reason?.status === 401 || result.reason?.status === 403)) {
+          if (
+            result.status === "rejected" &&
+            (result.reason?.status === 401 || result.reason?.status === 403)
+          ) {
             handleUnauthorized();
             return;
           }
@@ -403,7 +415,7 @@ export default function AdminDashboardPage() {
 
         let algumaCoisaOk = false;
 
-        if (resCli.status === 'fulfilled') {
+        if (resCli.status === "fulfilled") {
           const data = resCli.value;
           const rows = Array.isArray(data.rows) ? data.rows : [];
           const mapped: TopCliente[] = rows.slice(0, 5).map((c) => ({
@@ -416,19 +428,21 @@ export default function AdminDashboardPage() {
           algumaCoisaOk = true;
         }
 
-        if (resProd.status === 'fulfilled') {
+        if (resProd.status === "fulfilled") {
           const data = resProd.value;
-          const mapped: TopProduto[] = (Array.isArray(data) ? data : []).map((p) => ({
-            id: p.id,
-            nome: p.name,
-            total_vendido: Number(p.quantidadeVendida || 0),
-            receita_total: Number(p.totalVendido || 0),
-          }));
+          const mapped: TopProduto[] = (Array.isArray(data) ? data : []).map(
+            (p) => ({
+              id: p.id,
+              nome: p.name,
+              total_vendido: Number(p.quantidadeVendida || 0),
+              receita_total: Number(p.totalVendido || 0),
+            }),
+          );
           setTopProdutos(mapped);
           algumaCoisaOk = true;
         }
 
-        if (resServ.status === 'fulfilled') {
+        if (resServ.status === "fulfilled") {
           const data = resServ.value;
           const rows = Array.isArray(data.rows) ? data.rows : [];
           const mapped: TopServico[] = rows.slice(0, 5).map((s) => ({
@@ -444,13 +458,15 @@ export default function AdminDashboardPage() {
 
         if (!algumaCoisaOk) {
           setTopsError(
-            "Não foi possível carregar os rankings. Verifique se as rotas de relatórios estão ativas."
+            "Não foi possível carregar os rankings. Verifique se as rotas de relatórios estão ativas.",
           );
         }
       } catch (err) {
         if (cancelado) return;
         console.warn("Erro ao carregar tops:", err);
-        setTopsError("Erro ao carregar rankings de clientes/produtos/serviços.");
+        setTopsError(
+          "Erro ao carregar rankings de clientes/produtos/serviços.",
+        );
       } finally {
         if (!cancelado) setTopsLoading(false);
       }
@@ -471,7 +487,9 @@ export default function AdminDashboardPage() {
       setAlertasError(null);
 
       try {
-        const data = await apiClient.get<AlertItem[]>('/api/admin/stats/alertas');
+        const data = await apiClient.get<AlertItem[]>(
+          "/api/admin/stats/alertas",
+        );
         if (cancelado) return;
         setAlertas(Array.isArray(data) ? data : []);
       } catch (err: any) {
@@ -500,7 +518,7 @@ export default function AdminDashboardPage() {
         date: formatShortDate(p.date),
         total: p.total,
       })),
-    [vendas]
+    [vendas],
   );
 
   if (loading && !resumo) {
@@ -508,7 +526,9 @@ export default function AdminDashboardPage() {
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-100">
         <div className="flex flex-col items-center gap-3">
           <LoadingSpinner />
-          <p className="text-sm text-slate-400">Carregando dados do dashboard...</p>
+          <p className="text-sm text-slate-400">
+            Carregando dados do dashboard...
+          </p>
         </div>
       </div>
     );
@@ -518,7 +538,9 @@ export default function AdminDashboardPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-slate-100">
         <div className="max-w-md rounded-2xl bg-slate-900/90 p-6 text-center shadow-xl shadow-rose-900/30">
-          <h1 className="text-lg font-semibold text-rose-300">Oops, algo deu errado</h1>
+          <h1 className="text-lg font-semibold text-rose-300">
+            Oops, algo deu errado
+          </h1>
           <p className="mt-2 text-sm text-slate-300">{errorMsg}</p>
           <button
             type="button"
@@ -559,11 +581,15 @@ export default function AdminDashboardPage() {
               )}
             </div>
 
-            <h1 className="truncate text-base font-semibold sm:text-lg">Painel administrativo Kavita</h1>
+            <h1 className="truncate text-base font-semibold sm:text-lg">
+              Painel administrativo Kavita
+            </h1>
             <p className="mt-0.5 text-[11px] text-slate-400 sm:text-xs">
               Tudo que importa da sua loja em um só lugar.
               {nome && (
-                <span className="ml-1 text-emerald-300/80">Bem-vindo(a), {nome}.</span>
+                <span className="ml-1 text-emerald-300/80">
+                  Bem-vindo(a), {nome}.
+                </span>
               )}
             </p>
           </div>
@@ -576,7 +602,9 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="leading-tight">
                   <p className="text-xs font-medium">{nome}</p>
-                  <p className="text-[10px] text-emerald-300/80">{ROLE_SHORT_LABEL[role]}</p>
+                  <p className="text-[10px] text-emerald-300/80">
+                    {ROLE_SHORT_LABEL[role]}
+                  </p>
                 </div>
               </div>
             )}
@@ -585,8 +613,9 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className={`md:hidden flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-900/40 ${isMobileMenuOpen ? "hidden" : "flex"
-                }`}
+              className={`md:hidden flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-900/40 ${
+                isMobileMenuOpen ? "hidden" : "flex"
+              }`}
               aria-label="Abrir menu do painel"
             >
               <span className="sr-only">Abrir menu</span>
@@ -623,7 +652,9 @@ export default function AdminDashboardPage() {
 
           <div className="relative ml-0 flex h-full w-4/5 max-w-xs flex-col bg-slate-950/95 shadow-xl shadow-black/60">
             <div className="flex items-center justify-between border-b border-slate-800 px-3 py-2">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Menu</p>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                Menu
+              </p>
               <CloseButton
                 onClose={() => setIsMobileMenuOpen(false)}
                 className="ml-auto"
@@ -641,7 +672,9 @@ export default function AdminDashboardPage() {
       {/* CONTEÚDO PRINCIPAL */}
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-3 pb-8 pt-4 sm:px-4">
         {!resumo ? (
-          <p className="mt-4 text-sm text-slate-400">Nenhum dado disponível para o dashboard.</p>
+          <p className="mt-4 text-sm text-slate-400">
+            Nenhum dado disponível para o dashboard.
+          </p>
         ) : (
           <>
             {/* KPIs PRINCIPAIS */}
@@ -710,7 +743,9 @@ export default function AdminDashboardPage() {
                     <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300">
                       Vendas · 7 últimos dias
                     </p>
-                    <h2 className="text-sm font-semibold text-slate-50">Faturamento diário</h2>
+                    <h2 className="text-sm font-semibold text-slate-50">
+                      Faturamento diário
+                    </h2>
                   </div>
                   <Link
                     href="/admin/relatorios/vendas"
@@ -729,7 +764,11 @@ export default function AdminDashboardPage() {
                     ) : (
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData} barSize={24}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#1f2933" vertical={false} />
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#1f2933"
+                            vertical={false}
+                          />
                           <XAxis
                             dataKey="date"
                             tickLine={false}
@@ -739,11 +778,17 @@ export default function AdminDashboardPage() {
                           <YAxis
                             tickLine={false}
                             axisLine={false}
-                            tickFormatter={(value: number) => formatMoney(value).replace("R$", "R$")}
+                            tickFormatter={(value: number) =>
+                              formatMoney(value).replace("R$", "R$")
+                            }
                             tick={{ fontSize: 10, fill: "#94a3b8" }}
                           />
                           <RechartsTooltip content={<SalesTooltip />} />
-                          <Bar dataKey="total" radius={[8, 8, 0, 0]} fill="#22c55e" />
+                          <Bar
+                            dataKey="total"
+                            radius={[8, 8, 0, 0]}
+                            fill="#22c55e"
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     )}
@@ -758,20 +803,28 @@ export default function AdminDashboardPage() {
                     <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">
                       Atividade recente
                     </p>
-                    <h2 className="text-sm font-semibold text-slate-50">Logs de admins</h2>
+                    <h2 className="text-sm font-semibold text-slate-50">
+                      Logs de admins
+                    </h2>
                   </div>
-                  <span className="text-[10px] text-slate-500">Últimas 20 ações</span>
+                  <span className="text-[10px] text-slate-500">
+                    Últimas 20 ações
+                  </span>
                 </div>
 
                 <div className="mt-2 flex-1 space-y-2 overflow-y-auto pr-1">
                   {logsLoading && (
                     <div className="flex items-center justify-center py-6 text-xs text-slate-400">
                       <LoadingSpinner size="sm" />
-                      <span className="ml-2">Carregando atividade recente...</span>
+                      <span className="ml-2">
+                        Carregando atividade recente...
+                      </span>
                     </div>
                   )}
 
-                  {logsError && !logsLoading && <p className="text-xs text-rose-300">{logsError}</p>}
+                  {logsError && !logsLoading && (
+                    <p className="text-xs text-rose-300">{logsError}</p>
+                  )}
 
                   {!canViewLogs && (
                     <p className="text-xs text-slate-400">
@@ -779,9 +832,14 @@ export default function AdminDashboardPage() {
                     </p>
                   )}
 
-                  {canViewLogs && !logsLoading && !logsError && logs.length === 0 && (
-                    <p className="text-xs text-slate-400">Nenhuma atividade registrada recentemente.</p>
-                  )}
+                  {canViewLogs &&
+                    !logsLoading &&
+                    !logsError &&
+                    logs.length === 0 && (
+                      <p className="text-xs text-slate-400">
+                        Nenhuma atividade registrada recentemente.
+                      </p>
+                    )}
 
                   {canViewLogs &&
                     !logsLoading &&
@@ -801,7 +859,10 @@ export default function AdminDashboardPage() {
                           <p className="mt-0.5 text-[11px] text-slate-300">
                             {log.acao}
                             {log.detalhes && (
-                              <span className="text-slate-400"> — {log.detalhes}</span>
+                              <span className="text-slate-400">
+                                {" "}
+                                — {log.detalhes}
+                              </span>
                             )}
                           </p>
                           <p className="mt-0.5 text-[10px] text-slate-500">
@@ -823,7 +884,9 @@ export default function AdminDashboardPage() {
                     <p className="text-xs font-medium uppercase tracking-[0.18em] text-amber-300">
                       Alertas da loja
                     </p>
-                    <h2 className="text-sm font-semibold text-slate-50">O que precisa de atenção</h2>
+                    <h2 className="text-sm font-semibold text-slate-50">
+                      O que precisa de atenção
+                    </h2>
                   </div>
                   {alertas.length > 0 && (
                     <span className="rounded-full bg-amber-500/10 px-2 py-[2px] text-[10px] font-medium text-amber-200">
@@ -836,15 +899,20 @@ export default function AdminDashboardPage() {
                   {alertasLoading && (
                     <div className="flex items-center justify-center py-5 text-xs text-slate-400">
                       <LoadingSpinner size="sm" />
-                      <span className="ml-2">Verificando status da loja...</span>
+                      <span className="ml-2">
+                        Verificando status da loja...
+                      </span>
                     </div>
                   )}
 
-                  {alertasError && !alertasLoading && <p className="text-xs text-rose-300">{alertasError}</p>}
+                  {alertasError && !alertasLoading && (
+                    <p className="text-xs text-rose-300">{alertasError}</p>
+                  )}
 
                   {!alertasLoading && !alertasError && alertas.length === 0 && (
                     <p className="text-xs text-slate-400">
-                      Nenhum alerta crítico no momento. Sua loja está saudável. 🎉
+                      Nenhum alerta crítico no momento. Sua loja está saudável.
+                      🎉
                     </p>
                   )}
 
@@ -856,15 +924,21 @@ export default function AdminDashboardPage() {
                         className="rounded-xl border border-slate-800/70 bg-slate-900/80 px-3 py-2.5"
                       >
                         <div className="mb-1 flex items-center gap-2">
-                          <span className={`h-2.5 w-2.5 rounded-full ${colors.dot}`} />
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full ${colors.dot}`}
+                          />
                           <span
                             className={`rounded-full px-2 py-[1px] text-[10px] font-medium uppercase tracking-[0.14em] ${colors.badge}`}
                           >
                             {alerta.tipo.toUpperCase()}
                           </span>
                         </div>
-                        <p className="text-xs font-semibold text-slate-100">{alerta.titulo}</p>
-                        <p className="mt-0.5 text-[11px] text-slate-300">{alerta.mensagem}</p>
+                        <p className="text-xs font-semibold text-slate-100">
+                          {alerta.titulo}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-slate-300">
+                          {alerta.mensagem}
+                        </p>
                         {alerta.link && alerta.link_label && (
                           <Link
                             href={alerta.link}
@@ -883,8 +957,12 @@ export default function AdminDashboardPage() {
               <div className="col-span-1 flex flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Ranking</p>
-                    <h2 className="text-sm font-semibold text-slate-50">Top clientes</h2>
+                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                      Ranking
+                    </p>
+                    <h2 className="text-sm font-semibold text-slate-50">
+                      Top clientes
+                    </h2>
                   </div>
                   <Link
                     href="/admin/relatorios/clientes"
@@ -907,7 +985,9 @@ export default function AdminDashboardPage() {
                   )}
 
                   {!topsLoading && !topsError && topClientes.length === 0 && (
-                    <p className="text-xs text-slate-400">Ainda não há clientes ranqueados.</p>
+                    <p className="text-xs text-slate-400">
+                      Ainda não há clientes ranqueados.
+                    </p>
                   )}
 
                   {topClientes.map((cli, index) => (
@@ -920,9 +1000,12 @@ export default function AdminDashboardPage() {
                           {index + 1}
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-medium text-slate-100">{cli.nome}</p>
+                          <p className="truncate text-xs font-medium text-slate-100">
+                            {cli.nome}
+                          </p>
                           <p className="text-[11px] text-slate-400">
-                            {cli.total_pedidos} pedido(s) · {formatMoney(cli.total_gasto)}
+                            {cli.total_pedidos} pedido(s) ·{" "}
+                            {formatMoney(cli.total_gasto)}
                           </p>
                         </div>
                       </div>
@@ -937,8 +1020,12 @@ export default function AdminDashboardPage() {
                 <div className="flex flex-1 flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Ranking</p>
-                      <h2 className="text-sm font-semibold text-slate-50">Top produtos</h2>
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                        Ranking
+                      </p>
+                      <h2 className="text-sm font-semibold text-slate-50">
+                        Top produtos
+                      </h2>
                     </div>
                     <Link
                       href="/admin/relatorios/produtos"
@@ -957,7 +1044,9 @@ export default function AdminDashboardPage() {
                     )}
 
                     {!topsLoading && !topsError && topProdutos.length === 0 && (
-                      <p className="text-xs text-slate-400">Nenhum produto ranqueado ainda.</p>
+                      <p className="text-xs text-slate-400">
+                        Nenhum produto ranqueado ainda.
+                      </p>
                     )}
 
                     {topProdutos.map((prod, index) => (
@@ -970,7 +1059,8 @@ export default function AdminDashboardPage() {
                             {index + 1}. {prod.nome}
                           </p>
                           <p className="text-[11px] text-slate-400">
-                            {prod.total_vendido} un. · {formatMoney(prod.receita_total)}
+                            {prod.total_vendido} un. ·{" "}
+                            {formatMoney(prod.receita_total)}
                           </p>
                         </div>
                       </div>
@@ -982,8 +1072,12 @@ export default function AdminDashboardPage() {
                 <div className="flex flex-1 flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Ranking</p>
-                      <h2 className="text-sm font-semibold text-slate-50">Top serviços</h2>
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                        Ranking
+                      </p>
+                      <h2 className="text-sm font-semibold text-slate-50">
+                        Top serviços
+                      </h2>
                     </div>
                     <Link
                       href="/admin/relatorios/servicos"
@@ -1002,7 +1096,9 @@ export default function AdminDashboardPage() {
                     )}
 
                     {!topsLoading && !topsError && topServicos.length === 0 && (
-                      <p className="text-xs text-slate-400">Nenhum serviço ranqueado ainda.</p>
+                      <p className="text-xs text-slate-400">
+                        Nenhum serviço ranqueado ainda.
+                      </p>
                     )}
 
                     {topServicos.map((serv, index) => (
@@ -1015,10 +1111,13 @@ export default function AdminDashboardPage() {
                             {index + 1}. {serv.titulo}
                           </p>
                           <p className="text-[11px] text-slate-400">
-                            {serv.total_contratos} contrato(s) · {formatMoney(serv.receita_total)}
+                            {serv.total_contratos} contrato(s) ·{" "}
+                            {formatMoney(serv.receita_total)}
                           </p>
                           {typeof serv.nota_media === "number" && (
-                            <p className="text-[11px] text-amber-300">⭐ {serv.nota_media.toFixed(1)} média</p>
+                            <p className="text-[11px] text-amber-300">
+                              ⭐ {serv.nota_media.toFixed(1)} média
+                            </p>
                           )}
                         </div>
                       </div>
@@ -1035,7 +1134,9 @@ export default function AdminDashboardPage() {
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
                     Navegação rápida
                   </p>
-                  <h2 className="text-sm font-semibold text-slate-50">Módulos principais do painel</h2>
+                  <h2 className="text-sm font-semibold text-slate-50">
+                    Módulos principais do painel
+                  </h2>
                 </div>
               </div>
 
@@ -1055,8 +1156,12 @@ export default function AdminDashboardPage() {
                         </span>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-slate-50">{link.label}</p>
-                        <p className="mt-0.5 text-[11px] text-slate-400">{link.description}</p>
+                        <p className="text-xs font-semibold text-slate-50">
+                          {link.label}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-slate-400">
+                          {link.description}
+                        </p>
                       </div>
                     </Link>
                   ))}

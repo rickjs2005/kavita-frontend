@@ -45,7 +45,10 @@ function makeProduct(overrides: Partial<UiProduct> = {}): UiProduct {
 }
 
 function normalizeText(s: string) {
-  return s.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+  return s
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 beforeEach(() => {
@@ -59,7 +62,7 @@ afterEach(() => {
 describe("ProductGrid", () => {
   it("renderiza skeleton de loading com 12 cards (positivo)", () => {
     const { container } = render(
-      <ProductGrid loading={true} products={[]} empty={<div>Nenhum</div>} />
+      <ProductGrid loading={true} products={[]} empty={<div>Nenhum</div>} />,
     );
 
     const cards = container.querySelectorAll("div.h-56");
@@ -74,7 +77,7 @@ describe("ProductGrid", () => {
         loading={false}
         products={[]}
         empty={<div data-testid="empty">Sem resultados</div>}
-      />
+      />,
     );
 
     expect(screen.getByTestId("empty")).toBeInTheDocument();
@@ -112,7 +115,9 @@ describe("ProductGrid", () => {
     render(<ProductGrid loading={false} products={products} empty={<div />} />);
 
     // Badge
-    expect(screen.getByText(/^promo$/i, { selector: "span" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/^promo$/i, { selector: "span" }),
+    ).toBeInTheDocument();
 
     // Preço final: restringe a spans para não casar em <a>/<div>/<body>
     expect(
@@ -120,7 +125,7 @@ describe("ProductGrid", () => {
         if (!node) return false;
         if (node.tagName.toLowerCase() !== "span") return false;
         return /R\$\s*99,90/i.test(normalizeText(node.textContent ?? ""));
-      })
+      }),
     ).toBeInTheDocument();
   });
 
@@ -138,10 +143,14 @@ describe("ProductGrid", () => {
     render(<ProductGrid loading={false} products={products} empty={<div />} />);
 
     // Escopa no card do produto (link tem accessible name = nome do produto)
-    const cardLink = screen.getByRole("link", { name: /produto com desconto/i });
+    const cardLink = screen.getByRole("link", {
+      name: /produto com desconto/i,
+    });
     const card = within(cardLink);
 
-    expect(card.getByText(/^promo$/i, { selector: "span" })).toBeInTheDocument();
+    expect(
+      card.getByText(/^promo$/i, { selector: "span" }),
+    ).toBeInTheDocument();
 
     // Preço final e original: restringe para spans (evita match no <a> e <div>)
     const finalPrice = card.getByText((_, node) => {
@@ -184,7 +193,7 @@ describe("ProductGrid", () => {
         if (!node) return false;
         if (node.tagName.toLowerCase() !== "span") return false;
         return /R\$\s*123,45/i.test(normalizeText(node.textContent ?? ""));
-      })
+      }),
     ).toBeInTheDocument();
   });
 
@@ -208,7 +217,7 @@ describe("ProductGrid", () => {
         if (!node) return false;
         if (node.tagName.toLowerCase() !== "span") return false;
         return /R\$/i.test(normalizeText(node.textContent ?? ""));
-      })
+      }),
     ).not.toBeInTheDocument();
   });
 
@@ -236,7 +245,9 @@ describe("ProductGrid", () => {
 
     render(<ProductGrid loading={false} products={products} empty={<div />} />);
 
-    const cardLink = screen.getByRole("link", { name: /produto com percentual/i });
+    const cardLink = screen.getByRole("link", {
+      name: /produto com percentual/i,
+    });
     const card = within(cardLink);
 
     // O componente quebra em "10" + "% OFF" com whitespace, então normaliza.
@@ -246,7 +257,7 @@ describe("ProductGrid", () => {
         if (!node) return false;
         if (node.tagName.toLowerCase() !== "p") return false;
         return /10\s*% OFF/i.test(normalizeText(node.textContent ?? ""));
-      })
+      }),
     ).toBeInTheDocument();
 
     // negativos: não deve existir qualquer <p> com "% OFF" nos outros cards

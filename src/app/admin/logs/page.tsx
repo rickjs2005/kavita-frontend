@@ -39,7 +39,7 @@ function parseLogDate(dateStr: string | null | undefined): Date | null {
 
   // 2) Tenta formato BR dd/mm/yyyy HH:MM[:SS]
   const match = dateStr.match(
-    /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+    /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/,
   );
   if (match) {
     const [, dd, mm, yyyy, hh = "00", min = "00", ss = "00"] = match;
@@ -49,7 +49,7 @@ function parseLogDate(dateStr: string | null | undefined): Date | null {
       Number(dd),
       Number(hh),
       Number(min),
-      Number(ss)
+      Number(ss),
     );
     if (!Number.isNaN(dt.getTime())) {
       return dt;
@@ -158,12 +158,12 @@ export default function AdminLogsPage() {
 
   const uniqueEntities = useMemo(
     () => Array.from(new Set(logs.map((l) => l.entidade))).sort(),
-    [logs]
+    [logs],
   );
 
   const uniqueAdmins = useMemo(
     () => Array.from(new Set(logs.map((l) => l.admin_email))).sort(),
-    [logs]
+    [logs],
   );
 
   const filteredLogs = useMemo(() => {
@@ -196,8 +196,7 @@ export default function AdminLogsPage() {
   const totalLogs = logs.length;
   const totalFiltrados = filteredLogs.length;
   const totalAdmins = uniqueAdmins.length;
-  const lastEvent =
-    logs.length > 0 ? formatRelative(logs[0].criado_em) : "—";
+  const lastEvent = logs.length > 0 ? formatRelative(logs[0].criado_em) : "—";
 
   // 🔒 Tela de acesso negado
   if (!canViewLogs) {
@@ -381,12 +380,8 @@ export default function AdminLogsPage() {
 
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-col">
-                      <span className="text-[11px] text-slate-400">
-                        Ação
-                      </span>
-                      <span className="text-sm text-slate-200">
-                        {log.acao}
-                      </span>
+                      <span className="text-[11px] text-slate-400">Ação</span>
+                      <span className="text-sm text-slate-200">{log.acao}</span>
                     </div>
 
                     <div className="flex flex-col">
@@ -399,9 +394,7 @@ export default function AdminLogsPage() {
                     </div>
 
                     <div className="flex flex-col text-right ml-auto">
-                      <span className="text-[11px] text-slate-400">
-                        Data
-                      </span>
+                      <span className="text-[11px] text-slate-400">Data</span>
                       <span className="text-xs text-slate-100">
                         {formatRelative(log.criado_em)}
                       </span>

@@ -74,7 +74,9 @@ describe("AddToCartButton", () => {
 
     render(<AddToCartButton product={product as never} qty={3} />);
 
-    await user.click(screen.getByRole("button", { name: /adicionar ao carrinho/i }));
+    await user.click(
+      screen.getByRole("button", { name: /adicionar ao carrinho/i }),
+    );
 
     expect(addToCartMock).toHaveBeenCalledTimes(1);
     expect(addToCartMock).toHaveBeenCalledWith(product, 3);
@@ -93,7 +95,9 @@ describe("AddToCartButton", () => {
 
     render(<AddToCartButton product={product as never} qty={2} />);
 
-    await user.click(screen.getByRole("button", { name: /adicionar ao carrinho/i }));
+    await user.click(
+      screen.getByRole("button", { name: /adicionar ao carrinho/i }),
+    );
 
     expect(addToCartMock).toHaveBeenCalledTimes(1);
     expect(addToCartMock).toHaveBeenCalledWith(product, 2);
@@ -153,13 +157,15 @@ describe("AddToCartButton", () => {
         onKeyDown={onParentKeyDown}
       >
         <AddToCartButton product={product as never} />
-      </div>
+      </div>,
     );
 
     // ⚠️ Há 2 "buttons" agora (o div role=button e o button real).
     // Então fazemos scope no container pai.
     const parent = screen.getByRole("button", { name: /container-pai/i });
-    const btn = within(parent).getByRole("button", { name: /adicionar ao carrinho/i });
+    const btn = within(parent).getByRole("button", {
+      name: /adicionar ao carrinho/i,
+    });
 
     await user.click(btn);
 
@@ -180,7 +186,9 @@ describe("AddToCartButton", () => {
   it("concatena className no container raiz (positivo/controle)", () => {
     const product = makeProduct({ stock: 10 });
 
-    render(<AddToCartButton product={product as never} className="minha-classe" />);
+    render(
+      <AddToCartButton product={product as never} className="minha-classe" />,
+    );
 
     const btn = screen.getByRole("button", { name: /adicionar ao carrinho/i });
     expect(btn.className).toContain("minha-classe");

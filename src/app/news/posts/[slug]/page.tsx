@@ -13,7 +13,10 @@ function formatDateTimePtBR(value?: string | null) {
   if (!value) return "";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(d);
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(d);
 }
 
 function resolveCoverUrl(item: any): string | null {
@@ -26,7 +29,9 @@ function resolveCoverUrl(item: any): string | null {
     item?.thumbnail_url,
   ];
 
-  const raw = candidates.find((v) => typeof v === "string" && v.trim().length > 0) as string | undefined;
+  const raw = candidates.find(
+    (v) => typeof v === "string" && v.trim().length > 0,
+  ) as string | undefined;
   if (!raw) return null;
 
   const trimmed = raw.trim();
@@ -95,7 +100,8 @@ export default async function PostDetailPage({ params }: PageProps) {
           </Link>
 
           <div className="text-xs text-zinc-500">
-            {published ? published : ""} {post.views ? `• ${post.views} views` : ""}
+            {published ? published : ""}{" "}
+            {post.views ? `• ${post.views} views` : ""}
           </div>
         </div>
 
@@ -110,9 +116,15 @@ export default async function PostDetailPage({ params }: PageProps) {
         ) : (
           <div className="w-full h-56 md:h-72 rounded-2xl border border-zinc-200 bg-gradient-to-b from-zinc-100 to-white flex items-center justify-center text-center px-6">
             <div>
-              <div className="text-3xl" aria-hidden>📰</div>
-              <p className="mt-2 text-sm font-medium text-zinc-700">Sem imagem de capa</p>
-              <p className="mt-1 text-xs text-zinc-500">A matéria segue disponível para leitura.</p>
+              <div className="text-3xl" aria-hidden>
+                📰
+              </div>
+              <p className="mt-2 text-sm font-medium text-zinc-700">
+                Sem imagem de capa
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                A matéria segue disponível para leitura.
+              </p>
             </div>
           </div>
         )}

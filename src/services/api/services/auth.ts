@@ -52,7 +52,9 @@ export async function getMe(): Promise<UserProfile> {
 /**
  * Update the current user's profile.
  */
-export async function updateMe(payload: Partial<UserProfile>): Promise<UserProfile> {
+export async function updateMe(
+  payload: Partial<UserProfile>,
+): Promise<UserProfile> {
   return apiClient.put<UserProfile>(ENDPOINTS.USERS.ME, payload);
 }
 
@@ -66,13 +68,17 @@ export async function register(payload: RegisterPayload): Promise<UserProfile> {
 /**
  * Request a password reset email.
  */
-export async function forgotPassword(payload: ForgotPasswordPayload): Promise<void> {
+export async function forgotPassword(
+  payload: ForgotPasswordPayload,
+): Promise<void> {
   return apiClient.post<void>(ENDPOINTS.AUTH.FORGOT_PASSWORD, payload);
 }
 
 /**
  * Complete a password reset using a token.
  */
-export async function resetPassword(payload: ResetPasswordPayload): Promise<void> {
+export async function resetPassword(
+  payload: ResetPasswordPayload,
+): Promise<void> {
   return apiClient.post<void>(ENDPOINTS.AUTH.RESET_PASSWORD, payload);
 }

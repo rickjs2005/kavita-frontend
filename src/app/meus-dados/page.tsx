@@ -4,10 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
-import {
-  formatCpfMask,
-  formatPhoneMask,
-} from "@/utils/formatters";
+import { formatCpfMask, formatPhoneMask } from "@/utils/formatters";
 import { apiClient } from "@/lib/apiClient";
 import { ENDPOINTS } from "@/services/api/endpoints";
 
@@ -231,8 +228,8 @@ export default function MeusDadosPage() {
                 {saving
                   ? "Salvando..."
                   : hasChanges
-                  ? "Salvar alterações"
-                  : "Nada para salvar"}
+                    ? "Salvar alterações"
+                    : "Nada para salvar"}
               </button>
             </div>
 
@@ -243,8 +240,7 @@ export default function MeusDadosPage() {
                   Endereços de entrega
                 </p>
                 <p className="text-xs sm:text-sm text-gray-500">
-                  Cadastre e gerencie múltiplos endereços para usar no
-                  checkout.
+                  Cadastre e gerencie múltiplos endereços para usar no checkout.
                 </p>
               </div>
               <Link
@@ -276,9 +272,7 @@ function Field({
   return (
     <div
       className={
-        full
-          ? "md:col-span-2 flex flex-col gap-1.5"
-          : "flex flex-col gap-1.5"
+        full ? "md:col-span-2 flex flex-col gap-1.5" : "flex flex-col gap-1.5"
       }
     >
       <span className="text-sm text-gray-700">{label}</span>

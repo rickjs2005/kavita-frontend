@@ -108,7 +108,9 @@ describe("ServiceFormUnificado", () => {
 
     // previews
     vi.stubGlobal("URL", {
-      createObjectURL: vi.fn((file: any) => `blob:mock-${file?.name ?? "file"}`),
+      createObjectURL: vi.fn(
+        (file: any) => `blob:mock-${file?.name ?? "file"}`,
+      ),
       revokeObjectURL: vi.fn(),
     } as any);
   });
@@ -129,11 +131,13 @@ describe("ServiceFormUnificado", () => {
     render(<ServiceFormUnificado onSaved={vi.fn()} onCancel={vi.fn()} />);
 
     expect(
-      screen.getByRole("option", { name: /Selecione a especialidade/i })
+      screen.getByRole("option", { name: /Selecione a especialidade/i }),
     ).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByRole("option", { name: "Bovinos" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("option", { name: "Bovinos" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -159,7 +163,9 @@ describe("ServiceFormUnificado", () => {
       expect(consoleSpy).toHaveBeenCalled();
     });
 
-    expect(screen.queryByRole("option", { name: "Bovinos" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: "Bovinos" }),
+    ).not.toBeInTheDocument();
   });
 
   it("deve impedir submit efetivo quando campos obrigatórios estão vazios (não chama POST)", async () => {
@@ -206,7 +212,9 @@ describe("ServiceFormUnificado", () => {
     render(<ServiceFormUnificado onSaved={onSaved} onCancel={onCancel} />);
 
     await waitFor(() => {
-      expect(screen.getByRole("option", { name: "Bovinos" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("option", { name: "Bovinos" }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByLabelText(/Nome do colaborador/i), {
@@ -222,14 +230,20 @@ describe("ServiceFormUnificado", () => {
     fireEvent.click(screen.getByRole("button", { name: /Adicionar Serviço/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Serviço cadastrado com sucesso/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Serviço cadastrado com sucesso/i),
+      ).toBeInTheDocument();
     });
 
     expect(onSaved).toHaveBeenCalledTimes(1);
     expect(onCancel).toHaveBeenCalledTimes(1);
 
-    expect((screen.getByLabelText(/Nome do colaborador/i) as HTMLInputElement).value).toBe("");
-    expect((screen.getByLabelText(/WhatsApp/i) as HTMLInputElement).value).toBe("");
+    expect(
+      (screen.getByLabelText(/Nome do colaborador/i) as HTMLInputElement).value,
+    ).toBe("");
+    expect((screen.getByLabelText(/WhatsApp/i) as HTMLInputElement).value).toBe(
+      "",
+    );
   });
 
   it("em modo edição: deve preencher campos, listar imagens existentes únicas e permitir marcar para remoção (keepImages)", async () => {
@@ -272,11 +286,13 @@ describe("ServiceFormUnificado", () => {
         servicoEditado={servicoEditado as any}
         onSaved={onSaved}
         onCancel={onCancel}
-      />
+      />,
     );
 
     expect(screen.getByText(/Editar Serviço/i)).toBeInTheDocument();
-    expect((screen.getByLabelText(/Nome do colaborador/i) as HTMLInputElement).value).toBe("Maria");
+    expect(
+      (screen.getByLabelText(/Nome do colaborador/i) as HTMLInputElement).value,
+    ).toBe("Maria");
 
     await waitFor(() => {
       expect(screen.getByText(/Imagens atuais/i)).toBeInTheDocument();
@@ -287,7 +303,7 @@ describe("ServiceFormUnificado", () => {
 
     // selecionar a imagem "extra" para remover (a que NÃO contém "capa.jpg")
     const imgExtra = existingImgs.find(
-      (img) => !String((img as HTMLImageElement).src).includes("capa.jpg")
+      (img) => !String((img as HTMLImageElement).src).includes("capa.jpg"),
     );
     expect(imgExtra).toBeTruthy();
 
@@ -304,7 +320,9 @@ describe("ServiceFormUnificado", () => {
     fireEvent.click(screen.getByRole("button", { name: /Atualizar Serviço/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Serviço atualizado com sucesso/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Serviço atualizado com sucesso/i),
+      ).toBeInTheDocument();
     });
 
     expect(onSaved).toHaveBeenCalledTimes(1);
@@ -319,10 +337,14 @@ describe("ServiceFormUnificado", () => {
       return okEmpty();
     });
 
-    const { container } = render(<ServiceFormUnificado onSaved={vi.fn()} onCancel={vi.fn()} />);
+    const { container } = render(
+      <ServiceFormUnificado onSaved={vi.fn()} onCancel={vi.fn()} />,
+    );
 
     // label não está associado ao input; selecionar direto pelo DOM
-    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = container.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
     expect(input).toBeTruthy();
 
     const files = Array.from({ length: 9 }).map((_, i) => {
@@ -349,7 +371,10 @@ describe("ServiceFormUnificado", () => {
       if (String(url).includes("/api/admin/especialidades")) {
         return okJson([{ id: 10, nome: "Bovinos" }]);
       }
-      if (String(url).includes("/api/admin/servicos") && init?.method === "POST") {
+      if (
+        String(url).includes("/api/admin/servicos") &&
+        init?.method === "POST"
+      ) {
         return Promise.resolve({
           ok: false,
           status: 401,
@@ -364,7 +389,9 @@ describe("ServiceFormUnificado", () => {
     render(<ServiceFormUnificado onSaved={vi.fn()} onCancel={vi.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByRole("option", { name: "Bovinos" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("option", { name: "Bovinos" }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByLabelText(/Nome do colaborador/i), {
@@ -380,7 +407,9 @@ describe("ServiceFormUnificado", () => {
     fireEvent.click(screen.getByRole("button", { name: /Adicionar Serviço/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Você não tem permissão para salvar serviço/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Você não tem permissão para salvar serviço/i),
+      ).toBeInTheDocument();
     });
   });
 
@@ -402,7 +431,9 @@ describe("ServiceFormUnificado", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Limpar/i }));
 
-    expect((screen.getByLabelText(/Nome do colaborador/i) as HTMLInputElement).value).toBe("");
+    expect(
+      (screen.getByLabelText(/Nome do colaborador/i) as HTMLInputElement).value,
+    ).toBe("");
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });

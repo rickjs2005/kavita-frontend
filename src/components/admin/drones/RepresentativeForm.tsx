@@ -34,7 +34,10 @@ type Rep = {
 };
 
 function normalizeUF(value: string) {
-  return (value || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2);
+  return (value || "")
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "")
+    .slice(0, 2);
 }
 
 function isValidUF(uf: string) {
@@ -50,7 +53,11 @@ export default function RepresentativeForm() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  const [data, setData] = useState<{ items: Rep[]; total: number; totalPages: number } | null>(null);
+  const [data, setData] = useState<{
+    items: Rep[];
+    total: number;
+    totalPages: number;
+  } | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -126,7 +133,7 @@ export default function RepresentativeForm() {
       params.set("orderDir", "asc");
 
       const data = await apiClient.get<any>(
-        `/api/admin/drones/representantes?${params.toString()}`
+        `/api/admin/drones/representantes?${params.toString()}`,
       );
 
       setData({
@@ -137,7 +144,8 @@ export default function RepresentativeForm() {
       setPage(Number(data?.page || p));
     } catch (err: any) {
       if (err?.status === 401 || err?.status === 403) {
-        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        if (typeof window !== "undefined")
+          window.location.assign("/admin/login");
         return;
       }
       setMsg(err?.message || "Erro de rede ao carregar representantes.");
@@ -162,7 +170,8 @@ export default function RepresentativeForm() {
 
     const w = onlyDigits(whatsapp);
     if (!w) return "whatsapp é obrigatório.";
-    if (!(w.length === 10 || w.length === 11)) return "whatsapp inválido (DDD + número).";
+    if (!(w.length === 10 || w.length === 11))
+      return "whatsapp inválido (DDD + número).";
 
     const c = onlyDigits(cnpj);
     if (!c) return "cnpj é obrigatório.";
@@ -174,7 +183,8 @@ export default function RepresentativeForm() {
     const cepDigits = onlyDigits(cep);
     if (cepDigits && cepDigits.length !== 8) return "cep inválido (8 dígitos).";
 
-    if (!isValidUF(uf)) return "UF inválida. Use uma sigla válida (ex: SP, MG).";
+    if (!isValidUF(uf))
+      return "UF inválida. Use uma sigla válida (ex: SP, MG).";
 
     return null;
   }
@@ -209,9 +219,12 @@ export default function RepresentativeForm() {
       };
 
       if (editing) {
-        await apiClient.put(`/api/admin/drones/representantes/${editing.id}`, payload);
+        await apiClient.put(
+          `/api/admin/drones/representantes/${editing.id}`,
+          payload,
+        );
       } else {
-        await apiClient.post('/api/admin/drones/representantes', payload);
+        await apiClient.post("/api/admin/drones/representantes", payload);
       }
 
       setMsg(editing ? "Representante atualizado." : "Representante criado.");
@@ -219,7 +232,8 @@ export default function RepresentativeForm() {
       await load(1);
     } catch (err: any) {
       if (err?.status === 401 || err?.status === 403) {
-        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        if (typeof window !== "undefined")
+          window.location.assign("/admin/login");
         return;
       }
       setMsg(err?.message || "Erro de rede ao salvar representante.");
@@ -237,7 +251,8 @@ export default function RepresentativeForm() {
       await load(1);
     } catch (err: any) {
       if (err?.status === 401 || err?.status === 403) {
-        if (typeof window !== "undefined") window.location.assign("/admin/login");
+        if (typeof window !== "undefined")
+          window.location.assign("/admin/login");
         return;
       }
       setMsg(err?.message || "Erro de rede ao remover representante.");
@@ -249,7 +264,9 @@ export default function RepresentativeForm() {
   return (
     <div className="grid gap-6">
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <h2 className="text-sm font-extrabold">Representantes/Lojas (CRUD + busca + ordenação)</h2>
+        <h2 className="text-sm font-extrabold">
+          Representantes/Lojas (CRUD + busca + ordenação)
+        </h2>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
           <input
@@ -270,7 +287,9 @@ export default function RepresentativeForm() {
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <h3 className="text-sm font-extrabold">{editing ? "Editar representante" : "Adicionar representante"}</h3>
+        <h3 className="text-sm font-extrabold">
+          {editing ? "Editar representante" : "Adicionar representante"}
+        </h3>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div>
@@ -323,7 +342,9 @@ export default function RepresentativeForm() {
           </div>
 
           <div>
-            <label className="text-xs text-slate-300">Número (obrigatório)</label>
+            <label className="text-xs text-slate-300">
+              Número (obrigatório)
+            </label>
             <input
               value={number}
               onChange={(e) => setNumber(e.target.value)}
@@ -417,7 +438,11 @@ export default function RepresentativeForm() {
               disabled={saving}
               className="rounded-full bg-emerald-500 px-6 py-2 text-sm font-bold text-white disabled:opacity-60"
             >
-              {saving ? "Salvando..." : editing ? "Salvar alterações" : "Adicionar"}
+              {saving
+                ? "Salvando..."
+                : editing
+                  ? "Salvar alterações"
+                  : "Adicionar"}
             </button>
 
             <button
@@ -437,19 +462,26 @@ export default function RepresentativeForm() {
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((r) => (
-            <div key={r.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+            <div
+              key={r.id}
+              className="rounded-2xl border border-white/10 bg-black/30 p-4"
+            >
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-bold text-white">{r.name}</p>
-                <span className="text-xs text-slate-300">{r.is_active ? "ATIVO" : "INATIVO"}</span>
+                <span className="text-xs text-slate-300">
+                  {r.is_active ? "ATIVO" : "INATIVO"}
+                </span>
               </div>
 
               <p className="mt-1 text-xs text-slate-300">
-                {r.address_city || "Cidade"} {r.address_uf ? `- ${normalizeUF(r.address_uf)}` : ""} • ordem{" "}
+                {r.address_city || "Cidade"}{" "}
+                {r.address_uf ? `- ${normalizeUF(r.address_uf)}` : ""} • ordem{" "}
                 {r.sort_order}
               </p>
 
               <p className="mt-2 text-xs text-slate-300">
-                WhatsApp: {formatPhoneMask(r.whatsapp)} • CNPJ: {formatCnpjMask(r.cnpj)}
+                WhatsApp: {formatPhoneMask(r.whatsapp)} • CNPJ:{" "}
+                {formatCnpjMask(r.cnpj)}
               </p>
 
               <p className="mt-2 text-xs text-slate-400">
@@ -500,7 +532,9 @@ export default function RepresentativeForm() {
         ) : null}
 
         {!items.length && !loading ? (
-          <p className="mt-3 text-sm text-slate-300">Nenhum representante encontrado.</p>
+          <p className="mt-3 text-sm text-slate-300">
+            Nenhum representante encontrado.
+          </p>
         ) : null}
       </div>
     </div>

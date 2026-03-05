@@ -22,10 +22,15 @@ const API_ESPECIALIDADES = `${API_BASE}/api/admin/especialidades`;
 
 // Normaliza URL absoluta → para preview
 const toAbs = (p?: string | null) =>
-  !p ? null : p.startsWith("http") ? p : `${API_BASE}${p.startsWith("/") ? p : `/${p}`}`;
+  !p
+    ? null
+    : p.startsWith("http")
+      ? p
+      : `${API_BASE}${p.startsWith("/") ? p : `/${p}`}`;
 
 // Converte URL absoluta → para relativa (salvar no banco)
-const toRel = (u: string) => (u?.startsWith(API_BASE) ? u.slice(API_BASE.length) : u);
+const toRel = (u: string) =>
+  u?.startsWith(API_BASE) ? u.slice(API_BASE.length) : u;
 
 export default function ServiceFormUnificado({
   servicoEditado,
@@ -50,9 +55,10 @@ export default function ServiceFormUnificado({
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(
-    null
-  );
+  const [msg, setMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isEditing = !!servicoEditado?.id;
@@ -91,7 +97,9 @@ export default function ServiceFormUnificado({
       const extras = Array.isArray(servicoEditado.images)
         ? (servicoEditado.images as unknown as string[])
         : [];
-      const allRel = [servicoEditado.imagem, ...extras].filter(Boolean) as string[];
+      const allRel = [servicoEditado.imagem, ...extras].filter(
+        Boolean,
+      ) as string[];
       const uniqueRel = Array.from(new Set(allRel));
       const abs = uniqueRel.map((p) => toAbs(p)!).filter(Boolean);
       setExistingImgs(abs);
@@ -152,7 +160,7 @@ export default function ServiceFormUnificado({
     e:
       | React.ChangeEvent<HTMLInputElement>
       | React.ChangeEvent<HTMLTextAreaElement>
-      | React.ChangeEvent<HTMLSelectElement>
+      | React.ChangeEvent<HTMLSelectElement>,
   ) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -207,7 +215,9 @@ export default function ServiceFormUnificado({
     }
 
     const method = isEditing ? "PUT" : "POST";
-    const url = isEditing ? `${API_SERVICOS}/${servicoEditado!.id}` : API_SERVICOS;
+    const url = isEditing
+      ? `${API_SERVICOS}/${servicoEditado!.id}`
+      : API_SERVICOS;
 
     setLoading(true);
     try {
@@ -379,7 +389,9 @@ export default function ServiceFormUnificado({
                   />
                   <span
                     className={`absolute right-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                      marked ? "bg-red-600 text-white" : "bg-black/60 text-white"
+                      marked
+                        ? "bg-red-600 text-white"
+                        : "bg-black/60 text-white"
                     }`}
                   >
                     {marked ? "remover" : "manter"}
@@ -463,8 +475,8 @@ export default function ServiceFormUnificado({
                 ? "Atualizando..."
                 : "Salvando..."
               : isEditing
-              ? "Atualizar Serviço"
-              : "Adicionar Serviço"
+                ? "Atualizar Serviço"
+                : "Adicionar Serviço"
           }
           variant="primary"
           size="medium"

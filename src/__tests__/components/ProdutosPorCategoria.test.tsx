@@ -62,13 +62,13 @@ describe("ProdutosPorCategoria", () => {
     // URL vem com encodeURIComponent e inclui host base
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining(
-        `/api/products?category=${encodeURIComponent("ração")}`
+        `/api/products?category=${encodeURIComponent("ração")}`,
       ),
       expect.objectContaining({
         cache: "no-store",
         // o componente passa AbortSignal
         signal: expect.any(Object),
-      })
+      }),
     );
   });
 
@@ -98,7 +98,7 @@ describe("ProdutosPorCategoria", () => {
 
     // Assert
     expect(
-      await screen.findByText(/sem produtos nessa categoria/i)
+      await screen.findByText(/sem produtos nessa categoria/i),
     ).toBeInTheDocument();
   });
 
@@ -117,7 +117,7 @@ describe("ProdutosPorCategoria", () => {
 
     // Assert
     expect(
-      await screen.findByText(/não foi possível carregar produtos/i)
+      await screen.findByText(/não foi possível carregar produtos/i),
     ).toBeInTheDocument();
 
     expect(warnSpy).toHaveBeenCalled();
@@ -129,7 +129,7 @@ describe("ProdutosPorCategoria", () => {
       new Array(10).fill(0).map((_, i) => ({
         id: i + 1,
         name: `Produto ${i + 1}`,
-      }))
+      })),
     );
 
     // Act
@@ -161,11 +161,11 @@ describe("ProdutosPorCategoria", () => {
     await screen.findByTestId("product-card");
 
     expect(
-      screen.queryByRole("button", { name: /avançar produtos/i })
+      screen.queryByRole("button", { name: /avançar produtos/i }),
     ).not.toBeInTheDocument();
 
     expect(
-      screen.queryByRole("button", { name: /voltar produtos/i })
+      screen.queryByRole("button", { name: /voltar produtos/i }),
     ).not.toBeInTheDocument();
   });
 });

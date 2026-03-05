@@ -34,7 +34,7 @@ describe("PostPreview", () => {
     const post = makePost();
 
     const { container } = render(
-      <PostPreview open={false} post={post as any} onClose={onClose} />
+      <PostPreview open={false} post={post as any} onClose={onClose} />,
     );
 
     expect(container).toBeEmptyDOMElement();
@@ -45,7 +45,7 @@ describe("PostPreview", () => {
     const onClose = vi.fn();
 
     const { container } = render(
-      <PostPreview open={true} post={null} onClose={onClose} />
+      <PostPreview open={true} post={null} onClose={onClose} />,
     );
 
     expect(container).toBeEmptyDOMElement();
@@ -83,7 +83,7 @@ describe("PostPreview", () => {
 
     // overlay clicável com aria-label
     expect(
-      screen.getByRole("button", { name: "Fechar preview" })
+      screen.getByRole("button", { name: "Fechar preview" }),
     ).toBeInTheDocument();
   });
 
@@ -143,7 +143,7 @@ describe("PostPreview", () => {
     document.body.style.overflow = "auto";
 
     const { rerender, unmount } = render(
-      <PostPreview open={true} post={post as any} onClose={onClose} />
+      <PostPreview open={true} post={post as any} onClose={onClose} />,
     );
 
     expect(document.body.style.overflow).toBe("hidden");
@@ -166,20 +166,27 @@ describe("PostPreview", () => {
     // 1) cover_image_url (prioridade)
     const postA = makePost({ cover_image_url: "https://cdn/a.jpg" });
     const { rerender } = render(
-      <PostPreview open={true} post={postA as any} onClose={onClose} />
+      <PostPreview open={true} post={postA as any} onClose={onClose} />,
     );
 
     const imgA = screen.getByRole("img", { name: "Capa" }) as HTMLImageElement;
     expect(imgA.src).toContain("https://cdn/a.jpg");
 
     // 2) coverUrl
-    const postB = makePost({ cover_image_url: null, coverUrl: "https://cdn/b.jpg" });
+    const postB = makePost({
+      cover_image_url: null,
+      coverUrl: "https://cdn/b.jpg",
+    });
     rerender(<PostPreview open={true} post={postB as any} onClose={onClose} />);
     const imgB = screen.getByRole("img", { name: "Capa" }) as HTMLImageElement;
     expect(imgB.src).toContain("https://cdn/b.jpg");
 
     // 3) cover_url
-    const postC = makePost({ cover_image_url: null, coverUrl: null, cover_url: "https://cdn/c.jpg" });
+    const postC = makePost({
+      cover_image_url: null,
+      coverUrl: null,
+      cover_url: "https://cdn/c.jpg",
+    });
     rerender(<PostPreview open={true} post={postC as any} onClose={onClose} />);
     const imgC = screen.getByRole("img", { name: "Capa" }) as HTMLImageElement;
     expect(imgC.src).toContain("https://cdn/c.jpg");
@@ -187,7 +194,11 @@ describe("PostPreview", () => {
 
   it("não deve renderizar imagem quando nenhuma URL de capa estiver disponível (negativo)", () => {
     const onClose = vi.fn();
-    const post = makePost({ cover_image_url: null, coverUrl: null, cover_url: null });
+    const post = makePost({
+      cover_image_url: null,
+      coverUrl: null,
+      cover_url: null,
+    });
 
     render(<PostPreview open={true} post={post as any} onClose={onClose} />);
 

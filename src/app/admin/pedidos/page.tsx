@@ -66,8 +66,7 @@ const LABEL_STATUS_ENTREGA: Record<StatusEntrega, string> = {
 const CLASSE_BADGE_PAGAMENTO: Record<StatusPagamento, string> = {
   pendente:
     "border-amber-500/40 bg-amber-500/10 text-amber-100 dark:border-amber-400/30 dark:bg-amber-500/15 dark:text-amber-200",
-  pago:
-    "border-emerald-500/40 bg-emerald-500/10 text-emerald-100 dark:border-emerald-400/30 dark:bg-emerald-500/15 dark:text-emerald-200",
+  pago: "border-emerald-500/40 bg-emerald-500/10 text-emerald-100 dark:border-emerald-400/30 dark:bg-emerald-500/15 dark:text-emerald-200",
   falhou:
     "border-rose-500/40 bg-rose-500/10 text-rose-100 dark:border-rose-400/30 dark:bg-rose-500/15 dark:text-rose-200",
   estornado:
@@ -139,7 +138,7 @@ function normalizarTelefoneBr(telefone?: string | null): string | null {
 function whatsappLink(
   telefone?: string | null,
   nome?: string,
-  pedidoId?: number
+  pedidoId?: number,
 ): string | null {
   const numero = normalizarTelefoneBr(telefone);
   if (!numero) return null;
@@ -220,18 +219,20 @@ export default function PedidosAdminPage() {
 
   const atualizarStatusEntrega = async (
     id: number,
-    novoStatus: StatusEntrega
+    novoStatus: StatusEntrega,
   ) => {
     try {
       setAtualizandoId(id);
 
       // 🔐 Requisição autenticada via apiClient (CSRF automático)
-      await apiClient.put(`/api/admin/pedidos/${id}/entrega`, { status_entrega: novoStatus });
+      await apiClient.put(`/api/admin/pedidos/${id}/entrega`, {
+        status_entrega: novoStatus,
+      });
 
       setPedidos((prev) =>
         prev.map((p) =>
-          p.id === id ? { ...p, status_entrega: novoStatus } : p
-        )
+          p.id === id ? { ...p, status_entrega: novoStatus } : p,
+        ),
       );
     } catch (err) {
       console.error("Erro ao atualizar status de entrega:", err);
@@ -243,18 +244,20 @@ export default function PedidosAdminPage() {
 
   const atualizarStatusPagamento = async (
     id: number,
-    novoStatus: StatusPagamento
+    novoStatus: StatusPagamento,
   ) => {
     try {
       setAtualizandoId(id);
 
       // 🔐 Requisição autenticada via apiClient (CSRF automático)
-      await apiClient.put(`/api/admin/pedidos/${id}/pagamento`, { status_pagamento: novoStatus });
+      await apiClient.put(`/api/admin/pedidos/${id}/pagamento`, {
+        status_pagamento: novoStatus,
+      });
 
       setPedidos((prev) =>
         prev.map((p) =>
-          p.id === id ? { ...p, status_pagamento: novoStatus } : p
-        )
+          p.id === id ? { ...p, status_pagamento: novoStatus } : p,
+        ),
       );
     } catch (err) {
       console.error("Erro ao atualizar status de pagamento:", err);
@@ -267,14 +270,17 @@ export default function PedidosAdminPage() {
   // 🔔 Envio de comunicação (e-mail + WhatsApp) baseado em template
   const enviarComunicacao = async (
     id: number,
-    template: "confirmacao_pedido" | "pagamento_aprovado" | "pedido_enviado"
+    template: "confirmacao_pedido" | "pagamento_aprovado" | "pedido_enviado",
   ) => {
     try {
       setAtualizandoId(id);
 
       // e-mail
       try {
-        await apiClient.post("/api/admin/comunicacao/email", { template, pedidoId: id });
+        await apiClient.post("/api/admin/comunicacao/email", {
+          template,
+          pedidoId: id,
+        });
       } catch (err) {
         console.error("Erro ao enviar e-mail de comunicação:", err);
         alert("Erro ao enviar e-mail de comunicação.");
@@ -282,7 +288,10 @@ export default function PedidosAdminPage() {
 
       // WhatsApp
       try {
-        await apiClient.post("/api/admin/comunicacao/whatsapp", { template, pedidoId: id });
+        await apiClient.post("/api/admin/comunicacao/whatsapp", {
+          template,
+          pedidoId: id,
+        });
       } catch (err) {
         console.error("Erro ao enviar WhatsApp de comunicação:", err);
         alert("Erro ao enviar mensagem de WhatsApp.");
@@ -349,8 +358,8 @@ export default function PedidosAdminPage() {
                 <span>
                   Filtrando por cliente{" "}
                   <strong>
-                    #{String(clienteSelecionado.usuario_id).padStart(4, "0")}{" "}
-                    - {clienteSelecionado.usuario}
+                    #{String(clienteSelecionado.usuario_id).padStart(4, "0")} -{" "}
+                    {clienteSelecionado.usuario}
                   </strong>
                 </span>
                 <button
@@ -401,7 +410,7 @@ export default function PedidosAdminPage() {
                   const linkWpp = whatsappLink(
                     telefoneContato,
                     pedido.usuario,
-                    pedido.id
+                    pedido.id,
                   );
 
                   return (
@@ -433,7 +442,7 @@ export default function PedidosAdminPage() {
                           <div className="mt-1 text-xs">
                             <a
                               href={`mailto:${pedido.email}?subject=${encodeURIComponent(
-                                `Pedido #${pedido.id}`
+                                `Pedido #${pedido.id}`,
                               )}`}
                               className="text-emerald-600 hover:underline dark:text-emerald-400"
                             >
@@ -529,10 +538,7 @@ export default function PedidosAdminPage() {
                           <button
                             type="button"
                             onClick={() =>
-                              enviarComunicacao(
-                                pedido.id,
-                                "confirmacao_pedido"
-                              )
+                              enviarComunicacao(pedido.id, "confirmacao_pedido")
                             }
                             disabled={atualizandoId === pedido.id}
                             className="inline-flex items-center justify-center rounded-md border border-gray-300 px-3 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
@@ -543,10 +549,7 @@ export default function PedidosAdminPage() {
                           <button
                             type="button"
                             onClick={() =>
-                              enviarComunicacao(
-                                pedido.id,
-                                "pagamento_aprovado"
-                              )
+                              enviarComunicacao(pedido.id, "pagamento_aprovado")
                             }
                             disabled={atualizandoId === pedido.id}
                             className="inline-flex items-center justify-center rounded-md border border-gray-300 px-3 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
@@ -582,7 +585,7 @@ export default function PedidosAdminPage() {
                             onChange={(e) =>
                               atualizarStatusEntrega(
                                 pedido.id,
-                                e.target.value as StatusEntrega
+                                e.target.value as StatusEntrega,
                               )
                             }
                             className="block w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
@@ -619,7 +622,7 @@ export default function PedidosAdminPage() {
                 const linkWpp = whatsappLink(
                   telefoneContato,
                   pedido.usuario,
-                  pedido.id
+                  pedido.id,
                 );
 
                 return (
@@ -660,7 +663,7 @@ export default function PedidosAdminPage() {
                         {pedido.email && (
                           <a
                             href={`mailto:${pedido.email}?subject=${encodeURIComponent(
-                              `Pedido #${pedido.id}`
+                              `Pedido #${pedido.id}`,
                             )}`}
                             className="block truncate text-emerald-500 hover:underline dark:text-emerald-300"
                           >
@@ -732,7 +735,7 @@ export default function PedidosAdminPage() {
                         onChange={(e) =>
                           atualizarStatusEntrega(
                             pedido.id,
-                            e.target.value as StatusEntrega
+                            e.target.value as StatusEntrega,
                           )
                         }
                         className="block w-full rounded-md border border-gray-300 bg-white px-2 py-2 text-xs text-gray-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
@@ -760,10 +763,7 @@ export default function PedidosAdminPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            enviarComunicacao(
-                              pedido.id,
-                              "pagamento_aprovado"
-                            )
+                            enviarComunicacao(pedido.id, "pagamento_aprovado")
                           }
                           disabled={atualizandoId === pedido.id}
                           className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 px-3 py-2 text-[11px] font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"

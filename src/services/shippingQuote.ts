@@ -19,7 +19,13 @@ export async function fetchShippingQuote(args: {
 
   const items = (args.items || [])
     .map((i) => ({ id: Number(i.id), quantidade: Number(i.quantidade) }))
-    .filter((i) => Number.isFinite(i.id) && i.id > 0 && Number.isFinite(i.quantidade) && i.quantidade > 0);
+    .filter(
+      (i) =>
+        Number.isFinite(i.id) &&
+        i.id > 0 &&
+        Number.isFinite(i.quantidade) &&
+        i.quantidade > 0,
+    );
 
   if (!items.length) throw new Error("Carrinho vazio");
 
@@ -45,7 +51,10 @@ export async function fetchShippingQuote(args: {
   // route retorna { success: true, ...quote } :contentReference[oaicite:3]{index=3}
   return {
     price: Number(data?.price || 0),
-    prazo_dias: data?.prazo_dias === null || data?.prazo_dias === undefined ? null : Number(data.prazo_dias),
+    prazo_dias:
+      data?.prazo_dias === null || data?.prazo_dias === undefined
+        ? null
+        : Number(data.prazo_dias),
     is_free: Boolean(data?.is_free),
     ruleApplied: data?.ruleApplied,
     zone: data?.zone,

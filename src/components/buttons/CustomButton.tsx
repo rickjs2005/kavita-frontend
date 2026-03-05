@@ -34,8 +34,8 @@ const CustomButton: React.FC<CustomButtonProps> = ({
     size === "small"
       ? "px-3 py-2 text-sm"
       : size === "medium"
-      ? "px-6 py-2"
-      : "w-full px-6 py-3";
+        ? "px-6 py-2"
+        : "w-full px-6 py-3";
   const variantStyles =
     variant === "primary"
       ? "bg-[#359293] hover:bg-[#2b797a] focus-visible:outline-[#2b797a]"
@@ -44,7 +44,8 @@ const CustomButton: React.FC<CustomButtonProps> = ({
     ? "opacity-60 cursor-not-allowed pointer-events-none"
     : "disabled:opacity-50 disabled:cursor-not-allowed";
   const hoverStyles = "hover:scale-105";
-  const buttonStyles = `${baseStyles} ${sizeStyles} ${variantStyles} ${hoverStyles} ${disabledStyles} ${className}`.trim();
+  const buttonStyles =
+    `${baseStyles} ${sizeStyles} ${variantStyles} ${hoverStyles} ${disabledStyles} ${className}`.trim();
 
   const inner = isLoading ? (
     <div className="flex items-center">
@@ -66,7 +67,9 @@ const CustomButton: React.FC<CustomButtonProps> = ({
         >
           {inner}
         </Link>
-        {message && !isLoading && <p className="text-red-500 text-sm mt-2">{message}</p>}
+        {message && !isLoading && (
+          <p className="text-red-500 text-sm mt-2">{message}</p>
+        )}
       </>
     );
   }
@@ -82,7 +85,9 @@ const CustomButton: React.FC<CustomButtonProps> = ({
       >
         {inner}
       </button>
-      {message && !isLoading && <p className="text-red-500 text-sm mt-2">{message}</p>}
+      {message && !isLoading && (
+        <p className="text-red-500 text-sm mt-2">{message}</p>
+      )}
     </>
   );
 };

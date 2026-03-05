@@ -23,18 +23,18 @@ describe("PostsToolbar", () => {
         onChangeQ={onChangeQ}
         onChangeStatus={onChangeStatus}
         onClickNew={onClickNew}
-      />
+      />,
     );
 
     // Assert
     expect(
-      screen.getByPlaceholderText("Buscar por título, slug, tag...")
+      screen.getByPlaceholderText("Buscar por título, slug, tag..."),
     ).toBeInTheDocument();
 
     expect(screen.getByRole("combobox")).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: "Novo Post" })
+      screen.getByRole("button", { name: "Novo Post" }),
     ).toBeInTheDocument();
   });
 
@@ -47,12 +47,12 @@ describe("PostsToolbar", () => {
         onChangeQ={onChangeQ}
         onChangeStatus={onChangeStatus}
         onClickNew={onClickNew}
-      />
+      />,
     );
 
     // Assert
     const input = screen.getByPlaceholderText(
-      "Buscar por título, slug, tag..."
+      "Buscar por título, slug, tag...",
     ) as HTMLInputElement;
 
     expect(input.value).toBe("milho");
@@ -67,11 +67,11 @@ describe("PostsToolbar", () => {
         onChangeQ={onChangeQ}
         onChangeStatus={onChangeStatus}
         onClickNew={onClickNew}
-      />
+      />,
     );
 
     const input = screen.getByPlaceholderText(
-      "Buscar por título, slug, tag..."
+      "Buscar por título, slug, tag...",
     );
 
     // Act
@@ -90,7 +90,7 @@ describe("PostsToolbar", () => {
         onChangeQ={onChangeQ}
         onChangeStatus={onChangeStatus}
         onClickNew={onClickNew}
-      />
+      />,
     );
 
     // Assert
@@ -107,7 +107,7 @@ describe("PostsToolbar", () => {
         onChangeQ={onChangeQ}
         onChangeStatus={onChangeStatus}
         onClickNew={onClickNew}
-      />
+      />,
     );
 
     const select = screen.getByRole("combobox");
@@ -128,13 +128,11 @@ describe("PostsToolbar", () => {
         onChangeQ={onChangeQ}
         onChangeStatus={onChangeStatus}
         onClickNew={onClickNew}
-      />
+      />,
     );
 
     // Assert
-    expect(
-      screen.queryByRole("button", { name: "Atualizar" })
-    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Atualizar" })).toBeNull();
   });
 
   it("deve renderizar botão Atualizar quando onClickRefresh existir (positivo)", () => {
@@ -147,12 +145,12 @@ describe("PostsToolbar", () => {
         onChangeStatus={onChangeStatus}
         onClickNew={onClickNew}
         onClickRefresh={onClickRefresh}
-      />
+      />,
     );
 
     // Assert
     expect(
-      screen.getByRole("button", { name: "Atualizar" })
+      screen.getByRole("button", { name: "Atualizar" }),
     ).toBeInTheDocument();
   });
 
@@ -166,7 +164,7 @@ describe("PostsToolbar", () => {
         onChangeStatus={onChangeStatus}
         onClickNew={onClickNew}
         onClickRefresh={onClickRefresh}
-      />
+      />,
     );
 
     // Act
@@ -187,7 +185,7 @@ describe("PostsToolbar", () => {
         onClickNew={onClickNew}
         onClickRefresh={onClickRefresh}
         isLoading={true}
-      />
+      />,
     );
 
     // Assert
@@ -204,13 +202,11 @@ describe("PostsToolbar", () => {
         onChangeQ={onChangeQ}
         onChangeStatus={onChangeStatus}
         onClickNew={onClickNew}
-      />
+      />,
     );
 
     // Act
-    fireEvent.click(
-      screen.getByRole("button", { name: "Novo Post" })
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Novo Post" }));
 
     // Assert
     expect(onClickNew).toHaveBeenCalledTimes(1);

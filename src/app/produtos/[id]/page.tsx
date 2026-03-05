@@ -46,7 +46,7 @@ type ProductPromotion = {
 };
 
 async function getPromocaoProduto(
-  id: string
+  id: string,
 ): Promise<ProductPromotion | null> {
   try {
     const res = await fetch(`${API}/api/public/promocoes/${id}`, {
@@ -55,7 +55,7 @@ async function getPromocaoProduto(
     if (!res.ok) return null;
     const data = await res.json();
     return Array.isArray(data)
-      ? (data[0] as ProductPromotion) ?? null
+      ? ((data[0] as ProductPromotion) ?? null)
       : (data as ProductPromotion);
   } catch {
     return null;
@@ -88,10 +88,7 @@ export default async function Page({ params }: ProductPageProps) {
 
   const originalFromPromo = promocao?.original_price ?? promocao?.price ?? null;
   const finalFromPromo =
-    promocao?.final_price ??
-    promocao?.promo_price ??
-    promocao?.price ??
-    null;
+    promocao?.final_price ?? promocao?.promo_price ?? promocao?.price ?? null;
 
   const originalPrice =
     originalFromPromo != null ? Number(originalFromPromo) : precoBase;
@@ -112,8 +109,7 @@ export default async function Page({ params }: ProductPageProps) {
     }
 
     if (originalPrice > 0 && finalPrice < originalPrice) {
-      discountPercent =
-        ((originalPrice - finalPrice) / originalPrice) * 100;
+      discountPercent = ((originalPrice - finalPrice) / originalPrice) * 100;
     } else if (!Number.isNaN(explicit) && explicit > 0) {
       discountPercent = explicit;
     }
@@ -136,7 +132,7 @@ export default async function Page({ params }: ProductPageProps) {
 
   // ===== ESTOQUE =====
   const estoque = Number(
-    (produto as any).estoque ?? (produto as any).quantity ?? 0
+    (produto as any).estoque ?? (produto as any).quantity ?? 0,
   );
   const disponivel = estoque > 0;
 
@@ -145,7 +141,7 @@ export default async function Page({ params }: ProductPageProps) {
     ? (produto.images as unknown as string[])
     : [];
   const images = Array.from(
-    new Set([produto.image, ...extras].filter(Boolean) as string[])
+    new Set([produto.image, ...extras].filter(Boolean) as string[]),
   ).map(absUrl);
 
   const produtoComPrecoFinal: Product = {

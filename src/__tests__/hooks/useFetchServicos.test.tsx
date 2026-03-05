@@ -21,7 +21,8 @@ vi.mock("@/lib/apiClient", () => ({
 
 const handleApiErrorMock = vi.fn();
 vi.mock("@/lib/handleApiError", () => ({
-  handleApiError: (err: unknown, opts: unknown) => handleApiErrorMock(err, opts),
+  handleApiError: (err: unknown, opts: unknown) =>
+    handleApiErrorMock(err, opts),
 }));
 
 type SwrReturn = { data?: unknown; error?: unknown; isLoading?: boolean };
@@ -93,7 +94,14 @@ describe("useFetchServicos (hook)", () => {
 
     // Act
     renderHook(() =>
-      useFetchServicos({ q: "  vacina  ", especialidade: 10, page: 2, limit: 20, sort: "nome", order: "asc" })
+      useFetchServicos({
+        q: "  vacina  ",
+        especialidade: 10,
+        page: 2,
+        limit: 20,
+        sort: "nome",
+        order: "asc",
+      }),
     );
 
     // Assert
@@ -151,7 +159,11 @@ describe("useFetchServicos (hook)", () => {
   it("Arrange/Act/Assert: normaliza lista quando payload é aninhado (data.items)", async () => {
     // Arrange
     const list = [{ id: 9 }];
-    setSWRReturn({ data: { data: { items: list } }, error: undefined, isLoading: false });
+    setSWRReturn({
+      data: { data: { items: list } },
+      error: undefined,
+      isLoading: false,
+    });
     const useFetchServicos = await importHookWithEnv("http://api.test");
 
     // Act
@@ -196,7 +208,9 @@ describe("useFetchServicos (hook)", () => {
   it("Arrange/Act/Assert: quando há error, usa handleApiError(silent=true) e retorna errorMessage; quando não há, error=null", async () => {
     // Arrange
     const err = new Error("boom");
-    handleApiErrorMock.mockReturnValue("Não foi possível carregar os serviços.");
+    handleApiErrorMock.mockReturnValue(
+      "Não foi possível carregar os serviços.",
+    );
     setSWRReturn({ data: undefined, error: err, isLoading: false });
     const useFetchServicos = await importHookWithEnv("http://api.test");
 
@@ -238,13 +252,13 @@ describe("useFetchServicos (hook)", () => {
     expect(typeof fetcher).toBe("function");
 
     await (fetcher as (u: string) => Promise<unknown>)(
-      "http://api.test/api/public/servicos?page=1&limit=12&sort=id&order=desc&q=x"
+      "http://api.test/api/public/servicos?page=1&limit=12&sort=id&order=desc&q=x",
     );
 
     expect(apiFetchMock).toHaveBeenCalledTimes(1);
     expect(apiFetchMock).toHaveBeenCalledWith(
       "http://api.test/api/public/servicos?page=1&limit=12&sort=id&order=desc&q=x",
-      undefined
+      undefined,
     );
   });
 });

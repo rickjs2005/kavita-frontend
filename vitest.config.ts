@@ -26,7 +26,10 @@ export default defineConfig({
 
       // ESSENCIAL: Next "server-only" é um módulo virtual e o Vite não resolve sem alias.
       // Isso evita quebrar qualquer teste que importe arquivos do /src/server.
-      "server-only": path.resolve(__dirname, "src/__tests__/mocks/server-only.ts"),
+      "server-only": path.resolve(
+        __dirname,
+        "src/__tests__/mocks/server-only.ts",
+      ),
     },
   },
 });

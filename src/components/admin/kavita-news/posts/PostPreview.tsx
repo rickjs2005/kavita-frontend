@@ -15,10 +15,7 @@ export default function PostPreview({ open, post, onClose }: Props) {
     // compat: alguns fronts usam cover_url, backend usa cover_image_url
     const anyPost = post as any;
     return (
-      anyPost.cover_image_url ||
-      anyPost.coverUrl ||
-      anyPost.cover_url ||
-      null
+      anyPost.cover_image_url || anyPost.coverUrl || anyPost.cover_url || null
     );
   }, [post]);
 

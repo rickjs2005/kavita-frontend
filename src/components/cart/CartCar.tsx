@@ -27,7 +27,9 @@ interface CouponPreviewResponse {
 }
 
 const money = (v: number) =>
-  `R$ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
+  `R$ ${Number(v || 0)
+    .toFixed(2)
+    .replace(".", ",")}`;
 
 // Promoção normalizada para o carrinho
 type Promotion = {
@@ -59,7 +61,8 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
   // 🔐 Verifica se está logado
   // ============================
   useEffect(() => {
-    const authenticated = Boolean(auth?.user?.id) || Boolean(auth?.isAuthenticated);
+    const authenticated =
+      Boolean(auth?.user?.id) || Boolean(auth?.isAuthenticated);
     setLogged(authenticated);
   }, [auth?.user?.id, auth?.isAuthenticated]);
 
@@ -76,7 +79,9 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
   // ============================
   // 🔥 Promoções por produto
   // ============================
-  const [promotions, setPromotions] = useState<Record<number, Promotion | null>>({});
+  const [promotions, setPromotions] = useState<
+    Record<number, Promotion | null>
+  >({});
 
   useEffect(() => {
     if (!cartItems.length) {
@@ -84,7 +89,9 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
       return;
     }
 
-    const uniqueIds = Array.from(new Set(cartItems.map((it) => Number(it.id)))).filter(Boolean);
+    const uniqueIds = Array.from(
+      new Set(cartItems.map((it) => Number(it.id))),
+    ).filter(Boolean);
 
     (async () => {
       try {
@@ -100,10 +107,14 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
               const data = await res.json();
 
               const original = Number(data.original_price ?? data.price ?? 0);
-              const final = Number(data.final_price ?? data.promo_price ?? data.price ?? original);
+              const final = Number(
+                data.final_price ?? data.promo_price ?? data.price ?? original,
+              );
 
               const discountPercent =
-                data.discount_percent != null ? Number(data.discount_percent) : undefined;
+                data.discount_percent != null
+                  ? Number(data.discount_percent)
+                  : undefined;
 
               return {
                 id,
@@ -116,7 +127,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
             } catch {
               return { id, promo: null };
             }
-          })
+          }),
         );
 
         setPromotions((prev) => {
@@ -137,7 +148,12 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
   // ============================
   const warnings = useMemo(() => {
     return (cartItems as any[])
-      .filter((i) => typeof i._stock === "number" && i._stock > 0 && i.quantity >= i._stock)
+      .filter(
+        (i) =>
+          typeof i._stock === "number" &&
+          i._stock > 0 &&
+          i.quantity >= i._stock,
+      )
       .map((i) => `“${i.name}” atingiu o limite de estoque (${i._stock}).`);
   }, [cartItems]);
 
@@ -155,10 +171,13 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
 
         return acc + finalPricePerUnit * qty;
       }, 0),
-    [cartItems, promotions]
+    [cartItems, promotions],
   );
 
-  const total = useMemo(() => Math.max(subtotal - discount, 0), [subtotal, discount]);
+  const total = useMemo(
+    () => Math.max(subtotal - discount, 0),
+    [subtotal, discount],
+  );
 
   // sempre que carrinho mudar (itens ou promoções), limpa estado de cupom
   useEffect(() => {
@@ -197,7 +216,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
       const { data } = await axios.post<CouponPreviewResponse>(
         `${API_BASE}/api/checkout/preview-cupom`,
         { codigo: code, total: subtotal },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (!data?.success) {
@@ -259,7 +278,9 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b px-4 sm:px-5 py-3">
         <div className="relative flex items-center justify-center">
-          <h2 className="text-base sm:text-lg font-semibold">Carrinho de compras</h2>
+          <h2 className="text-base sm:text-lg font-semibold">
+            Carrinho de compras
+          </h2>
           <CloseButton
             onClose={closeCart}
             className="absolute right-0 top-1/2 -translate-y-1/2"
@@ -314,8 +335,12 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
             </div>
           </div>
 
-          {couponMessage && <p className="mt-1 text-xs text-emerald-600">{couponMessage}</p>}
-          {couponError && <p className="mt-1 text-xs text-red-600">{couponError}</p>}
+          {couponMessage && (
+            <p className="mt-1 text-xs text-emerald-600">{couponMessage}</p>
+          )}
+          {couponError && (
+            <p className="mt-1 text-xs text-red-600">{couponError}</p>
+          )}
 
           <div className="mt-3 flex gap-2">
             <input

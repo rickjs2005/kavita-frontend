@@ -29,7 +29,7 @@ function stableStringify(value: unknown) {
 
 function pickChangedFields(
   current: AdminConfigForm,
-  baseline: AdminConfigForm
+  baseline: AdminConfigForm,
 ): Partial<AdminConfigForm> {
   const out: Partial<AdminConfigForm> = {};
 
@@ -83,7 +83,7 @@ export default function ConfiguracoesPage() {
       try {
         setLoading(true);
 
-        const data = await apiClient.get<any>('/api/admin/config');
+        const data = await apiClient.get<any>("/api/admin/config");
 
         // Se footer_links vier como string, parse aqui.
         let footerLinksParsed: FooterLinkItem[] | null | undefined =
@@ -168,7 +168,7 @@ export default function ConfiguracoesPage() {
   // ============================================================
   function handleChange<K extends keyof AdminConfigForm>(
     field: K,
-    value: AdminConfigForm[K]
+    value: AdminConfigForm[K],
   ) {
     setSettings((prev) => ({
       ...prev,
@@ -201,7 +201,7 @@ export default function ConfiguracoesPage() {
 
   function updateFooterLink(index: number, patch: Partial<FooterLinkItem>) {
     const next = footerLinks.map((item, i) =>
-      i === index ? { ...item, ...patch } : item
+      i === index ? { ...item, ...patch } : item,
     );
     setSettings((prev: any) => ({ ...prev, footer_links: next }));
   }
@@ -227,9 +227,9 @@ export default function ConfiguracoesPage() {
       fd.append("logo", logoFile);
 
       const data = await apiClient.post<any>(
-        '/api/admin/shop-config/upload/logo',
+        "/api/admin/shop-config/upload/logo",
         fd,
-        { skipContentType: true }
+        { skipContentType: true },
       );
 
       setSettings((prev: any) => ({ ...prev, logo_url: data.logo_url }));
@@ -274,7 +274,7 @@ export default function ConfiguracoesPage() {
 
       const tId = toast.loading("Salvando alterações...");
 
-      await apiClient.put('/api/admin/config', changed);
+      await apiClient.put("/api/admin/config", changed);
 
       setBaseline(settings);
       toast.success("Configurações salvas com sucesso!", { id: tId });
@@ -388,9 +388,7 @@ export default function ConfiguracoesPage() {
 
                 {/* Logo upload */}
                 <div>
-                  <label className="text-sm text-gray-200">
-                    Logo (upload)
-                  </label>
+                  <label className="text-sm text-gray-200">Logo (upload)</label>
 
                   <div className="mt-2 flex items-center gap-3">
                     <input
@@ -515,8 +513,8 @@ export default function ConfiguracoesPage() {
                   Footer
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Dados que aparecem no rodapé do site (contato, endereço, redes,
-                  CTA e links).
+                  Dados que aparecem no rodapé do site (contato, endereço,
+                  redes, CTA e links).
                 </p>
               </div>
               <span className="hidden rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-300 sm:inline">
@@ -534,10 +532,7 @@ export default function ConfiguracoesPage() {
                 variant="dark"
                 placeholder="Conectando você ao melhor da agropecuária..."
                 onChange={(e) =>
-                  handleChange(
-                    "footer_tagline" as any,
-                    e.target.value as any
-                  )
+                  handleChange("footer_tagline" as any, e.target.value as any)
                 }
               />
 
@@ -550,10 +545,7 @@ export default function ConfiguracoesPage() {
                 type="tel"
                 placeholder="(31) 99999-9999"
                 onChange={(e) =>
-                  handleChange(
-                    "contact_whatsapp" as any,
-                    e.target.value as any
-                  )
+                  handleChange("contact_whatsapp" as any, e.target.value as any)
                 }
               />
 
@@ -592,7 +584,7 @@ export default function ConfiguracoesPage() {
                 onChange={(e) =>
                   handleChange(
                     "social_instagram_url" as any,
-                    e.target.value as any
+                    e.target.value as any,
                   )
                 }
               />
@@ -608,7 +600,7 @@ export default function ConfiguracoesPage() {
                 onChange={(e) =>
                   handleChange(
                     "social_whatsapp_url" as any,
-                    e.target.value as any
+                    e.target.value as any,
                   )
                 }
               />
@@ -648,7 +640,7 @@ export default function ConfiguracoesPage() {
                   onChange={(e) =>
                     handleChange(
                       "address_state" as any,
-                      (e.target.value || "").toUpperCase().slice(0, 2) as any
+                      (e.target.value || "").toUpperCase().slice(0, 2) as any,
                     )
                   }
                 />
@@ -675,7 +667,7 @@ export default function ConfiguracoesPage() {
                   onChange={(e) =>
                     handleChange(
                       "address_neighborhood" as any,
-                      e.target.value as any
+                      e.target.value as any,
                     )
                   }
                 />
@@ -712,7 +704,7 @@ export default function ConfiguracoesPage() {
                     onChange={(v) =>
                       handleChange(
                         "footer_partner_cta_enabled" as any,
-                        v as any
+                        v as any,
                       )
                     }
                   />
@@ -729,7 +721,7 @@ export default function ConfiguracoesPage() {
                     onChange={(e) =>
                       handleChange(
                         "footer_partner_cta_title" as any,
-                        e.target.value as any
+                        e.target.value as any,
                       )
                     }
                   />
@@ -741,14 +733,15 @@ export default function ConfiguracoesPage() {
                       onChange={(e) =>
                         handleChange(
                           "footer_partner_cta_text" as any,
-                          e.target.value as any
+                          e.target.value as any,
                         )
                       }
                       placeholder="Veterinário, agrônomo, mecânico..."
                       className="mt-2 w-full min-h-[90px] rounded-xl border border-slate-800/80 bg-slate-950/50 px-3.5 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                     <p className="mt-1 text-[11px] text-slate-500">
-                      Dica: mantenha o texto curto para ficar elegante no rodapé.
+                      Dica: mantenha o texto curto para ficar elegante no
+                      rodapé.
                     </p>
                   </div>
 
@@ -762,7 +755,7 @@ export default function ConfiguracoesPage() {
                     onChange={(e) =>
                       handleChange(
                         "footer_partner_cta_href" as any,
-                        e.target.value as any
+                        e.target.value as any,
                       )
                     }
                   />
@@ -902,7 +895,12 @@ type ToggleItemProps = {
   onChange: (value: boolean) => void;
 };
 
-function ToggleItem({ label, description, checked, onChange }: ToggleItemProps) {
+function ToggleItem({
+  label,
+  description,
+  checked,
+  onChange,
+}: ToggleItemProps) {
   return (
     <button
       type="button"

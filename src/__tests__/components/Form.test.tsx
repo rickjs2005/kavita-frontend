@@ -112,12 +112,14 @@ describe("Form (src/components/form.tsx)", () => {
     // Assert: mensagem de sucesso aparece
     expect(
       screen.getByText(
-        /Sua mensagem foi enviada com sucesso! Logo entraremos em contato\./i
-      )
+        /Sua mensagem foi enviada com sucesso! Logo entraremos em contato\./i,
+      ),
     ).toBeInTheDocument();
 
     // Formulário some após submit
-    expect(screen.queryByRole("button", { name: /Enviar/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Enviar/i }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Assunto")).not.toBeInTheDocument();
 
     // Assert do console.log (sem ser frágil demais)
@@ -135,7 +137,7 @@ describe("Form (src/components/form.tsx)", () => {
         cidade: filled.cidade,
         corrego: "",
         mensagem: filled.mensagem,
-      })
+      }),
     );
 
     consoleLogSpy.mockRestore();
@@ -154,7 +156,9 @@ describe("Form (src/components/form.tsx)", () => {
     fireEvent.submit(formEl as HTMLFormElement);
 
     // Assert
-    expect(screen.getByText(/Sua mensagem foi enviada com sucesso!/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Sua mensagem foi enviada com sucesso!/i),
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText("Email")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Mensagem")).not.toBeInTheDocument();
   });
@@ -177,7 +181,9 @@ describe("Form (src/components/form.tsx)", () => {
     fireEvent.submit(formEl as HTMLFormElement);
 
     // Assert
-    expect(screen.getByText(/Sua mensagem foi enviada com sucesso!/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Sua mensagem foi enviada com sucesso!/i),
+    ).toBeInTheDocument();
 
     expect(consoleLogSpy).toHaveBeenCalled();
     expect(consoleLogSpy).toHaveBeenCalledWith(
@@ -191,7 +197,7 @@ describe("Form (src/components/form.tsx)", () => {
         cidade: filled.cidade,
         corrego: "Córrego da Serra",
         mensagem: filled.mensagem,
-      })
+      }),
     );
 
     consoleLogSpy.mockRestore();

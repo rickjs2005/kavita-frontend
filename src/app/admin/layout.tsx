@@ -69,7 +69,11 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   );
 }
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <AdminAuthProvider>
       <AdminLayoutInner>{children}</AdminLayoutInner>

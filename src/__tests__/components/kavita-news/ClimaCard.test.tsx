@@ -67,7 +67,7 @@ describe("ClimaCard", () => {
     expect(link.textContent).toContain("MG");
 
     expect(
-      screen.getByText("Monitoramento de chuva (24h e 7 dias).")
+      screen.getByText("Monitoramento de chuva (24h e 7 dias)."),
     ).toBeInTheDocument();
     expect(screen.getByText("Atualização contínua")).toBeInTheDocument();
     expect(screen.getByText("Ver detalhes")).toBeInTheDocument();

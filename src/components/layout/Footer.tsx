@@ -26,7 +26,7 @@ function formatCnpj(v: string) {
   if (!d) return "";
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(
     8,
-    12
+    12,
   )}-${d.slice(12, 14)}`;
 }
 
@@ -40,7 +40,7 @@ function buildAddress(
   neighborhood: string,
   city: string,
   state: string,
-  zip: string
+  zip: string,
 ) {
   const line1 = [street, neighborhood]
     .map((x) => String(x || "").trim())
@@ -119,7 +119,8 @@ export default function Footer({ shop }: FooterProps) {
     ];
   }, [shop, footer.links]);
 
-  const whatsapp = (shop as any)?.contact_whatsapp || footer.contact_whatsapp || "";
+  const whatsapp =
+    (shop as any)?.contact_whatsapp || footer.contact_whatsapp || "";
   const email = (shop as any)?.contact_email || footer.contact_email || "";
   const cnpj = (shop as any)?.cnpj ? formatCnpj((shop as any).cnpj) : "";
 
@@ -135,8 +136,10 @@ export default function Footer({ shop }: FooterProps) {
 
   // Endereço (flat ou compat)
   const address_city = (shop as any)?.address_city ?? footer.address_city ?? "";
-  const address_state = (shop as any)?.address_state ?? footer.address_state ?? "";
-  const address_street = (shop as any)?.address_street ?? footer.address_street ?? "";
+  const address_state =
+    (shop as any)?.address_state ?? footer.address_state ?? "";
+  const address_street =
+    (shop as any)?.address_street ?? footer.address_street ?? "";
   const address_neighborhood =
     (shop as any)?.address_neighborhood ?? footer.address_neighborhood ?? "";
   const address_zip = (shop as any)?.address_zip ?? footer.address_zip ?? "";
@@ -153,7 +156,7 @@ export default function Footer({ shop }: FooterProps) {
     address_neighborhood,
     address_city,
     address_state,
-    address_zip
+    address_zip,
   );
 
   return (
@@ -165,7 +168,9 @@ export default function Footer({ shop }: FooterProps) {
           {/* Brand */}
           <div className="space-y-3">
             <div>
-              <h2 className="text-2xl font-extrabold tracking-tight">{storeName}</h2>
+              <h2 className="text-2xl font-extrabold tracking-tight">
+                {storeName}
+              </h2>
               <div className="mt-2 h-[3px] w-12 rounded-full bg-emerald-400/80" />
             </div>
 
@@ -301,7 +306,9 @@ export default function Footer({ shop }: FooterProps) {
 
             {/* CTA secundário (mobile-friendly) */}
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-sm font-semibold text-white">Atendimento rápido</p>
+              <p className="text-sm font-semibold text-white">
+                Atendimento rápido
+              </p>
               <p className="mt-1 text-xs text-white/70">
                 Resposta mais ágil via WhatsApp em horário comercial.
               </p>

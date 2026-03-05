@@ -3,9 +3,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { FiltersPanel, type FiltersState } from "@/components/search/FiltersPanel";
+import {
+  FiltersPanel,
+  type FiltersState,
+} from "@/components/search/FiltersPanel";
 
-type Category = { id: number; name: string; slug?: string; total_products?: number };
+type Category = {
+  id: number;
+  name: string;
+  slug?: string;
+  total_products?: number;
+};
 
 function renderControlled({
   categories = [],
@@ -83,10 +91,14 @@ describe("FiltersPanel", () => {
     renderControlled({ initialValue: baseValue });
 
     expect(screen.getByText("Filtros")).toBeInTheDocument();
-    expect(screen.getByText("Ajuste para refinar os resultados")).toBeInTheDocument();
+    expect(
+      screen.getByText("Ajuste para refinar os resultados"),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Limpar" })).toBeInTheDocument();
 
-    expect(screen.getByPlaceholderText("Nome ou descrição…")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Nome ou descrição…"),
+    ).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("0")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("9999")).toBeInTheDocument();
@@ -144,8 +156,12 @@ describe("FiltersPanel", () => {
     const select = screen.getByRole("combobox") as HTMLSelectElement;
     expect(select.value).toBe("2");
 
-    expect(screen.getByRole("option", { name: "Medicamentos (10)" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Pets (3)" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Medicamentos (10)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Pets (3)" }),
+    ).toBeInTheDocument();
   });
 
   it("ao selecionar categoria > 0 chama onChange com categories=[id] (positivo)", async () => {
@@ -154,7 +170,10 @@ describe("FiltersPanel", () => {
       { id: 1, name: "Medicamentos" },
       { id: 2, name: "Pets" },
     ];
-    const { onChangeSpy } = renderControlled({ categories, initialValue: baseValue });
+    const { onChangeSpy } = renderControlled({
+      categories,
+      initialValue: baseValue,
+    });
 
     await user.selectOptions(screen.getByRole("combobox"), "2");
 
@@ -180,9 +199,15 @@ describe("FiltersPanel", () => {
   });
 
   it("quando não está carregando e não há categorias, mostra 'Nenhuma categoria encontrada.' (negativo)", () => {
-    renderControlled({ categories: [], categoriesLoading: false, initialValue: baseValue });
+    renderControlled({
+      categories: [],
+      categoriesLoading: false,
+      initialValue: baseValue,
+    });
 
-    expect(screen.getByText("Nenhuma categoria encontrada.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Nenhuma categoria encontrada."),
+    ).toBeInTheDocument();
   });
 
   it("minPrice: remove separadores e mantém apenas dígitos (ex: '12,50' => 1250) (positivo)", async () => {
@@ -266,12 +291,16 @@ describe("FiltersPanel", () => {
       applyLabel: "Buscar agora",
     });
 
-    expect(screen.getByRole("button", { name: "Buscar agora" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Buscar agora" }),
+    ).toBeInTheDocument();
   });
 
   it("quando stickyActions=false não renderiza botão aplicar (negativo)", () => {
     renderControlled({ initialValue: baseValue, stickyActions: false });
 
-    expect(screen.queryByRole("button", { name: "Aplicar filtros" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Aplicar filtros" }),
+    ).not.toBeInTheDocument();
   });
 });

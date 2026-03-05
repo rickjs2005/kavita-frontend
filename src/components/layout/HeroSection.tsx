@@ -40,7 +40,8 @@ function toMediaUrl(raw?: string | null) {
 function normalizeHref(href?: string | null) {
   const v = String(href || "").trim();
   if (!v) return "/drones";
-  if (v.startsWith("/") || v.startsWith("http://") || v.startsWith("https://")) return v;
+  if (v.startsWith("/") || v.startsWith("http://") || v.startsWith("https://"))
+    return v;
   return `/${v}`;
 }
 

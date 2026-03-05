@@ -43,14 +43,16 @@ describe("ClimaTable", () => {
         onEdit={vi.fn()}
         onDelete={vi.fn()}
         deletingId={null}
-      />
+      />,
     );
 
     expect(screen.getByText("Cidades cadastradas")).toBeInTheDocument();
     expect(screen.getByText(/Total:/i)).toHaveTextContent("Total: 0");
 
     // Estado vazio aparece em mobile e desktop ao mesmo tempo (classes Tailwind não ocultam em jsdom)
-    expect(screen.getAllByText("Nenhuma cidade cadastrada.").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Nenhuma cidade cadastrada.").length,
+    ).toBeGreaterThanOrEqual(1);
 
     const atualizar = screen.getByRole("button", { name: "Atualizar" });
     expect(atualizar).toBeDisabled();
@@ -74,7 +76,7 @@ describe("ClimaTable", () => {
         onEdit={vi.fn()}
         onDelete={vi.fn()}
         deletingId={null}
-      />
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: "Atualizar" }));
@@ -92,7 +94,7 @@ describe("ClimaTable", () => {
         onEdit={vi.fn()}
         onDelete={vi.fn()}
         deletingId={null}
-      />
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: "Atualizar" }));
@@ -104,7 +106,13 @@ describe("ClimaTable", () => {
     const onEdit = vi.fn();
     const onDelete = vi.fn();
 
-    const rows = [makeRow({ id: 7, city_name: "Santana do Manhuaçu", slug: "santana-do-manhuacu" })];
+    const rows = [
+      makeRow({
+        id: 7,
+        city_name: "Santana do Manhuaçu",
+        slug: "santana-do-manhuacu",
+      }),
+    ];
 
     const { rerender } = render(
       <ClimaTable
@@ -115,7 +123,7 @@ describe("ClimaTable", () => {
         onEdit={onEdit}
         onDelete={onDelete}
         deletingId={null}
-      />
+      />,
     );
 
     // “Editar” e “Excluir” existem tanto em cards (mobile) quanto na tabela (desktop).
@@ -141,10 +149,12 @@ describe("ClimaTable", () => {
         onEdit={onEdit}
         onDelete={onDelete}
         deletingId={7}
-      />
+      />,
     );
 
-    expect(screen.getAllByText("Excluindo...").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Excluindo...").length).toBeGreaterThanOrEqual(
+      1,
+    );
   });
 
   it("quando syncingAll=true, desabilita ações por linha e botão Atualizar mostra 'Sincronizando...'", () => {
@@ -163,7 +173,7 @@ describe("ClimaTable", () => {
         onSync={vi.fn()}
         deletingId={null}
         syncingId={null}
-      />
+      />,
     );
 
     const atualizar = screen.getByRole("button", { name: /Sincronizando/i });
@@ -171,7 +181,9 @@ describe("ClimaTable", () => {
 
     // Ações de linha desabilitadas (Editar/Excluir/Sync)
     const editarButtons = screen.getAllByRole("button", { name: "Editar" });
-    const excluirButtons = screen.getAllByRole("button", { name: /Excluir|Excluindo\.\.\./i });
+    const excluirButtons = screen.getAllByRole("button", {
+      name: /Excluir|Excluindo\.\.\./i,
+    });
     const syncButtons = screen.getAllByRole("button", { name: /Sync/i });
 
     expect(editarButtons[0]).toBeDisabled();
@@ -189,7 +201,7 @@ describe("ClimaTable", () => {
         onEdit={vi.fn()}
         onDelete={vi.fn()}
         deletingId={null}
-      />
+      />,
     );
 
     expect(screen.getByText("Falha ao carregar.")).toBeInTheDocument();
@@ -212,7 +224,7 @@ describe("ClimaTable", () => {
         onSync={onSync}
         deletingId={null}
         syncingId={null}
-      />
+      />,
     );
 
     const syncButtons = screen.getAllByRole("button", { name: "Sync" });
@@ -231,9 +243,11 @@ describe("ClimaTable", () => {
         onSync={onSync}
         deletingId={null}
         syncingId={99}
-      />
+      />,
     );
 
-    expect(screen.getAllByText("Sincronizando...").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Sincronizando...").length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });

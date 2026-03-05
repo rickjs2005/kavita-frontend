@@ -66,10 +66,7 @@ function pickMeta(payload: any, fallbackPage: number) {
 
   const totalPages =
     Number(
-      metaFromMeta?.totalPages ??
-        p?.totalPages ??
-        p?.data?.totalPages ??
-        1
+      metaFromMeta?.totalPages ?? p?.totalPages ?? p?.data?.totalPages ?? 1,
     ) || 1;
 
   const page =
@@ -111,7 +108,7 @@ export function useFetchServicos({
 
   const { data, error, isLoading } = useSWR<ApiListResponse<any>>(
     url.toString(),
-    fetcher
+    fetcher,
   );
 
   const list = pickList<any>(data);

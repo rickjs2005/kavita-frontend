@@ -31,7 +31,7 @@ describe("CotacoesTable", () => {
         onEdit={vi.fn()}
         onDelete={vi.fn()}
         deletingId={null}
-      />
+      />,
     );
 
     // "Dólar" aparece no card (mobile) e no <td> (desktop)
@@ -51,16 +51,18 @@ describe("CotacoesTable", () => {
         onEdit={vi.fn()}
         onDelete={vi.fn()}
         deletingId={null}
-      />
+      />,
     );
 
     await user.type(
       screen.getByPlaceholderText(/Buscar por nome, slug, tipo, fonte/i),
-      "soja"
+      "soja",
     );
 
     // Empty aparece duas vezes (mobile e desktop)
-    expect(screen.getAllByText(/Nenhuma cotação encontrada/i).length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/Nenhuma cotação encontrada/i).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("botão Atualizar fica disabled quando não há rows", () => {
@@ -73,7 +75,7 @@ describe("CotacoesTable", () => {
         onEdit={vi.fn()}
         onDelete={vi.fn()}
         deletingId={null}
-      />
+      />,
     );
 
     const btn = screen.getByRole("button", { name: /Atualizar/i });

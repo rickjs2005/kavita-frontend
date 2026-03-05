@@ -24,13 +24,15 @@ function asProductList(payload: unknown): Product[] {
 }
 
 export default function CategoryPage({ categoria, title }: Props) {
-  const { data, loading, error } = useFetchProducts({ categorySlug: categoria });
+  const { data, loading, error } = useFetchProducts({
+    categorySlug: categoria,
+  });
   const products: Product[] = asProductList(data);
   const [selected, setSelected] = useState<string>("");
 
   const subcategorias = useMemo(() => {
     const set = new Set(
-      products.map((p) => p.third_category).filter(Boolean) as string[]
+      products.map((p) => p.third_category).filter(Boolean) as string[],
     );
     return Array.from(set);
   }, [products]);
@@ -45,7 +47,9 @@ export default function CategoryPage({ categoria, title }: Props) {
       <div className="flex items-center justify-center min-h-[50vh] px-4">
         <div className="flex flex-col items-center text-center">
           <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-emerald-500 mb-3" />
-          <p className="text-gray-600 text-sm sm:text-base font-medium">Carregando produtos...</p>
+          <p className="text-gray-600 text-sm sm:text-base font-medium">
+            Carregando produtos...
+          </p>
         </div>
       </div>
     );
@@ -54,7 +58,9 @@ export default function CategoryPage({ categoria, title }: Props) {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-        <p className="text-red-600 font-semibold mb-1 sm:mb-2">Erro ao carregar produtos</p>
+        <p className="text-red-600 font-semibold mb-1 sm:mb-2">
+          Erro ao carregar produtos
+        </p>
         <p className="text-gray-500 text-xs sm:text-sm">{String(error)}</p>
       </div>
     );
@@ -85,7 +91,9 @@ export default function CategoryPage({ categoria, title }: Props) {
 
       {filtered.length === 0 ? (
         <div className="text-center text-gray-500 py-12 sm:py-16">
-          <p className="text-base sm:text-lg font-medium">Nenhum item encontrado.</p>
+          <p className="text-base sm:text-lg font-medium">
+            Nenhum item encontrado.
+          </p>
           <p className="text-xs sm:text-sm text-gray-400 mt-1">
             Tente outra subcategoria ou volte mais tarde.
           </p>

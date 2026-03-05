@@ -31,10 +31,7 @@ function PaymentMethodHarness(props?: {
   };
 
   return (
-    <PaymentMethodForm
-      formaPagamento={formaPagamento}
-      onChange={onChange}
-    />
+    <PaymentMethodForm formaPagamento={formaPagamento} onChange={onChange} />
   );
 }
 
@@ -55,10 +52,7 @@ describe("PaymentMethodForm (src/components/checkout/PaymentMethodForm.tsx)", ()
 
     expect(select).toHaveAttribute("id", "checkout-payment-method");
     expect(select).toHaveAttribute("name", "formaPagamento");
-    expect(select).toHaveAttribute(
-      "aria-describedby",
-      "checkout-payment-hint"
-    );
+    expect(select).toHaveAttribute("aria-describedby", "checkout-payment-hint");
 
     // hint sempre existe (conteúdo varia conforme método)
     expect(document.getElementById("checkout-payment-hint")).toBeTruthy();
@@ -102,16 +96,9 @@ describe("PaymentMethodForm (src/components/checkout/PaymentMethodForm.tsx)", ()
 
   it("dispara onChange e atualiza o valor controlado ao alterar seleção (positivo)", async () => {
     // Arrange
-    const onChangeSpy = vi.fn() as MockedFunction<
-      (e: AnyChangeEvent) => void
-    >;
+    const onChangeSpy = vi.fn() as MockedFunction<(e: AnyChangeEvent) => void>;
 
-    render(
-      <PaymentMethodHarness
-        initial="Pix"
-        onChangeSpy={onChangeSpy}
-      />
-    );
+    render(<PaymentMethodHarness initial="Pix" onChangeSpy={onChangeSpy} />);
 
     const select = screen.getByRole("combobox", {
       name: "Forma de Pagamento",
@@ -134,31 +121,27 @@ describe("PaymentMethodForm (src/components/checkout/PaymentMethodForm.tsx)", ()
     // Pix
     render(<PaymentMethodHarness initial="Pix" />);
     expect(
-      screen.getByText("Pagamento instantâneo via Pix.")
+      screen.getByText("Pagamento instantâneo via Pix."),
     ).toBeInTheDocument();
 
     // Boleto
     render(<PaymentMethodHarness initial="Boleto" />);
     expect(
       screen.getByText(
-        "Boleto bancário (confirmação pode levar até 2 dias úteis)."
-      )
+        "Boleto bancário (confirmação pode levar até 2 dias úteis).",
+      ),
     ).toBeInTheDocument();
 
     // Cartão
-    render(
-      <PaymentMethodHarness initial="Cartão (Mercado Pago)" />
-    );
+    render(<PaymentMethodHarness initial="Cartão (Mercado Pago)" />);
     expect(
-      screen.getByText(
-        "Cartão processado com segurança pelo Mercado Pago."
-      )
+      screen.getByText("Cartão processado com segurança pelo Mercado Pago."),
     ).toBeInTheDocument();
 
     // Prazo
     render(<PaymentMethodHarness initial="Prazo" />);
     expect(
-      screen.getByText("Pagamento no prazo (sem Mercado Pago).")
+      screen.getByText("Pagamento no prazo (sem Mercado Pago)."),
     ).toBeInTheDocument();
   });
 
@@ -171,7 +154,7 @@ describe("PaymentMethodForm (src/components/checkout/PaymentMethodForm.tsx)", ()
     }) as HTMLSelectElement;
 
     expect(
-      screen.getByText("Pagamento instantâneo via Pix.")
+      screen.getByText("Pagamento instantâneo via Pix."),
     ).toBeInTheDocument();
 
     // Act
@@ -181,7 +164,7 @@ describe("PaymentMethodForm (src/components/checkout/PaymentMethodForm.tsx)", ()
     await waitFor(() => {
       expect(select.value).toBe("Prazo");
       expect(
-        screen.getByText("Pagamento no prazo (sem Mercado Pago).")
+        screen.getByText("Pagamento no prazo (sem Mercado Pago)."),
       ).toBeInTheDocument();
     });
   });

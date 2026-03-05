@@ -46,7 +46,9 @@ describe("fetchPublicShopSettings (src/server/data/shopSettings.ts)", () => {
     const result = await fetchPublicShopSettings();
 
     // Assert
-    expect(global.fetch).toHaveBeenCalledWith("http://api.test/api/config", { cache: "no-store" });
+    expect(global.fetch).toHaveBeenCalledWith("http://api.test/api/config", {
+      cache: "no-store",
+    });
     expect(result.store_name).toBe("Kavita");
     expect(result.footer).toBeDefined();
     expect(result.footer_links).toBeDefined();
@@ -81,7 +83,9 @@ describe("fetchPublicShopSettings (src/server/data/shopSettings.ts)", () => {
         footer_partner_cta_title: "  Parceiros ",
         footer_partner_cta_text: "  Seja parceiro ",
         footer_partner_cta_href: "  /parcerias ",
-        footer_links: JSON.stringify([{ label: "  Home  ", href: "  /  ", highlight: true }]),
+        footer_links: JSON.stringify([
+          { label: "  Home  ", href: "  /  ", highlight: true },
+        ]),
       }),
     }) as any;
 
@@ -99,7 +103,9 @@ describe("fetchPublicShopSettings (src/server/data/shopSettings.ts)", () => {
     expect(result.footer?.contact_whatsapp).toBe("31999999999");
 
     // Links parseados
-    expect(result.footer_links).toEqual([{ label: "Home", href: "/", highlight: true }]);
+    expect(result.footer_links).toEqual([
+      { label: "Home", href: "/", highlight: true },
+    ]);
     expect(result.footer?.links).toEqual(result.footer_links);
 
     // Partner CTA montado (linha 204)
@@ -109,7 +115,7 @@ describe("fetchPublicShopSettings (src/server/data/shopSettings.ts)", () => {
         title: "Parceiros",
         text: "Seja parceiro",
         href: "/parcerias",
-      })
+      }),
     );
   });
 
@@ -130,7 +136,12 @@ describe("fetchPublicShopSettings (src/server/data/shopSettings.ts)", () => {
           contact_whatsapp: "  31999999999 ",
           contact_email: "  legacy@loja.com ",
           links: [{ label: "  Contato  ", href: " /contato " }],
-          partner_cta: { enabled: 1, title: "  T  ", text: "  X  ", href: " /p " },
+          partner_cta: {
+            enabled: 1,
+            title: "  T  ",
+            text: "  X  ",
+            href: " /p ",
+          },
         },
       }),
     }) as any;
@@ -144,7 +155,9 @@ describe("fetchPublicShopSettings (src/server/data/shopSettings.ts)", () => {
     expect(result.store_name).toBe("Kavita"); // fallback
     expect(result.footer_tagline).toBe("Tagline Legacy");
     expect(result.footer?.tagline).toBe("Tagline Legacy");
-    expect(result.footer_links).toEqual([{ label: "Contato", href: "/contato" }]);
+    expect(result.footer_links).toEqual([
+      { label: "Contato", href: "/contato" },
+    ]);
     expect(result.footer?.links).toEqual(result.footer_links);
     expect(result.footer?.partner_cta?.enabled).toBe(true);
   });
@@ -209,7 +222,7 @@ describe("fetchPublicShopSettings (src/server/data/shopSettings.ts)", () => {
         title: "Parceiros",
         text: "Texto",
         href: "/parcerias",
-      })
+      }),
     );
   });
 

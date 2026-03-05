@@ -14,7 +14,6 @@ export function handleApiError(err: unknown, opts: HandleApiErrorOptions = {}) {
 
   // Aqui você pode centralizar logs se quiser
   if (opts.debug) {
-     
     console.error("[handleApiError]", { ui, err });
   }
 

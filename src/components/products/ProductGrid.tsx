@@ -28,7 +28,10 @@ export function ProductGrid({ loading, products, empty }: Props) {
     return (
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="h-56 rounded-xl border border-zinc-200 bg-white shadow-sm">
+          <div
+            key={i}
+            className="h-56 rounded-xl border border-zinc-200 bg-white shadow-sm"
+          >
             <div className="h-32 w-full animate-pulse rounded-t-xl bg-zinc-100" />
             <div className="space-y-2 p-3">
               <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-100" />
@@ -72,7 +75,9 @@ export function ProductGrid({ loading, products, empty }: Props) {
             </div>
 
             <div className="p-3">
-              <h3 className="line-clamp-2 text-sm font-semibold text-zinc-900">{p.name}</h3>
+              <h3 className="line-clamp-2 text-sm font-semibold text-zinc-900">
+                {p.name}
+              </h3>
 
               <div className="mt-2">
                 {hasDiscount ? (
@@ -85,11 +90,15 @@ export function ProductGrid({ loading, products, empty }: Props) {
                     </span>
                   </div>
                 ) : p.final_price != null ? (
-                  <span className="text-sm font-bold text-zinc-900">{formatBRL(p.final_price)}</span>
+                  <span className="text-sm font-bold text-zinc-900">
+                    {formatBRL(p.final_price)}
+                  </span>
                 ) : null}
 
                 {p.discount_percent != null && p.discount_percent > 0 ? (
-                  <p className="mt-1 text-xs font-medium text-emerald-700">{p.discount_percent}% OFF</p>
+                  <p className="mt-1 text-xs font-medium text-emerald-700">
+                    {p.discount_percent}% OFF
+                  </p>
                 ) : null}
               </div>
             </div>

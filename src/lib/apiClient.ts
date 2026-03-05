@@ -41,13 +41,17 @@ async function fetchCsrfToken(baseUrl: string): Promise<string | null> {
         _csrfToken = token;
         _csrfFetchedAt = Date.now();
       } else {
-        console.warn("[apiClient] CSRF token endpoint não retornou token válido.");
+        console.warn(
+          "[apiClient] CSRF token endpoint não retornou token válido.",
+        );
       }
       return token;
     } catch (err) {
       // backend ainda não implementou; não quebra o fluxo
       const msg = err instanceof Error ? err.message : "erro desconhecido";
-      console.warn(`[apiClient] CSRF token indisponível (endpoint ausente ou erro de rede). ${msg}`);
+      console.warn(
+        `[apiClient] CSRF token indisponível (endpoint ausente ou erro de rede). ${msg}`,
+      );
       return null;
     } finally {
       _csrfInflight = null;
@@ -85,7 +89,9 @@ function joinUrl(base: string, path: string) {
 }
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null && (v as any).constructor === Object;
+  return (
+    typeof v === "object" && v !== null && (v as any).constructor === Object
+  );
 }
 
 function isBodyJsonSerializable(body: any) {
@@ -99,7 +105,9 @@ function isBodyJsonSerializable(body: any) {
   return Array.isArray(body) || isPlainObject(body);
 }
 
-async function safeReadBody(res: Response): Promise<{ data: any; text?: string }> {
+async function safeReadBody(
+  res: Response,
+): Promise<{ data: any; text?: string }> {
   const ct = (res.headers.get("content-type") || "").toLowerCase();
 
   // Prefer JSON quando content-type declara JSON
@@ -165,12 +173,16 @@ function buildHeaders(initHeaders?: HeadersInit, contentType?: string) {
   // Mantém compat com chamadas antigas
   if (!headers.has("accept")) headers.set("accept", "application/json");
 
-  if (contentType && !headers.has("content-type")) headers.set("content-type", contentType);
+  if (contentType && !headers.has("content-type"))
+    headers.set("content-type", contentType);
 
   return headers;
 }
 
-export async function apiRequest<T = any>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+export async function apiRequest<T = any>(
+  path: string,
+  options: ApiRequestOptions = {},
+): Promise<T> {
   const baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
   const url = joinUrl(baseUrl, path);
 
@@ -199,7 +211,10 @@ export async function apiRequest<T = any>(path: string, options: ApiRequestOptio
     }
   }
 
-  const headers = buildHeaders(options.headers, options.skipContentType ? undefined : contentType);
+  const headers = buildHeaders(
+    options.headers,
+    options.skipContentType ? undefined : contentType,
+  );
 
   // P0-2: Injeta CSRF token automaticamente para mutações (POST/PUT/PATCH/DELETE).
   // Falha silenciosa: se o backend ainda não expõe /api/csrf-token, continua sem o header.
@@ -218,7 +233,7 @@ export async function apiRequest<T = any>(path: string, options: ApiRequestOptio
     body,
   });
 
-  if (options.raw) return (res as unknown) as T;
+  if (options.raw) return res as unknown as T;
 
   const requestId = extractRequestId(res);
   const { data, text } = await safeReadBody(res);
@@ -254,14 +269,16 @@ export const apiFetch = apiRequest;
 // Conveniências (padrão único)
 export const apiClient = {
   request: apiRequest,
-  get: <T = any>(path: string, options?: ApiRequestOptions) => apiRequest<T>(path, { ...options, method: "GET" }),
+  get: <T = any>(path: string, options?: ApiRequestOptions) =>
+    apiRequest<T>(path, { ...options, method: "GET" }),
   post: <T = any>(path: string, body?: any, options?: ApiRequestOptions) =>
     apiRequest<T>(path, { ...options, method: "POST", body }),
   put: <T = any>(path: string, body?: any, options?: ApiRequestOptions) =>
     apiRequest<T>(path, { ...options, method: "PUT", body }),
   patch: <T = any>(path: string, body?: any, options?: ApiRequestOptions) =>
     apiRequest<T>(path, { ...options, method: "PATCH", body }),
-  del: <T = any>(path: string, options?: ApiRequestOptions) => apiRequest<T>(path, { ...options, method: "DELETE" }),
+  del: <T = any>(path: string, options?: ApiRequestOptions) =>
+    apiRequest<T>(path, { ...options, method: "DELETE" }),
 };
 
 export default apiClient;

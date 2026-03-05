@@ -83,15 +83,14 @@ export default function NovoEnderecoPage() {
     (async () => {
       try {
         const res = await fetch(
-          `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`
+          `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`,
         );
         if (!res.ok) return;
         const data = await res.json();
         if (aborted || !Array.isArray(data)) return;
         const names = data.map((m: any) => m.nome).sort();
         setCities(names);
-      } catch {
-      }
+      } catch {}
     })();
 
     return () => {
@@ -100,14 +99,14 @@ export default function NovoEnderecoPage() {
   }, [form.estado]);
 
   const handleEstadoChange: React.ChangeEventHandler<HTMLSelectElement> = (
-    e
+    e,
   ) => {
     const uf = e.target.value;
     setForm((prev) => ({ ...prev, estado: uf, cidade: "" }));
   };
 
   const handleCidadeChange: React.ChangeEventHandler<HTMLInputElement> = (
-    e
+    e,
   ) => {
     const value = e.target.value;
     setForm((prev) => ({ ...prev, cidade: value }));
@@ -132,8 +131,7 @@ export default function NovoEnderecoPage() {
   const ui = {
     wrap: "pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 lg:px-10",
     container: "mx-auto w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl",
-    card:
-      "rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden",
+    card: "rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden",
     header: "mb-4 sm:mb-6",
     title: "text-lg sm:text-xl font-semibold tracking-tight",
     subtitle: "mt-1 text-xs sm:text-sm text-gray-500",
@@ -303,11 +301,7 @@ export default function NovoEnderecoPage() {
               >
                 Cancelar
               </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className={ui.saveBtn}
-              >
+              <button type="submit" disabled={saving} className={ui.saveBtn}>
                 {saving ? "Salvando..." : "Salvar endereço"}
               </button>
             </div>
@@ -332,9 +326,7 @@ function Field({
   return (
     <div
       className={
-        full
-          ? "md:col-span-2 flex flex-col gap-1.5"
-          : "flex flex-col gap-1.5"
+        full ? "md:col-span-2 flex flex-col gap-1.5" : "flex flex-col gap-1.5"
       }
     >
       <span className="text-sm text-gray-700">{label}</span>

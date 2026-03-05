@@ -61,10 +61,16 @@ vi.mock("@/components/layout/Footer", () => ({
     // Renderiza alguns campos para validação fácil
     return (
       <div data-testid="Footer">
-        <div data-testid="Footer.store_name">{String(shop.store_name ?? "")}</div>
+        <div data-testid="Footer.store_name">
+          {String(shop.store_name ?? "")}
+        </div>
         <div data-testid="Footer.logo_url">{String(shop.logo_url ?? "")}</div>
-        <div data-testid="Footer.contact_email">{String(shop.contact_email ?? "")}</div>
-        <div data-testid="Footer.footer_tagline">{String(shop.footer_tagline ?? "")}</div>
+        <div data-testid="Footer.contact_email">
+          {String(shop.contact_email ?? "")}
+        </div>
+        <div data-testid="Footer.footer_tagline">
+          {String(shop.footer_tagline ?? "")}
+        </div>
       </div>
     );
   },
@@ -139,7 +145,7 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
 
     // Mensagem de vazio (UI do catálogo)
     expect(
-      screen.getByText("Nenhuma categoria ativa encontrada.")
+      screen.getByText("Nenhuma categoria ativa encontrada."),
     ).toBeInTheDocument();
 
     // Não deve renderizar cards de categoria
@@ -173,7 +179,7 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
 
     // Não deve mostrar mensagem de vazio
     expect(
-      screen.queryByText("Nenhuma categoria ativa encontrada.")
+      screen.queryByText("Nenhuma categoria ativa encontrada."),
     ).not.toBeInTheDocument();
 
     // Renderiza títulos das categorias
@@ -184,7 +190,10 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
     const verTodosLinks = screen.getAllByRole("link", { name: "Ver todos" });
     expect(verTodosLinks).toHaveLength(2);
 
-    expect(verTodosLinks[0]).toHaveAttribute("href", "/categorias/medicamentos");
+    expect(verTodosLinks[0]).toHaveAttribute(
+      "href",
+      "/categorias/medicamentos",
+    );
     expect(verTodosLinks[1]).toHaveAttribute("href", "/categorias/pets");
 
     // ProdutosPorCategoria: 1 por categoria
@@ -199,11 +208,11 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
     expect(produtosPorCategoriaSpy).toHaveBeenCalledTimes(2);
     expect(produtosPorCategoriaSpy).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ categoria: "medicamentos", limit: 12 })
+      expect.objectContaining({ categoria: "medicamentos", limit: 12 }),
     );
     expect(produtosPorCategoriaSpy).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ categoria: "pets", limit: 12 })
+      expect.objectContaining({ categoria: "pets", limit: 12 }),
     );
   });
 
@@ -227,17 +236,25 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
 
     // Primeiro render: defaults
     expect(screen.getByTestId("Footer.store_name")).toHaveTextContent("Kavita");
-    expect(screen.getByTestId("Footer.logo_url")).toHaveTextContent("/logo.png");
+    expect(screen.getByTestId("Footer.logo_url")).toHaveTextContent(
+      "/logo.png",
+    );
 
     // Após fetch: atualiza shop
     await waitFor(() => {
-      expect(screen.getByTestId("Footer.store_name")).toHaveTextContent("Kavita X");
+      expect(screen.getByTestId("Footer.store_name")).toHaveTextContent(
+        "Kavita X",
+      );
     });
 
-    expect(screen.getByTestId("Footer.logo_url")).toHaveTextContent("/custom-logo.png");
-    expect(screen.getByTestId("Footer.contact_email")).toHaveTextContent("suporte@kavita.com.br");
+    expect(screen.getByTestId("Footer.logo_url")).toHaveTextContent(
+      "/custom-logo.png",
+    );
+    expect(screen.getByTestId("Footer.contact_email")).toHaveTextContent(
+      "suporte@kavita.com.br",
+    );
     expect(screen.getByTestId("Footer.footer_tagline")).toHaveTextContent(
-      "Nova tagline vinda do backend"
+      "Nova tagline vinda do backend",
     );
 
     // Chamada do fetch (URL + headers)
@@ -257,7 +274,7 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
           contact_email: "suporte@kavita.com.br",
           footer_tagline: "Nova tagline vinda do backend",
         }),
-      })
+      }),
     );
   });
 
@@ -278,7 +295,9 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
 
     // Mantém defaults
     expect(screen.getByTestId("Footer.store_name")).toHaveTextContent("Kavita");
-    expect(screen.getByTestId("Footer.logo_url")).toHaveTextContent("/logo.png");
+    expect(screen.getByTestId("Footer.logo_url")).toHaveTextContent(
+      "/logo.png",
+    );
   });
 
   it("negativo: fetch lança erro -> mantém defaults no Footer (silencioso)", async () => {
@@ -298,14 +317,18 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
 
     // Mantém defaults
     expect(screen.getByTestId("Footer.store_name")).toHaveTextContent("Kavita");
-    expect(screen.getByTestId("Footer.logo_url")).toHaveTextContent("/logo.png");
+    expect(screen.getByTestId("Footer.logo_url")).toHaveTextContent(
+      "/logo.png",
+    );
   });
 
   it("negativo (estável): se desmontar antes do fetch resolver, não deve ocorrer warning de setState após unmount", async () => {
     process.env.NEXT_PUBLIC_API_URL = "http://api.test";
     vi.resetModules();
 
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     // fetch com resolução controlada
     const d = deferred<any>();
@@ -349,9 +372,12 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
-    expect(global.fetch).toHaveBeenCalledWith("http://localhost:5000/api/config", {
-      method: "GET",
-      headers: { "Cache-Control": "no-store" },
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://localhost:5000/api/config",
+      {
+        method: "GET",
+        headers: { "Cache-Control": "no-store" },
+      },
+    );
   });
 });

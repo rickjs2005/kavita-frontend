@@ -19,7 +19,9 @@ export default function HeroSection({
   page: DronePageSettings;
   representatives: DroneRepresentative[];
 }) {
-  const heroVideo = page.hero_video_path ? `${API_BASE}${page.hero_video_path}` : null;
+  const heroVideo = page.hero_video_path
+    ? `${API_BASE}${page.hero_video_path}`
+    : null;
   const heroImg = page.hero_image_fallback_path
     ? `${API_BASE}${page.hero_image_fallback_path}`
     : null;
@@ -65,7 +67,9 @@ export default function HeroSection({
                     className="group rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm hover:bg-white/10 transition focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-white truncate">{rep.name}</div>
+                      <div className="font-semibold text-white truncate">
+                        {rep.name}
+                      </div>
                       <span className="text-[11px] text-emerald-300/90 group-hover:text-emerald-200">
                         WhatsApp
                       </span>
@@ -82,7 +86,10 @@ export default function HeroSection({
                 <a
                   href={
                     representatives?.[0]
-                      ? buildWaLink(representatives[0], page.cta_message_template)
+                      ? buildWaLink(
+                          representatives[0],
+                          page.cta_message_template,
+                        )
                       : "#"
                   }
                   className="inline-flex w-full sm:w-auto items-center justify-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white hover:brightness-110 transition focus:outline-none focus:ring-2 focus:ring-emerald-400/60"

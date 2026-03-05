@@ -118,7 +118,9 @@ describe("CartItemCard", () => {
     render(<CartItemCard item={baseItem as never} />);
 
     // Act
-    await userEvent.click(screen.getByRole("button", { name: /aumentar quantidade/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /aumentar quantidade/i }),
+    );
 
     // Assert
     expect(hoisted.cart.updateQuantity).toHaveBeenCalledWith(1, 3);
@@ -129,7 +131,9 @@ describe("CartItemCard", () => {
     render(<CartItemCard item={baseItem as never} />);
 
     // Act
-    await userEvent.click(screen.getByRole("button", { name: /diminuir quantidade/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /diminuir quantidade/i }),
+    );
 
     // Assert
     expect(hoisted.cart.updateQuantity).toHaveBeenCalledWith(1, 1);
@@ -146,7 +150,7 @@ describe("CartItemCard", () => {
             _stock: 5,
           } as never
         }
-      />
+      />,
     );
 
     // Assert
@@ -169,7 +173,7 @@ describe("CartItemCard", () => {
             _stock: 10,
           } as never
         }
-      />
+      />,
     );
 
     // Assert

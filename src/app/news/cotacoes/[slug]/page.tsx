@@ -38,13 +38,16 @@ function formatDatePtBR(value?: string | null) {
 }
 
 function getMarketEmoji(item: any): string {
-  const hay = `${item?.slug ?? ""} ${item?.name ?? ""} ${item?.group_key ?? ""} ${item?.market ?? ""} ${item?.type ?? ""}`.toLowerCase();
+  const hay =
+    `${item?.slug ?? ""} ${item?.name ?? ""} ${item?.group_key ?? ""} ${item?.market ?? ""} ${item?.type ?? ""}`.toLowerCase();
 
   if (hay.includes("cafe") || hay.includes("café")) return "☕";
   if (hay.includes("milho")) return "🌽";
   if (hay.includes("soja")) return "🫘";
-  if (hay.includes("boi") || hay.includes("arroba") || hay.includes("gordo")) return "🐂";
-  if (hay.includes("dolar") || hay.includes("dólar") || hay.includes("usd")) return "💵";
+  if (hay.includes("boi") || hay.includes("arroba") || hay.includes("gordo"))
+    return "🐂";
+  if (hay.includes("dolar") || hay.includes("dólar") || hay.includes("usd"))
+    return "💵";
 
   return "🏷";
 }
@@ -120,7 +123,9 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
 
         <article className="rounded-2xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
           <header className="border-b border-zinc-100 p-6 md:p-8">
-            <p className="text-xs font-semibold tracking-widest text-zinc-500">KAVITA NEWS • MERCADO</p>
+            <p className="text-xs font-semibold tracking-widest text-zinc-500">
+              KAVITA NEWS • MERCADO
+            </p>
 
             {/* Exatamente 1 H1 */}
             <h1 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight text-zinc-900">
@@ -128,12 +133,17 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
             </h1>
 
             <p className="mt-2 text-sm text-zinc-600">
-              {item.group_key ? item.group_key : "Mercado"} • {item.type ?? "Tipo -"} • {item.slug}
+              {item.group_key ? item.group_key : "Mercado"} •{" "}
+              {item.type ?? "Tipo -"} • {item.slug}
             </p>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${variationTone}`}>
-                {variationEmoji ? <span aria-hidden>{variationEmoji}</span> : null}
+              <span
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${variationTone}`}
+              >
+                {variationEmoji ? (
+                  <span aria-hidden>{variationEmoji}</span>
+                ) : null}
                 Variação do dia: {varLabel}
               </span>
 
@@ -144,13 +154,17 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
 
               <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs text-zinc-600">
                 <span aria-hidden>⏱</span>
-                {updated ? `Atualizado: ${updated}` : "Atualização: indisponível"}
+                {updated
+                  ? `Atualizado: ${updated}`
+                  : "Atualização: indisponível"}
               </span>
             </div>
           </header>
 
           <section aria-label="Resumo do dia" className="p-6 md:p-8">
-            <h2 className="text-base font-semibold text-zinc-900">Resumo do dia</h2>
+            <h2 className="text-base font-semibold text-zinc-900">
+              Resumo do dia
+            </h2>
 
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50 p-5">
@@ -158,14 +172,20 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
                 <p className="mt-1 text-3xl font-bold tracking-tight text-zinc-900">
                   {formatPrice(item.price)}
                 </p>
-                <p className="mt-1 text-sm font-medium text-zinc-600">{item.unit ?? ""}</p>
+                <p className="mt-1 text-sm font-medium text-zinc-600">
+                  {item.unit ?? ""}
+                </p>
               </div>
 
               <div className="rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50 p-5">
                 <p className="text-sm text-zinc-600">Variação do dia</p>
                 <p className="mt-1 text-2xl font-semibold text-zinc-900">
-                  <span className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 ${variationTone}`}>
-                    {variationEmoji ? <span aria-hidden>{variationEmoji}</span> : null}
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 ${variationTone}`}
+                  >
+                    {variationEmoji ? (
+                      <span aria-hidden>{variationEmoji}</span>
+                    ) : null}
                     {varLabel}
                   </span>
                 </p>
@@ -176,31 +196,45 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
             </div>
           </section>
 
-          <section aria-label="Dados do mercado" className="border-t border-zinc-100 p-6 md:p-8">
-            <h2 className="text-base font-semibold text-zinc-900">Dados do mercado</h2>
+          <section
+            aria-label="Dados do mercado"
+            className="border-t border-zinc-100 p-6 md:p-8"
+          >
+            <h2 className="text-base font-semibold text-zinc-900">
+              Dados do mercado
+            </h2>
 
             <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 md:p-5 text-sm text-zinc-700">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <p>
                   <span className="text-zinc-500">Mercado:</span>{" "}
-                  <span className="font-medium text-zinc-900">{item.market ? item.market : "-"}</span>
+                  <span className="font-medium text-zinc-900">
+                    {item.market ? item.market : "-"}
+                  </span>
                 </p>
                 <p>
                   <span className="text-zinc-500">Grupo:</span>{" "}
-                  <span className="font-medium text-zinc-900">{item.group_key ? item.group_key : "-"}</span>
+                  <span className="font-medium text-zinc-900">
+                    {item.group_key ? item.group_key : "-"}
+                  </span>
                 </p>
                 <p>
                   <span className="text-zinc-500">Tipo:</span>{" "}
-                  <span className="font-medium text-zinc-900">{item.type ?? "-"}</span>
+                  <span className="font-medium text-zinc-900">
+                    {item.type ?? "-"}
+                  </span>
                 </p>
                 <p>
                   <span className="text-zinc-500">Fonte:</span>{" "}
-                  <span className="font-medium text-zinc-900">{item.source ? item.source : "-"}</span>
+                  <span className="font-medium text-zinc-900">
+                    {item.source ? item.source : "-"}
+                  </span>
                 </p>
               </div>
 
               <div className="mt-4 text-xs text-zinc-500">
-                Os dados são exibidos conforme a atualização da fonte oficial associada ao ativo.
+                Os dados são exibidos conforme a atualização da fonte oficial
+                associada ao ativo.
               </div>
             </div>
           </section>

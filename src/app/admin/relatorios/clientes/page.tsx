@@ -9,7 +9,6 @@ import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { formatCurrency } from "@/utils/formatters";
 
-
 type ClienteTop = {
   id: number;
   nome: string;
@@ -42,7 +41,7 @@ export default function RelatorioClientesPage() {
         setError(null);
 
         const res = await apiClient.get<ClientesResponse>(
-          '/api/admin/relatorios/clientes-top'
+          "/api/admin/relatorios/clientes-top",
         );
 
         setData(res.rows ?? []);
@@ -50,11 +49,11 @@ export default function RelatorioClientesPage() {
         console.error(err);
 
         let msg = "Não foi possível carregar o relatório de clientes.";
-          if (err?.status === 401 || err?.status === 403) {
-            msg =
-              "Sessão expirada ou sem permissão. Faça login novamente no admin.";
-          }
-        
+        if (err?.status === 401 || err?.status === 403) {
+          msg =
+            "Sessão expirada ou sem permissão. Faça login novamente no admin.";
+        }
+
         setError(msg);
         toast.error(msg);
       } finally {
@@ -69,23 +68,23 @@ export default function RelatorioClientesPage() {
 
   const totalGastoGeral = useMemo(
     () => data.reduce((acc, c) => acc + Number(c.total_gasto || 0), 0),
-    [data]
+    [data],
   );
 
   const totalPedidosGeral = useMemo(
     () => data.reduce((acc, c) => acc + Number(c.pedidos || 0), 0),
-    [data]
+    [data],
   );
 
   const ticketMedioPorCliente = useMemo(
     () => (totalClientes ? totalGastoGeral / totalClientes : 0),
-    [totalClientes, totalGastoGeral]
+    [totalClientes, totalGastoGeral],
   );
 
   const melhorCliente = useMemo(() => {
     if (!data.length) return null;
     return data.reduce((prev, curr) =>
-      Number(curr.total_gasto) > Number(prev.total_gasto) ? curr : prev
+      Number(curr.total_gasto) > Number(prev.total_gasto) ? curr : prev,
     );
   }, [data]);
 
@@ -109,7 +108,7 @@ export default function RelatorioClientesPage() {
       result = result.filter(
         (c) =>
           c.nome.toLowerCase().includes(term) ||
-          c.email.toLowerCase().includes(term)
+          c.email.toLowerCase().includes(term),
       );
     }
 
@@ -123,12 +122,12 @@ export default function RelatorioClientesPage() {
 
   const visibleTotalPedidos = useMemo(
     () => filteredData.reduce((acc, c) => acc + Number(c.pedidos || 0), 0),
-    [filteredData]
+    [filteredData],
   );
 
   const visibleTotalGasto = useMemo(
     () => filteredData.reduce((acc, c) => acc + Number(c.total_gasto || 0), 0),
-    [filteredData]
+    [filteredData],
   );
 
   const visibleClientes = filteredData.length;
@@ -201,8 +200,8 @@ export default function RelatorioClientesPage() {
             </h1>
             <p className="mt-1 max-w-xl text-xs text-slate-300 sm:text-sm">
               Ranking dos clientes que mais compram. Ideal para definir
-              campanhas VIP, cupons exclusivos e ações de fidelização dignas
-              de um marketplace gigante.
+              campanhas VIP, cupons exclusivos e ações de fidelização dignas de
+              um marketplace gigante.
             </p>
 
             {hasData && (
@@ -420,9 +419,7 @@ export default function RelatorioClientesPage() {
                           setLimit(
                             e.target.value === "all"
                               ? "all"
-                              : (Number(
-                                  e.target.value
-                                ) as LimitOption)
+                              : (Number(e.target.value) as LimitOption),
                           )
                         }
                         className="
@@ -440,7 +437,9 @@ export default function RelatorioClientesPage() {
                         <option value="all">Todos</option>
                       </select>
 
-                      {(searchTerm || limit !== "all" || sortMode !== "valor") && (
+                      {(searchTerm ||
+                        limit !== "all" ||
+                        sortMode !== "valor") && (
                         <button
                           type="button"
                           onClick={resetFilters}
@@ -464,8 +463,9 @@ export default function RelatorioClientesPage() {
                 <div className="mt-3 rounded-2xl border border-dashed border-slate-700 bg-slate-950/70 px-4 py-5 text-center text-xs text-slate-300">
                   Nenhum cliente encontrado para esse filtro.
                   <p className="mt-1 text-[11px] text-slate-500">
-                    Ajuste a busca ou clique em <span className="font-semibold">“Limpar”</span>{" "}
-                    para ver novamente todo o ranking.
+                    Ajuste a busca ou clique em{" "}
+                    <span className="font-semibold">“Limpar”</span> para ver
+                    novamente todo o ranking.
                   </p>
                 </div>
               ) : (
@@ -501,10 +501,10 @@ export default function RelatorioClientesPage() {
                                       index === 0
                                         ? "bg-amber-500/20 text-amber-100"
                                         : index === 1
-                                        ? "bg-slate-700/60 text-slate-100"
-                                        : index === 2
-                                        ? "bg-orange-500/15 text-orange-100"
-                                        : "bg-slate-900/80 text-slate-100"
+                                          ? "bg-slate-700/60 text-slate-100"
+                                          : index === 2
+                                            ? "bg-orange-500/15 text-orange-100"
+                                            : "bg-slate-900/80 text-slate-100"
                                     }
                                   `}
                                 >
@@ -526,7 +526,7 @@ export default function RelatorioClientesPage() {
                               </td>
                               <td className="px-4 py-2.5 text-right align-middle">
                                 {formatCurrency(
-                                  Number(cliente.total_gasto || 0)
+                                  Number(cliente.total_gasto || 0),
                                 )}
                               </td>
                             </tr>
@@ -564,10 +564,10 @@ export default function RelatorioClientesPage() {
                                     index === 0
                                       ? "bg-amber-500/25 text-amber-100"
                                       : index === 1
-                                      ? "bg-slate-700/70 text-slate-100"
-                                      : index === 2
-                                      ? "bg-orange-500/20 text-orange-100"
-                                      : "bg-slate-800 text-slate-100"
+                                        ? "bg-slate-700/70 text-slate-100"
+                                        : index === 2
+                                          ? "bg-orange-500/20 text-orange-100"
+                                          : "bg-slate-800 text-slate-100"
                                   }
                                 `}
                               >
@@ -584,9 +584,7 @@ export default function RelatorioClientesPage() {
 
                           <div className="text-right">
                             <p className="text-[11px] font-semibold text-[#35c2c4]">
-                              {formatCurrency(
-                                Number(cliente.total_gasto || 0)
-                              )}
+                              {formatCurrency(Number(cliente.total_gasto || 0))}
                             </p>
                             <p className="text-[11px] text-slate-400">
                               {cliente.pedidos} pedido

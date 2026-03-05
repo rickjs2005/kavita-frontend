@@ -3,7 +3,10 @@
 import type { CheckoutFormData } from "@/hooks/useCheckoutForm";
 import React from "react";
 
-const OPTIONS: Array<{ value: CheckoutFormData["formaPagamento"]; label: string }> = [
+const OPTIONS: Array<{
+  value: CheckoutFormData["formaPagamento"];
+  label: string;
+}> = [
   { value: "Pix", label: "Pix" },
   { value: "Boleto", label: "Boleto" },
   { value: "Cartão (Mercado Pago)", label: "Cartão (Mercado Pago)" },
@@ -14,11 +17,16 @@ type PaymentMethodFormProps = {
   formaPagamento: CheckoutFormData["formaPagamento"];
   // tipa exatamente como o seu hook aceita no "Caso 1: evento"
   onChange: (
-    e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement
+    >,
   ) => void;
 };
 
-export function PaymentMethodForm({ formaPagamento, onChange }: PaymentMethodFormProps) {
+export function PaymentMethodForm({
+  formaPagamento,
+  onChange,
+}: PaymentMethodFormProps) {
   const selectId = "checkout-payment-method";
 
   const hint =
@@ -32,7 +40,10 @@ export function PaymentMethodForm({ formaPagamento, onChange }: PaymentMethodFor
 
   return (
     <div className="mt-6 sm:mt-8">
-      <label className="text-base sm:text-lg font-semibold mb-2 block" htmlFor={selectId}>
+      <label
+        className="text-base sm:text-lg font-semibold mb-2 block"
+        htmlFor={selectId}
+      >
         Forma de Pagamento
       </label>
 
@@ -51,7 +62,10 @@ export function PaymentMethodForm({ formaPagamento, onChange }: PaymentMethodFor
         ))}
       </select>
 
-      <p className="text-xs sm:text-sm text-gray-600 mt-2" id="checkout-payment-hint">
+      <p
+        className="text-xs sm:text-sm text-gray-600 mt-2"
+        id="checkout-payment-hint"
+      >
         {hint}
       </p>
     </div>

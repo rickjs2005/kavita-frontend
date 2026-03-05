@@ -26,7 +26,9 @@ export default function SpecsSection({ page }: { page: DronePageSettings }) {
   return (
     <section className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
       <div className="flex items-end justify-between gap-4">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-white">{title}</h2>
+        <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+          {title}
+        </h2>
       </div>
 
       {groups.length ? (
@@ -36,11 +38,16 @@ export default function SpecsSection({ page }: { page: DronePageSettings }) {
               key={idx}
               className="rounded-3xl border border-white/10 bg-white/5 p-5 hover:bg-white/10 transition"
             >
-              <p className="text-sm font-extrabold text-white">{g.title || "Grupo"}</p>
+              <p className="text-sm font-extrabold text-white">
+                {g.title || "Grupo"}
+              </p>
 
               <ul className="mt-4 grid gap-2">
                 {(g.items || []).map((it, i) => (
-                  <li key={i} className="text-sm text-slate-200 leading-relaxed">
+                  <li
+                    key={i}
+                    className="text-sm text-slate-200 leading-relaxed"
+                  >
                     <span className="text-emerald-300/90">•</span> {it}
                   </li>
                 ))}

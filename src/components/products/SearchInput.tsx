@@ -66,8 +66,10 @@ export default function SearchInputProdutos({
     (async () => {
       setLoading(true);
       try {
-         const res = await fetch(`${apiBase}/api/products?category=all&limit=1000&sort=name&order=asc`, 
-          { cache: "no-store" });
+        const res = await fetch(
+          `${apiBase}/api/products?category=all&limit=1000&sort=name&order=asc`,
+          { cache: "no-store" },
+        );
         if (!res.ok) {
           const txt = await res.text().catch(() => "");
           throw new Error(`Falha ao listar produtos (${res.status}): ${txt}`);
@@ -81,7 +83,9 @@ export default function SearchInputProdutos({
           price: Number(p.price ?? p.preco ?? 0),
           image:
             p.image ??
-            (Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null),
+            (Array.isArray(p.images) && p.images.length > 0
+              ? p.images[0]
+              : null),
           images: Array.isArray(p.images) ? p.images : null,
         }));
 
@@ -106,8 +110,8 @@ export default function SearchInputProdutos({
   const results = useMemo(() => {
     const term = debounced.trim().toLowerCase();
     if (!term) return [];
-    return all
-      return all.filter((p) => p.name.toLowerCase().includes(term));
+    return all;
+    return all.filter((p) => p.name.toLowerCase().includes(term));
   }, [debounced, all]);
 
   function choose(item: Produto) {
@@ -131,8 +135,7 @@ export default function SearchInputProdutos({
             if (!results.length) return;
             if (e.key === "ArrowDown")
               setCursor((v) => Math.min(v + 1, results.length - 1));
-            if (e.key === "ArrowUp")
-              setCursor((v) => Math.max(v - 1, 0));
+            if (e.key === "ArrowUp") setCursor((v) => Math.max(v - 1, 0));
             if (e.key === "Enter" && cursor >= 0) choose(results[cursor]!);
           }}
           className="w-full px-4 py-2 text-sm text-gray-700 focus:outline-none"

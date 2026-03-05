@@ -85,34 +85,33 @@ export default function Header({ categories, shop }: HeaderProps) {
   const isDronePage = pathname.startsWith("/drones");
   const isNewsPage = pathname.startsWith("/news");
 
-const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const logoSrc = isDronePage
-  ? "/kavita-drone.png"
-  : shop?.logo_url?.trim()
-    ? (shop.logo_url.startsWith("http")
+  const logoSrc = isDronePage
+    ? "/kavita-drone.png"
+    : shop?.logo_url?.trim()
+      ? shop.logo_url.startsWith("http")
         ? shop.logo_url
-        : `${apiBase}${shop.logo_url}`)
-    : "/images/kavita2.png";
-
+        : `${apiBase}${shop.logo_url}`
+      : "/images/kavita2.png";
 
   const logoAlt = shop?.store_name?.trim() ? shop.store_name : "Kavita";
 
   // Normaliza categories (evita crash/hydration estranho)
   const safeCategories = useMemo<PublicCategory[]>(
     () => (Array.isArray(categories) ? categories : []),
-    [categories]
+    [categories],
   );
 
   // Apenas categorias públicas ativas (fonte única)
   const publicActiveCategories = useMemo<PublicCategory[]>(
     () => safeCategories.filter(isActiveCategory),
-    [safeCategories]
+    [safeCategories],
   );
 
   const hideHeader = useMemo(() => {
     const isExcluded = EXCLUDED_ROUTES.includes(
-      pathname as (typeof EXCLUDED_ROUTES)[number]
+      pathname as (typeof EXCLUDED_ROUTES)[number],
     );
     const isAdminClientSubRoute = pathname.startsWith("/admin/clientes/");
     return isExcluded || isAdminClientSubRoute;

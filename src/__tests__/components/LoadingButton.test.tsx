@@ -11,11 +11,7 @@ describe("LoadingButton", () => {
   });
 
   it("renderiza o botão com children quando não está carregando (positivo)", () => {
-    render(
-      <LoadingButton isLoading={false}>
-        Salvar
-      </LoadingButton>
-    );
+    render(<LoadingButton isLoading={false}>Salvar</LoadingButton>);
 
     const button = screen.getByRole("button", { name: /salvar/i });
     expect(button).toBeInTheDocument();
@@ -23,22 +19,14 @@ describe("LoadingButton", () => {
   });
 
   it("renderiza spinner e texto 'Carregando...' quando isLoading=true (positivo)", () => {
-    render(
-      <LoadingButton isLoading={true}>
-        Salvar
-      </LoadingButton>
-    );
+    render(<LoadingButton isLoading={true}>Salvar</LoadingButton>);
 
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();
     expect(screen.queryByText(/salvar/i)).not.toBeInTheDocument();
   });
 
   it("desabilita o botão quando isLoading=true (positivo)", () => {
-    render(
-      <LoadingButton isLoading={true}>
-        Salvar
-      </LoadingButton>
-    );
+    render(<LoadingButton isLoading={true}>Salvar</LoadingButton>);
 
     const button = screen.getByRole("button");
     expect(button).toBeDisabled();
@@ -48,7 +36,7 @@ describe("LoadingButton", () => {
     render(
       <LoadingButton isLoading={false} disabled>
         Salvar
-      </LoadingButton>
+      </LoadingButton>,
     );
 
     const button = screen.getByRole("button");
@@ -59,7 +47,7 @@ describe("LoadingButton", () => {
     render(
       <LoadingButton isLoading={true} disabled>
         Salvar
-      </LoadingButton>
+      </LoadingButton>,
     );
 
     const button = screen.getByRole("button");
@@ -70,11 +58,7 @@ describe("LoadingButton", () => {
   });
 
   it("aplica classes de estado normal quando não está em loading (positivo)", () => {
-    render(
-      <LoadingButton isLoading={false}>
-        Salvar
-      </LoadingButton>
-    );
+    render(<LoadingButton isLoading={false}>Salvar</LoadingButton>);
 
     const button = screen.getByRole("button");
 
@@ -86,7 +70,7 @@ describe("LoadingButton", () => {
     render(
       <LoadingButton isLoading={false} type="submit">
         Enviar
-      </LoadingButton>
+      </LoadingButton>,
     );
 
     const button = screen.getByRole("button", { name: /enviar/i });
@@ -100,7 +84,7 @@ describe("LoadingButton", () => {
     render(
       <LoadingButton isLoading={false} onClick={onClickMock}>
         Clique
-      </LoadingButton>
+      </LoadingButton>,
     );
 
     await user.click(screen.getByRole("button", { name: /clique/i }));
@@ -115,7 +99,7 @@ describe("LoadingButton", () => {
     render(
       <LoadingButton isLoading={true} onClick={onClickMock}>
         Clique
-      </LoadingButton>
+      </LoadingButton>,
     );
 
     const button = screen.getByRole("button");
@@ -127,13 +111,10 @@ describe("LoadingButton", () => {
   });
 
   it("mantém acessibilidade básica: spinner é aria-hidden (a11y)", () => {
-    render(
-      <LoadingButton isLoading={true}>
-        Salvar
-      </LoadingButton>
-    );
+    render(<LoadingButton isLoading={true}>Salvar</LoadingButton>);
 
-    const spinner = screen.getByText(/carregando/i).previousSibling as HTMLElement;
+    const spinner = screen.getByText(/carregando/i)
+      .previousSibling as HTMLElement;
     expect(spinner).toHaveAttribute("aria-hidden", "true");
   });
 });

@@ -57,7 +57,7 @@ export default function RepresentativesSection({
 
       const res = await fetch(
         `${API_BASE}/api/public/drones/representantes?${params.toString()}`,
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
 
       const data = await res.json().catch(() => null);
@@ -78,8 +78,13 @@ export default function RepresentativesSection({
   }
 
   return (
-    <section id="representantes" className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
-      <h2 className="text-xl sm:text-2xl font-extrabold text-white">Representantes</h2>
+    <section
+      id="representantes"
+      className="mx-auto max-w-6xl px-5 py-10 sm:py-12"
+    >
+      <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+        Representantes
+      </h2>
       <p className="mt-2 text-sm text-slate-300">
         Escolha um representante e fale direto no WhatsApp.
       </p>
@@ -114,9 +119,12 @@ export default function RepresentativesSection({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-extrabold text-white truncate">{rep.name}</p>
+                <p className="text-sm font-extrabold text-white truncate">
+                  {rep.name}
+                </p>
                 <p className="mt-1 text-xs text-slate-300 truncate">
-                  {rep.address_city || "Cidade"} {rep.address_uf ? `- ${rep.address_uf}` : ""}
+                  {rep.address_city || "Cidade"}{" "}
+                  {rep.address_uf ? `- ${rep.address_uf}` : ""}
                 </p>
               </div>
               <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[11px] text-emerald-200">
@@ -145,7 +153,9 @@ export default function RepresentativesSection({
                 </a>
               ) : null}
 
-              {rep.notes ? <span className="text-slate-400">{rep.notes}</span> : null}
+              {rep.notes ? (
+                <span className="text-slate-400">{rep.notes}</span>
+              ) : null}
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2">

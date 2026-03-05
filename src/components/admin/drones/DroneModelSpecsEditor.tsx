@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import apiClient from "@/lib/apiClient";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type SpecsGroup = { title?: string; items?: string[] };
 
@@ -11,12 +12,31 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
+function isAuthError(res: Response) {
+  return res.status === 401 || res.status === 403;
+}
+
+function redirectToLogin() {
+  if (typeof window !== "undefined") window.location.assign("/admin/login");
+}
+
+async function readSafe(res: Response) {
+  const txt = await res.text();
+  try {
+    return { txt, data: JSON.parse(txt) };
+  } catch {
+    return { txt, data: null as any };
+  }
+}
+
 function normalizeGroups(v: any): SpecsGroup[] {
   if (!Array.isArray(v)) return [];
   return v
     .map((g) => ({
       title: typeof g?.title === "string" ? g.title : "",
-      items: Array.isArray(g?.items) ? g.items.filter((x: any) => typeof x === "string") : [],
+      items: Array.isArray(g?.items)
+        ? g.items.filter((x: any) => typeof x === "string")
+        : [],
     }))
     .filter((g) => (g.title && g.title.trim()) || (g.items && g.items.length));
 }
@@ -37,17 +57,24 @@ function ToastView({ toast }: { toast: Toast }) {
     toast.type === "success"
       ? "border-emerald-200/20 bg-emerald-500/10 text-emerald-100"
       : toast.type === "error"
-      ? "border-amber-200/20 bg-amber-500/10 text-amber-100"
-      : "border-white/10 bg-white/5 text-white/80";
+        ? "border-amber-200/20 bg-amber-500/10 text-amber-100"
+        : "border-white/10 bg-white/5 text-white/80";
 
-  return <div className={cx("rounded-2xl border px-4 py-3 text-sm", cls)}>{toast.text}</div>;
+  return (
+    <div className={cx("rounded-2xl border px-4 py-3 text-sm", cls)}>
+      {toast.text}
+    </div>
+  );
 }
 
 type Props = {
   modelKey: string;
   initialTitle?: string | null;
   initialGroups?: SpecsGroup[] | null;
-  onSaved?: (payload: { specs_title: string | null; specs_items_json: SpecsGroup[] }) => void;
+  onSaved?: (payload: {
+    specs_title: string | null;
+    specs_items_json: SpecsGroup[];
+  }) => void;
 };
 
 export default function DroneModelSpecsEditor({
@@ -59,8 +86,12 @@ export default function DroneModelSpecsEditor({
   const [toast, setToast] = useState<Toast>(null);
   const [saving, setSaving] = useState(false);
 
-  const [title, setTitle] = useState<string>(initialTitle?.trim() || "Especificações");
-  const [groups, setGroups] = useState<SpecsGroup[]>(normalizeGroups(initialGroups));
+  const [title, setTitle] = useState<string>(
+    initialTitle?.trim() || "Especificações",
+  );
+  const [groups, setGroups] = useState<SpecsGroup[]>(
+    normalizeGroups(initialGroups),
+  );
 
   useEffect(() => {
     setTitle(initialTitle?.trim() || "Especificações");
@@ -79,20 +110,26 @@ export default function DroneModelSpecsEditor({
   }
 
   function updateGroupTitle(idx: number, v: string) {
-    setGroups((prev) => prev.map((g, i) => (i === idx ? { ...g, title: v } : g)));
+    setGroups((prev) =>
+      prev.map((g, i) => (i === idx ? { ...g, title: v } : g)),
+    );
   }
 
   function addItem(groupIdx: number) {
     setGroups((prev) =>
-      prev.map((g, i) => (i === groupIdx ? { ...g, items: [...(g.items || []), ""] } : g))
+      prev.map((g, i) =>
+        i === groupIdx ? { ...g, items: [...(g.items || []), ""] } : g,
+      ),
     );
   }
 
   function removeItem(groupIdx: number, itemIdx: number) {
     setGroups((prev) =>
       prev.map((g, i) =>
-        i === groupIdx ? { ...g, items: (g.items || []).filter((_, j) => j !== itemIdx) } : g
-      )
+        i === groupIdx
+          ? { ...g, items: (g.items || []).filter((_, j) => j !== itemIdx) }
+          : g,
+      ),
     );
   }
 
@@ -103,7 +140,7 @@ export default function DroneModelSpecsEditor({
         const items = [...(g.items || [])];
         items[itemIdx] = v;
         return { ...g, items };
-      })
+      }),
     );
   }
 
@@ -131,10 +168,22 @@ export default function DroneModelSpecsEditor({
     try {
       const payload = sanitizePayload();
 
-      await apiClient.put(
-        `/api/admin/drones/models/${modelKey}`,
-        payload
+      const res = await fetch(
+        `${API_BASE}/api/admin/drones/models/${modelKey}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
       );
+
+      if (isAuthError(res)) return redirectToLogin();
+
+      const { data } = await readSafe(res);
+      if (!res.ok) {
+        throw new Error(data?.message || "Erro ao salvar especificações.");
+      }
 
       setToast({ type: "success", text: "Especificações salvas com sucesso." });
       onSaved?.(payload);
@@ -172,7 +221,7 @@ export default function DroneModelSpecsEditor({
               "rounded-xl px-4 py-2 text-sm font-medium text-white transition active:scale-[0.99]",
               saving || !canSave
                 ? "bg-white/10 text-white/50"
-                : "bg-emerald-500 hover:bg-emerald-400"
+                : "bg-emerald-500 hover:bg-emerald-400",
             )}
           >
             {saving ? "Salvando..." : "Salvar"}
@@ -183,7 +232,9 @@ export default function DroneModelSpecsEditor({
       <ToastView toast={toast} />
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-white/60">Título da seção</label>
+        <label className="text-xs font-medium text-white/60">
+          Título da seção
+        </label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -229,7 +280,9 @@ export default function DroneModelSpecsEditor({
 
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-white/60">Título do grupo</label>
+                  <label className="text-xs font-medium text-white/60">
+                    Título do grupo
+                  </label>
                   <input
                     value={g.title || ""}
                     onChange={(e) => updateGroupTitle(gi, e.target.value)}
@@ -241,7 +294,8 @@ export default function DroneModelSpecsEditor({
                 <div className="space-y-2">
                   {(g.items || []).length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-4 text-sm text-white/55">
-                      Sem itens neste grupo. Clique em <b className="text-white">+ Item</b>.
+                      Sem itens neste grupo. Clique em{" "}
+                      <b className="text-white">+ Item</b>.
                     </div>
                   ) : (
                     (g.items || []).map((it, ii) => (

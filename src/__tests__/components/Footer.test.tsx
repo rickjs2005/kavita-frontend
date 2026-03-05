@@ -18,7 +18,7 @@ vi.mock("next/link", () => ({
  * Factory tipada para evitar erro de props obrigatórias
  */
 function makeShop(
-  overrides: Partial<PublicShopSettings> = {}
+  overrides: Partial<PublicShopSettings> = {},
 ): PublicShopSettings {
   return {
     store_name: "Kavita",
@@ -55,36 +55,32 @@ describe("Footer (src/components/layout/Footer.tsx)", () => {
 
     vi.runAllTimers();
 
-    expect(
-      screen.getByRole("heading", { name: "Kavita" })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Kavita" })).toBeInTheDocument();
 
     expect(screen.getByRole("link", { name: /Home/i })).toHaveAttribute(
       "href",
-      "/"
+      "/",
     );
     expect(screen.getByRole("link", { name: /Serviços/i })).toHaveAttribute(
       "href",
-      "/servicos"
+      "/servicos",
     );
     expect(screen.getByRole("link", { name: /Contato/i })).toHaveAttribute(
       "href",
-      "/contato"
+      "/contato",
     );
   });
 
   it("formata CNPJ quando fornecido e não exibe valor quando vazio (positivo + negativo)", () => {
     const { rerender } = render(
-      <Footer shop={makeShop({ cnpj: "12.345.678/0001-99" })} />
+      <Footer shop={makeShop({ cnpj: "12.345.678/0001-99" })} />,
     );
 
     vi.runAllTimers();
 
     // positivo
     expect(screen.getByText(/CNPJ:/i)).toBeInTheDocument();
-    expect(
-      screen.getByText("12.345.678/0001-99")
-    ).toBeInTheDocument();
+    expect(screen.getByText("12.345.678/0001-99")).toBeInTheDocument();
 
     // negativo (rerender limpo)
     rerender(<Footer shop={makeShop({ cnpj: "" })} />);
@@ -92,7 +88,7 @@ describe("Footer (src/components/layout/Footer.tsx)", () => {
 
     // label pode existir, valor não
     expect(
-      screen.queryByText(/\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/)
+      screen.queryByText(/\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/),
     ).not.toBeInTheDocument();
   });
 
@@ -106,7 +102,7 @@ describe("Footer (src/components/layout/Footer.tsx)", () => {
           address_state: "MG",
           address_zip: "30100-000",
         })}
-      />
+      />,
     );
 
     vi.runAllTimers();
@@ -124,7 +120,7 @@ describe("Footer (src/components/layout/Footer.tsx)", () => {
           address_city: "São Paulo",
           address_state: "SP",
         })}
-      />
+      />,
     );
 
     vi.runAllTimers();
@@ -140,7 +136,7 @@ describe("Footer (src/components/layout/Footer.tsx)", () => {
         shop={makeShop({
           contact_whatsapp: "(31) 9 9999-8888",
         })}
-      />
+      />,
     );
 
     vi.runAllTimers();
@@ -156,16 +152,13 @@ describe("Footer (src/components/layout/Footer.tsx)", () => {
           contact_whatsapp: "31999998888",
           social_whatsapp_url: "https://wa.me/5511999999999?text=Oi",
         })}
-      />
+      />,
     );
 
     vi.runAllTimers();
 
     const wa = screen.getByRole("link", { name: "WhatsApp" });
-    expect(wa).toHaveAttribute(
-      "href",
-      "https://wa.me/5511999999999?text=Oi"
-    );
+    expect(wa).toHaveAttribute("href", "https://wa.me/5511999999999?text=Oi");
   });
 
   it("não renderiza botão de WhatsApp quando não há dados", () => {
@@ -174,7 +167,7 @@ describe("Footer (src/components/layout/Footer.tsx)", () => {
     vi.runAllTimers();
 
     expect(
-      screen.queryByRole("link", { name: "WhatsApp" })
+      screen.queryByRole("link", { name: "WhatsApp" }),
     ).not.toBeInTheDocument();
   });
 

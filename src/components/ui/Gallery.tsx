@@ -4,18 +4,23 @@ import Image from "next/image";
 import { useState, useMemo } from "react";
 
 type Props = {
-  images: string[];     // sempre um array (se vier só 1, ok)
+  images: string[]; // sempre um array (se vier só 1, ok)
   alt: string;
   className?: string;
-  thumbSize?: number;   // px (default 80)
+  thumbSize?: number; // px (default 80)
 };
 
 const PLACEHOLDER = "/placeholder.png";
 
-export default function Gallery({ images, alt, className = "", thumbSize = 80 }: Props) {
+export default function Gallery({
+  images,
+  alt,
+  className = "",
+  thumbSize = 80,
+}: Props) {
   const safeImages = useMemo(
     () => (Array.isArray(images) && images.length ? images : [PLACEHOLDER]),
-    [images]
+    [images],
   );
 
   const [active, setActive] = useState(safeImages[0]);
@@ -44,7 +49,9 @@ export default function Gallery({ images, alt, className = "", thumbSize = 80 }:
               onClick={() => setActive(src)}
               aria-label={`Ver imagem ${i + 1}`}
               className={`rounded border-2 overflow-hidden transition ${
-                active === src ? "border-[#2F7E7F]" : "border-transparent hover:border-gray-300"
+                active === src
+                  ? "border-[#2F7E7F]"
+                  : "border-transparent hover:border-gray-300"
               }`}
               style={{ width: thumbSize + 4, height: thumbSize + 4 }}
             >
@@ -54,7 +61,9 @@ export default function Gallery({ images, alt, className = "", thumbSize = 80 }:
                 width={thumbSize}
                 height={thumbSize}
                 className="rounded object-cover"
-                onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
+                onError={(e) =>
+                  ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+                }
               />
             </button>
           ))}

@@ -6,8 +6,22 @@ import { FaSearch, FaCartPlus } from "react-icons/fa";
 import { useCart } from "@/context/CartContext";
 
 type ResultItem =
-  | { type: "produto"; id: number; name: string; price: number; image?: string; images?: string[] }
-  | { type: "servico"; id: number; name: string; price: number; image?: string; images?: string[] };
+  | {
+      type: "produto";
+      id: number;
+      name: string;
+      price: number;
+      image?: string;
+      images?: string[];
+    }
+  | {
+      type: "servico";
+      id: number;
+      name: string;
+      price: number;
+      image?: string;
+      images?: string[];
+    };
 
 type CartItem = Parameters<ReturnType<typeof useCart>["addToCart"]>[0];
 
@@ -16,7 +30,10 @@ const ORANGE = "#FF7A00";
 
 /** Blindado: nunca gera /api/api */
 function getApiBase(): string {
-  const raw = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const raw =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:5000";
   const base = raw.replace(/\/+$/, "");
   return base.endsWith("/api") ? base : `${base}/api`;
 }
@@ -30,7 +47,8 @@ function safeNumber(v: unknown, fallback = 0): number {
 
 function toArray<T = any>(data: any): T[] {
   if (Array.isArray(data)) return data as T[];
-  if (data?.products && Array.isArray(data.products)) return data.products as T[];
+  if (data?.products && Array.isArray(data.products))
+    return data.products as T[];
   if (data?.data && Array.isArray(data.data)) return data.data as T[];
   if (data?.items && Array.isArray(data.items)) return data.items as T[];
   if (data?.results && Array.isArray(data.results)) return data.results as T[];
@@ -42,7 +60,8 @@ function resolveImage(raw?: unknown): string {
 
   if (typeof raw === "object" && raw !== null) {
     const anyRaw = raw as any;
-    const candidate = anyRaw.url || anyRaw.path || anyRaw.src || anyRaw.image || anyRaw.imagem;
+    const candidate =
+      anyRaw.url || anyRaw.path || anyRaw.src || anyRaw.image || anyRaw.imagem;
     return candidate ? resolveImage(candidate) : PLACEHOLDER;
   }
 
@@ -60,7 +79,11 @@ function resolveImage(raw?: unknown): string {
 }
 
 function formatPrice(v: unknown): string {
-  const n = parseFloat(String(v ?? "").replace(/[^0-9,.-]/g, "").replace(",", "."));
+  const n = parseFloat(
+    String(v ?? "")
+      .replace(/[^0-9,.-]/g, "")
+      .replace(",", "."),
+  );
   return Number.isFinite(n) ? n.toFixed(2) : "0,00";
 }
 
@@ -169,7 +192,9 @@ export default function SearchBar() {
   };
 
   const goTo = (item: ResultItem) => {
-    router.push(item.type === "produto" ? `/produtos/${item.id}` : `/servicos/${item.id}`);
+    router.push(
+      item.type === "produto" ? `/produtos/${item.id}` : `/servicos/${item.id}`,
+    );
     setOpen(false);
     setQuery("");
     setResults([]);
@@ -177,7 +202,8 @@ export default function SearchBar() {
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") setCursor((v) => Math.min(v + 1, results.length - 1));
+    if (e.key === "ArrowDown")
+      setCursor((v) => Math.min(v + 1, results.length - 1));
     else if (e.key === "ArrowUp") setCursor((v) => Math.max(v - 1, 0));
     else if (e.key === "Escape") {
       setOpen(false);
@@ -209,7 +235,10 @@ export default function SearchBar() {
 
   return (
     <div className="relative w-full max-w-xl mx-auto">
-      <form onSubmit={onSubmit} className="flex shadow rounded overflow-hidden bg-white">
+      <form
+        onSubmit={onSubmit}
+        className="flex shadow rounded overflow-hidden bg-white"
+      >
         <input
           type="text"
           placeholder="Buscar produto ou serviço..."
@@ -235,7 +264,9 @@ export default function SearchBar() {
       {open && (
         <ul className="absolute w-full mt-1 z-20 max-h-64 overflow-y-auto border border-gray-200 bg-white rounded-md shadow">
           {loading ? (
-            <li className="px-4 py-2 text-sm text-gray-500 italic">Carregando...</li>
+            <li className="px-4 py-2 text-sm text-gray-500 italic">
+              Carregando...
+            </li>
           ) : results.length ? (
             results.map((item, i) => {
               const img = resolveImage(item.image || item.images?.[0]);
@@ -250,11 +281,21 @@ export default function SearchBar() {
                 >
                   <div className="flex items-center gap-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img} alt={item.name} className="w-12 h-12 object-cover rounded" />
+                    <img
+                      src={img}
+                      alt={item.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
                     <div>
-                      <p className="text-sm font-semibold text-gray-800">{item.name}</p>
-                      <p className="text-xs text-gray-500">{item.type === "produto" ? "Produto" : "Serviço"}</p>
-                      <p className="text-xs text-green-600 font-semibold">R$ {formatPrice(item.price)}</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {item.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {item.type === "produto" ? "Produto" : "Serviço"}
+                      </p>
+                      <p className="text-xs text-green-600 font-semibold">
+                        R$ {formatPrice(item.price)}
+                      </p>
                     </div>
                   </div>
 
@@ -283,7 +324,9 @@ export default function SearchBar() {
               );
             })
           ) : (
-            <li className="px-4 py-2 text-sm text-gray-500 italic">Nenhum resultado encontrado</li>
+            <li className="px-4 py-2 text-sm text-gray-500 italic">
+              Nenhum resultado encontrado
+            </li>
           )}
         </ul>
       )}

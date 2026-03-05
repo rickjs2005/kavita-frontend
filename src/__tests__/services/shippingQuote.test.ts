@@ -3,11 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 /**
  * Helper local para mockar Response (evita depender de util compartilhado).
  */
-function makeRes(opts: {
-  ok: boolean;
-  status: number;
-  text?: string;
-}) {
+function makeRes(opts: { ok: boolean; status: number; text?: string }) {
   return {
     ok: opts.ok,
     status: opts.status,
@@ -38,7 +34,7 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
       mod.fetchShippingQuote({
         cep: "1234-000", // 7 dígitos
         items: [{ id: 1, quantidade: 1 }],
-      })
+      }),
     ).rejects.toThrow("CEP inválido");
 
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -60,7 +56,7 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
           { id: 1, quantidade: 0 as any },
           { id: "x" as any, quantidade: 2 as any },
         ],
-      })
+      }),
     ).rejects.toThrow("Carrinho vazio");
 
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -80,7 +76,7 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
           ruleApplied: "ZONE",
           cep: "12345678",
         }),
-      })
+      }),
     );
     global.fetch = fetchSpy;
 
@@ -120,9 +116,11 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
       cep: "12345678",
     };
 
-    const fetchSpy = vi.fn().mockResolvedValue(
-      makeRes({ ok: true, status: 200, text: JSON.stringify(payload) })
-    );
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValue(
+        makeRes({ ok: true, status: 200, text: JSON.stringify(payload) }),
+      );
     global.fetch = fetchSpy;
 
     const mod = await import("@/services/shippingQuote");
@@ -151,7 +149,7 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
         ok: true,
         status: 200,
         text: JSON.stringify({ price: 0, prazo_dias: null, is_free: false }),
-      })
+      }),
     );
     global.fetch = fetchSpy;
 
@@ -173,7 +171,7 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
         ok: false,
         status: 400,
         text: JSON.stringify({ message: "CEP fora da área atendida." }),
-      })
+      }),
     );
     global.fetch = fetchSpy;
 
@@ -183,7 +181,7 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
       mod.fetchShippingQuote({
         cep: "12345-678",
         items: [{ id: 1, quantidade: 1 }],
-      })
+      }),
     ).rejects.toThrow("CEP fora da área atendida.");
   });
 
@@ -191,9 +189,11 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
     process.env.NEXT_PUBLIC_API_URL = "http://api.test";
 
     // Caso 1: texto não-JSON
-    const fetchSpy1 = vi.fn().mockResolvedValue(
-      makeRes({ ok: false, status: 500, text: "Erro interno" })
-    );
+    const fetchSpy1 = vi
+      .fn()
+      .mockResolvedValue(
+        makeRes({ ok: false, status: 500, text: "Erro interno" }),
+      );
     global.fetch = fetchSpy1;
 
     const mod1 = await import("@/services/shippingQuote");
@@ -201,15 +201,15 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
       mod1.fetchShippingQuote({
         cep: "12345-678",
         items: [{ id: 1, quantidade: 1 }],
-      })
+      }),
     ).rejects.toThrow("Erro interno");
 
     // Caso 2: texto vazio => fallback
     vi.resetModules();
-    const fetchSpy2 = vi.fn().mockResolvedValue(
-      makeRes({ ok: false, status: 502, text: "" })
-    );
-    
+    const fetchSpy2 = vi
+      .fn()
+      .mockResolvedValue(makeRes({ ok: false, status: 502, text: "" }));
+
     global.fetch = fetchSpy2;
 
     const mod2 = await import("@/services/shippingQuote");
@@ -217,7 +217,7 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
       mod2.fetchShippingQuote({
         cep: "12345-678",
         items: [{ id: 1, quantidade: 1 }],
-      })
+      }),
     ).rejects.toThrow("Falha ao cotar frete (502).");
   });
 });

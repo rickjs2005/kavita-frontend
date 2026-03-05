@@ -92,7 +92,10 @@ describe("utils/kavita-news/posts", () => {
     });
 
     it("lança erro com message/mensagem quando res.ok = false", async () => {
-      mockFetchOnce({ message: "Credenciais inválidas" }, { ok: false, status: 401 });
+      mockFetchOnce(
+        { message: "Credenciais inválidas" },
+        { ok: false, status: 401 },
+      );
 
       await expect(listNewsPosts()).rejects.toThrow("Credenciais inválidas");
     });
@@ -107,7 +110,10 @@ describe("utils/kavita-news/posts", () => {
     it("retorna post pelo id usando listNewsPosts", async () => {
       mockFetchOnce({
         ok: true,
-        data: [{ id: 7, title: "Post 7" }, { id: 9, title: "Post 9" }],
+        data: [
+          { id: 7, title: "Post 7" },
+          { id: 9, title: "Post 9" },
+        ],
         meta: { total: 2 },
       });
 
@@ -141,7 +147,10 @@ describe("utils/kavita-news/posts", () => {
 
       expect((out as any).id).toBe(1);
 
-      const [url, init] = (globalThis.fetch as any).mock.calls[0] as [string, RequestInit];
+      const [url, init] = (globalThis.fetch as any).mock.calls[0] as [
+        string,
+        RequestInit,
+      ];
       expect(url).toContain("/api/admin/news/posts");
       expect(init.method).toBe("POST");
       expect(init.credentials).toBe("include");
@@ -155,12 +164,17 @@ describe("utils/kavita-news/posts", () => {
 
     it("lança erro quando res.ok=false e body tem mensagem", async () => {
       mockFetchOnce({ mensagem: "Falha ao criar" }, { ok: false, status: 400 });
-      await expect(createNewsPost({ title: "X" } as any)).rejects.toThrow("Falha ao criar");
+      await expect(createNewsPost({ title: "X" } as any)).rejects.toThrow(
+        "Falha ao criar",
+      );
     });
 
     it("quando body NÃO vem no formato { ok, data }, retorna o body direto", async () => {
       // cobre branch tipo: return body?.data ?? body
-      mockFetchOnce({ id: 99, title: "Sem envelope ok/data" }, { ok: true, status: 200 });
+      mockFetchOnce(
+        { id: 99, title: "Sem envelope ok/data" },
+        { ok: true, status: 200 },
+      );
 
       const out = await createNewsPost({ title: "X", content: "Y" } as any);
       expect((out as any).id).toBe(99);
@@ -171,14 +185,17 @@ describe("utils/kavita-news/posts", () => {
     it("envia PUT e retorna body.data", async () => {
       mockFetchOnce({ ok: true, data: { id: 10, title: "Editado" } });
 
-      const out = await updateNewsPost(
-        10,
-        { title: "Editado", cover_image_url: "http://img/a.png" } as any
-      );
+      const out = await updateNewsPost(10, {
+        title: "Editado",
+        cover_image_url: "http://img/a.png",
+      } as any);
 
       expect((out as any).id).toBe(10);
 
-      const [url, init] = (globalThis.fetch as any).mock.calls[0] as [string, RequestInit];
+      const [url, init] = (globalThis.fetch as any).mock.calls[0] as [
+        string,
+        RequestInit,
+      ];
       expect(url).toContain("/api/admin/news/posts/10");
       expect(init.method).toBe("PUT");
 
@@ -187,14 +204,20 @@ describe("utils/kavita-news/posts", () => {
     });
 
     it("quando res.ok=false lança erro com message/mensagem", async () => {
-      mockFetchOnce({ message: "Falha ao atualizar" }, { ok: false, status: 400 });
-      await expect(updateNewsPost(10, { title: "Edit" } as any)).rejects.toThrow(
-        "Falha ao atualizar"
+      mockFetchOnce(
+        { message: "Falha ao atualizar" },
+        { ok: false, status: 400 },
       );
+      await expect(
+        updateNewsPost(10, { title: "Edit" } as any),
+      ).rejects.toThrow("Falha ao atualizar");
     });
 
     it("quando body NÃO vem no formato { ok, data }, retorna o body direto", async () => {
-      mockFetchOnce({ id: 10, title: "Retorno direto" }, { ok: true, status: 200 });
+      mockFetchOnce(
+        { id: 10, title: "Retorno direto" },
+        { ok: true, status: 200 },
+      );
 
       const out = await updateNewsPost(10, { title: "Edit" } as any);
       expect((out as any).title).toBe("Retorno direto");
@@ -207,7 +230,10 @@ describe("utils/kavita-news/posts", () => {
 
       await expect(deleteNewsPost(33)).resolves.toBeUndefined();
 
-      const [url, init] = (globalThis.fetch as any).mock.calls[0] as [string, RequestInit];
+      const [url, init] = (globalThis.fetch as any).mock.calls[0] as [
+        string,
+        RequestInit,
+      ];
       expect(url).toContain("/api/admin/news/posts/33");
       expect(init.method).toBe("DELETE");
       expect(init.credentials).toBe("include");
@@ -237,7 +263,10 @@ describe("utils/kavita-news/posts", () => {
       expect(out.url).toBe("http://localhost:5000/uploads/a.png");
       expect(out.filename).toBe("a.png");
 
-      const [url, init] = (globalThis.fetch as any).mock.calls[0] as [string, RequestInit];
+      const [url, init] = (globalThis.fetch as any).mock.calls[0] as [
+        string,
+        RequestInit,
+      ];
       expect(url).toContain("/api/admin/news/upload/cover");
       expect(init.method).toBe("POST");
       expect(init.credentials).toBe("include");
@@ -246,7 +275,10 @@ describe("utils/kavita-news/posts", () => {
 
     it("lança erro se res.ok=false ou body.ok=false", async () => {
       // aqui o fetch ok=true mas o body ok=false
-      mockFetchOnce({ ok: false, message: "Falha no upload" }, { ok: true, status: 200 });
+      mockFetchOnce(
+        { ok: false, message: "Falha no upload" },
+        { ok: true, status: 200 },
+      );
 
       const file = new File(["x"], "a.png", { type: "image/png" });
       await expect(uploadNewsCover(file)).rejects.toThrow("Falha no upload");

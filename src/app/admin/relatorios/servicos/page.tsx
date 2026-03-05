@@ -17,7 +17,6 @@ import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
 
-
 type EspecialidadeStats = {
   especialidade_id: number | null;
   especialidade_nome: string | null;
@@ -67,8 +66,10 @@ export default function RelatorioServicosPage() {
         setError(null);
 
         const [resServicos, resRanking] = await Promise.all([
-          apiClient.get<ServicosResponse>('/api/admin/relatorios/servicos'),
-          apiClient.get<ServicosRankingResponse>('/api/admin/relatorios/servicos-ranking'),
+          apiClient.get<ServicosResponse>("/api/admin/relatorios/servicos"),
+          apiClient.get<ServicosRankingResponse>(
+            "/api/admin/relatorios/servicos-ranking",
+          ),
         ]);
 
         setData(resServicos);
@@ -77,11 +78,10 @@ export default function RelatorioServicosPage() {
         console.error(err);
 
         let msg = "Não foi possível carregar o relatório de serviços.";
-          if (err?.status === 401 || err?.status === 403) {
-            msg =
-              "Sessão expirada ou sem permissão. Faça login novamente no admin.";
-          }
-        
+        if (err?.status === 401 || err?.status === 403) {
+          msg =
+            "Sessão expirada ou sem permissão. Faça login novamente no admin.";
+        }
 
         setError(msg);
         toast.error(msg);
@@ -100,25 +100,25 @@ export default function RelatorioServicosPage() {
   // ====== DERIVADOS / MÉTRICAS ======
   const totalServicos = useMemo(
     () => (data ? Number(data.totalServicos || 0) : 0),
-    [data]
+    [data],
   );
 
   const totalEspecialidades = useMemo(
     () => (data ? data.porEspecialidade.length : 0),
-    [data]
+    [data],
   );
 
   const especialidadeDestaque = useMemo(() => {
     if (!data || !data.porEspecialidade.length) return null;
     return data.porEspecialidade.reduce((prev, curr) =>
-      curr.total_servicos > prev.total_servicos ? curr : prev
+      curr.total_servicos > prev.total_servicos ? curr : prev,
     );
   }, [data]);
 
   const totalSemCategoria = useMemo(() => {
     if (!data) return 0;
     const semCat = data.porEspecialidade.find(
-      (e) => !e.especialidade_id && !e.especialidade_nome
+      (e) => !e.especialidade_id && !e.especialidade_nome,
     );
     return semCat ? Number(semCat.total_servicos || 0) : 0;
   }, [data]);
@@ -168,8 +168,8 @@ export default function RelatorioServicosPage() {
             </h1>
             <p className="mt-1 max-w-xl text-xs text-slate-300 sm:text-sm">
               Visão geral das especialidades e serviços oferecidos pelos
-              colaboradores. Ideal para entender quais áreas estão mais
-              fortes e onde vale investir em novos profissionais.
+              colaboradores. Ideal para entender quais áreas estão mais fortes e
+              onde vale investir em novos profissionais.
             </p>
 
             {hasData && (
@@ -306,9 +306,7 @@ export default function RelatorioServicosPage() {
                         formatter={(value: number | undefined) =>
                           `${value ?? 0} serviço${value === 1 ? "" : "s"}`
                         }
-                        labelFormatter={(label) =>
-                          `Especialidade: ${label}`
-                        }
+                        labelFormatter={(label) => `Especialidade: ${label}`}
                         contentStyle={{
                           backgroundColor: "#ffffff",
                           border: "1px solid #e5e7eb",
@@ -412,10 +410,10 @@ export default function RelatorioServicosPage() {
                                     index === 0
                                       ? "bg-amber-500/20 text-amber-100"
                                       : index === 1
-                                      ? "bg-slate-700/60 text-slate-100"
-                                      : index === 2
-                                      ? "bg-orange-500/15 text-orange-100"
-                                      : "bg-slate-900/80 text-slate-100"
+                                        ? "bg-slate-700/60 text-slate-100"
+                                        : index === 2
+                                          ? "bg-orange-500/15 text-orange-100"
+                                          : "bg-slate-900/80 text-slate-100"
                                   }
                                 `}
                               >
@@ -437,10 +435,7 @@ export default function RelatorioServicosPage() {
                         );
                       })}
                       <tr className="bg-slate-900/90">
-                        <td
-                          className="px-4 py-3 font-semibold"
-                          colSpan={2}
-                        >
+                        <td className="px-4 py-3 font-semibold" colSpan={2}>
                           Totais
                         </td>
                         <td className="px-4 py-3 text-right font-semibold text-slate-100">
@@ -482,10 +477,10 @@ export default function RelatorioServicosPage() {
                                   index === 0
                                     ? "bg-amber-500/25 text-amber-100"
                                     : index === 1
-                                    ? "bg-slate-700/70 text-slate-100"
-                                    : index === 2
-                                    ? "bg-orange-500/20 text-orange-100"
-                                    : "bg-slate-800 text-slate-100"
+                                      ? "bg-slate-700/70 text-slate-100"
+                                      : index === 2
+                                        ? "bg-orange-500/20 text-orange-100"
+                                        : "bg-slate-800 text-slate-100"
                                 }
                               `}
                             >
@@ -513,9 +508,7 @@ export default function RelatorioServicosPage() {
 
                 <div className="mt-2 rounded-2xl border border-slate-800 bg-slate-950/80 p-3 text-[11px] text-slate-300">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold">
-                      Totais do relatório
-                    </span>
+                    <span className="font-semibold">Totais do relatório</span>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px]">
@@ -574,9 +567,7 @@ export default function RelatorioServicosPage() {
                       <table className="min-w-full text-left text-xs text-slate-200 sm:text-sm">
                         <thead>
                           <tr className="border-b border-slate-800 bg-slate-900/80">
-                            <th className="px-4 py-3 font-semibold">
-                              Posição
-                            </th>
+                            <th className="px-4 py-3 font-semibold">Posição</th>
                             <th className="px-4 py-3 font-semibold">
                               Profissional
                             </th>
@@ -611,10 +602,10 @@ export default function RelatorioServicosPage() {
                                       index === 0
                                         ? "bg-amber-500/20 text-amber-100"
                                         : index === 1
-                                        ? "bg-slate-700/60 text-slate-100"
-                                        : index === 2
-                                        ? "bg-orange-500/15 text-orange-100"
-                                        : "bg-slate-900/80 text-slate-100"
+                                          ? "bg-slate-700/60 text-slate-100"
+                                          : index === 2
+                                            ? "bg-orange-500/15 text-orange-100"
+                                            : "bg-slate-900/80 text-slate-100"
                                     }
                                   `}
                                 >
@@ -672,10 +663,10 @@ export default function RelatorioServicosPage() {
                                     index === 0
                                       ? "bg-amber-500/25 text-amber-100"
                                       : index === 1
-                                      ? "bg-slate-700/70 text-slate-100"
-                                      : index === 2
-                                      ? "bg-orange-500/20 text-orange-100"
-                                      : "bg-slate-800 text-slate-100"
+                                        ? "bg-slate-700/70 text-slate-100"
+                                        : index === 2
+                                          ? "bg-orange-500/20 text-orange-100"
+                                          : "bg-slate-800 text-slate-100"
                                   }
                                 `}
                               >
@@ -691,8 +682,7 @@ export default function RelatorioServicosPage() {
                               </p>
                             )}
                             <p className="text-[11px] text-slate-400">
-                              Especialidade:{" "}
-                              {row.especialidade_nome || "—"}
+                              Especialidade: {row.especialidade_nome || "—"}
                             </p>
                           </div>
                           <div className="text-right text-[11px] text-slate-300">

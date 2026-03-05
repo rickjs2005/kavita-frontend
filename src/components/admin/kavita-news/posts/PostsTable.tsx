@@ -176,7 +176,9 @@ export default function PostsTable({
                           className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 hover:bg-gray-50 active:bg-gray-100"
                           onClick={() => onTogglePublish(p)}
                           title={
-                            p.status === "published" ? "Despublicar" : "Publicar"
+                            p.status === "published"
+                              ? "Despublicar"
+                              : "Publicar"
                           }
                         >
                           {p.status === "published"

@@ -86,7 +86,7 @@ export default function PostsTab() {
       page: page ?? 1,
       pageSize,
     }),
-    [q, status, page, pageSize]
+    [q, status, page, pageSize],
   );
 
   const refresh = useCallback(async () => {
@@ -142,7 +142,7 @@ export default function PostsTab() {
         setIsSaving(false);
       }
     },
-    [formMode, selected?.id, refresh]
+    [formMode, selected?.id, refresh],
   );
 
   const onDelete = useCallback(
@@ -160,7 +160,7 @@ export default function PostsTab() {
         setIsLoading(false);
       }
     },
-    [items.length, page, refresh]
+    [items.length, page, refresh],
   );
 
   const onTogglePublish = useCallback(
@@ -172,27 +172,24 @@ export default function PostsTab() {
       try {
         const anyP: any = p as any;
 
-        await updateNewsPost(
-          p.id,
-          {
-            title: p.title,
-            slug: (anyP?.slug ?? p.slug ?? "") as any,
-            status: nextStatus,
-            category: (anyP?.category ?? p.category ?? null) as any,
-            tags_csv: normalizeTagsCsv(anyP),
-            cover_url: (anyP?.cover_url ?? p.cover_url ?? null) as any,
-            excerpt: (anyP?.excerpt ?? p.excerpt ?? null) as any,
-            content: anyP?.content ?? null,
-            publish_now: nextStatus === "published",
-          } as any
-        );
+        await updateNewsPost(p.id, {
+          title: p.title,
+          slug: (anyP?.slug ?? p.slug ?? "") as any,
+          status: nextStatus,
+          category: (anyP?.category ?? p.category ?? null) as any,
+          tags_csv: normalizeTagsCsv(anyP),
+          cover_url: (anyP?.cover_url ?? p.cover_url ?? null) as any,
+          excerpt: (anyP?.excerpt ?? p.excerpt ?? null) as any,
+          content: anyP?.content ?? null,
+          publish_now: nextStatus === "published",
+        } as any);
 
         await refresh();
       } finally {
         setIsLoading(false);
       }
     },
-    [refresh]
+    [refresh],
   );
 
   return (

@@ -61,15 +61,17 @@ export async function getServiceById(id: string | number): Promise<Service> {
   if (!id && id !== 0) throw new Error("Service id is required");
 
   try {
-    const json: any = await apiFetch(`/api/servicos/${id}`, { cache: "no-store" });
+    const json: any = await apiFetch(`/api/servicos/${id}`, {
+      cache: "no-store",
+    });
 
     return {
       ...json,
       images: Array.isArray(json.images)
         ? json.images
         : typeof json.images === "string" && json.images
-        ? [json.images]
-        : [],
+          ? [json.images]
+          : [],
     } as Service;
   } catch {
     // erro limpo

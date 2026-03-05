@@ -86,14 +86,14 @@ export default function CartItemCard({ item }: { item: CartItem }) {
 
         // normaliza para sempre ter number (sem null)
         const original = Number(
-          data.original_price ?? data.price ?? unitFromCart ?? 0
+          data.original_price ?? data.price ?? unitFromCart ?? 0,
         );
         const final = Number(
           data.final_price ??
             data.promo_price ??
             data.price ??
             unitFromCart ??
-            0
+            0,
         );
 
         const discountPercent =
@@ -173,7 +173,9 @@ export default function CartItemCard({ item }: { item: CartItem }) {
         <div className="mt-2 flex items-center gap-2" aria-live="polite">
           <button
             type="button"
-            onClick={() => canDecrease && updateQuantity(item.id, Math.max(1, qty - 1))}
+            onClick={() =>
+              canDecrease && updateQuantity(item.id, Math.max(1, qty - 1))
+            }
             className={quantityButtonClasses}
             disabled={!canDecrease}
             aria-label={`Diminuir quantidade de ${item.name}`}
@@ -202,8 +204,8 @@ export default function CartItemCard({ item }: { item: CartItem }) {
             {stock === 0
               ? "Sem estoque"
               : atMax
-              ? "Limite de estoque atingido"
-              : `Em estoque: ${Math.max(0, stock - qty)}`}
+                ? "Limite de estoque atingido"
+                : `Em estoque: ${Math.max(0, stock - qty)}`}
           </p>
         )}
       </div>

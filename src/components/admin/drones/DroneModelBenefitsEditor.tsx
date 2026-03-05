@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import apiClient from "@/lib/apiClient";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type TextItem = { title?: string; text?: string };
 
@@ -9,6 +10,23 @@ type Toast = { type: "success" | "error" | "info"; text: string } | null;
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+function isAuthError(res: Response) {
+  return res.status === 401 || res.status === 403;
+}
+
+function redirectToLogin() {
+  if (typeof window !== "undefined") window.location.assign("/admin/login");
+}
+
+async function readSafe(res: Response) {
+  const txt = await res.text();
+  try {
+    return { txt, data: JSON.parse(txt) };
+  } catch {
+    return { txt, data: null as any };
+  }
 }
 
 function normalizeItems(v: any): TextItem[] {
@@ -39,17 +57,24 @@ function ToastView({ toast }: { toast: Toast }) {
     toast.type === "success"
       ? "border-emerald-200/20 bg-emerald-500/10 text-emerald-100"
       : toast.type === "error"
-      ? "border-amber-200/20 bg-amber-500/10 text-amber-100"
-      : "border-white/10 bg-white/5 text-white/80";
+        ? "border-amber-200/20 bg-amber-500/10 text-amber-100"
+        : "border-white/10 bg-white/5 text-white/80";
 
-  return <div className={cx("rounded-2xl border px-4 py-3 text-sm", cls)}>{toast.text}</div>;
+  return (
+    <div className={cx("rounded-2xl border px-4 py-3 text-sm", cls)}>
+      {toast.text}
+    </div>
+  );
 }
 
 type Props = {
   modelKey: string;
   initialTitle?: string | null;
   initialItems?: TextItem[] | null;
-  onSaved?: (payload: { benefits_title: string | null; benefits_items_json: TextItem[] }) => void;
+  onSaved?: (payload: {
+    benefits_title: string | null;
+    benefits_items_json: TextItem[];
+  }) => void;
 };
 
 export default function DroneModelBenefitsEditor({
@@ -61,7 +86,9 @@ export default function DroneModelBenefitsEditor({
   const [toast, setToast] = useState<Toast>(null);
   const [saving, setSaving] = useState(false);
 
-  const [title, setTitle] = useState<string>(initialTitle?.trim() || "Benefícios");
+  const [title, setTitle] = useState<string>(
+    initialTitle?.trim() || "Benefícios",
+  );
   const [items, setItems] = useState<TextItem[]>(normalizeItems(initialItems));
 
   useEffect(() => {
@@ -81,7 +108,9 @@ export default function DroneModelBenefitsEditor({
   }
 
   function updateItem(idx: number, patch: Partial<TextItem>) {
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+    setItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)),
+    );
   }
 
   function sanitizePayload() {
@@ -92,7 +121,9 @@ export default function DroneModelBenefitsEditor({
         title: (it.title || "").trim() || undefined,
         text: (it.text || "").trim() || undefined,
       }))
-      .filter((it) => (it.title && it.title.trim()) || (it.text && it.text.trim()));
+      .filter(
+        (it) => (it.title && it.title.trim()) || (it.text && it.text.trim()),
+      );
 
     return { benefits_title: cleanTitle, benefits_items_json: cleanItems };
   }
@@ -106,10 +137,22 @@ export default function DroneModelBenefitsEditor({
     try {
       const payload = sanitizePayload();
 
-      await apiClient.put(
-        `/api/admin/drones/models/${modelKey}`,
-        payload
+      const res = await fetch(
+        `${API_BASE}/api/admin/drones/models/${modelKey}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
       );
+
+      if (isAuthError(res)) return redirectToLogin();
+
+      const { data } = await readSafe(res);
+      if (!res.ok) {
+        throw new Error(data?.message || "Erro ao salvar benefícios.");
+      }
 
       setToast({ type: "success", text: "Benefícios salvos com sucesso." });
       onSaved?.(payload);
@@ -147,7 +190,7 @@ export default function DroneModelBenefitsEditor({
               "rounded-xl px-4 py-2 text-sm font-medium text-white transition active:scale-[0.99]",
               saving || !canSave
                 ? "bg-white/10 text-white/50"
-                : "bg-emerald-500 hover:bg-emerald-400"
+                : "bg-emerald-500 hover:bg-emerald-400",
             )}
           >
             {saving ? "Salvando..." : "Salvar"}
@@ -158,7 +201,9 @@ export default function DroneModelBenefitsEditor({
       <ToastView toast={toast} />
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-white/60">Título da seção</label>
+        <label className="text-xs font-medium text-white/60">
+          Título da seção
+        </label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -194,7 +239,9 @@ export default function DroneModelBenefitsEditor({
 
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-white/60">Título (opcional)</label>
+                  <label className="text-xs font-medium text-white/60">
+                    Título (opcional)
+                  </label>
                   <input
                     value={it.title || ""}
                     onChange={(e) => updateItem(idx, { title: e.target.value })}
@@ -204,7 +251,9 @@ export default function DroneModelBenefitsEditor({
                 </div>
 
                 <div className="space-y-1 lg:col-span-2">
-                  <label className="text-xs font-medium text-white/60">Descrição</label>
+                  <label className="text-xs font-medium text-white/60">
+                    Descrição
+                  </label>
                   <textarea
                     value={it.text || ""}
                     onChange={(e) => updateItem(idx, { text: e.target.value })}

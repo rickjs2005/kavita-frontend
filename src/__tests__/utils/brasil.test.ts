@@ -35,8 +35,12 @@ describe("utils/brasil", () => {
 
   it("contém UFs essenciais (SP e DF)", () => {
     // Act
-    const hasSP = ESTADOS_BR.some((e) => e.sigla === "SP" && e.nome.includes("São Paulo"));
-    const hasDF = ESTADOS_BR.some((e) => e.sigla === "DF" && e.nome.includes("Distrito Federal"));
+    const hasSP = ESTADOS_BR.some(
+      (e) => e.sigla === "SP" && e.nome.includes("São Paulo"),
+    );
+    const hasDF = ESTADOS_BR.some(
+      (e) => e.sigla === "DF" && e.nome.includes("Distrito Federal"),
+    );
 
     // Assert
     expect(hasSP).toBe(true);

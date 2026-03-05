@@ -28,6 +28,8 @@ export async function getMe(): Promise<UserProfile> {
 /**
  * Update the current user's profile.
  */
-export async function updateMe(payload: Partial<UserProfile>): Promise<UserProfile> {
+export async function updateMe(
+  payload: Partial<UserProfile>,
+): Promise<UserProfile> {
   return apiClient.put<UserProfile>(ENDPOINTS.USERS.ME, payload);
 }

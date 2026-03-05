@@ -32,11 +32,11 @@ type AuthContextValue = {
 
   login: (
     email: string,
-    senha: string
+    senha: string,
   ) => Promise<{ ok: boolean; message?: string }>;
 
   register: (
-    payload: RegisterPayload
+    payload: RegisterPayload,
   ) => Promise<{ ok: boolean; message?: string }>;
 
   logout: () => Promise<void>;
@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       refreshUser,
     }),
-    [user, loading]
+    [user, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

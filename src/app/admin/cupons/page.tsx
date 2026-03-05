@@ -29,7 +29,7 @@ export default function CuponsPage() {
 
   function handleChange(
     field: keyof Coupon,
-    value: string | number | boolean | null
+    value: string | number | boolean | null,
   ) {
     setForm((prev) => ({
       ...prev,
@@ -59,7 +59,7 @@ export default function CuponsPage() {
     setError(null);
 
     try {
-      const data = await apiClient.get<Coupon[]>('/api/admin/cupons');
+      const data = await apiClient.get<Coupon[]>("/api/admin/cupons");
       setCupons(data);
     } catch (err: any) {
       console.error(err);
@@ -104,14 +104,14 @@ export default function CuponsPage() {
       if (editing) {
         await apiClient.put(`/api/admin/cupons/${editing.id}`, payload);
       } else {
-        await apiClient.post('/api/admin/cupons', payload);
+        await apiClient.post("/api/admin/cupons", payload);
       }
 
       await carregarCupons();
       setEditing(null);
       setForm(emptyCoupon);
       toast.success(
-        editing ? "Cupom atualizado com sucesso." : "Cupom criado com sucesso."
+        editing ? "Cupom atualizado com sucesso." : "Cupom criado com sucesso.",
       );
     } catch (err: any) {
       console.error(err);
@@ -307,7 +307,7 @@ export default function CuponsPage() {
                     onChange={(e) =>
                       handleChange(
                         "max_usos",
-                        e.target.value === "" ? null : Number(e.target.value)
+                        e.target.value === "" ? null : Number(e.target.value),
                       )
                     }
                     className="w-full rounded-lg border border-white/10 bg-[#020617] px-3 py-2 text-sm text-white outline-none focus:border-[#38bdf8]"
@@ -358,8 +358,8 @@ export default function CuponsPage() {
                   {saving
                     ? "Salvando..."
                     : editing
-                    ? "Salvar alterações"
-                    : "Criar cupom"}
+                      ? "Salvar alterações"
+                      : "Criar cupom"}
                 </button>
               </div>
             </form>

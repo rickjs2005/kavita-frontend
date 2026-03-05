@@ -26,16 +26,16 @@ function resolveCoverUrl(item: any): string | null {
     item?.thumbnail_url,
   ];
 
-  const raw = candidates.find((v) => typeof v === "string" && v.trim().length > 0) as string | undefined;
+  const raw = candidates.find(
+    (v) => typeof v === "string" && v.trim().length > 0,
+  ) as string | undefined;
   if (!raw) return null;
 
   const trimmed = raw.trim();
   const base = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
   // URL relativa -> absoluta
-  const absolute = trimmed.startsWith("/")
-    ? `${base}${trimmed}`
-    : trimmed;
+  const absolute = trimmed.startsWith("/") ? `${base}${trimmed}` : trimmed;
 
   try {
     return encodeURI(absolute);
@@ -45,9 +45,17 @@ function resolveCoverUrl(item: any): string | null {
 }
 
 function getEmoji(item: any): string {
-  const hay = `${item?.category ?? ""} ${item?.tags ?? ""} ${item?.title ?? ""}`.toLowerCase();
+  const hay =
+    `${item?.category ?? ""} ${item?.tags ?? ""} ${item?.title ?? ""}`.toLowerCase();
   // 1 emoji funcional por card (no título)
-  if (hay.includes("agro") || hay.includes("fazenda") || hay.includes("soja") || hay.includes("milho") || hay.includes("café") || hay.includes("cafe")) {
+  if (
+    hay.includes("agro") ||
+    hay.includes("fazenda") ||
+    hay.includes("soja") ||
+    hay.includes("milho") ||
+    hay.includes("café") ||
+    hay.includes("cafe")
+  ) {
     return "🌾";
   }
   return "📰";
@@ -82,8 +90,12 @@ export function PostCard({ item }: { item: PublicPost }) {
           <div className="h-44 w-full bg-gradient-to-b from-zinc-100 to-white md:h-40">
             <div className="flex h-full items-center justify-center px-6 text-center">
               <div>
-                <div className="text-2xl" aria-hidden>📰</div>
-                <p className="mt-1 text-xs font-medium text-zinc-600">Sem imagem de capa</p>
+                <div className="text-2xl" aria-hidden>
+                  📰
+                </div>
+                <p className="mt-1 text-xs font-medium text-zinc-600">
+                  Sem imagem de capa
+                </p>
               </div>
             </div>
           </div>

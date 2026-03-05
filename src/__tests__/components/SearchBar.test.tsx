@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  cleanup,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
 
 import SearchBar from "@/components/ui/SearchBar";
@@ -51,12 +57,17 @@ function makeFetchResponse(payload: MockPayload) {
   };
 }
 
-function mockFetchByEndpoint(params: { products: MockPayload; servicos: MockPayload }) {
+function mockFetchByEndpoint(params: {
+  products: MockPayload;
+  servicos: MockPayload;
+}) {
   (global.fetch as any) = vi.fn(async (url: string) => {
     const u = String(url);
 
-    if (u.includes("/products/search")) return makeFetchResponse(params.products);
-    if (u.includes("/public/servicos")) return makeFetchResponse(params.servicos);
+    if (u.includes("/products/search"))
+      return makeFetchResponse(params.products);
+    if (u.includes("/public/servicos"))
+      return makeFetchResponse(params.servicos);
 
     return makeFetchResponse({ ok: true, json: { data: [] } });
   });
@@ -128,7 +139,9 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
     render(<SearchBar />);
 
     expect(screen.getByRole("textbox", { name: "Buscar" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Pesquisar" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Pesquisar" }),
+    ).toBeInTheDocument();
   });
 
   it("não dispara busca se query estiver vazia (negativo)", async () => {
@@ -154,11 +167,17 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
     mockFetchByEndpoint({
       products: {
         ok: true,
-        json: { products: [{ id: 1, name: "Produto A", price: 10, images: ["a.jpg"] }] },
+        json: {
+          products: [
+            { id: 1, name: "Produto A", price: 10, images: ["a.jpg"] },
+          ],
+        },
       },
       servicos: {
         ok: true,
-        json: { data: [{ id: 2, nome: "Serviço B", preco: 20, imagem: "b.jpg" }] },
+        json: {
+          data: [{ id: 2, nome: "Serviço B", preco: 20, imagem: "b.jpg" }],
+        },
       },
     });
 
@@ -182,7 +201,9 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
       const u = String(url);
       if (u.includes("/products/search")) return prodDef.promise;
       if (u.includes("/public/servicos")) return servDef.promise;
-      return Promise.resolve(makeFetchResponse({ ok: true, json: { data: [] } }));
+      return Promise.resolve(
+        makeFetchResponse({ ok: true, json: { data: [] } }),
+      );
     });
 
     render(<SearchBar />);
@@ -231,7 +252,10 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
   it("navega para produto ao clicar em um item (positivo)", async () => {
     // Arrange
     mockFetchByEndpoint({
-      products: { ok: true, json: { data: [{ id: 10, name: "Produto X", price: 30 }] } },
+      products: {
+        ok: true,
+        json: { data: [{ id: 10, name: "Produto X", price: 30 }] },
+      },
       servicos: { ok: true, json: { data: [] } },
     });
 
@@ -253,7 +277,10 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
   it("adiciona produto ao carrinho ao clicar no ícone (positivo)", async () => {
     // Arrange
     mockFetchByEndpoint({
-      products: { ok: true, json: { data: [{ id: 5, name: "Produto Carrinho", price: 99 }] } },
+      products: {
+        ok: true,
+        json: { data: [{ id: 5, name: "Produto Carrinho", price: 99 }] },
+      },
       servicos: { ok: true, json: { data: [] } },
     });
 
@@ -263,7 +290,9 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
     await typeAndRunDebounce("cart");
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Adicionar ao carrinho" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Adicionar ao carrinho" }),
+      );
     });
 
     // Assert
@@ -273,7 +302,7 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
         id: 5,
         name: "Produto Carrinho",
         quantity: 1,
-      })
+      }),
     );
   });
 
@@ -294,7 +323,10 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
   it("Escape fecha a lista (negativo)", async () => {
     // Arrange
     mockFetchByEndpoint({
-      products: { ok: true, json: { data: [{ id: 1, name: "Item Escape", price: 10 }] } },
+      products: {
+        ok: true,
+        json: { data: [{ id: 1, name: "Item Escape", price: 10 }] },
+      },
       servicos: { ok: true, json: { data: [] } },
     });
 

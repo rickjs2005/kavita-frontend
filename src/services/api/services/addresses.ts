@@ -43,14 +43,19 @@ export async function getAddresses(): Promise<UserAddress[]> {
 /**
  * Create a new address for the authenticated user.
  */
-export async function createAddress(payload: UserAddressPayload): Promise<UserAddress> {
+export async function createAddress(
+  payload: UserAddressPayload,
+): Promise<UserAddress> {
   return apiClient.post<UserAddress>(ENDPOINTS.USERS.ADDRESSES, payload);
 }
 
 /**
  * Update an existing address by ID.
  */
-export async function updateAddress(id: number, payload: UserAddressPayload): Promise<UserAddress> {
+export async function updateAddress(
+  id: number,
+  payload: UserAddressPayload,
+): Promise<UserAddress> {
   return apiClient.put<UserAddress>(ENDPOINTS.USERS.ADDRESS(id), payload);
 }
 

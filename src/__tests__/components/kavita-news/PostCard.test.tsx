@@ -75,10 +75,7 @@ describe("PostCard", () => {
     });
 
     // encodeURI aplicado
-    expect(img).toHaveAttribute(
-      "src",
-      "https://site.com/imagem%20teste.jpg"
-    );
+    expect(img).toHaveAttribute("src", "https://site.com/imagem%20teste.jpg");
     expect(img).toHaveAttribute("loading", "lazy");
   });
 
@@ -97,29 +94,29 @@ describe("PostCard", () => {
 
     expect(img).toHaveAttribute(
       "src",
-      "https://api.kavita.com/uploads/capas/capa%201.jpg"
+      "https://api.kavita.com/uploads/capas/capa%201.jpg",
     );
   });
 
   it("deve exibir fallback visual quando não houver imagem de capa (negativo)", () => {
-  const item = makeItem({
-    cover_image_url: null,
+    const item = makeItem({
+      cover_image_url: null,
+    });
+
+    // 👇 escape controlado apenas para este cenário
+    const extendedItem = {
+      ...item,
+      cover: null,
+      cover_url: null,
+      image_url: null,
+      thumbnail_url: null,
+    } as any;
+
+    render(<PostCard item={extendedItem} />);
+
+    expect(screen.getByText("Sem imagem de capa")).toBeInTheDocument();
+    expect(screen.getByText("📰")).toBeInTheDocument();
   });
-
-  // 👇 escape controlado apenas para este cenário
-  const extendedItem = {
-    ...item,
-    cover: null,
-    cover_url: null,
-    image_url: null,
-    thumbnail_url: null,
-  } as any;
-
-  render(<PostCard item={extendedItem} />);
-
-  expect(screen.getByText("Sem imagem de capa")).toBeInTheDocument();
-  expect(screen.getByText("📰")).toBeInTheDocument();
-});
 
   it("deve renderizar selo editorial com emoji 🌾 quando contexto for agro (positivo)", () => {
     const item = makeItem({
@@ -152,9 +149,7 @@ describe("PostCard", () => {
 
     render(<PostCard item={item} />);
 
-    expect(
-      screen.getByText("Texto resumido da matéria.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Texto resumido da matéria.")).toBeInTheDocument();
   });
 
   it("deve renderizar fallback de excerpt quando estiver vazio (negativo)", () => {
@@ -165,7 +160,7 @@ describe("PostCard", () => {
     render(<PostCard item={item} />);
 
     expect(
-      screen.getByText("Resumo indisponível no momento.")
+      screen.getByText("Resumo indisponível no momento."),
     ).toBeInTheDocument();
   });
 
@@ -219,9 +214,7 @@ describe("PostCard", () => {
 
     // Span existe, mas vazio
     const spans = screen.getAllByText((_, el) => el?.tagName === "SPAN");
-    const hasDate = spans.some((s) =>
-      s.textContent?.includes("202")
-    );
+    const hasDate = spans.some((s) => s.textContent?.includes("202"));
     expect(hasDate).toBe(false);
   });
 });

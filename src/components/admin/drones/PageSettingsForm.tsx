@@ -75,7 +75,9 @@ function Field({
     <div className="grid gap-1.5">
       <div className="flex items-baseline justify-between gap-3">
         <label className="text-xs font-semibold text-slate-200">{label}</label>
-        {hint ? <span className="text-[11px] text-slate-400">{hint}</span> : null}
+        {hint ? (
+          <span className="text-[11px] text-slate-400">{hint}</span>
+        ) : null}
       </div>
       {children}
     </div>
@@ -98,9 +100,13 @@ function SectionCard({
       <div className="flex flex-col gap-2 border-b border-white/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
           <h2 className="text-sm font-extrabold text-slate-100">{title}</h2>
-          {subtitle ? <p className="mt-0.5 text-xs text-slate-300">{subtitle}</p> : null}
+          {subtitle ? (
+            <p className="mt-0.5 text-xs text-slate-300">{subtitle}</p>
+          ) : null}
         </div>
-        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        {actions ? (
+          <div className="flex items-center gap-2">{actions}</div>
+        ) : null}
       </div>
       <div className="p-4 sm:p-5">{children}</div>
     </section>
@@ -110,7 +116,10 @@ function SectionCard({
 export default function PageSettingsForm() {
   const router = useRouter();
 
-  const defaultSections = useMemo(() => ["hero", "gallery", "representatives", "comments"], []);
+  const defaultSections = useMemo(
+    () => ["hero", "gallery", "representatives", "comments"],
+    [],
+  );
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -128,8 +137,12 @@ export default function PageSettingsForm() {
   const [heroVideo, setHeroVideo] = useState<File | null>(null);
   const [heroImageFallback, setHeroImageFallback] = useState<File | null>(null);
 
-  const [currentHeroVideoPath, setCurrentHeroVideoPath] = useState<string | null>(null);
-  const [currentHeroImagePath, setCurrentHeroImagePath] = useState<string | null>(null);
+  const [currentHeroVideoPath, setCurrentHeroVideoPath] = useState<
+    string | null
+  >(null);
+  const [currentHeroImagePath, setCurrentHeroImagePath] = useState<
+    string | null
+  >(null);
 
   async function fetchWithFallback(paths: string[]) {
     let lastError: any = null;
@@ -150,11 +163,16 @@ export default function PageSettingsForm() {
       setLoading(true);
       try {
         // compat: /page-settings (novo) e /page (legado)
-        const json = await fetchWithFallback(["/api/admin/drones/page-settings", "/api/admin/drones/page"]);
+        const json = await fetchWithFallback([
+          "/api/admin/drones/page-settings",
+          "/api/admin/drones/page",
+        ]);
 
-        const data = (json && typeof json === "object" && "page" in json ? (json as any).page : json) as Partial<
-          PageSettingsDTO
-        >;
+        const data = (
+          json && typeof json === "object" && "page" in json
+            ? (json as any).page
+            : json
+        ) as Partial<PageSettingsDTO>;
 
         setHeroTitle(sanitizeString(data.hero_title, ""));
         setHeroSubtitle(sanitizeString(data.hero_subtitle, ""));
@@ -163,10 +181,18 @@ export default function PageSettingsForm() {
         setCtaButtonLabel(sanitizeString(data.cta_button_label, ""));
         setCtaTemplate(sanitizeString(data.cta_message_template, ""));
 
-        setCurrentHeroVideoPath(sanitizeString(data.hero_video_path, "") || null);
-        setCurrentHeroImagePath(sanitizeString(data.hero_image_fallback_path, "") || null);
+        setCurrentHeroVideoPath(
+          sanitizeString(data.hero_video_path, "") || null,
+        );
+        setCurrentHeroImagePath(
+          sanitizeString(data.hero_image_fallback_path, "") || null,
+        );
 
-        setSectionsOrder(uniqOrder(ensureArray<string>(data.sections_order_json, defaultSections)));
+        setSectionsOrder(
+          uniqOrder(
+            ensureArray<string>(data.sections_order_json, defaultSections),
+          ),
+        );
       } catch {
         setMsg("Erro de rede ao carregar Config Landing.");
       } finally {
@@ -177,7 +203,8 @@ export default function PageSettingsForm() {
 
   function validate(): string | null {
     if (!heroTitle.trim()) return "hero_title é obrigatório.";
-    if (!Array.isArray(sectionsOrder) || sectionsOrder.length === 0) return "sections_order_json inválido.";
+    if (!Array.isArray(sectionsOrder) || sectionsOrder.length === 0)
+      return "sections_order_json inválido.";
     return null;
   }
 
@@ -209,7 +236,10 @@ export default function PageSettingsForm() {
       const ctmp = normalizeNullableString(ctaTemplate);
       if (ctmp) fd.append("cta_message_template", ctmp);
 
-      fd.append("sections_order_json", JSON.stringify(uniqOrder(sectionsOrder)));
+      fd.append(
+        "sections_order_json",
+        JSON.stringify(uniqOrder(sectionsOrder)),
+      );
 
       // mídia (nomes devem bater com seu controller)
       if (heroVideo) fd.append("heroVideo", heroVideo);
@@ -220,20 +250,28 @@ export default function PageSettingsForm() {
       // - se 404, tenta /page
       let targetPath = "/api/admin/drones/page";
       try {
-        await apiClient.request("/api/admin/drones/page-settings", { method: "OPTIONS" });
+        await apiClient.request("/api/admin/drones/page-settings", {
+          method: "OPTIONS",
+        });
         targetPath = "/api/admin/drones/page-settings";
       } catch {
         // use legacy endpoint
       }
 
-      const json = await apiClient.put(targetPath, fd, { skipContentType: true });
+      const json = await apiClient.put(targetPath, fd, {
+        skipContentType: true,
+      });
 
-      const page = (json && typeof json === "object" && "page" in json ? (json as any).page : json) as Partial<
-        PageSettingsDTO
-      >;
+      const page = (
+        json && typeof json === "object" && "page" in json
+          ? (json as any).page
+          : json
+      ) as Partial<PageSettingsDTO>;
 
       setCurrentHeroVideoPath(sanitizeString(page.hero_video_path, "") || null);
-      setCurrentHeroImagePath(sanitizeString(page.hero_image_fallback_path, "") || null);
+      setCurrentHeroImagePath(
+        sanitizeString(page.hero_image_fallback_path, "") || null,
+      );
 
       setHeroVideo(null);
       setHeroImageFallback(null);
@@ -272,7 +310,9 @@ export default function PageSettingsForm() {
             ← Voltar
           </button>
           <div className="min-w-0 text-right">
-            <p className="truncate text-xs font-extrabold text-slate-100">Config Landing</p>
+            <p className="truncate text-xs font-extrabold text-slate-100">
+              Config Landing
+            </p>
             <p className="truncate text-[11px] text-slate-400">Kavita Drones</p>
           </div>
         </div>
@@ -281,8 +321,12 @@ export default function PageSettingsForm() {
       {/* Desktop header */}
       <div className="hidden sm:flex sm:items-start sm:justify-between sm:gap-4">
         <div>
-          <h1 className="text-lg font-extrabold text-white">Config Landing (Drones)</h1>
-          <p className="mt-1 text-sm text-slate-300">Ajuste título, CTA, mídias e a ordem das seções.</p>
+          <h1 className="text-lg font-extrabold text-white">
+            Config Landing (Drones)
+          </h1>
+          <p className="mt-1 text-sm text-slate-300">
+            Ajuste título, CTA, mídias e a ordem das seções.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -294,7 +338,11 @@ export default function PageSettingsForm() {
             Voltar
           </button>
 
-          <LoadingButton isLoading={saving} onClick={save} className="rounded-full px-5">
+          <LoadingButton
+            isLoading={saving}
+            onClick={save}
+            className="rounded-full px-5"
+          >
             Salvar
           </LoadingButton>
         </div>
@@ -329,19 +377,33 @@ export default function PageSettingsForm() {
           <div className="sm:col-span-2 grid gap-3 sm:grid-cols-2">
             <Field
               label="Vídeo do Hero (upload)"
-              hint={currentHeroVideoPath ? `Atual: ${currentHeroVideoPath}` : undefined}
+              hint={
+                currentHeroVideoPath
+                  ? `Atual: ${currentHeroVideoPath}`
+                  : undefined
+              }
             >
-              <input type="file" accept="video/mp4" onChange={(e) => setHeroVideo(e.target.files?.[0] || null)} />
+              <input
+                type="file"
+                accept="video/mp4"
+                onChange={(e) => setHeroVideo(e.target.files?.[0] || null)}
+              />
             </Field>
 
             <Field
               label="Imagem fallback (upload)"
-              hint={currentHeroImagePath ? `Atual: ${currentHeroImagePath}` : undefined}
+              hint={
+                currentHeroImagePath
+                  ? `Atual: ${currentHeroImagePath}`
+                  : undefined
+              }
             >
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => setHeroImageFallback(e.target.files?.[0] || null)}
+                onChange={(e) =>
+                  setHeroImageFallback(e.target.files?.[0] || null)
+                }
               />
             </Field>
           </div>
@@ -351,7 +413,11 @@ export default function PageSettingsForm() {
       <SectionCard title="CTA" subtitle="Mensagem e botão de contato.">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Título do CTA (cta_title)" hint="Opcional">
-            <input value={ctaTitle} onChange={(e) => setCtaTitle(e.target.value)} className={cx(inputBase, inputFocus)} />
+            <input
+              value={ctaTitle}
+              onChange={(e) => setCtaTitle(e.target.value)}
+              className={cx(inputBase, inputFocus)}
+            />
           </Field>
 
           <Field label="Label do botão (cta_button_label)" hint="Opcional">
@@ -363,7 +429,10 @@ export default function PageSettingsForm() {
           </Field>
 
           <div className="sm:col-span-2">
-            <Field label="Template da mensagem (cta_message_template)" hint="Opcional">
+            <Field
+              label="Template da mensagem (cta_message_template)"
+              hint="Opcional"
+            >
               <textarea
                 value={ctaTemplate}
                 onChange={(e) => setCtaTemplate(e.target.value)}
@@ -390,7 +459,10 @@ export default function PageSettingsForm() {
       >
         <div className="grid gap-2">
           {sectionsOrder.map((s, idx) => (
-            <div key={`${s}-${idx}`} className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div
+              key={`${s}-${idx}`}
+              className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center"
+            >
               <input
                 value={s}
                 onChange={(e) => updateSectionAt(idx, e.target.value)}
@@ -410,7 +482,11 @@ export default function PageSettingsForm() {
       </SectionCard>
 
       <div className="sm:hidden">
-        <LoadingButton isLoading={saving} onClick={save} className="w-full rounded-full px-5 py-3">
+        <LoadingButton
+          isLoading={saving}
+          onClick={save}
+          className="w-full rounded-full px-5 py-3"
+        >
           Salvar
         </LoadingButton>
       </div>

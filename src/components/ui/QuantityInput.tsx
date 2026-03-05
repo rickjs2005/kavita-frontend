@@ -9,7 +9,12 @@ type Props = {
   onChange?: (qty: number) => void;
 };
 
-export default function QuantityInput({ max, disabled, value = 1, onChange }: Props) {
+export default function QuantityInput({
+  max,
+  disabled,
+  value = 1,
+  onChange,
+}: Props) {
   const [qty, setQty] = useState<number>(value);
 
   const emit = (v: number) => {
@@ -44,7 +49,10 @@ export default function QuantityInput({ max, disabled, value = 1, onChange }: Pr
       <button
         type="button"
         onClick={() => emit(qty + 1)}
-        disabled={disabled || (Number.isFinite(max) && (max ?? 0) > 0 && qty >= (max ?? 0))}
+        disabled={
+          disabled ||
+          (Number.isFinite(max) && (max ?? 0) > 0 && qty >= (max ?? 0))
+        }
         className="px-3 py-2 text-lg leading-none disabled:opacity-40"
         aria-label="Aumentar quantidade"
       >

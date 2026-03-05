@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  cleanup,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
 
 import UserMenu from "@/components/ui/UserMenu";
@@ -78,7 +84,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     render(<UserMenu />);
 
     // Assert
-    expect(screen.getByRole("button", { name: "Bem-vindo, user@kavita.com" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Bem-vindo, user@kavita.com" }),
+    ).toBeInTheDocument();
   });
 
   it("abre e fecha o menu ao clicar no botão (positivo)", async () => {
@@ -94,7 +102,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     });
 
     // Assert: menu aberto
-    expect(screen.getByRole("menu", { name: "Menu do usuário" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menu", { name: "Menu do usuário" }),
+    ).toBeInTheDocument();
     expect(btn).toHaveAttribute("aria-expanded", "true");
 
     // Act: fecha
@@ -103,7 +113,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     });
 
     // Assert: menu fechado
-    expect(screen.queryByRole("menu", { name: "Menu do usuário" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menu", { name: "Menu do usuário" }),
+    ).not.toBeInTheDocument();
     expect(btn).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -116,7 +128,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     await act(async () => {
       fireEvent.click(btn);
     });
-    expect(screen.getByRole("menu", { name: "Menu do usuário" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menu", { name: "Menu do usuário" }),
+    ).toBeInTheDocument();
 
     // Act
     await act(async () => {
@@ -124,7 +138,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     });
 
     // Assert
-    expect(screen.queryByRole("menu", { name: "Menu do usuário" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menu", { name: "Menu do usuário" }),
+    ).not.toBeInTheDocument();
     expect(btn).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -135,7 +151,7 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
       <div>
         <UserMenu />
         <button type="button">Fora</button>
-      </div>
+      </div>,
     );
 
     const btn = screen.getByRole("button", { name: "Bem-vindo, Rick" });
@@ -143,7 +159,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     await act(async () => {
       fireEvent.click(btn);
     });
-    expect(screen.getByRole("menu", { name: "Menu do usuário" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menu", { name: "Menu do usuário" }),
+    ).toBeInTheDocument();
 
     // Act: click fora (mousedown é o evento usado pelo componente)
     await act(async () => {
@@ -151,7 +169,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     });
 
     // Assert
-    expect(screen.queryByRole("menu", { name: "Menu do usuário" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menu", { name: "Menu do usuário" }),
+    ).not.toBeInTheDocument();
   });
 
   it("não fecha o menu ao clicar dentro do próprio menu (controle)", async () => {
@@ -163,15 +183,21 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     await act(async () => {
       fireEvent.click(btn);
     });
-    expect(screen.getByRole("menu", { name: "Menu do usuário" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menu", { name: "Menu do usuário" }),
+    ).toBeInTheDocument();
 
     // Act: mousedown dentro do menu
     await act(async () => {
-      fireEvent.mouseDown(screen.getByRole("menu", { name: "Menu do usuário" }));
+      fireEvent.mouseDown(
+        screen.getByRole("menu", { name: "Menu do usuário" }),
+      );
     });
 
     // Assert: continua aberto
-    expect(screen.getByRole("menu", { name: "Menu do usuário" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menu", { name: "Menu do usuário" }),
+    ).toBeInTheDocument();
   });
 
   it("ao clicar em 'Meus Dados', fecha o menu (positivo)", async () => {
@@ -192,7 +218,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     });
 
     // Assert
-    expect(screen.queryByRole("menu", { name: "Menu do usuário" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menu", { name: "Menu do usuário" }),
+    ).not.toBeInTheDocument();
     expect(btn).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -214,7 +242,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     });
 
     // Assert
-    expect(screen.queryByRole("menu", { name: "Menu do usuário" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menu", { name: "Menu do usuário" }),
+    ).not.toBeInTheDocument();
   });
 
   it("ao clicar em 'Meus Pedidos', fecha o menu (positivo)", async () => {
@@ -235,7 +265,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     });
 
     // Assert
-    expect(screen.queryByRole("menu", { name: "Menu do usuário" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menu", { name: "Menu do usuário" }),
+    ).not.toBeInTheDocument();
   });
 
   it("ao clicar em 'Sair', chama logout e fecha o menu (positivo)", async () => {
@@ -257,7 +289,9 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
 
     // Assert
     expect(logoutMock).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole("menu", { name: "Menu do usuário" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menu", { name: "Menu do usuário" }),
+    ).not.toBeInTheDocument();
     expect(btn).toHaveAttribute("aria-expanded", "false");
   });
 });

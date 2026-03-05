@@ -46,9 +46,12 @@ export default function PedidosClientePage() {
         setLoading(true);
         setError(null);
 
-        const { data } = await axios.get<PedidoResumo[]>(`${API_BASE}/api/pedidos`, {
-          withCredentials: true,
-        });
+        const { data } = await axios.get<PedidoResumo[]>(
+          `${API_BASE}/api/pedidos`,
+          {
+            withCredentials: true,
+          },
+        );
 
         setPedidos(Array.isArray(data) ? data : []);
       } catch (err: any) {
@@ -58,7 +61,8 @@ export default function PedidosClientePage() {
           router.push("/login");
         } else {
           setError(
-            err?.response?.data?.message || "Não foi possível carregar seus pedidos."
+            err?.response?.data?.message ||
+              "Não foi possível carregar seus pedidos.",
           );
         }
       } finally {
@@ -133,7 +137,10 @@ export default function PedidosClientePage() {
 
                 <div className="text-right">
                   <p className="font-semibold">
-                    R$ {Number(p.total || 0).toFixed(2).replace(".", ",")}
+                    R${" "}
+                    {Number(p.total || 0)
+                      .toFixed(2)
+                      .replace(".", ",")}
                   </p>
                   <p className="text-sm text-gray-600">{p.forma_pagamento}</p>
                 </div>

@@ -1,7 +1,13 @@
 // src/__tests__/components/ServicosSection.test.tsx
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, fireEvent, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  cleanup,
+} from "@testing-library/react";
 
 // Ajuste o import se seu path for diferente:
 import ServicosSection from "../../components/layout/ServicosSection";
@@ -40,7 +46,9 @@ type ServiceCardProps = {
 
 const ServiceCardMock = vi.fn((props: ServiceCardProps) => {
   const nome = props?.servico?.nome ?? "SEM_NOME";
-  const imagesLen = Array.isArray(props?.servico?.images) ? props.servico!.images!.length : "NA";
+  const imagesLen = Array.isArray(props?.servico?.images)
+    ? props.servico!.images!.length
+    : "NA";
 
   return (
     <div data-testid="service-card">
@@ -79,7 +87,9 @@ class ResizeObserverMock {
 
     // guarda função de trigger sem "aliasar" this em variável
     lastROTrigger = () => {
-      const entries = this.elements.map((el) => ({ target: el })) as unknown as ResizeObserverEntry[];
+      const entries = this.elements.map((el) => ({
+        target: el,
+      })) as unknown as ResizeObserverEntry[];
       // 2º parâmetro é opcional; passamos undefined
       this.cb(entries, undefined as unknown as ResizeObserver);
     };
@@ -155,16 +165,20 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
     lastROTrigger = null;
 
     // ResizeObserver precisa ser construtor real
-    (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = ResizeObserverMock;
+    (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver =
+      ResizeObserverMock;
 
     // AbortController
-    (globalThis as unknown as { AbortController: unknown }).AbortController = AbortControllerMock as unknown;
+    (globalThis as unknown as { AbortController: unknown }).AbortController =
+      AbortControllerMock as unknown;
 
     // scrollBy (jsdom pode não ter)
     if (!HTMLElement.prototype.scrollBy) {
       (HTMLElement.prototype as any).scrollBy = vi.fn();
     } else {
-      vi.spyOn(HTMLElement.prototype as any, "scrollBy").mockImplementation(() => {});
+      vi.spyOn(HTMLElement.prototype as any, "scrollBy").mockImplementation(
+        () => {},
+      );
     }
   });
 
@@ -188,15 +202,18 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
     const { container } = render(<ServicosSection />);
 
     // Assert (header)
-    expect(screen.getByRole("heading", { name: "Serviços" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Serviços" }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Rede de serviços do campo/i)).toBeInTheDocument();
 
     // links
-    expect(screen.getByRole("link", { name: /Ver todos os profissionais/i })).toHaveAttribute("href", "/servicos");
-    expect(screen.getByRole("link", { name: /Quero prestar serviços/i })).toHaveAttribute(
-      "href",
-      "/trabalhe-conosco"
-    );
+    expect(
+      screen.getByRole("link", { name: /Ver todos os profissionais/i }),
+    ).toHaveAttribute("href", "/servicos");
+    expect(
+      screen.getByRole("link", { name: /Quero prestar serviços/i }),
+    ).toHaveAttribute("href", "/trabalhe-conosco");
 
     // Skeletons: 3 cards * (imagem + 2 linhas) = 9 blocos animate-pulse
     const skeletonBlocks = container.querySelectorAll(".animate-pulse");
@@ -227,14 +244,15 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
 
     // Assert fetch params
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
-    const [url, init] = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0] as [
-      unknown,
-      RequestInit | undefined
-    ];
+    const [url, init] = (
+      globalThis.fetch as unknown as { mock: { calls: unknown[][] } }
+    ).mock.calls[0] as [unknown, RequestInit | undefined];
 
     expect(String(url)).toMatch(/\/api\/public\/servicos$/);
     expect(init?.cache).toBe("no-store");
-    expect((init as { signal?: unknown } | undefined)?.signal).toMatchObject({ __mockSignal: true });
+    expect((init as { signal?: unknown } | undefined)?.signal).toMatchObject({
+      __mockSignal: true,
+    });
 
     // cards
     await waitFor(() => {
@@ -242,13 +260,23 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
     });
 
     expect(screen.getByText("Veterinário")).toBeInTheDocument();
-    expect(screen.getAllByTestId("service-card-href")[0]).toHaveTextContent("/servicos/1");
-    expect(screen.getAllByTestId("service-card-readonly")[0]).toHaveTextContent("true");
-    expect(screen.getAllByTestId("service-card-images-len")[0]).toHaveTextContent("1");
+    expect(screen.getAllByTestId("service-card-href")[0]).toHaveTextContent(
+      "/servicos/1",
+    );
+    expect(screen.getAllByTestId("service-card-readonly")[0]).toHaveTextContent(
+      "true",
+    );
+    expect(
+      screen.getAllByTestId("service-card-images-len")[0],
+    ).toHaveTextContent("1");
 
     expect(screen.getByText("Técnico em irrigação")).toBeInTheDocument();
-    expect(screen.getAllByTestId("service-card-href")[1]).toHaveTextContent("/servicos/2");
-    expect(screen.getAllByTestId("service-card-images-len")[1]).toHaveTextContent("0");
+    expect(screen.getAllByTestId("service-card-href")[1]).toHaveTextContent(
+      "/servicos/2",
+    );
+    expect(
+      screen.getAllByTestId("service-card-images-len")[1],
+    ).toHaveTextContent("0");
   });
 
   it("normaliza payload quando API retorna em chaves (ex: data.items) (positivo)", async () => {
@@ -268,8 +296,12 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
     });
 
     expect(screen.getByText("Eletricista rural")).toBeInTheDocument();
-    expect(screen.getByTestId("service-card-href")).toHaveTextContent("/servicos/10");
-    expect(screen.getByTestId("service-card-images-len")).toHaveTextContent("0");
+    expect(screen.getByTestId("service-card-href")).toHaveTextContent(
+      "/servicos/10",
+    );
+    expect(screen.getByTestId("service-card-images-len")).toHaveTextContent(
+      "0",
+    );
   });
 
   it("quando fetch ok retorna vazio, mostra mensagem 'Nenhum serviço cadastrado ainda.' (negativo/sem resultados)", async () => {
@@ -281,7 +313,9 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
 
     // Assert
     await waitFor(() => {
-      expect(screen.getByText(/Nenhum serviço cadastrado ainda\./i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Nenhum serviço cadastrado ainda\./i),
+      ).toBeInTheDocument();
     });
     expect(ServiceCardMock).not.toHaveBeenCalled();
   });
@@ -298,7 +332,9 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
 
     // Assert
     await waitFor(() => {
-      expect(screen.getByText("Não foi possível carregar os serviços.")).toBeInTheDocument();
+      expect(
+        screen.getByText("Não foi possível carregar os serviços."),
+      ).toBeInTheDocument();
     });
     expect(ServiceCardMock).not.toHaveBeenCalled();
 
@@ -322,22 +358,37 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
       expect(screen.getAllByTestId("service-card").length).toBe(3);
     });
 
-    const scroller = container.querySelector(".overflow-x-auto") as HTMLElement | null;
+    const scroller = container.querySelector(
+      ".overflow-x-auto",
+    ) as HTMLElement | null;
     expect(scroller).toBeTruthy();
 
     // força overflow
-    Object.defineProperty(scroller!, "clientWidth", { value: 300, configurable: true });
-    Object.defineProperty(scroller!, "scrollWidth", { value: 700, configurable: true });
+    Object.defineProperty(scroller!, "clientWidth", {
+      value: 300,
+      configurable: true,
+    });
+    Object.defineProperty(scroller!, "scrollWidth", {
+      value: 700,
+      configurable: true,
+    });
 
     // dispara ResizeObserver check
     expect(lastROTrigger).toBeTruthy();
     lastROTrigger?.();
 
-    const btnPrev = await screen.findByRole("button", { name: /Voltar lista de serviços/i });
-    const btnNext = await screen.findByRole("button", { name: /Avançar lista de serviços/i });
+    const btnPrev = await screen.findByRole("button", {
+      name: /Voltar lista de serviços/i,
+    });
+    const btnNext = await screen.findByRole("button", {
+      name: /Avançar lista de serviços/i,
+    });
 
     fireEvent.click(btnPrev);
-    expect(scrollBySpy).toHaveBeenCalledWith({ left: -320, behavior: "smooth" });
+    expect(scrollBySpy).toHaveBeenCalledWith({
+      left: -320,
+      behavior: "smooth",
+    });
 
     fireEvent.click(btnNext);
     expect(scrollBySpy).toHaveBeenCalledWith({ left: 320, behavior: "smooth" });

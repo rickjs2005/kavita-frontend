@@ -25,7 +25,11 @@ import apiClient from "@/lib/apiClient";
 import { handleApiError } from "@/lib/handleApiError";
 import { isApiError } from "@/lib/errors";
 
-import { AdminAuthProvider, useAdminAuth, type AdminUser } from "@/context/AdminAuthContext";
+import {
+  AdminAuthProvider,
+  useAdminAuth,
+  type AdminUser,
+} from "@/context/AdminAuthContext";
 
 type MockFn = ReturnType<typeof vi.fn>;
 
@@ -44,13 +48,21 @@ function Harness() {
 
       <div data-testid="hasPerm-x">{String(ctx.hasPermission("x"))}</div>
       <div data-testid="hasRole-master">{String(ctx.hasRole("master"))}</div>
-      <div data-testid="hasRole-any">{String(ctx.hasRole(["suporte", "gerente"]))}</div>
+      <div data-testid="hasRole-any">
+        {String(ctx.hasRole(["suporte", "gerente"]))}
+      </div>
 
       <button
         type="button"
         onClick={() =>
           ctx.markAsAdmin({
-            user: { id: 1, nome: "Rick", email: "r@k.com", role: "master", role_id: null },
+            user: {
+              id: 1,
+              nome: "Rick",
+              email: "r@k.com",
+              role: "master",
+              role_id: null,
+            },
             permissions: ["x", "y"],
           })
         }
@@ -74,7 +86,10 @@ function Harness() {
         logout
       </button>
 
-      <button type="button" onClick={() => ctx.logout({ redirectTo: "/admin/login" })}>
+      <button
+        type="button"
+        onClick={() => ctx.logout({ redirectTo: "/admin/login" })}
+      >
         logout-redirect
       </button>
     </div>
@@ -85,11 +100,13 @@ function renderWithProvider() {
   return render(
     <AdminAuthProvider>
       <Harness />
-    </AdminAuthProvider>
+    </AdminAuthProvider>,
   );
 }
 
-function makeAdminMeResponse(overrides?: Partial<AdminUser> & { permissions?: string[] }) {
+function makeAdminMeResponse(
+  overrides?: Partial<AdminUser> & { permissions?: string[] },
+) {
   return {
     id: overrides?.id ?? 10,
     nome: overrides?.nome ?? "Admin",
@@ -131,7 +148,9 @@ describe("context/AdminAuthContext", () => {
       return null;
     }
 
-    expect(() => render(<Bad />)).toThrow("useAdminAuth deve ser usado dentro de AdminAuthProvider");
+    expect(() => render(<Bad />)).toThrow(
+      "useAdminAuth deve ser usado dentro de AdminAuthProvider",
+    );
   });
 
   it("estado inicial: loading=true, isAdmin=false", () => {
@@ -179,10 +198,14 @@ describe("context/AdminAuthContext", () => {
       // aqui só garantimos que o master não atrapalhe, então vamos chamar loadSession sucesso
     });
 
-    (apiClient.get as unknown as MockFn).mockResolvedValueOnce(makeAdminMeResponse({ role: "gerente", permissions: ["x"] }));
+    (apiClient.get as unknown as MockFn).mockResolvedValueOnce(
+      makeAdminMeResponse({ role: "gerente", permissions: ["x"] }),
+    );
     await u.click(screen.getByText("load-silent"));
 
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false"),
+    );
 
     expect(screen.getByTestId("isAdmin").textContent).toBe("true");
     expect(screen.getByTestId("role").textContent).toBe("gerente");
@@ -193,14 +216,18 @@ describe("context/AdminAuthContext", () => {
     renderWithProvider();
     const u = userEvent.setup();
 
-    (apiClient.get as unknown as MockFn).mockResolvedValueOnce(makeAdminMeResponse({ nome: "João", permissions: ["a", "b"] }));
+    (apiClient.get as unknown as MockFn).mockResolvedValueOnce(
+      makeAdminMeResponse({ nome: "João", permissions: ["a", "b"] }),
+    );
 
     await u.click(screen.getByText("load-silent"));
 
     await waitFor(() => expect(apiClient.get).toHaveBeenCalledTimes(1));
     expect(apiClient.get).toHaveBeenCalledWith("/api/admin/me");
 
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false"),
+    );
 
     expect(screen.getByTestId("isAdmin").textContent).toBe("true");
     expect(screen.getByTestId("nome").textContent).toBe("João");
@@ -224,7 +251,9 @@ describe("context/AdminAuthContext", () => {
 
     resolve(makeAdminMeResponse({ permissions: ["x"] }));
 
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false"),
+    );
   });
 
   it("loadSession: 401/403 (ApiError) deve limpar state e NÃO chamar handleApiError mesmo silent=false", async () => {
@@ -232,9 +261,13 @@ describe("context/AdminAuthContext", () => {
     const u = userEvent.setup();
 
     // primeiro entra admin (pra provar que limpa)
-    (apiClient.get as unknown as MockFn).mockResolvedValueOnce(makeAdminMeResponse({ nome: "Admin", permissions: ["x"] }));
+    (apiClient.get as unknown as MockFn).mockResolvedValueOnce(
+      makeAdminMeResponse({ nome: "Admin", permissions: ["x"] }),
+    );
     await u.click(screen.getByText("load-silent"));
-    await waitFor(() => expect(screen.getByTestId("isAdmin").textContent).toBe("true"));
+    await waitFor(() =>
+      expect(screen.getByTestId("isAdmin").textContent).toBe("true"),
+    );
 
     // agora 401
     const err401 = { status: 401 };
@@ -243,7 +276,9 @@ describe("context/AdminAuthContext", () => {
 
     await u.click(screen.getByText("load-loud"));
 
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false"),
+    );
 
     expect(screen.getByTestId("isAdmin").textContent).toBe("false");
     expect(screen.getByTestId("perm-count").textContent).toBe("0");
@@ -260,7 +295,9 @@ describe("context/AdminAuthContext", () => {
 
     await u.click(screen.getByText("load-loud"));
 
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false"),
+    );
 
     expect(screen.getByTestId("isAdmin").textContent).toBe("false");
     expect(handleApiError).toHaveBeenCalledTimes(1);
@@ -280,7 +317,9 @@ describe("context/AdminAuthContext", () => {
 
     await u.click(screen.getByText("load-silent"));
 
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false"),
+    );
     expect(handleApiError).not.toHaveBeenCalled();
   });
 
@@ -289,9 +328,13 @@ describe("context/AdminAuthContext", () => {
     const u = userEvent.setup();
 
     // entra admin
-    (apiClient.get as unknown as MockFn).mockResolvedValueOnce(makeAdminMeResponse({ nome: "Admin", permissions: ["x"] }));
+    (apiClient.get as unknown as MockFn).mockResolvedValueOnce(
+      makeAdminMeResponse({ nome: "Admin", permissions: ["x"] }),
+    );
     await u.click(screen.getByText("load-silent"));
-    await waitFor(() => expect(screen.getByTestId("isAdmin").textContent).toBe("true"));
+    await waitFor(() =>
+      expect(screen.getByTestId("isAdmin").textContent).toBe("true"),
+    );
 
     (apiClient.post as unknown as MockFn).mockResolvedValueOnce({ ok: true });
 
@@ -299,7 +342,9 @@ describe("context/AdminAuthContext", () => {
 
     expect(apiClient.post).toHaveBeenCalledWith("/api/admin/logout");
 
-    await waitFor(() => expect(screen.getByTestId("isAdmin").textContent).toBe("false"));
+    await waitFor(() =>
+      expect(screen.getByTestId("isAdmin").textContent).toBe("false"),
+    );
     expect(screen.getByTestId("perm-count").textContent).toBe("0");
   });
 
@@ -308,9 +353,13 @@ describe("context/AdminAuthContext", () => {
     const u = userEvent.setup();
 
     // entra admin
-    (apiClient.get as unknown as MockFn).mockResolvedValueOnce(makeAdminMeResponse({ nome: "Admin", permissions: ["x"] }));
+    (apiClient.get as unknown as MockFn).mockResolvedValueOnce(
+      makeAdminMeResponse({ nome: "Admin", permissions: ["x"] }),
+    );
     await u.click(screen.getByText("load-silent"));
-    await waitFor(() => expect(screen.getByTestId("isAdmin").textContent).toBe("true"));
+    await waitFor(() =>
+      expect(screen.getByTestId("isAdmin").textContent).toBe("true"),
+    );
 
     const err = new Error("logout fail");
     (apiClient.post as unknown as MockFn).mockRejectedValueOnce(err);
@@ -322,7 +371,9 @@ describe("context/AdminAuthContext", () => {
       fallback: "Falha ao encerrar sessão de administrador.",
     });
 
-    await waitFor(() => expect(screen.getByTestId("isAdmin").textContent).toBe("false"));
+    await waitFor(() =>
+      expect(screen.getByTestId("isAdmin").textContent).toBe("false"),
+    );
   });
 
   it("logout({redirectTo}) deve redirecionar via window.location.assign", async () => {

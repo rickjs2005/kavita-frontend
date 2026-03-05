@@ -37,7 +37,7 @@ describe("CotacoesSection", () => {
         apiBase="http://localhost"
         authOptions={{}}
         onUnauthorized={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Cotações")).toBeInTheDocument();
@@ -52,11 +52,9 @@ describe("CotacoesSection", () => {
         apiBase="http://localhost"
         authOptions={{}}
         onUnauthorized={vi.fn()}
-      />
+      />,
     );
 
-    await user.click(
-      screen.getAllByRole("button", { name: /Atualizar/i })[0]
-    );
+    await user.click(screen.getAllByRole("button", { name: /Atualizar/i })[0]);
   });
 });

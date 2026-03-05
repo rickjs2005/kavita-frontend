@@ -21,7 +21,7 @@ describe("services/products", () => {
     expect(apiFetchMock).toHaveBeenCalledTimes(1);
     expect(apiFetchMock).toHaveBeenCalledWith(
       "/api/products?page=1&limit=12&sort=id&order=desc",
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
   });
 
@@ -30,7 +30,7 @@ describe("services/products", () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith(
       "/api/products?page=1&limit=12&sort=id&order=desc&q=milho",
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
   });
 
@@ -39,7 +39,7 @@ describe("services/products", () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith(
       "/api/products?page=1&limit=12&sort=id&order=desc&category=medicamentos",
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
   });
 
@@ -48,7 +48,7 @@ describe("services/products", () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith(
       "/api/products?page=1&limit=12&sort=id&order=desc&subcategory=bovinos",
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
   });
 
@@ -61,7 +61,7 @@ describe("services/products", () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith(
       "/api/products?page=1&limit=12&sort=id&order=desc&q=verm%C3%ADfugo&category=medicamentos&subcategory=bovinos",
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
   });
 
@@ -70,7 +70,7 @@ describe("services/products", () => {
 
     expect(apiFetchMock).toHaveBeenCalledWith(
       "/api/products?page=3&limit=24&sort=price&order=asc",
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
   });
 
@@ -80,7 +80,7 @@ describe("services/products", () => {
     // category vira "" após trim -> não deve setar
     expect(apiFetchMock).toHaveBeenCalledWith(
       "/api/products?page=1&limit=12&sort=id&order=desc",
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
   });
 
@@ -96,17 +96,17 @@ describe("services/products", () => {
   it("getProductById: lança erro se id inválido (undefined/null/empty string)", async () => {
     // undefined
     await expect(getProductById(undefined as any)).rejects.toThrow(
-      "Product id is required"
+      "Product id is required",
     );
 
     // null
     await expect(getProductById(null as any)).rejects.toThrow(
-      "Product id is required"
+      "Product id is required",
     );
 
     // "" (string vazia)
     await expect(getProductById("" as any)).rejects.toThrow(
-      "Product id is required"
+      "Product id is required",
     );
   });
 

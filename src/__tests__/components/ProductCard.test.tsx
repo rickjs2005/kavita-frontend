@@ -1,6 +1,12 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 // Importante: API_BASE é lido no module init do ProductCard
 process.env.NEXT_PUBLIC_API_URL = "http://api.test";
@@ -118,7 +124,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
         }
         // qualquer outra rota que não deveria ser chamada: 404
         return new Response(null, { status: 404 });
-      })
+      }),
     );
   });
 
@@ -151,7 +157,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
     });
     expect(verDetalhesLinks.length).toBeGreaterThanOrEqual(2);
     verDetalhesLinks.forEach((a) =>
-      expect(a).toHaveAttribute("href", "/produtos/105")
+      expect(a).toHaveAttribute("href", "/produtos/105"),
     );
 
     const img = screen.getByRole("img", { name: "Produto Teste" });
@@ -169,7 +175,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
 
     // Act
     render(
-      <ProductCard product={baseProduct({ image: null, images: [] }) as any} />
+      <ProductCard product={baseProduct({ image: null, images: [] }) as any} />,
     );
 
     // Assert
@@ -206,7 +212,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
             shipping_free_from_qty: null,
           }) as any
         }
-      />
+      />,
     );
 
     // Assert
@@ -228,13 +234,11 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
             shipping_free_from_qty: 5,
           }) as any
         }
-      />
+      />,
     );
 
     // Assert
-    expect(
-      screen.getByText(/Frete grátis a partir de 5/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Frete grátis a partir de 5/i)).toBeInTheDocument();
   });
 
   it("exibe avaliação (⭐) apenas quando rating_avg > 0 e rating_count > 0", async () => {
@@ -252,7 +256,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
             rating_count: 2,
           }) as any
         }
-      />
+      />,
     );
 
     // Assert
@@ -282,7 +286,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
             rating_count: 0,
           }) as any
         }
-      />
+      />,
     );
 
     // Assert
@@ -298,7 +302,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
       if (u.includes("/api/public/promocoes/105")) {
         return new Response(
           JSON.stringify({ original_price: 100, final_price: 80 }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }
       return new Response(null, { status: 404 });
@@ -364,7 +368,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
 
     // Não pode chamar favorites
     const favoritesCalls = fetchSpy.mock.calls.filter((c) =>
-      String(c[0]).includes("/api/favorites")
+      String(c[0]).includes("/api/favorites"),
     );
     expect(favoritesCalls.length).toBe(0);
   });
@@ -392,7 +396,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
 
     // Assert
     const favoritesCalls = fetchSpy.mock.calls.filter((c) =>
-      String(c[0]).includes("/api/favorites")
+      String(c[0]).includes("/api/favorites"),
     );
     expect(favoritesCalls.length).toBe(0);
     expect(warnSpy).toHaveBeenCalled();
@@ -407,7 +411,8 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
       const u = String(url);
       if (u.includes("/api/public/promocoes/"))
         return new Response(null, { status: 404 });
-      if (u.endsWith("/api/favorites")) return new Response(null, { status: 200 });
+      if (u.endsWith("/api/favorites"))
+        return new Response(null, { status: 200 });
       return new Response(null, { status: 404 });
     });
     vi.stubGlobal("fetch", fetchSpy);
@@ -428,7 +433,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
     });
 
     const calls = fetchSpy.mock.calls.filter((c) =>
-      String(c[0]).includes("/api/favorites")
+      String(c[0]).includes("/api/favorites"),
     );
     const [url, init] = calls[calls.length - 1] as [string, RequestInit];
 
@@ -475,9 +480,12 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
     });
 
     const calls = fetchSpy.mock.calls.filter((c) =>
-      String(c[0]).includes("/api/favorites/105")
+      String(c[0]).includes("/api/favorites/105"),
     );
-    const [url, init] = calls[calls.length - 1] as unknown as [string, RequestInit];
+    const [url, init] = calls[calls.length - 1] as unknown as [
+      string,
+      RequestInit,
+    ];
 
     expect(url).toBe("http://api.test/api/favorites/105");
     expect(init.method).toBe("DELETE");
@@ -496,7 +504,8 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
       const u = String(url);
       if (u.includes("/api/public/promocoes/"))
         return new Response(null, { status: 404 });
-      if (u.includes("/api/favorites")) return new Response(null, { status: 500 });
+      if (u.includes("/api/favorites"))
+        return new Response(null, { status: 500 });
       return new Response(null, { status: 404 });
     });
     vi.stubGlobal("fetch", fetchSpy);

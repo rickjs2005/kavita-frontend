@@ -79,7 +79,10 @@ export default function ServiceCard({
 
   // ⭐ média de avaliações vinda do backend (compatível com o Service tipo antigo)
   const ratingAvg = (servico as any).rating_avg as number | null | undefined;
-  const ratingCount = (servico as any).rating_count as number | null | undefined;
+  const ratingCount = (servico as any).rating_count as
+    | number
+    | null
+    | undefined;
 
   async function handleRemove() {
     if (!onRemover || readOnly || !servico) return;
@@ -103,7 +106,9 @@ export default function ServiceCard({
           src={activeImg}
           alt={servico.nome || "Imagem do serviço"}
           className="absolute inset-0 h-full w-full object-cover transition-all duration-300"
-          onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
+          onError={(e) =>
+            ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+          }
           loading="lazy"
         />
 
@@ -145,7 +150,8 @@ export default function ServiceCard({
           <div className="mt-0.5 flex items-center gap-1 text-xs text-amber-600">
             <span>⭐ {ratingAvg.toFixed(1)}</span>
             <span className="text-[11px] text-gray-500">
-              ({ratingCount} avaliação{ratingCount && ratingCount > 1 ? "s" : ""})
+              ({ratingCount} avaliação
+              {ratingCount && ratingCount > 1 ? "s" : ""})
             </span>
           </div>
         )}
@@ -181,14 +187,18 @@ export default function ServiceCard({
                   setActiveImg(src);
                 }}
                 className={`flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
-                  activeImg === src ? "border-[#2F7E7F] shadow-sm" : "border-transparent hover:border-gray-300"
+                  activeImg === src
+                    ? "border-[#2F7E7F] shadow-sm"
+                    : "border-transparent hover:border-gray-300"
                 }`}
               >
                 <img
                   src={src}
                   alt={`Miniatura ${i + 1}`}
                   className="h-12 w-12 object-cover sm:h-14 sm:w-14"
-                  onError={(e) => ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)}
+                  onError={(e) =>
+                    ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+                  }
                   loading="lazy"
                 />
               </button>

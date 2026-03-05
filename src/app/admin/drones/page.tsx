@@ -14,7 +14,12 @@ type Kpis = {
 };
 
 export default function AdminDronesPage() {
-  const [kpis, setKpis] = useState<Kpis>({ models: 0, gallery: 0, representatives: 0, comments: 0 });
+  const [kpis, setKpis] = useState<Kpis>({
+    models: 0,
+    gallery: 0,
+    representatives: 0,
+    comments: 0,
+  });
   const [kpisLoading, setKpisLoading] = useState(false);
   const [kpisMsg, setKpisMsg] = useState<string | null>(null);
 
@@ -22,12 +27,13 @@ export default function AdminDronesPage() {
     setKpisLoading(true);
     setKpisMsg(null);
     try {
-      const [modelsData, galleryData, repsData, commentsData] = await Promise.all([
-        apiClient.get<any>("/api/admin/drones/models?includeInactive=1"),
-        apiClient.get<any>("/api/admin/drones/galeria"),
-        apiClient.get<any>("/api/admin/drones/representantes?page=1&limit=1"),
-        apiClient.get<any>("/api/admin/drones/comentarios?page=1&limit=1"),
-      ]);
+      const [modelsData, galleryData, repsData, commentsData] =
+        await Promise.all([
+          apiClient.get<any>("/api/admin/drones/models?includeInactive=1"),
+          apiClient.get<any>("/api/admin/drones/galeria"),
+          apiClient.get<any>("/api/admin/drones/representantes?page=1&limit=1"),
+          apiClient.get<any>("/api/admin/drones/comentarios?page=1&limit=1"),
+        ]);
 
       const modelsItems = Array.isArray(modelsData?.items)
         ? modelsData.items
@@ -65,12 +71,32 @@ export default function AdminDronesPage() {
 
   const kpiCards = useMemo(
     () => [
-      { label: "Modelos", value: kpis.models, helper: "Cadastrados no painel", variant: "success" as const },
-      { label: "Itens na galeria", value: kpis.gallery, helper: "Vídeos e fotos", variant: "default" as const },
-      { label: "Representantes", value: kpis.representatives, helper: "Lojas cadastradas", variant: "warning" as const },
-      { label: "Comentários", value: kpis.comments, helper: "Total no painel", variant: "danger" as const },
+      {
+        label: "Modelos",
+        value: kpis.models,
+        helper: "Cadastrados no painel",
+        variant: "success" as const,
+      },
+      {
+        label: "Itens na galeria",
+        value: kpis.gallery,
+        helper: "Vídeos e fotos",
+        variant: "default" as const,
+      },
+      {
+        label: "Representantes",
+        value: kpis.representatives,
+        helper: "Lojas cadastradas",
+        variant: "warning" as const,
+      },
+      {
+        label: "Comentários",
+        value: kpis.comments,
+        helper: "Total no painel",
+        variant: "danger" as const,
+      },
     ],
-    [kpis]
+    [kpis],
   );
 
   return (
@@ -86,9 +112,12 @@ export default function AdminDronesPage() {
 
             <div>
               <p className="text-[11px] font-medium text-slate-400">Admin</p>
-              <h1 className="text-lg font-extrabold sm:text-xl">Kavita Drones</h1>
+              <h1 className="text-lg font-extrabold sm:text-xl">
+                Kavita Drones
+              </h1>
               <p className="mt-0.5 hidden text-xs text-slate-400 sm:block">
-                Configure landing, galeria, representantes e moderação de comentários.
+                Configure landing, galeria, representantes e moderação de
+                comentários.
               </p>
             </div>
           </div>
@@ -120,7 +149,13 @@ export default function AdminDronesPage() {
         {/* KPIs */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {kpiCards.map((c) => (
-            <KpiCard key={c.label} label={c.label} value={c.value} helper={c.helper} variant={c.variant} />
+            <KpiCard
+              key={c.label}
+              label={c.label}
+              value={c.value}
+              helper={c.helper}
+              variant={c.variant}
+            />
           ))}
         </div>
 

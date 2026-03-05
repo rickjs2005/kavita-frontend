@@ -80,7 +80,7 @@ export default function ProductCard({
   const stock = resolveStockValue(
     (product as any).quantity,
     (product as any).estoque,
-    (product as any).stock
+    (product as any).stock,
   );
   const outOfStock = typeof stock === "number" ? stock <= 0 : false;
 
@@ -121,7 +121,9 @@ export default function ProductCard({
       try {
         if (!product?.id) return;
 
-        const res = await fetch(`${API_BASE}/api/public/promocoes/${product.id}`);
+        const res = await fetch(
+          `${API_BASE}/api/public/promocoes/${product.id}`,
+        );
 
         if (!res.ok) {
           // 404 = não tem promo pra esse produto, só ignora
@@ -156,7 +158,8 @@ export default function ProductCard({
         ? Number(promotion.promo_price)
         : null;
 
-  const originalPrice = originalFromPromo !== null ? originalFromPromo : precoBase || 0;
+  const originalPrice =
+    originalFromPromo !== null ? originalFromPromo : precoBase || 0;
 
   let finalPrice = finalFromPromo !== null ? finalFromPromo : originalPrice;
 
@@ -164,7 +167,9 @@ export default function ProductCard({
 
   if (promotion) {
     const explicitDiscount =
-      promotion.discount_percent != null ? Number(promotion.discount_percent) : NaN;
+      promotion.discount_percent != null
+        ? Number(promotion.discount_percent)
+        : NaN;
 
     // se veio só % de desconto sem final_price calculado
     if (
@@ -185,7 +190,9 @@ export default function ProductCard({
   }
 
   const hasDiscount =
-    discountPercent !== null && discountPercent > 0 && finalPrice < originalPrice;
+    discountPercent !== null &&
+    discountPercent > 0 &&
+    finalPrice < originalPrice;
 
   // produto que vai para o carrinho com o PREÇO FINAL
   const productForCart: Product = {
@@ -280,7 +287,10 @@ export default function ProductCard({
           transition
         "
       >
-        <Heart className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
+        <Heart
+          className="h-4 w-4"
+          fill={isFavorite ? "currentColor" : "none"}
+        />
       </button>
 
       {/* Imagem */}

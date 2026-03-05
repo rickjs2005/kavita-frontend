@@ -10,7 +10,12 @@ type MetaResponse = {
   ok: boolean;
   data?: {
     allowed_slugs?: string[];
-    presets?: Record<string, Partial<Pick<CotacaoFormState, "name" | "type" | "unit" | "market" | "source">>>;
+    presets?: Record<
+      string,
+      Partial<
+        Pick<CotacaoFormState, "name" | "type" | "unit" | "market" | "source">
+      >
+    >;
     suggestions?: {
       markets?: string[];
       sources?: string[];
@@ -37,7 +42,6 @@ type Props = {
   onStartCreate: () => void;
 };
 
-
 export default function CotacoesForm({
   allowedSlugs,
   mode,
@@ -55,15 +59,25 @@ export default function CotacoesForm({
     "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 " +
     "placeholder:text-slate-400 shadow-sm " +
     "focus:outline-none focus:ring-2 focus:ring-[#EC5B20] focus:border-transparent";
-  const labelBase = "text-xs font-semibold uppercase tracking-wide text-slate-600";
+  const labelBase =
+    "text-xs font-semibold uppercase tracking-wide text-slate-600";
 
-  function set<K extends keyof CotacaoFormState>(key: K, value: CotacaoFormState[K]) {
+  function set<K extends keyof CotacaoFormState>(
+    key: K,
+    value: CotacaoFormState[K],
+  ) {
     setForm((p) => ({ ...p, [key]: value }));
   }
 
   // ===== META (presets + suggestions) =====
-  const [metaPresets, setMetaPresets] =
-    useState<Record<string, Partial<Pick<CotacaoFormState, "name" | "type" | "unit" | "market" | "source">>>>({});
+  const [metaPresets, setMetaPresets] = useState<
+    Record<
+      string,
+      Partial<
+        Pick<CotacaoFormState, "name" | "type" | "unit" | "market" | "source">
+      >
+    >
+  >({});
   const [suggestions, setSuggestions] = useState({
     markets: [] as string[],
     sources: [] as string[],
@@ -76,7 +90,9 @@ export default function CotacoesForm({
 
     (async () => {
       try {
-        const json = await apiClient.get<MetaResponse>('/api/admin/news/cotacoes/meta');
+        const json = await apiClient.get<MetaResponse>(
+          "/api/admin/news/cotacoes/meta",
+        );
 
         if (!mounted) return;
 
@@ -137,8 +153,12 @@ export default function CotacoesForm({
 
     // sempre set o slug (mesmo sem preset)
     setForm((p) => {
-      const pick = <K extends keyof CotacaoFormState>(key: K, val?: any): CotacaoFormState[K] => {
-        if (val === undefined || val === null || String(val).trim() === "") return p[key];
+      const pick = <K extends keyof CotacaoFormState>(
+        key: K,
+        val?: any,
+      ): CotacaoFormState[K] => {
+        if (val === undefined || val === null || String(val).trim() === "")
+          return p[key];
         const cur = String(p[key] ?? "").trim();
         // não sobrescreve o que já foi digitado
         return (cur ? p[key] : (val as any)) as CotacaoFormState[K];
@@ -182,9 +202,13 @@ export default function CotacoesForm({
               📈
             </span>
             <div>
-              <h3 className="text-base font-semibold text-slate-900">Cotações</h3>
+              <h3 className="text-base font-semibold text-slate-900">
+                Cotações
+              </h3>
               <p className="text-sm text-slate-500">
-                {isEdit ? `Editando: ${editing?.name ?? ""}` : "Cadastrar / editar cotações monitoradas"}
+                {isEdit
+                  ? `Editando: ${editing?.name ?? ""}`
+                  : "Cadastrar / editar cotações monitoradas"}
               </p>
             </div>
           </div>
@@ -213,7 +237,11 @@ export default function CotacoesForm({
 
           <div className="space-y-2">
             <label className={labelBase}>Slug (padrão)</label>
-            <select value={form.slug} onChange={(e) => applySlugPreset(e.target.value)} className={inputBase}>
+            <select
+              value={form.slug}
+              onChange={(e) => applySlugPreset(e.target.value)}
+              className={inputBase}
+            >
               <option value="">Selecione…</option>
               {(mergedAllowedSlugs || []).map((s) => (
                 <option key={s} value={s}>
@@ -224,20 +252,33 @@ export default function CotacoesForm({
 
             <div className="flex flex-col gap-2">
               <p className="text-xs text-slate-500">
-                Ao escolher um slug, o sistema pode auto-preencher alguns campos (se estiverem vazios).
+                Ao escolher um slug, o sistema pode auto-preencher alguns campos
+                (se estiverem vazios).
               </p>
 
               {selectedPreset ? (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-xs text-slate-600">
-                      <span className="font-semibold text-slate-800">Preset:</span>{" "}
+                      <span className="font-semibold text-slate-800">
+                        Preset:
+                      </span>{" "}
                       {[
-                        selectedPreset.name ? `nome: ${selectedPreset.name}` : null,
-                        selectedPreset.type ? `tipo: ${selectedPreset.type}` : null,
-                        selectedPreset.unit ? `unidade: ${selectedPreset.unit}` : null,
-                        selectedPreset.market ? `market: ${selectedPreset.market}` : null,
-                        selectedPreset.source ? `source: ${selectedPreset.source}` : null,
+                        selectedPreset.name
+                          ? `nome: ${selectedPreset.name}`
+                          : null,
+                        selectedPreset.type
+                          ? `tipo: ${selectedPreset.type}`
+                          : null,
+                        selectedPreset.unit
+                          ? `unidade: ${selectedPreset.unit}`
+                          : null,
+                        selectedPreset.market
+                          ? `market: ${selectedPreset.market}`
+                          : null,
+                        selectedPreset.source
+                          ? `source: ${selectedPreset.source}`
+                          : null,
                       ]
                         .filter(Boolean)
                         .join(" • ")}

@@ -7,7 +7,7 @@ import { resolveStockValue } from "../../utils/stock";
 
 interface AddToCartButtonProps {
   product: Product;
-  qty?: number;            // 👈 NOVO: quantidade
+  qty?: number; // 👈 NOVO: quantidade
   className?: string;
   disabled?: boolean;
 }
@@ -24,7 +24,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const stock = resolveStockValue(
     (product as any).quantity,
     (product as any).estoque,
-    (product as any).stock
+    (product as any).stock,
   );
   const hasStockFlag = typeof stock === "number";
   const isOut = hasStockFlag ? stock <= 0 : false;
@@ -56,7 +56,11 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       title={isOut ? "Esgotado" : "Adicionar ao Carrinho"}
       aria-disabled={loading || disabled || isOut || undefined}
     >
-      {loading ? "Adicionando..." : isOut ? "Esgotado" : "Adicionar ao Carrinho"}
+      {loading
+        ? "Adicionando..."
+        : isOut
+          ? "Esgotado"
+          : "Adicionar ao Carrinho"}
     </button>
   );
 };

@@ -60,8 +60,10 @@ export function buildQueryString(params: {
     }
   }
 
-  if (typeof params.minPrice === "number") sp.set("minPrice", String(params.minPrice));
-  if (typeof params.maxPrice === "number") sp.set("maxPrice", String(params.maxPrice));
+  if (typeof params.minPrice === "number")
+    sp.set("minPrice", String(params.minPrice));
+  if (typeof params.maxPrice === "number")
+    sp.set("maxPrice", String(params.maxPrice));
   if (params.promo) sp.set("promo", "true");
   if (params.sort) sp.set("sort", params.sort);
 

@@ -3,7 +3,11 @@
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useUserAddresses, UserAddress, UserAddressPayload } from "@/hooks/useUserAddresses";
+import {
+  useUserAddresses,
+  UserAddress,
+  UserAddressPayload,
+} from "@/hooks/useUserAddresses";
 import { ESTADOS_BR } from "@/utils/brasil";
 
 type ViaCepResponse = {
@@ -64,7 +68,8 @@ export default function EditarEnderecoPage() {
 
   const handleCepChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
-    const masked = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    const masked =
+      digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
     setForm((prev) => (prev ? { ...prev, cep: masked } : prev));
   };
 
@@ -96,7 +101,7 @@ export default function EditarEnderecoPage() {
                 cidade: data.localidade || prev.cidade,
                 estado: data.uf || prev.estado,
               }
-            : prev
+            : prev,
         );
       } catch {
         // silêncio: não quebra UX em falhas momentâneas
@@ -122,14 +127,17 @@ export default function EditarEnderecoPage() {
     (async () => {
       try {
         const res = await fetch(
-          `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`
+          `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`,
         );
         if (!res.ok) return;
 
         const raw = (await res.json()) as unknown;
         if (aborted || !Array.isArray(raw)) return;
 
-        const names = raw.filter(isIbgeMunicipio).map((m) => m.nome).sort();
+        const names = raw
+          .filter(isIbgeMunicipio)
+          .map((m) => m.nome)
+          .sort();
         setCities(names);
       } catch {
         // silêncio
@@ -141,12 +149,16 @@ export default function EditarEnderecoPage() {
     };
   }, [form?.estado]);
 
-  const handleEstadoChange: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
+  const handleEstadoChange: React.ChangeEventHandler<HTMLSelectElement> = (
+    e,
+  ) => {
     const uf = e.target.value;
     setForm((prev) => (prev ? { ...prev, estado: uf, cidade: "" } : prev));
   };
 
-  const handleCidadeChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+  const handleCidadeChange: React.ChangeEventHandler<HTMLInputElement> = (
+    e,
+  ) => {
     const value = e.target.value;
     setForm((prev) => (prev ? { ...prev, cidade: value } : prev));
   };
@@ -181,17 +193,26 @@ export default function EditarEnderecoPage() {
     <div className="pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 lg:px-10">
       <div className="mx-auto w-full max-w-3xl sm:max-w-4xl lg:max-w-5xl">
         <div className="mb-4 sm:mb-6">
-          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Editar endereço</h1>
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">
+            Editar endereço
+          </h1>
           <p className="mt-1 text-xs sm:text-sm text-gray-500">
             Altere as informações de entrega deste endereço.
           </p>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          <form onSubmit={handleSubmit} className="p-5 sm:p-6 lg:p-8 space-y-4 sm:space-y-5">
+          <form
+            onSubmit={handleSubmit}
+            className="p-5 sm:p-6 lg:p-8 space-y-4 sm:space-y-5"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
               <Field label="Apelido (Casa, Trabalho...)" full>
-                <input className="input-kavita" value={form.apelido || ""} onChange={setField("apelido")} />
+                <input
+                  className="input-kavita"
+                  value={form.apelido || ""}
+                  onChange={setField("apelido")}
+                />
               </Field>
 
               <Field label="CEP">
@@ -202,7 +223,11 @@ export default function EditarEnderecoPage() {
                     onChange={handleCepChange}
                     inputMode="numeric"
                   />
-                  {cepLoading && <span className="text-[11px] text-gray-500">Buscando...</span>}
+                  {cepLoading && (
+                    <span className="text-[11px] text-gray-500">
+                      Buscando...
+                    </span>
+                  )}
                 </div>
               </Field>
 
@@ -216,11 +241,19 @@ export default function EditarEnderecoPage() {
               </Field>
 
               <Field label="Número">
-                <input className="input-kavita" value={form.numero || ""} onChange={setField("numero")} />
+                <input
+                  className="input-kavita"
+                  value={form.numero || ""}
+                  onChange={setField("numero")}
+                />
               </Field>
 
               <Field label="Bairro">
-                <input className="input-kavita" value={form.bairro || ""} onChange={setField("bairro")} />
+                <input
+                  className="input-kavita"
+                  value={form.bairro || ""}
+                  onChange={setField("bairro")}
+                />
               </Field>
 
               <Field label="Cidade">
@@ -283,9 +316,16 @@ export default function EditarEnderecoPage() {
                 id="addr-default-edit"
                 type="checkbox"
                 checked={!!form.is_default}
-                onChange={(e) => setForm((prev) => (prev ? { ...prev, is_default: e.target.checked } : prev))}
+                onChange={(e) =>
+                  setForm((prev) =>
+                    prev ? { ...prev, is_default: e.target.checked } : prev,
+                  )
+                }
               />
-              <label htmlFor="addr-default-edit" className="text-sm text-gray-700">
+              <label
+                htmlFor="addr-default-edit"
+                className="text-sm text-gray-700"
+              >
                 Definir como endereço padrão
               </label>
             </div>
@@ -325,7 +365,11 @@ function Field({
   full?: boolean;
 }) {
   return (
-    <div className={full ? "md:col-span-2 flex flex-col gap-1.5" : "flex flex-col gap-1.5"}>
+    <div
+      className={
+        full ? "md:col-span-2 flex flex-col gap-1.5" : "flex flex-col gap-1.5"
+      }
+    >
       <span className="text-sm text-gray-700">{label}</span>
       {children}
     </div>

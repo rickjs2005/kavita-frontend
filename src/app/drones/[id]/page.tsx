@@ -1,7 +1,13 @@
 // src/app/drones/[id]/page.tsx
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import SpecsSection from "@/components/drones/SpecsSection";
@@ -11,7 +17,11 @@ import GallerySection from "@/components/drones/GallerySection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 
 // ✅ ajuste o path se seus types estiverem em outro lugar
-import type { DroneGalleryItem, DronePageSettings, DroneRepresentative } from "@/types/drones";
+import type {
+  DroneGalleryItem,
+  DronePageSettings,
+  DroneRepresentative,
+} from "@/types/drones";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -135,7 +145,7 @@ function pickCaption(picked: ApiGalleryItem | null | undefined): string {
       picked.label ||
       picked.descricao ||
       picked.description ||
-      ""
+      "",
   );
 }
 
@@ -146,14 +156,17 @@ function resolveById(gallery: ApiGalleryItem[], id?: number | null): MediaPick {
   if (!picked) return null;
 
   const url = absUrl(pickMediaUrl(picked));
-  const typeRaw = picked.media_type ?? picked.type ?? picked.kind ?? picked.file_type;
+  const typeRaw =
+    picked.media_type ?? picked.type ?? picked.kind ?? picked.file_type;
   const type = normalizeMediaType(typeRaw, url);
   const caption = pickCaption(picked);
 
   return { url, type, caption };
 }
 
-function resolveGalleryHero(gallery: ApiGalleryItem[]): Exclude<MediaPick, null> {
+function resolveGalleryHero(
+  gallery: ApiGalleryItem[],
+): Exclude<MediaPick, null> {
   const firstVideo = gallery.find((it) => {
     const url = absUrl(pickMediaUrl(it));
     const typeRaw = it.type ?? it.media_type ?? it.kind ?? it.file_type;
@@ -169,7 +182,8 @@ function resolveGalleryHero(gallery: ApiGalleryItem[]): Exclude<MediaPick, null>
   const picked = firstVideo || firstImage || gallery[0] || null;
 
   const url = absUrl(pickMediaUrl(picked));
-  const typeRaw = picked?.type ?? picked?.media_type ?? picked?.kind ?? picked?.file_type;
+  const typeRaw =
+    picked?.type ?? picked?.media_type ?? picked?.kind ?? picked?.file_type;
   const type = normalizeMediaType(typeRaw, url);
   const caption = pickCaption(picked);
 
@@ -196,7 +210,9 @@ function toDronePageSettings(input: Dict | null): DronePageSettings {
     hero_title: String(base.hero_title ?? ""),
     hero_subtitle: String(base.hero_subtitle ?? ""),
     hero_video_path: String(base.hero_video_path ?? base.hero_video_url ?? ""),
-    hero_image_fallback_path: String(base.hero_image_fallback_path ?? base.hero_image_url ?? ""),
+    hero_image_fallback_path: String(
+      base.hero_image_fallback_path ?? base.hero_image_url ?? "",
+    ),
     ...base,
   };
 
@@ -256,7 +272,9 @@ export default function DroneModelPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchModels = useCallback(async (): Promise<DroneModel[]> => {
-    const res = await fetch(`${API_BASE}/api/public/drones/models`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/public/drones/models`, {
+      cache: "no-store",
+    });
     if (!res.ok) return [];
 
     const json: unknown = await res.json();
@@ -276,14 +294,20 @@ export default function DroneModelPage() {
             m.video ??
             m.cover_url ??
             m.thumb_url ??
-            ""
+            "",
         );
 
         const mediaTypeRaw = m.card_media_type ?? m.media_type;
         const inferredType =
-          normalizeMediaType(mediaTypeRaw, mediaUrl) || (mediaUrl ? "image" : "");
+          normalizeMediaType(mediaTypeRaw, mediaUrl) ||
+          (mediaUrl ? "image" : "");
 
-        const cardMediaType = inferredType === "video" ? "video" : inferredType === "image" ? "image" : undefined;
+        const cardMediaType =
+          inferredType === "video"
+            ? "video"
+            : inferredType === "image"
+              ? "image"
+              : undefined;
 
         return {
           key,
@@ -297,13 +321,17 @@ export default function DroneModelPage() {
   }, []);
 
   const fetchPage = useCallback(async (): Promise<RootResponse | null> => {
-    const res = await fetch(`${API_BASE}/api/public/drones?model=${modelKey}`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/public/drones?model=${modelKey}`, {
+      cache: "no-store",
+    });
     if (!res.ok) return null;
     return (await res.json()) as RootResponse;
   }, [modelKey]);
 
   const fetchRepresentatives = useCallback(async (): Promise<Dict[]> => {
-    const res = await fetch(`${API_BASE}/api/public/drones/representantes`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE}/api/public/drones/representantes`, {
+      cache: "no-store",
+    });
     if (!res.ok) return [];
     const json: unknown = await res.json();
     return extractArray<Dict>(json);
@@ -313,7 +341,11 @@ export default function DroneModelPage() {
     (async () => {
       setLoading(true);
 
-      const [root, reps, modelsDb] = await Promise.all([fetchPage(), fetchRepresentatives(), fetchModels()]);
+      const [root, reps, modelsDb] = await Promise.all([
+        fetchPage(),
+        fetchRepresentatives(),
+        fetchModels(),
+      ]);
 
       setLanding(root?.landing || null);
       setModelData(root?.model_data || null);
@@ -329,33 +361,62 @@ export default function DroneModelPage() {
   }, [fetchModels, fetchPage, fetchRepresentatives]);
 
   // ✅ merged “raw”
-  const mergedPageRaw = useMemo<Dict>(() => ({ ...(landing || {}), ...(modelData || {}) }), [landing, modelData]);
-
-  // ✅ tipado para sections
-  const pageSettings = useMemo<DronePageSettings>(() => toDronePageSettings(mergedPageRaw), [mergedPageRaw]);
-
-  const galleryItems = useMemo<DroneGalleryItem[]>(() => toDroneGalleryItems(galleryRaw), [galleryRaw]);
-  const representatives = useMemo<DroneRepresentative[]>(
-    () => toDroneRepresentatives(representativesRaw),
-    [representativesRaw]
+  const mergedPageRaw = useMemo<Dict>(
+    () => ({ ...(landing || {}), ...(modelData || {}) }),
+    [landing, modelData],
   );
 
-  const modelFromList = useMemo(() => models.find((m) => m.key === modelKey), [models, modelKey]);
+  // ✅ tipado para sections
+  const pageSettings = useMemo<DronePageSettings>(
+    () => toDronePageSettings(mergedPageRaw),
+    [mergedPageRaw],
+  );
+
+  const galleryItems = useMemo<DroneGalleryItem[]>(
+    () => toDroneGalleryItems(galleryRaw),
+    [galleryRaw],
+  );
+  const representatives = useMemo<DroneRepresentative[]>(
+    () => toDroneRepresentatives(representativesRaw),
+    [representativesRaw],
+  );
+
+  const modelFromList = useMemo(
+    () => models.find((m) => m.key === modelKey),
+    [models, modelKey],
+  );
 
   const modelLabel =
     String(
-      mergedPageRaw.model_label ?? mergedPageRaw.label ?? mergedPageRaw.name ?? modelFromList?.label ?? ""
+      mergedPageRaw.model_label ??
+        mergedPageRaw.label ??
+        mergedPageRaw.name ??
+        modelFromList?.label ??
+        "",
     ).trim() || (modelKey ? modelKey.toUpperCase() : "Modelo");
 
-  const heroFromGallery = useMemo(() => resolveGalleryHero(galleryRaw), [galleryRaw]);
+  const heroFromGallery = useMemo(
+    () => resolveGalleryHero(galleryRaw),
+    [galleryRaw],
+  );
 
   const selectedHero = useMemo(() => {
-    const heroId = Number((mergedPageRaw.current_hero_media_id ?? modelData?.current_hero_media_id ?? 0) as unknown) || null;
+    const heroId =
+      Number(
+        (mergedPageRaw.current_hero_media_id ??
+          modelData?.current_hero_media_id ??
+          0) as unknown,
+      ) || null;
     return resolveById(galleryRaw, heroId);
   }, [galleryRaw, mergedPageRaw, modelData]);
 
   const selectedCard = useMemo(() => {
-    const cardId = Number((mergedPageRaw.current_card_media_id ?? modelData?.current_card_media_id ?? 0) as unknown) || null;
+    const cardId =
+      Number(
+        (mergedPageRaw.current_card_media_id ??
+          modelData?.current_card_media_id ??
+          0) as unknown,
+      ) || null;
     return resolveById(galleryRaw, cardId);
   }, [galleryRaw, mergedPageRaw, modelData]);
 
@@ -382,7 +443,9 @@ export default function DroneModelPage() {
   }, [selectedHero, heroFromGallery, selectedCard, modelFromList]);
 
   const heroCaption = useMemo(() => {
-    return String(selectedHero?.caption || heroFromGallery?.caption || "").trim();
+    return String(
+      selectedHero?.caption || heroFromGallery?.caption || "",
+    ).trim();
   }, [selectedHero, heroFromGallery]);
 
   if (loading && !landing) {
@@ -417,8 +480,12 @@ export default function DroneModelPage() {
           </button>
 
           <div className="min-w-0 text-center">
-            <div className="text-[11px] text-slate-400 font-semibold">Modelo</div>
-            <div className="text-sm sm:text-base font-extrabold truncate">{modelLabel}</div>
+            <div className="text-[11px] text-slate-400 font-semibold">
+              Modelo
+            </div>
+            <div className="text-sm sm:text-base font-extrabold truncate">
+              {modelLabel}
+            </div>
           </div>
 
           <a
@@ -437,14 +504,27 @@ export default function DroneModelPage() {
 
             <div className="relative aspect-[16/9] bg-gradient-to-br from-white/10 via-white/5 to-transparent">
               {hero.url && hero.type === "video" ? (
-                <video className="h-full w-full object-cover" src={hero.url} muted playsInline autoPlay loop />
+                <video
+                  className="h-full w-full object-cover"
+                  src={hero.url}
+                  muted
+                  playsInline
+                  autoPlay
+                  loop
+                />
               ) : hero.url && hero.type === "image" ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img className="h-full w-full object-cover" src={hero.url} alt={modelLabel} />
+                <img
+                  className="h-full w-full object-cover"
+                  src={hero.url}
+                  alt={modelLabel}
+                />
               ) : (
                 <div className="h-full w-full flex items-center justify-center">
                   <div className="text-center px-6">
-                    <div className="text-sm text-slate-200 font-extrabold">Sem mídia destacada</div>
+                    <div className="text-sm text-slate-200 font-extrabold">
+                      Sem mídia destacada
+                    </div>
                     <div className="text-xs text-slate-400 mt-1">
                       Selecione o Destaque (Hero) no admin para este modelo.
                     </div>
@@ -479,7 +559,8 @@ export default function DroneModelPage() {
                         {modelLabel}
                       </h1>
                       <p className="text-sm text-slate-200/90">
-                        {heroCaption || "Especificações, funcionalidades, benefícios e galeria completa."}
+                        {heroCaption ||
+                          "Especificações, funcionalidades, benefícios e galeria completa."}
                       </p>
                     </div>
                   </div>
@@ -494,8 +575,14 @@ export default function DroneModelPage() {
 
                     <button
                       onClick={() => {
-                        const el = document.getElementById("drones-model-gallery");
-                        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        const el = document.getElementById(
+                          "drones-model-gallery",
+                        );
+                        if (el)
+                          el.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
                       }}
                       className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-extrabold text-slate-200 hover:bg-white/10"
                     >
@@ -541,7 +628,10 @@ export default function DroneModelPage() {
       </div>
 
       {/* ✅ reps tipados */}
-      <RepresentativesSection page={pageSettings} representatives={representatives} />
+      <RepresentativesSection
+        page={pageSettings}
+        representatives={representatives}
+      />
     </div>
   );
 }

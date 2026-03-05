@@ -18,13 +18,7 @@ const mocks = vi.hoisted(() => ({
  */
 vi.mock("next/link", () => ({
   __esModule: true,
-  default: ({
-    href,
-    onClick,
-    className,
-    children,
-    ...rest
-  }: any) => (
+  default: ({ href, onClick, className, children, ...rest }: any) => (
     <a href={href} onClick={onClick} className={className} {...rest}>
       {children}
     </a>
@@ -88,7 +82,7 @@ describe("AdminSidebar", () => {
     render(<AdminSidebar />);
 
     expect(
-      screen.queryByRole("link", { name: /Produtos/i })
+      screen.queryByRole("link", { name: /Produtos/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -113,10 +107,10 @@ describe("AdminSidebar", () => {
     expect(screen.getByRole("link", { name: /Produtos/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Pedidos/i })).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Configurações/i })
+      screen.getByRole("link", { name: /Configurações/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Relatórios/i })
+      screen.getByRole("link", { name: /Relatórios/i }),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Equipe/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Logs/i })).toBeInTheDocument();
@@ -169,17 +163,15 @@ describe("AdminSidebar", () => {
     render(<AdminSidebar hideLogoutButton />);
 
     expect(
-      screen.queryByRole("button", { name: /Sair/i })
+      screen.queryByRole("button", { name: /Sair/i }),
     ).not.toBeInTheDocument();
   });
 
   it("concatena className no container raiz", () => {
-    const { container } = render(
-      <AdminSidebar className="test-extra-class" />
-    );
+    const { container } = render(<AdminSidebar className="test-extra-class" />);
 
     expect(container.firstElementChild?.className).toContain(
-      "test-extra-class"
+      "test-extra-class",
     );
   });
 });

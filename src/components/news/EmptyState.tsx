@@ -17,10 +17,7 @@ export function EmptyState({
       "
     >
       <div className="flex flex-col items-center text-center gap-2">
-        <span
-          aria-hidden
-          className="text-2xl"
-        >
+        <span aria-hidden className="text-2xl">
           📰
         </span>
 

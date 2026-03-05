@@ -68,7 +68,7 @@ describe("PostsTab (UI real)", () => {
     await screen.findByText("Post 1");
 
     const input = screen.getByPlaceholderText(
-      "Buscar por título, slug, tag..."
+      "Buscar por título, slug, tag...",
     ) as HTMLInputElement;
 
     // Act
@@ -79,7 +79,7 @@ describe("PostsTab (UI real)", () => {
       expect(listNewsPosts).toHaveBeenCalled();
       const lastCallArg = (listNewsPosts as any).mock.calls.at(-1)?.[0];
       expect(lastCallArg).toEqual(
-        expect.objectContaining({ q: "milho", page: 1 })
+        expect.objectContaining({ q: "milho", page: 1 }),
       );
     });
   });
@@ -99,7 +99,7 @@ describe("PostsTab (UI real)", () => {
     await waitFor(() => {
       const lastCallArg = (listNewsPosts as any).mock.calls.at(-1)?.[0];
       expect(lastCallArg).toEqual(
-        expect.objectContaining({ status: "published", page: 1 })
+        expect.objectContaining({ status: "published", page: 1 }),
       );
     });
   });
@@ -172,7 +172,7 @@ describe("PostsTab (UI real)", () => {
       expect.objectContaining({
         status: "published",
         publish_now: true,
-      })
+      }),
     );
 
     await waitFor(() => {

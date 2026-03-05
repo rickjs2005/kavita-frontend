@@ -2,15 +2,15 @@
 import { isApiError } from "./errors";
 
 export type UiError = {
-  message: string;      // humano (sempre)
-  code?: string;        // suporte (opcional)
-  requestId?: string;   // depuração (opcional)
-  status?: number;      // opcional
+  message: string; // humano (sempre)
+  code?: string; // suporte (opcional)
+  requestId?: string; // depuração (opcional)
+  status?: number; // opcional
 };
 
 export function formatApiError(
   err: unknown,
-  fallback = "Ocorreu um erro. Tente novamente."
+  fallback = "Ocorreu um erro. Tente novamente.",
 ): UiError {
   if (isApiError(err)) {
     const message = err.message || fallback;
@@ -35,7 +35,7 @@ export function formatApiError(
 
 export function toUserMessage(
   err: unknown,
-  fallback = "Ocorreu um erro. Tente novamente."
+  fallback = "Ocorreu um erro. Tente novamente.",
 ) {
   const e = formatApiError(err, fallback);
   // inclui requestId quando existir, como você pediu

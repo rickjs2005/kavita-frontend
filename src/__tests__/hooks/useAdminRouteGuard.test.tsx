@@ -98,7 +98,7 @@ describe("useAdminRouteGuard", () => {
 
     // Act
     const { result } = renderHook(() =>
-      useAdminRouteGuard({ permission: "posts_manage" })
+      useAdminRouteGuard({ permission: "posts_manage" }),
     );
 
     // Assert
@@ -115,7 +115,7 @@ describe("useAdminRouteGuard", () => {
 
     // Act
     const { result } = renderHook(() =>
-      useAdminRouteGuard({ permission: "posts_manage" })
+      useAdminRouteGuard({ permission: "posts_manage" }),
     );
 
     // Assert
@@ -135,7 +135,7 @@ describe("useAdminRouteGuard", () => {
 
     // Act
     const { result } = renderHook(() =>
-      useAdminRouteGuard({ permission: ["a", "b", "c"] })
+      useAdminRouteGuard({ permission: ["a", "b", "c"] }),
     );
 
     // Assert
@@ -159,7 +159,7 @@ describe("useAdminRouteGuard", () => {
 
     // Act
     const { result } = renderHook(() =>
-      useAdminRouteGuard({ roles: "admin" as any })
+      useAdminRouteGuard({ roles: "admin" as any }),
     );
 
     // Assert
@@ -176,7 +176,7 @@ describe("useAdminRouteGuard", () => {
 
     // Act
     const { result } = renderHook(() =>
-      useAdminRouteGuard({ roles: ["admin", "manager"] as any })
+      useAdminRouteGuard({ roles: ["admin", "manager"] as any }),
     );
 
     // Assert
@@ -196,7 +196,7 @@ describe("useAdminRouteGuard", () => {
       useAdminRouteGuard({
         permission: "cats_manage",
         redirectTo: "/admin/login",
-      })
+      }),
     );
 
     // Assert
@@ -217,7 +217,7 @@ describe("useAdminRouteGuard", () => {
       useAdminRouteGuard({
         permission: ["a", "b"],
         roles: ["admin"] as any,
-      })
+      }),
     );
 
     // Assert

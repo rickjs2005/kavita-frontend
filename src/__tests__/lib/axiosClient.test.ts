@@ -35,43 +35,65 @@ describe("src/lib/axiosClient.ts (deprecated wrapper)", () => {
   });
 
   it("api.post deve delegar para apiClient.post", async () => {
-    (apiClient.post as unknown as MockFn).mockResolvedValueOnce({ created: true });
+    (apiClient.post as unknown as MockFn).mockResolvedValueOnce({
+      created: true,
+    });
 
-    const result = await api.post("/create", { name: "Produto" }, { credentials: "include" });
+    const result = await api.post(
+      "/create",
+      { name: "Produto" },
+      { credentials: "include" },
+    );
 
     expect(apiClient.post).toHaveBeenCalledWith(
       "/create",
       { name: "Produto" },
-      { credentials: "include" }
+      { credentials: "include" },
     );
 
     expect(result).toEqual({ created: true });
   });
 
   it("api.put deve delegar para apiClient.put", async () => {
-    (apiClient.put as unknown as MockFn).mockResolvedValueOnce({ updated: true });
+    (apiClient.put as unknown as MockFn).mockResolvedValueOnce({
+      updated: true,
+    });
 
     const result = await api.put("/update/1", { name: "Novo" });
 
-    expect(apiClient.put).toHaveBeenCalledWith("/update/1", { name: "Novo" }, undefined);
+    expect(apiClient.put).toHaveBeenCalledWith(
+      "/update/1",
+      { name: "Novo" },
+      undefined,
+    );
 
     expect(result).toEqual({ updated: true });
   });
 
   it("api.patch deve delegar para apiClient.patch", async () => {
-    (apiClient.patch as unknown as MockFn).mockResolvedValueOnce({ patched: true });
+    (apiClient.patch as unknown as MockFn).mockResolvedValueOnce({
+      patched: true,
+    });
 
     const result = await api.patch("/patch/1", { status: "ok" });
 
-    expect(apiClient.patch).toHaveBeenCalledWith("/patch/1", { status: "ok" }, undefined);
+    expect(apiClient.patch).toHaveBeenCalledWith(
+      "/patch/1",
+      { status: "ok" },
+      undefined,
+    );
 
     expect(result).toEqual({ patched: true });
   });
 
   it("api.delete deve delegar para apiClient.del", async () => {
-    (apiClient.del as unknown as MockFn).mockResolvedValueOnce({ deleted: true });
+    (apiClient.del as unknown as MockFn).mockResolvedValueOnce({
+      deleted: true,
+    });
 
-    const result = await api.delete("/delete/1", { headers: { Authorization: "Bearer x" } });
+    const result = await api.delete("/delete/1", {
+      headers: { Authorization: "Bearer x" },
+    });
 
     expect(apiClient.del).toHaveBeenCalledWith("/delete/1", {
       headers: { Authorization: "Bearer x" },

@@ -33,18 +33,11 @@ function renderPostForm() {
 
   // 🔴 PONTO CRÍTICO
   // Tipagem correta do mock → elimina TODOS os erros de TS
-  const onSubmit = vi.fn<
-    (payload: NewsPostUpsertInput) => Promise<void>
-  >(async () => undefined);
-
-  render(
-    <PostForm
-      open
-      mode="create"
-      onClose={onClose}
-      onSubmit={onSubmit}
-    />
+  const onSubmit = vi.fn<(payload: NewsPostUpsertInput) => Promise<void>>(
+    async () => undefined,
   );
+
+  render(<PostForm open mode="create" onClose={onClose} onSubmit={onSubmit} />);
 
   return { onClose, onSubmit };
 }
@@ -63,17 +56,15 @@ describe("PostForm", () => {
 
     await user.type(
       screen.getByPlaceholderText("Ex: Café sobe com clima seco"),
-      "Post publicar"
+      "Post publicar",
     );
 
     await user.type(
       screen.getByPlaceholderText("Conteúdo do post..."),
-      "Conteúdo"
+      "Conteúdo",
     );
 
-    await user.click(
-      screen.getByRole("button", { name: "Publicar agora" })
-    );
+    await user.click(screen.getByRole("button", { name: "Publicar agora" }));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);

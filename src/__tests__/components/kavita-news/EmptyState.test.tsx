@@ -15,7 +15,7 @@ describe("EmptyState", () => {
     // Conteúdo padrão
     expect(screen.getByText("Nada por aqui ainda")).toBeInTheDocument();
     expect(
-      screen.getByText("Conteúdos serão atualizados em breve.")
+      screen.getByText("Conteúdos serão atualizados em breve."),
     ).toBeInTheDocument();
 
     // Emoji é decorativo
@@ -29,14 +29,12 @@ describe("EmptyState", () => {
       <EmptyState
         title="Nenhuma cotação encontrada"
         subtitle="Tente novamente mais tarde ou ajuste os filtros."
-      />
+      />,
     );
 
+    expect(screen.getByText("Nenhuma cotação encontrada")).toBeInTheDocument();
     expect(
-      screen.getByText("Nenhuma cotação encontrada")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Tente novamente mais tarde ou ajuste os filtros.")
+      screen.getByText("Tente novamente mais tarde ou ajuste os filtros."),
     ).toBeInTheDocument();
   });
 
@@ -45,20 +43,18 @@ describe("EmptyState", () => {
 
     expect(screen.getByText("Sem resultados")).toBeInTheDocument();
     expect(
-      screen.getByText("Conteúdos serão atualizados em breve.")
+      screen.getByText("Conteúdos serão atualizados em breve."),
     ).toBeInTheDocument();
   });
 
   it("deve permitir renderizar apenas subtitle customizado e manter title padrão (controle)", () => {
     render(
-      <EmptyState subtitle="Ainda não há dados disponíveis para esta seção." />
+      <EmptyState subtitle="Ainda não há dados disponíveis para esta seção." />,
     );
 
+    expect(screen.getByText("Nada por aqui ainda")).toBeInTheDocument();
     expect(
-      screen.getByText("Nada por aqui ainda")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Ainda não há dados disponíveis para esta seção.")
+      screen.getByText("Ainda não há dados disponíveis para esta seção."),
     ).toBeInTheDocument();
   });
 

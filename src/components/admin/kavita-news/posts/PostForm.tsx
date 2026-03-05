@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { NewsPostDetail, NewsPostStatus, NewsPostUpsertInput } from "@/types/kavita-news";
+import type {
+  NewsPostDetail,
+  NewsPostStatus,
+  NewsPostUpsertInput,
+} from "@/types/kavita-news";
 import { uploadNewsCover } from "@/utils/kavita-news/posts";
 
 type CoverMode = "url" | "upload";
@@ -134,7 +138,10 @@ export default function PostForm({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  const headerTitle = useMemo(() => (isEdit ? "Editar Post" : "Novo Post"), [isEdit]);
+  const headerTitle = useMemo(
+    () => (isEdit ? "Editar Post" : "Novo Post"),
+    [isEdit],
+  );
 
   function clearCover() {
     setFormError("");
@@ -218,12 +225,18 @@ export default function PostForm({
 
   return (
     <div className="fixed inset-0 z-50">
-      <button className="absolute inset-0 bg-black/50" onClick={onClose} aria-label="Fechar" />
+      <button
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+        aria-label="Fechar"
+      />
 
       <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-4xl rounded-t-2xl bg-white shadow-2xl sm:inset-y-10 sm:bottom-auto sm:rounded-2xl">
         <div className="flex items-center justify-between gap-3 border-b px-4 py-3 sm:px-6">
           <div>
-            <div className="text-base font-semibold text-gray-900">{headerTitle}</div>
+            <div className="text-base font-semibold text-gray-900">
+              {headerTitle}
+            </div>
             <div className="text-xs text-gray-500">Kavita News • Admin</div>
           </div>
 
@@ -245,7 +258,9 @@ export default function PostForm({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-xs font-semibold text-gray-700">Título</label>
+              <label className="text-xs font-semibold text-gray-700">
+                Título
+              </label>
               <input
                 value={title ?? ""}
                 onChange={(e) => setTitle(e.target.value)}
@@ -256,7 +271,9 @@ export default function PostForm({
 
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-gray-700">Slug</label>
+                <label className="text-xs font-semibold text-gray-700">
+                  Slug
+                </label>
                 <label className="flex items-center gap-2 text-xs text-gray-600">
                   <input
                     type="checkbox"
@@ -276,7 +293,9 @@ export default function PostForm({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-gray-700">Status</label>
+              <label className="text-xs font-semibold text-gray-700">
+                Status
+              </label>
               <select
                 value={status ?? "draft"}
                 onChange={(e) => setStatus(e.target.value as NewsPostStatus)}
@@ -289,7 +308,9 @@ export default function PostForm({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-gray-700">Categoria</label>
+              <label className="text-xs font-semibold text-gray-700">
+                Categoria
+              </label>
               <input
                 value={category ?? ""}
                 onChange={(e) => setCategory(e.target.value)}
@@ -299,7 +320,9 @@ export default function PostForm({
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-gray-700">Tags (CSV)</label>
+              <label className="text-xs font-semibold text-gray-700">
+                Tags (CSV)
+              </label>
               <input
                 value={tagsCsv ?? ""}
                 onChange={(e) => setTagsCsv(e.target.value)}
@@ -310,7 +333,9 @@ export default function PostForm({
 
             <div className="sm:col-span-2">
               <div className="flex items-center justify-between gap-2">
-                <label className="text-xs font-semibold text-gray-700">Capa</label>
+                <label className="text-xs font-semibold text-gray-700">
+                  Capa
+                </label>
 
                 <div className="flex items-center gap-2">
                   <button
@@ -371,7 +396,9 @@ export default function PostForm({
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    onChange={(e) => onPickCoverFile(e.target.files?.[0] || null)}
+                    onChange={(e) =>
+                      onPickCoverFile(e.target.files?.[0] || null)
+                    }
                     className="w-full rounded-lg border border-gray-200 bg-white text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-900 hover:file:bg-gray-200"
                   />
                   <button
@@ -397,7 +424,9 @@ export default function PostForm({
                 <div className="mt-3 overflow-hidden rounded-xl border bg-gray-50">
                   <div className="flex items-center justify-between gap-2 px-3 py-2 text-xs text-gray-600">
                     <span className="truncate">
-                      {coverMode === "upload" && coverFileName ? `Upload: ${coverFileName}` : "Prévia"}
+                      {coverMode === "upload" && coverFileName
+                        ? `Upload: ${coverFileName}`
+                        : "Prévia"}
                     </span>
 
                     <div className="flex items-center gap-2">
@@ -442,7 +471,9 @@ export default function PostForm({
 
                   <div className="flex items-center justify-between gap-2 px-3 py-2 text-xs text-gray-600">
                     <span className="truncate">
-                      {coverMode === "upload" && coverFileName ? `Upload: ${coverFileName}` : ""}
+                      {coverMode === "upload" && coverFileName
+                        ? `Upload: ${coverFileName}`
+                        : ""}
                     </span>
                     <span className="text-gray-500">Capa</span>
                   </div>
@@ -451,7 +482,9 @@ export default function PostForm({
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-gray-700">Excerpt</label>
+              <label className="text-xs font-semibold text-gray-700">
+                Excerpt
+              </label>
               <textarea
                 value={excerpt ?? ""}
                 onChange={(e) => setExcerpt(e.target.value)}
@@ -462,7 +495,9 @@ export default function PostForm({
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-gray-700">Conteúdo</label>
+              <label className="text-xs font-semibold text-gray-700">
+                Conteúdo
+              </label>
               <textarea
                 value={content ?? ""}
                 onChange={(e) => setContent(e.target.value)}
