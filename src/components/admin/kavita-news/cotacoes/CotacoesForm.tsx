@@ -202,8 +202,9 @@ export default function CotacoesForm({
       <div className="p-5 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2 md:col-span-2">
-            <label className={labelBase}>Nome</label>
+            <label htmlFor="cotacoes-nome" className={labelBase}>Nome</label>
             <input
+              id="cotacoes-nome"
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
               className={inputBase}
@@ -212,8 +213,8 @@ export default function CotacoesForm({
           </div>
 
           <div className="space-y-2">
-            <label className={labelBase}>Slug (padrão)</label>
-            <select value={form.slug} onChange={(e) => applySlugPreset(e.target.value)} className={inputBase}>
+            <label htmlFor="cotacoes-slug" className={labelBase}>Slug (padrão)</label>
+            <select id="cotacoes-slug" value={form.slug} onChange={(e) => applySlugPreset(e.target.value)} className={inputBase}>
               <option value="">Selecione…</option>
               {(mergedAllowedSlugs || []).map((s) => (
                 <option key={s} value={s}>
@@ -260,8 +261,9 @@ export default function CotacoesForm({
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2 md:col-span-2">
-            <label className={labelBase}>Tipo</label>
+            <label htmlFor="cotacoes-tipo" className={labelBase}>Tipo</label>
             <input
+              id="cotacoes-tipo"
               value={form.type}
               onChange={(e) => set("type", e.target.value)}
               className={inputBase}
@@ -276,8 +278,9 @@ export default function CotacoesForm({
           </div>
 
           <div className="space-y-2">
-            <label className={labelBase}>Unidade</label>
+            <label htmlFor="cotacoes-unidade" className={labelBase}>Unidade</label>
             <input
+              id="cotacoes-unidade"
               value={form.unit}
               onChange={(e) => set("unit", e.target.value)}
               className={inputBase}
@@ -292,8 +295,9 @@ export default function CotacoesForm({
           </div>
 
           <div className="space-y-2">
-            <label className={labelBase}>Market (opcional)</label>
+            <label htmlFor="cotacoes-market" className={labelBase}>Market (opcional)</label>
             <input
+              id="cotacoes-market"
               value={form.market}
               onChange={(e) => set("market", e.target.value)}
               className={inputBase}
@@ -310,8 +314,9 @@ export default function CotacoesForm({
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
-            <label className={labelBase}>Preço</label>
+            <label htmlFor="cotacoes-preco" className={labelBase}>Preço</label>
             <input
+              id="cotacoes-preco"
               value={form.price}
               onChange={(e) => set("price", e.target.value)}
               className={inputBase}
@@ -321,8 +326,9 @@ export default function CotacoesForm({
           </div>
 
           <div className="space-y-2">
-            <label className={labelBase}>Variação dia</label>
+            <label htmlFor="cotacoes-variacao" className={labelBase}>Variação dia</label>
             <input
+              id="cotacoes-variacao"
               value={form.variation_day}
               onChange={(e) => set("variation_day", e.target.value)}
               className={inputBase}
@@ -332,8 +338,9 @@ export default function CotacoesForm({
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <label className={labelBase}>Source (opcional)</label>
+            <label htmlFor="cotacoes-source" className={labelBase}>Source (opcional)</label>
             <input
+              id="cotacoes-source"
               value={form.source}
               onChange={(e) => set("source", e.target.value)}
               className={inputBase}
@@ -350,8 +357,9 @@ export default function CotacoesForm({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div className="space-y-2 md:col-span-2">
-            <label className={labelBase}>Last update (opcional)</label>
+            <label htmlFor="cotacoes-last-update" className={labelBase}>Last update (opcional)</label>
             <input
+              id="cotacoes-last-update"
               value={form.last_update_at}
               onChange={(e) => set("last_update_at", e.target.value)}
               className={inputBase}
