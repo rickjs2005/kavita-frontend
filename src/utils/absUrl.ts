@@ -1,24 +1,26 @@
 // src/utils/absUrl.ts
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 export function absUrl(raw?: string | null): string {
   if (!raw) return "";
 
-  const src = String(raw).trim().replace(/\\/g, "/");
+  let src = String(raw).trim().replace(/\\/g, "/");
   if (!src) return "";
 
-  // data url
+  // data URL
   if (src.startsWith("data:")) return src;
 
-  // absoluto
+  // URL absoluta
   if (/^https?:\/\//i.test(src)) return src;
 
-  // já veio com / (qualquer caminho)
-  if (src.startsWith("/")) return `${API}${src}`;
+  // remove múltiplas barras no começo
+  src = src.replace(/^\/+/, "");
 
-  // caminhos comuns
-  if (src.startsWith("uploads")) return `${API}/${src}`;
+  // se já vier uploads/...
+  if (src.startsWith("uploads/")) {
+    return `${API}/${src}`;
+  }
 
-  // fallback: assume uploads/filename
+  // se vier só nome de arquivo
   return `${API}/uploads/${src}`;
 }

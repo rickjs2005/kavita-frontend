@@ -15,16 +15,14 @@ type ProdutoEditado = {
   image?: string | null;
   images?: string[];
 
-  // frete por produto
   shipping_free?: number | boolean | null;
   shipping_free_from_qty?: number | null;
 
-  // ✅ NOVO: prazo por produto (dias)
   shipping_prazo_dias?: number | null;
 };
 
 type Props = {
-  API_BASE?: string; // ✅ deixa opcional para evitar "undefined" caso esqueça de passar
+  API_BASE?: string;
   produtoEditado?: ProdutoEditado | null;
   onProdutoAdicionado?: () => void;
   onLimparEdicao?: () => void;
@@ -42,7 +40,6 @@ export default function ProdutoForm({
   onProdutoAdicionado,
   onLimparEdicao,
 }: Props) {
-  // ✅ fallback seguro: se esquecer de passar API_BASE, não cai no Next (3000)
   const BASE =
     API_BASE || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -57,19 +54,16 @@ export default function ProdutoForm({
   const [quantityStr, setQuantityStr] = useState("");
   const [categoryId, setCategoryId] = useState<string | number>("");
 
-  // imagens
   const [existingImgs, setExistingImgs] = useState<string[]>([]);
   const [removeExisting, setRemoveExisting] = useState<Set<string>>(new Set());
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // frete por produto
   const [shippingFree, setShippingFree] = useState<boolean>(false);
   const [shippingFreeFromQtyStr, setShippingFreeFromQtyStr] =
     useState<string>("");
 
-  // ✅ NOVO: prazo do produto (dias)
   const [shippingPrazoDiasStr, setShippingPrazoDiasStr] = useState<string>("");
 
   function toRel(abs: string) {
@@ -117,7 +111,6 @@ export default function ProdutoForm({
           : "",
       );
 
-      // ✅ NOVO: carrega prazo do produto (dias)
       setShippingPrazoDiasStr(
         produtoEditado.shipping_prazo_dias
           ? String(produtoEditado.shipping_prazo_dias)
@@ -174,8 +167,6 @@ export default function ProdutoForm({
 
     setShippingFree(false);
     setShippingFreeFromQtyStr("");
-
-    // ✅ NOVO
     setShippingPrazoDiasStr("");
   }
 
@@ -192,7 +183,6 @@ export default function ProdutoForm({
       }
     }
 
-    // ✅ NOVO: prazo do produto (dias) opcional, mas se preenchido deve ser inteiro > 0
     if (shippingPrazoDiasStr.trim()) {
       const n = Number(shippingPrazoDiasStr);
       if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
@@ -227,6 +217,27 @@ export default function ProdutoForm({
     });
   }
 
+  async function getCsrfToken() {
+    const res = await fetch(`${BASE}/api/csrf-token`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const txt = await safeText(res);
+      throw new Error(txt || "Falha ao obter CSRF token.");
+    }
+
+    const data = await res.json();
+    return (
+      data?.csrfToken ||
+      data?.csrf ||
+      data?.token ||
+      data?.data?.csrfToken ||
+      ""
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
@@ -244,11 +255,8 @@ export default function ProdutoForm({
     fd.append("quantity", String(quantity));
     fd.append("category_id", String(categoryId));
 
-    // frete por produto (sempre enviar)
     fd.append("shippingFree", shippingFree ? "1" : "0");
     fd.append("shippingFreeFromQtyStr", shippingFreeFromQtyStr.trim());
-
-    // ✅ NOVO: prazo do produto (dias) — sempre enviar; "" => NULL no backend
     fd.append("shippingPrazoDiasStr", shippingPrazoDiasStr.trim());
 
     newFiles.forEach((file) => fd.append("images", file));
@@ -266,11 +274,21 @@ export default function ProdutoForm({
       : `${BASE}/api/admin/produtos`;
 
     setLoading(true);
+
     try {
+      const csrfToken = await getCsrfToken();
+
+      if (!csrfToken) {
+        throw new Error("CSRF token ausente.");
+      }
+
       const res = await fetch(url, {
         method,
         body: fd,
         credentials: "include",
+        headers: {
+          "x-csrf-token": csrfToken,
+        },
       });
 
       if (!res.ok) {
@@ -310,7 +328,7 @@ export default function ProdutoForm({
       const ct = res.headers.get("content-type") || "";
       if (ct.includes("application/json")) {
         const j = await res.json();
-        return (j as any)?.message || JSON.stringify(j);
+        return (j as any)?.message || (j as any)?.error || JSON.stringify(j);
       }
       return await res.text();
     } catch {
