@@ -217,6 +217,15 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
         ok: true,
         status: 200,
         contentType: "application/json",
+        json: { token: "test-token" },
+      }),
+    );
+
+    fetchMock.mockResolvedValueOnce(
+      makeFetchResponse({
+        ok: true,
+        status: 200,
+        contentType: "application/json",
         json: { ok: true },
       }),
     );
@@ -252,9 +261,12 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     await submitForm();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
-    const [url, init] = fetchMock.mock.calls[0];
+    const [csrfUrl] = fetchMock.mock.calls[0];
+    expect(csrfUrl).toBe("http://localhost:5000/api/csrf-token");
+
+    const [url, init] = fetchMock.mock.calls[1];
     expect(url).toBe("http://localhost:5000/api/admin/produtos/99");
     expect(init?.method).toBe("PUT");
     expect(init?.credentials).toBe("include");
@@ -330,6 +342,15 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     fetchMock.mockResolvedValueOnce(
       makeFetchResponse({
+        ok: true,
+        status: 200,
+        contentType: "application/json",
+        json: { token: "test-token" },
+      }),
+    );
+
+    fetchMock.mockResolvedValueOnce(
+      makeFetchResponse({
         ok: false,
         status: 500,
         contentType: "text/plain",
@@ -352,9 +373,11 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     await submitForm();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(
-      await screen.findByText(/Falha ao atualizar \(500\)\./i),
+      await screen.findByText((t) =>
+        t.includes("Falha ao atualizar") && t.includes("500"),
+      ),
     ).toBeInTheDocument();
     expect(
       await screen.findByText(/Explodiu no servidor/i),

@@ -212,6 +212,6 @@ describe("PostsTab (UI real)", () => {
     });
 
     // UI real: a tabela renderiza mensagem de vazio
-    expect(screen.getByText("Nenhum post encontrado.")).toBeInTheDocument();
+    expect(await screen.findByText("Nenhum post encontrado.")).toBeInTheDocument();
   });
 });
