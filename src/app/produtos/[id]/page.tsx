@@ -3,21 +3,11 @@ import type { Product } from "@/types/product";
 import Gallery from "@/components/ui/Gallery";
 import ProductBuyBox from "@/components/products/ProductBuyBox";
 import ProductReviews from "./ProductReviews";
+import { absUrl } from "@/utils/absUrl";
 
 export const dynamic = "force-dynamic";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-/** Normaliza qualquer caminho vindo do backend para uma URL válida */
-function absUrl(raw?: string | null): string {
-  if (!raw) return "/placeholder.png";
-  const s = String(raw).trim().replace(/\\/g, "/");
-  if (/^https?:\/\//i.test(s)) return s;
-  if (s.startsWith("/uploads")) return `${API}${s}`;
-  if (s.startsWith("uploads")) return `${API}/${s}`;
-  if (!s.startsWith("/")) return `${API}/uploads/${s}`;
-  return `${API}${s}`;
-}
 
 async function getProduto(id: string): Promise<Product | null> {
   try {

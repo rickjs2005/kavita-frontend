@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { absUrl } from "@/utils/absUrl";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -49,12 +50,6 @@ async function readSafe(res: Response) {
   } catch {
     return { data: null as any };
   }
-}
-
-function absUrl(path?: string | null) {
-  if (!path) return "";
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
 function toBool(v: any) {

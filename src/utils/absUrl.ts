@@ -13,8 +13,10 @@ export function absUrl(raw?: string | null): string {
   // URL absoluta
   if (/^https?:\/\//i.test(src)) return src;
 
-  // remove múltiplas barras no começo
-  src = src.replace(/^\/+/, "");
+  // se começa com /, normaliza barras múltiplas e prefixa com API
+  if (src.startsWith("/")) {
+    return `${API}${src.replace(/^\/+/, "/")}`;
+  }
 
   // se já vier uploads/...
   if (src.startsWith("uploads/")) {

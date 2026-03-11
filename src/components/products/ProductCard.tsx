@@ -8,6 +8,7 @@ import AddToCartButton from "@/components/buttons/AddToCartButton";
 import type { Product } from "@/types/product";
 import { resolveStockValue } from "../../utils/stock";
 import { useAuth } from "@/context/AuthContext";
+import { absUrl } from "@/utils/absUrl";
 
 type Props = {
   product: Product;
@@ -18,17 +19,6 @@ type Props = {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const PLACEHOLDER = "/placeholder.png";
-
-/** normaliza URL de imagem */
-function absUrl(raw?: string | null): string | null {
-  if (!raw) return null;
-  const src = String(raw).trim().replace(/\\/g, "/");
-  if (/^https?:\/\//i.test(src)) return src;
-  if (src.startsWith("/uploads")) return `${API_BASE}${src}`;
-  if (src.startsWith("uploads")) return `${API_BASE}/${src}`;
-  if (!src.startsWith("/")) return `${API_BASE}/uploads/${src}`;
-  return `${API_BASE}${src}`;
-}
 
 /** formatador BRL determinístico */
 function formatBRL(value: unknown): string {

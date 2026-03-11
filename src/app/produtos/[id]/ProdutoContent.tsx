@@ -4,6 +4,7 @@ import Gallery from "@/components/ui/Gallery";
 import ProductBuyBox from "@/components/products/ProductBuyBox";
 import CustomButton from "@/components/buttons/CustomButton";
 import { toast } from "react-hot-toast";
+import { absUrl } from "@/utils/absUrl";
 
 interface Props {
   produto: Product;
@@ -16,17 +17,6 @@ interface ProductReview {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-/** Normaliza qualquer caminho vindo do backend para uma URL válida do <Image> */
-function absUrl(raw?: string | null): string | null {
-  if (!raw) return null;
-  const s = String(raw).trim().replace(/\\/g, "/");
-  if (/^https?:\/\//i.test(s)) return s;
-  if (s.startsWith("/uploads")) return `${API_BASE}${s}`;
-  if (s.startsWith("uploads")) return `${API_BASE}/${s}`;
-  if (!s.startsWith("/")) return `${API_BASE}/uploads/${s}`;
-  return `${API_BASE}${s}`;
-}
 
 // MESMO TIPO DE PROMOÇÃO QUE USAMOS NA PAGE SERVER
 type ProductPromotion = {

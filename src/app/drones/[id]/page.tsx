@@ -15,6 +15,7 @@ import FeaturesSection from "@/components/drones/FeaturesSection";
 import BenefitsSection from "@/components/drones/BenefitsSection";
 import GallerySection from "@/components/drones/GallerySection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
+import { absUrl } from "@/utils/absUrl";
 
 // ✅ ajuste o path se seus types estiverem em outro lugar
 import type {
@@ -92,13 +93,6 @@ function extractArray<T>(v: unknown): T[] {
     if (data && Array.isArray(data.items)) return data.items as T[];
   }
   return [];
-}
-
-function absUrl(path?: string | null) {
-  if (!path) return "";
-  const p = String(path);
-  if (p.startsWith("http://") || p.startsWith("https://")) return p;
-  return `${API_BASE}${p.startsWith("/") ? "" : "/"}${p}`;
 }
 
 function pickMediaUrl(item: ApiGalleryItem | null | undefined): string {
