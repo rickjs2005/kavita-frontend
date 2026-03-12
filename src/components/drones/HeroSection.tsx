@@ -1,8 +1,7 @@
 "use client";
 
 import type { DronePageSettings, DroneRepresentative } from "@/types/drones";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { absUrl } from "@/utils/absUrl";
 
 function buildWaLink(rep: DroneRepresentative, template?: string | null) {
   const phone = String(rep.whatsapp || "").replace(/\D/g, "");
@@ -20,10 +19,10 @@ export default function HeroSection({
   representatives: DroneRepresentative[];
 }) {
   const heroVideo = page.hero_video_path
-    ? `${API_BASE}${page.hero_video_path}`
+    ? absUrl(page.hero_video_path)
     : null;
   const heroImg = page.hero_image_fallback_path
-    ? `${API_BASE}${page.hero_image_fallback_path}`
+    ? absUrl(page.hero_image_fallback_path)
     : null;
 
   const reps = (representatives || []).slice(0, 4);
