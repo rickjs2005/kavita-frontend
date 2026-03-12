@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 type Props = {
   images: string[]; // sempre um array (se vier só 1, ok)
@@ -19,11 +19,24 @@ export default function Gallery({
   thumbSize = 80,
 }: Props) {
   const safeImages = useMemo(
-    () => (Array.isArray(images) && images.length ? images : [PLACEHOLDER]),
+    () => {
+      const result = Array.isArray(images) && images.length ? images : [PLACEHOLDER];
+      console.log(`[TRACE][Gallery] images recebidas (prop):`, images);
+      console.log(`[TRACE][Gallery] safeImages (após normalização):`, result);
+      return result;
+    },
     [images],
   );
 
   const [active, setActive] = useState(safeImages[0]);
+
+  useEffect(() => {
+    console.log(`[TRACE][Gallery] imagem ativa inicial (src enviado ao <Image>): ${safeImages[0]} (length: ${String(safeImages[0]).length})`);
+  }, [safeImages]);
+
+  useEffect(() => {
+    console.log(`[TRACE][Gallery] src final enviado ao <Image> principal: ${active} (length: ${String(active).length})`);
+  }, [active]);
 
   return (
     <div className={`w-full flex flex-col items-center gap-4 ${className}`}>
