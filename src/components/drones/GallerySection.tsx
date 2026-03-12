@@ -1,16 +1,7 @@
 "use client";
 
 import type { DroneGalleryItem } from "@/types/drones";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-function buildSrc(mediaPath?: string | null) {
-  if (!mediaPath) return "";
-  // se já for absoluta (http/https), usa direto
-  if (/^https?:\/\//i.test(mediaPath)) return mediaPath;
-  // se for path do backend (/uploads/...), prefixa com API_BASE
-  return `${API_BASE}${mediaPath}`;
-}
+import { absUrl } from "@/utils/absUrl";
 
 function MediaBlock({
   item,
@@ -19,7 +10,7 @@ function MediaBlock({
   item: DroneGalleryItem;
   title: string;
 }) {
-  const src = buildSrc(item.media_path);
+  const src = absUrl(item.media_path);
 
   return (
     <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
@@ -101,7 +92,7 @@ export default function GallerySection({
       {items.length ? (
         <div className="mt-6 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((it) => {
-            const src = buildSrc(it.media_path);
+            const src = absUrl(it.media_path);
 
             const isHero =
               heroItemId != null && Number(it.id) === Number(heroItemId);

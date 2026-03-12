@@ -4,20 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
+import { absUrl } from "@/utils/absUrl";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-/** Normaliza qualquer caminho vindo do backend para uma URL de imagem válida */
-function absUrl(raw?: string | null): string {
-  if (!raw) return "/placeholder.png";
-  const s = String(raw).trim().replace(/\\/g, "/");
-
-  if (/^https?:\/\//i.test(s)) return s;
-  if (s.startsWith("/uploads")) return `${API_BASE}${s}`;
-  if (s.startsWith("uploads")) return `${API_BASE}/${s}`;
-  if (!s.startsWith("/")) return `${API_BASE}/uploads/${s}`;
-  return `${API_BASE}${s}`;
-}
 
 type PedidoItem = {
   id: number; // id na tabela pedidos_produtos
