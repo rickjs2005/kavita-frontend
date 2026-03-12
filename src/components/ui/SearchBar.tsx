@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaSearch, FaCartPlus } from "react-icons/fa";
 import { useCart } from "@/context/CartContext";
+import { absUrl } from "@/utils/absUrl";
 
 type ResultItem =
   | {
@@ -25,7 +26,6 @@ type ResultItem =
 
 type CartItem = Parameters<ReturnType<typeof useCart>["addToCart"]>[0];
 
-const PLACEHOLDER = "/placeholder.png";
 const ORANGE = "#FF7A00";
 
 /** Blindado: nunca gera /api/api */
@@ -53,29 +53,6 @@ function toArray<T = any>(data: any): T[] {
   if (data?.items && Array.isArray(data.items)) return data.items as T[];
   if (data?.results && Array.isArray(data.results)) return data.results as T[];
   return [];
-}
-
-function resolveImage(raw?: unknown): string {
-  if (!raw) return PLACEHOLDER;
-
-  if (typeof raw === "object" && raw !== null) {
-    const anyRaw = raw as any;
-    const candidate =
-      anyRaw.url || anyRaw.path || anyRaw.src || anyRaw.image || anyRaw.imagem;
-    return candidate ? resolveImage(candidate) : PLACEHOLDER;
-  }
-
-  const src = String(raw).trim().replace(/\\/g, "/");
-  if (!src) return PLACEHOLDER;
-
-  if (/^https?:\/\//i.test(src)) return src;
-
-  const serverBase = API_BASE.replace(/\/api$/, "");
-
-  if (src.startsWith("/uploads")) return `${serverBase}${src}`;
-  if (src.startsWith("uploads")) return `${serverBase}/${src}`;
-
-  return `${serverBase}/uploads/${src}`;
 }
 
 function formatPrice(v: unknown): string {
@@ -269,7 +246,7 @@ export default function SearchBar() {
             </li>
           ) : results.length ? (
             results.map((item, i) => {
-              const img = resolveImage(item.image || item.images?.[0]);
+              const img = absUrl(item.image || item.images?.[0]);
 
               return (
                 <li

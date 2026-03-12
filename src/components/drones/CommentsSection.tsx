@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { DroneComment } from "@/types/drones";
+import { absUrl } from "@/utils/absUrl";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -218,7 +219,7 @@ export default function CommentsSection({
                   {c.media?.length ? (
                     <div className="mt-4 grid gap-2 grid-cols-2 sm:grid-cols-3">
                       {c.media.map((m: any) => {
-                        const src = `${API_BASE}${m.media_path}`;
+                        const src = absUrl(m.media_path);
                         return m.media_type === "VIDEO" ? (
                           <video
                             key={m.__key}

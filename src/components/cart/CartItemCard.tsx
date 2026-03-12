@@ -5,9 +5,9 @@ import React, { useEffect, useState } from "react";
 import { CartItem } from "../../types/CartCarProps";
 import { useCart } from "../../context/CartContext";
 import CustomButton from "../buttons/CustomButton";
+import { absUrl } from "@/utils/absUrl";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "";
-const PLACEHOLDER = "/placeholder.png";
 
 /* Helpers de preço/imagem */
 function normalizePrice(price: unknown): number {
@@ -22,21 +22,6 @@ function normalizePrice(price: unknown): number {
 
 function formatPriceBRL(n: number): string {
   return n.toFixed(2).replace(".", ",");
-}
-
-function resolveImage(raw: any): string {
-  if (!raw) return PLACEHOLDER;
-  if (typeof raw === "object") {
-    const candidate = raw.url || raw.path || raw.src || raw.image;
-    if (candidate) return resolveImage(candidate);
-    return PLACEHOLDER;
-  }
-  const src = String(raw).trim().replace(/\\/g, "/");
-  if (!src) return PLACEHOLDER;
-  if (/^https?:\/\//i.test(src)) return src;
-  if (src.startsWith("/uploads")) return `${API}${src}`;
-  if (src.startsWith("uploads")) return `${API}/${src}`;
-  return `${API}/uploads/${src}`;
 }
 
 const quantityButtonClasses =
@@ -61,7 +46,7 @@ export default function CartItemCard({ item }: { item: CartItem }) {
   const rawImage =
     (item as any).image ||
     (Array.isArray((item as any).images) ? (item as any).images[0] : null);
-  const imageSrc = resolveImage(rawImage);
+  const imageSrc = absUrl(rawImage);
 
   const stock = Number((item as any)._stock);
   const hasStock = Number.isFinite(stock) && stock >= 0;
