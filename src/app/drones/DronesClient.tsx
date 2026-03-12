@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import HeroSection from "@/components/drones/HeroSection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import CommentsSection from "@/components/drones/CommentsSection";
+import { absUrl } from "@/utils/absUrl";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -90,14 +91,6 @@ function ModelTab({ active, label }: { active: boolean; label: string }) {
       {label}
     </div>
   );
-}
-
-/** ✅ Converte caminho relativo em URL absoluta (ex: /uploads/...) */
-function absUrl(path?: string | null) {
-  if (!path) return "";
-  const p = String(path);
-  if (p.startsWith("http://") || p.startsWith("https://")) return p;
-  return `${API_BASE}${p.startsWith("/") ? "" : "/"}${p}`;
 }
 
 /** ✅ Detecta tipo pela URL */

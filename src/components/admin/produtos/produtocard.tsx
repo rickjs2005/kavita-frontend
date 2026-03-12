@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { absUrl } from "@/utils/absUrl";
 
 export type Product = {
   id: number;
@@ -24,14 +25,6 @@ type Props = {
 };
 
 const PLACEHOLDER = "/placeholder.png";
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-/** Converte paths relativos ("/uploads/...") em URL absoluta do backend */
-function absUrl(p?: string | null) {
-  if (!p) return null;
-  if (p.startsWith("http://") || p.startsWith("https://")) return p;
-  return `${API_BASE}${p.startsWith("/") ? p : `/${p}`}`;
-}
 
 function toBRL(n: number) {
   try {

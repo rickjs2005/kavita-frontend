@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Service } from "@/types/service";
+import { absUrl } from "@/utils/absUrl";
 
 type Props = {
   servico?: Service | null;
@@ -16,15 +17,6 @@ type Props = {
 };
 
 const PLACEHOLDER = "/placeholder.png";
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-/** 🔗 Gera URL absoluta para imagem (caso backend envie caminho relativo) */
-function absUrl(p?: string | null) {
-  if (!p) return null;
-  const v = String(p).trim();
-  if (v.startsWith("http://") || v.startsWith("https://")) return v;
-  return `${API_BASE}${v.startsWith("/") ? v : `/${v}`}`;
-}
 
 /** 📱 Formata telefone BR para exibição */
 function formatWhatsApp(raw: string) {

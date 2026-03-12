@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ProductShippingSection from "./ProductShippingSection";
+import { absUrl } from "@/utils/absUrl";
 
 type Msg = { type: "success" | "error"; text: string };
 
@@ -27,12 +28,6 @@ type Props = {
   onProdutoAdicionado?: () => void;
   onLimparEdicao?: () => void;
 };
-
-function absUrl(API_BASE: string, p?: string | null) {
-  if (!p) return null;
-  if (p.startsWith("http://") || p.startsWith("https://")) return p;
-  return `${API_BASE}${p.startsWith("/") ? "" : "/"}${p}`;
-}
 
 export default function ProdutoForm({
   API_BASE,
@@ -91,7 +86,7 @@ export default function ProdutoForm({
         Boolean,
       ) as string[];
       const uniqueRel = Array.from(new Set(allRel));
-      const urlsAbs = uniqueRel.map((p) => absUrl(BASE, p)!).filter(Boolean);
+      const urlsAbs = uniqueRel.map((p) => absUrl(p)).filter(Boolean);
 
       setExistingImgs(urlsAbs);
       setRemoveExisting(new Set());
