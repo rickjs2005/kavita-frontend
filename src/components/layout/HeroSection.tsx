@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { resolveImageUrl } from "@/utils/imageUrl";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -21,21 +22,6 @@ type HeroConfig = {
 };
 
 const DEFAULT_IMG = "/images/drone/fallback-hero1.jpg";
-
-function toMediaUrl(raw?: string | null) {
-  if (!raw) return "";
-  const p = String(raw).trim().replace(/\\/g, "/");
-  if (!p) return "";
-
-  // absoluto
-  if (/^https?:\/\//i.test(p)) return p;
-
-  // relativo -> backend
-  const clean = p.replace(/^\/+/, "");
-  if (clean.startsWith("uploads/")) return `${API_BASE}/${clean}`;
-  if (clean.startsWith("public/")) return `${API_BASE}/${clean}`;
-  return `${API_BASE}/uploads/${clean}`;
-}
 
 function normalizeHref(href?: string | null) {
   const v = String(href || "").trim();
@@ -96,13 +82,13 @@ export default function HeroSection() {
 
   const videoSrc = useMemo(() => {
     const raw = cfg.hero_video_url || cfg.hero_video_path || "";
-    return toMediaUrl(raw);
+    return resolveImageUrl(raw);
   }, [cfg.hero_video_url, cfg.hero_video_path]);
 
   const heroImg = useMemo(() => {
     const raw = cfg.hero_image_url || cfg.hero_image_path || DEFAULT_IMG;
     if (raw.startsWith("/images/")) return raw;
-    return toMediaUrl(raw) || DEFAULT_IMG;
+    return resolveImageUrl(raw) || DEFAULT_IMG;
   }, [cfg.hero_image_url, cfg.hero_image_path]);
 
   const href = normalizeHref(cfg.button_href);

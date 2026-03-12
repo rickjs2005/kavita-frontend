@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { newsPublicApi } from "@/lib/newsPublicApi";
 import { EmptyState } from "@/components/news/EmptyState";
+import { resolveImageUrl } from "@/utils/imageUrl";
 
 function safeText(htmlOrText?: string | null) {
   // Por segurança, aqui eu renderizo como texto.
@@ -34,15 +35,8 @@ function resolveCoverUrl(item: any): string | null {
   ) as string | undefined;
   if (!raw) return null;
 
-  const trimmed = raw.trim();
-  const base = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
-  const absolute = trimmed.startsWith("/") ? `${base}${trimmed}` : trimmed;
-
-  try {
-    return encodeURI(absolute);
-  } catch {
-    return absolute;
-  }
+  const resolved = resolveImageUrl(raw.trim());
+  return resolved || null;
 }
 
 type PageProps = {
