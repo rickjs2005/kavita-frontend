@@ -39,14 +39,23 @@ export default function ProdutoContent({ produto }: Props) {
   const extras = Array.isArray(produto.images)
     ? (produto.images as unknown as string[])
     : [];
+  console.log(`[TRACE][ProdutoContent] produto.image da API: ${produto.image} (length: ${String(produto.image).length})`);
+  console.log(`[TRACE][ProdutoContent] produto.images (extras) da API:`, extras);
+  const allRaw = [produto.image, ...extras].filter(Boolean);
+  console.log(`[TRACE][ProdutoContent] allRaw (antes do absUrl):`, allRaw);
   const images = Array.from(
     new Set(
-      [produto.image, ...extras]
-        .filter(Boolean)
-        .map((img) => absUrl(img as string | null))
+      allRaw
+        .map((img) => {
+          console.log(`[TRACE][ProdutoContent] antes absUrl: ${img} (length: ${String(img).length})`);
+          const result = absUrl(img as string | null);
+          console.log(`[TRACE][ProdutoContent] após absUrl: ${result} (length: ${result.length})`);
+          return result;
+        })
         .filter(Boolean) as string[],
     ),
   );
+  console.log(`[TRACE][ProdutoContent] images finais passadas ao <Gallery>:`, images);
 
   const estoque = Number(
     (produto as any).estoque ?? (produto as any).quantity ?? 0,
