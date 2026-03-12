@@ -8,6 +8,7 @@ import DeleteButton from "@/components/buttons/DeleteButton";
 import SearchInputProdutos from "@/components/products/SearchInput";
 import CloseButton from "@/components/buttons/CloseButton";
 import apiClient from "@/lib/apiClient";
+import { absUrl } from "@/utils/absUrl";
 
 type Promocao = {
   id: number;
@@ -29,19 +30,6 @@ type Promocao = {
 };
 
 type FormMode = "idle" | "create" | "edit";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5000";
-const PLACEHOLDER = "https://via.placeholder.com/400x240?text=Sem+imagem";
-
-function toImageUrl(raw?: string | null) {
-  if (!raw) return PLACEHOLDER;
-  const p = String(raw).trim().replace(/\\/g, "/");
-  if (/^https?:\/\//i.test(p)) return p;
-  const clean = p.replace(/^\/+/, "");
-  if (clean.startsWith("uploads/")) return `${API_BASE}/${clean}`;
-  if (clean.startsWith("public/")) return `${API_BASE}/${clean}`;
-  return `${API_BASE}/uploads/${clean}`;
-}
 
 function toArray(json: any): any[] {
   if (Array.isArray(json)) return json;
@@ -105,7 +93,7 @@ export default function MarketingPromocoesPage() {
             d.promo_price !== null && d.promo_price !== undefined
               ? Number(d.promo_price)
               : null,
-          image: toImageUrl(d.image),
+          image: absUrl(d.image),
         })),
       );
     } catch (e: any) {
@@ -513,13 +501,13 @@ export default function MarketingPromocoesPage() {
                 >
                   <div className="relative w-full bg-gray-100/80 pb-[56.25%]">
                     <Image
-                      src={toImageUrl(promo.image)}
+                      src={absUrl(promo.image)}
                       alt={String(promo.name)}
                       fill
                       className="object-cover"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       onError={(e) =>
-                        ((e.currentTarget as any).src = PLACEHOLDER)
+                        ((e.currentTarget as any).src = "/placeholder.png")
                       }
                     />
 

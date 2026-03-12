@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { newsPublicApi } from "@/lib/newsPublicApi";
 import { EmptyState } from "@/components/news/EmptyState";
-import { resolveImageUrl } from "@/utils/imageUrl";
+import { absUrl } from "@/utils/absUrl";
 
 function safeText(htmlOrText?: string | null) {
   // Por segurança, aqui eu renderizo como texto.
@@ -35,8 +35,7 @@ function resolveCoverUrl(item: any): string | null {
   ) as string | undefined;
   if (!raw) return null;
 
-  const resolved = resolveImageUrl(raw.trim());
-  return resolved || null;
+  return absUrl(raw.trim());
 }
 
 type PageProps = {

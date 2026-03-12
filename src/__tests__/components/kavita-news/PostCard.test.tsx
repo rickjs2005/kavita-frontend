@@ -80,8 +80,6 @@ describe("PostCard", () => {
   });
 
   it("deve resolver URL relativa prefixando NEXT_PUBLIC_API_URL (positivo)", () => {
-    process.env.NEXT_PUBLIC_API_URL = "https://api.kavita.com/";
-
     const item = makeItem({
       cover_image_url: "/uploads/capas/capa 1.jpg",
     });
@@ -94,7 +92,7 @@ describe("PostCard", () => {
 
     expect(img).toHaveAttribute(
       "src",
-      "https://api.kavita.com/uploads/capas/capa%201.jpg",
+      "http://localhost:5000/uploads/capas/capa%201.jpg",
     );
   });
 

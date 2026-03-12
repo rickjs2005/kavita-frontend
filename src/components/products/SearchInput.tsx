@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { absUrl } from "@/utils/absUrl";
 
 type Produto = {
   id: number;
@@ -19,8 +20,6 @@ type Props = {
   apiBase?: string;
 };
 
-// Se tiver um arquivo em public/placeholder.png, pode trocar por "/placeholder.png"
-const PLACEHOLDER = "https://via.placeholder.com/80?text=Img";
 const API_DEFAULT =
   process.env.NEXT_PUBLIC_API_BASE ||
   process.env.NEXT_PUBLIC_API_URL ||
@@ -35,16 +34,6 @@ function toArray(json: any): any[] {
   if (json && Array.isArray(json.items)) return json.items;
   if (json && Array.isArray(json.products)) return json.products;
   return [];
-}
-
-function toImageUrl(apiBase: string, raw?: string | null) {
-  if (!raw) return PLACEHOLDER;
-  const p = String(raw).trim().replace(/\\/g, "/");
-  if (/^https?:\/\//i.test(p)) return p;
-  const clean = p.replace(/^\/+/, "");
-  if (clean.startsWith("uploads/")) return `${apiBase}/${clean}`;
-  if (clean.startsWith("public/")) return `${apiBase}/${clean}`;
-  return `${apiBase}/uploads/${clean}`;
 }
 
 /* --------------------------------- Componente -------------------------------- */
@@ -171,7 +160,7 @@ export default function SearchInputProdutos({
             </li>
           ) : results.length ? (
             results.map((p, i) => {
-              const img = toImageUrl(apiBase, p.image);
+              const img = absUrl(p.image);
               return (
                 <li
                   key={p.id}
@@ -185,7 +174,7 @@ export default function SearchInputProdutos({
                     alt={p.name}
                     className="w-10 h-10 object-cover rounded"
                     onError={(e) =>
-                      ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+                      ((e.currentTarget as HTMLImageElement).src = "/placeholder.png")
                     }
                   />
                   <div className="min-w-0">

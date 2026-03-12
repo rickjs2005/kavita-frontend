@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Product } from "@/types/product";
 import { api } from "@/lib/api";
+import { absUrl } from "@/utils/absUrl";
 
 type PromoProduct = Product & {
   image?: string | null;
@@ -16,25 +17,6 @@ type PromoProduct = Product & {
 };
 
 const SLIDE_INTERVAL = 6000; // 6s
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
-const PLACEHOLDER =
-  "https://via.placeholder.com/600x400?text=Produto+sem+imagem";
-
-// mesma ideia que usamos no admin
-function getImageUrl(raw?: string | null): string {
-  if (!raw) return PLACEHOLDER;
-
-  let p = String(raw).trim().replace(/\\/g, "/");
-
-  // já é URL completa
-  if (/^https?:\/\//i.test(p)) return p;
-
-  // remove barras iniciais duplicadas
-  p = p.replace(/^\/+/, "");
-
-  // se vier só "uploads/..." já funciona
-  return `${API_BASE}/${p}`;
-}
 
 export default function PromocoesHero() {
   const [promocoes, setPromocoes] = useState<PromoProduct[]>([]);
@@ -114,7 +96,7 @@ export default function PromocoesHero() {
         : 0;
 
   const endsAt = produto.ends_at;
-  const imageUrl = getImageUrl(produto.image as string | null);
+  const imageUrl = absUrl(produto.image as string | null);
 
   return (
     <section className="mb-10 px-4 sm:px-6 lg:px-10">

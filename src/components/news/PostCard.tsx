@@ -1,6 +1,7 @@
 // src/components/news/PostCard.tsx
 import Link from "next/link";
 import type { PublicPost } from "@/lib/newsPublicApi";
+import { absUrl } from "@/utils/absUrl";
 
 function formatDatePtBR(value?: string | null) {
   if (!value) return "";
@@ -10,13 +11,13 @@ function formatDatePtBR(value?: string | null) {
 }
 
 /**
- * resolveCoverUrl(item)
+ * getCoverUrl(item)
  * - tenta cover_image_url
  * - fallback para nomes comuns: cover, cover_url, coverImageUrl, image_url, thumbnail_url
- * - se relativa (/...), prefixa com NEXT_PUBLIC_API_URL
+ * - usa absUrl() para transformar o caminho em URL absoluta
  * - encodeURI para evitar quebra por espaços e caracteres
  */
-function resolveCoverUrl(item: any): string | null {
+function getCoverUrl(item: any): string | null {
   const candidates = [
     item?.cover_image_url,
     item?.cover,
@@ -31,16 +32,10 @@ function resolveCoverUrl(item: any): string | null {
   ) as string | undefined;
   if (!raw) return null;
 
-  const trimmed = raw.trim();
-  const base = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
-
-  // URL relativa -> absoluta
-  const absolute = trimmed.startsWith("/") ? `${base}${trimmed}` : trimmed;
-
   try {
-    return encodeURI(absolute);
+    return encodeURI(absUrl(raw.trim()));
   } catch {
-    return absolute; // fallback seguro
+    return absUrl(raw.trim());
   }
 }
 
@@ -62,7 +57,7 @@ function getEmoji(item: any): string {
 }
 
 export function PostCard({ item }: { item: PublicPost }) {
-  const coverUrl = resolveCoverUrl(item);
+  const coverUrl = getCoverUrl(item);
   const emoji = getEmoji(item);
   const published = formatDatePtBR((item as any)?.published_at);
 

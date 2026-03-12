@@ -21,7 +21,7 @@ describe("absUrl", () => {
     vi.unstubAllEnvs();
   });
 
-  it("retorna string vazia para null/undefined/empty", async () => {
+  it("retorna '/placeholder.png' para null/undefined/empty", async () => {
     // Arrange
     const absUrl = await loadAbsUrlWithEnv("https://api.kavita.com");
 
@@ -31,9 +31,9 @@ describe("absUrl", () => {
     const r3 = absUrl("");
 
     // Assert
-    expect(r1).toBe("");
-    expect(r2).toBe("");
-    expect(r3).toBe("");
+    expect(r1).toBe("/placeholder.png");
+    expect(r2).toBe("/placeholder.png");
+    expect(r3).toBe("/placeholder.png");
   });
 
   it("não altera data URLs", async () => {

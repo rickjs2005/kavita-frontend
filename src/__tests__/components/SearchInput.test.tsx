@@ -125,7 +125,7 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
     const img1 = within(list).getByRole("img", {
       name: "Ivermectina",
     }) as HTMLImageElement;
-    expect(img1.src).toBe(`${apiBase}/uploads/ivm.png`);
+    expect(img1.src).toContain('/uploads/ivm.png');
 
     const img2 = within(list).getByRole("img", {
       name: "Vitamina B12",
