@@ -1,6 +1,6 @@
 // src/lib/apiClient.ts
 // Padrão único de HTTP client (fetch) para o projeto.
-// Objetivos: credentials sempre include, parse seguro (JSON/texto), e erro consistente (ApiError).
+// Objetivos: credentials CONDICIONAL, parse seguro (JSON/texto), e erro consistente (ApiError).
 
 import { ApiError, type ApiErrorPayload } from "./errors";
 
@@ -188,8 +188,13 @@ export async function apiRequest<T = any>(
 
   const method = (options.method || "GET").toUpperCase();
 
-  // Garantia: credentials include sempre, a menos que o caller explicitamente mude
-  const credentials = options.credentials ?? "include";
+  // ✅ CORREÇÃO CRÍTICA: Credentials CONDICIONAL
+  // SÓ envia credentials para /api (autenticação, cookies, CSRF)
+  // NÃO envia para /uploads (arquivos estáticos)
+  const credentials: RequestCredentials = 
+    url.includes("/api") 
+      ? (options.credentials ?? "include")  // ✅ /api: com credentials
+      : "omit";                              // ✅ /uploads: sem credentials
 
   // Normaliza body: se for objeto, vira JSON (exceto FormData etc.)
   let body = options.body as any;
@@ -262,7 +267,7 @@ export async function apiRequest<T = any>(
 /**
  * Alias legado (compatibilidade)
  * Alguns hooks/services antigos ainda importam `apiFetch`.
- * Internamente, continua sendo o mesmo client (apiRequest) com credentials include e parse seguro.
+ * Internamente, continua sendo o mesmo client (apiRequest) com credentials condicional e parse seguro.
  */
 export const apiFetch = apiRequest;
 
