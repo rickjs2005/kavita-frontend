@@ -19,8 +19,6 @@ type Props = {
   apiBase?: string;
 };
 
-// Se tiver um arquivo em public/placeholder.png, pode trocar por "/placeholder.png"
-const PLACEHOLDER = "https://via.placeholder.com/80?text=Img";
 const API_DEFAULT =
   process.env.NEXT_PUBLIC_API_BASE ||
   process.env.NEXT_PUBLIC_API_URL ||
@@ -38,12 +36,11 @@ function toArray(json: any): any[] {
 }
 
 function toImageUrl(apiBase: string, raw?: string | null) {
-  if (!raw) return PLACEHOLDER;
+  if (!raw) return "/placeholder.png";
   const p = String(raw).trim().replace(/\\/g, "/");
   if (/^https?:\/\//i.test(p)) return p;
   const clean = p.replace(/^\/+/, "");
   if (clean.startsWith("uploads/")) return `${apiBase}/${clean}`;
-  if (clean.startsWith("public/")) return `${apiBase}/${clean}`;
   return `${apiBase}/uploads/${clean}`;
 }
 
@@ -185,7 +182,7 @@ export default function SearchInputProdutos({
                     alt={p.name}
                     className="w-10 h-10 object-cover rounded"
                     onError={(e) =>
-                      ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
+                      ((e.currentTarget as HTMLImageElement).src = "/placeholder.png")
                     }
                   />
                   <div className="min-w-0">

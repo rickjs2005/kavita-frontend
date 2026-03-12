@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { resolveImageUrl } from "@/utils/imageUrl";
+import { absUrl } from "@/utils/absUrl";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -82,13 +82,12 @@ export default function HeroSection() {
 
   const videoSrc = useMemo(() => {
     const raw = cfg.hero_video_url || cfg.hero_video_path || "";
-    return resolveImageUrl(raw);
+    return absUrl(raw);
   }, [cfg.hero_video_url, cfg.hero_video_path]);
 
   const heroImg = useMemo(() => {
     const raw = cfg.hero_image_url || cfg.hero_image_path || DEFAULT_IMG;
-    if (raw.startsWith("/images/")) return raw;
-    return resolveImageUrl(raw) || DEFAULT_IMG;
+    return absUrl(raw);
   }, [cfg.hero_image_url, cfg.hero_image_path]);
 
   const href = normalizeHref(cfg.button_href);

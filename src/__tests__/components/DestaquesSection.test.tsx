@@ -135,7 +135,7 @@ describe("PromocoesHero (DestaquesSection)", () => {
     await screen.findByText("Produtos em Promoção");
 
     const img = screen.getByAltText("Produto Teste") as HTMLImageElement;
-    expect(img.src).toContain("via.placeholder.com");
+    expect(img.src).toContain("/placeholder.png");
   });
 
   it("renderiza bolinhas de navegação quando há mais de uma promoção (positivo)", async () => {

@@ -21,7 +21,7 @@ describe("resolveImageUrl", () => {
     vi.unstubAllEnvs();
   });
 
-  it("retorna string vazia para null/undefined/empty", async () => {
+  it("retorna /placeholder.png para null/undefined/empty", async () => {
     // Arrange
     const resolveImageUrl = await loadResolveImageUrlWithEnv("http://172.20.10.9:5000");
 
@@ -31,9 +31,9 @@ describe("resolveImageUrl", () => {
     const r3 = resolveImageUrl("");
 
     // Assert
-    expect(r1).toBe("");
-    expect(r2).toBe("");
-    expect(r3).toBe("");
+    expect(r1).toBe("/placeholder.png");
+    expect(r2).toBe("/placeholder.png");
+    expect(r3).toBe("/placeholder.png");
   });
 
   it("não altera data URLs", async () => {
@@ -84,18 +84,6 @@ describe("resolveImageUrl", () => {
     expect(result).toBe("http://172.20.10.9:5000/uploads/foto.jpg");
   });
 
-  it("para caminhos que começam com 'public/', prefixa com API", async () => {
-    // Arrange
-    const resolveImageUrl = await loadResolveImageUrlWithEnv("http://172.20.10.9:5000");
-    const path = "public/images/hero.jpg";
-
-    // Act
-    const result = resolveImageUrl(path);
-
-    // Assert
-    expect(result).toBe("http://172.20.10.9:5000/public/images/hero.jpg");
-  });
-
   it("fallback: assume uploads/<arquivo> para nomes de arquivo simples", async () => {
     // Arrange
     const resolveImageUrl = await loadResolveImageUrlWithEnv("http://172.20.10.9:5000");
@@ -129,5 +117,17 @@ describe("resolveImageUrl", () => {
 
     // Assert
     expect(result).toBe("http://localhost:5000/uploads/img.png");
+  });
+
+  it("caminhos /images/ são servidos do frontend (sem prefixo API)", async () => {
+    // Arrange
+    const resolveImageUrl = await loadResolveImageUrlWithEnv("http://172.20.10.9:5000");
+    const path = "/images/drone/fallback-hero1.jpg";
+
+    // Act
+    const result = resolveImageUrl(path);
+
+    // Assert
+    expect(result).toBe("/images/drone/fallback-hero1.jpg");
   });
 });

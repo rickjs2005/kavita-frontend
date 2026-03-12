@@ -21,7 +21,7 @@ describe("absUrl", () => {
     vi.unstubAllEnvs();
   });
 
-  it("retorna string vazia para null/undefined/empty", async () => {
+  it("retorna /placeholder.png para null/undefined/empty", async () => {
     // Arrange
     const absUrl = await loadAbsUrlWithEnv("https://api.kavita.com");
 
@@ -31,9 +31,9 @@ describe("absUrl", () => {
     const r3 = absUrl("");
 
     // Assert
-    expect(r1).toBe("");
-    expect(r2).toBe("");
-    expect(r3).toBe("");
+    expect(r1).toBe("/placeholder.png");
+    expect(r2).toBe("/placeholder.png");
+    expect(r3).toBe("/placeholder.png");
   });
 
   it("não altera data URLs", async () => {
@@ -105,5 +105,28 @@ describe("absUrl", () => {
 
     // Assert
     expect(result).toBe("http://localhost:5000/ping");
+  });
+
+  it("caminhos /images/ são servidos do frontend (sem prefixo API)", async () => {
+    // Arrange
+    const absUrl = await loadAbsUrlWithEnv("https://api.kavita.com");
+    const path = "/images/drone/fallback-hero1.jpg";
+
+    // Act
+    const result = absUrl(path);
+
+    // Assert
+    expect(result).toBe("/images/drone/fallback-hero1.jpg");
+  });
+
+  it("caminho /placeholder.png é servido do frontend (sem prefixo API)", async () => {
+    // Arrange
+    const absUrl = await loadAbsUrlWithEnv("https://api.kavita.com");
+
+    // Act
+    const result = absUrl("/placeholder.png");
+
+    // Assert
+    expect(result).toBe("/placeholder.png");
   });
 });
