@@ -2,10 +2,10 @@
 const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 export function absUrl(raw?: string | null): string {
-  if (!raw) return "";
+  if (!raw) return "/placeholder.png"; // ✅ RETORNA PLACEHOLDER em vez de string vazia
 
   const src = String(raw).trim().replace(/\\/g, "/");
-  if (!src) return "";
+  if (!src) return "/placeholder.png"; // ✅ PLACEHOLDER aqui também
 
   // data URL
   if (src.startsWith("data:")) return src;
