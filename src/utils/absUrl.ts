@@ -4,7 +4,7 @@ const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace
 export function absUrl(raw?: string | null): string {
   if (!raw) return "";
 
-  let src = String(raw).trim().replace(/\\/g, "/");
+  const src = String(raw).trim().replace(/\\/g, "/");
   if (!src) return "";
 
   // data URL
@@ -13,9 +13,9 @@ export function absUrl(raw?: string | null): string {
   // URL absoluta
   if (/^https?:\/\//i.test(src)) return src;
 
-  // se começa com /, normaliza barras múltiplas e prefixa com API
+  // se começa com '/', prefixa com API sem /uploads/
   if (src.startsWith("/")) {
-    return `${API}${src.replace(/^\/+/, "/")}`;
+    return `${API}/${src.replace(/^\/+/, "")}`;
   }
 
   // se já vier uploads/...
