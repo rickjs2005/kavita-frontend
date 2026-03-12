@@ -1,11 +1,10 @@
-// src/utils/absUrl.ts
 const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 export function absUrl(raw?: string | null): string {
-  if (!raw) return "/placeholder.png"; // ✅ RETORNA PLACEHOLDER em vez de string vazia
+  if (!raw) return "/placeholder.png";
 
-  const src = String(raw).trim().replace(/\\/g, "/");
-  if (!src) return "/placeholder.png"; // ✅ PLACEHOLDER aqui também
+  let src = String(raw).trim().replace(/\\/g, "/");
+  if (!src) return "/placeholder.png";
 
   // data URL
   if (src.startsWith("data:")) return src;
@@ -13,16 +12,25 @@ export function absUrl(raw?: string | null): string {
   // URL absoluta
   if (/^https?:\/\//i.test(src)) return src;
 
-  // se começa com '/', prefixa com API sem /uploads/
-  if (src.startsWith("/")) {
-    return `${API}/${src.replace(/^\/+/, "")}`;
-  }
+  // remove barras iniciais
+  src = src.replace(/^\/+/, "");
 
-  // se já vier uploads/...
+  // já veio completo com uploads/
   if (src.startsWith("uploads/")) {
     return `${API}/${src}`;
   }
 
-  // se vier só nome de arquivo
+  // veio só a subpasta/arquivo, ex: products/x.jpg
+  if (
+    src.startsWith("products/") ||
+    src.startsWith("colaboradores/") ||
+    src.startsWith("logos/") ||
+    src.startsWith("news/") ||
+    src.startsWith("drones/")
+  ) {
+    return `${API}/uploads/${src}`;
+  }
+
+  // veio só nome de arquivo
   return `${API}/uploads/${src}`;
 }
