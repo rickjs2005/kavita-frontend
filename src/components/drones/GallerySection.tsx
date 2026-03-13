@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { DroneGalleryItem } from "@/types/drones";
 import { absUrl } from "@/utils/absUrl";
 
@@ -11,6 +12,7 @@ function MediaBlock({
   title: string;
 }) {
   const src = absUrl(item.media_path);
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
@@ -24,17 +26,28 @@ function MediaBlock({
       <div className="p-4 pt-3">
         {item.media_type === "VIDEO" ? (
           <video
-            className="w-full aspect-video object-cover bg-black/30 rounded-2xl"
+            className="block w-full aspect-video object-cover bg-black/30 rounded-2xl min-h-[180px]"
             src={src}
             controls
             playsInline
           />
+        ) : imgError ? (
+          <div className="flex w-full aspect-video min-h-[180px] items-center justify-center rounded-2xl bg-white/10 text-xs text-slate-400">
+            Imagem indisponível
+          </div>
         ) : (
           <img
-            className="w-full aspect-video object-cover bg-black/30 rounded-2xl"
+            className="block w-full aspect-video object-cover bg-black/30 rounded-2xl min-h-[180px]"
             src={src}
             alt={item.caption || title}
-            loading="lazy"
+            width={1280}
+            height={720}
+            loading="eager"
+            onLoad={() => console.log(`[GallerySection] MediaBlock image loaded: ${src}`)}
+            onError={() => {
+              console.warn(`[GallerySection] MediaBlock image failed to load: ${src}`);
+              setImgError(true);
+            }}
           />
         )}
 
@@ -46,6 +59,82 @@ function MediaBlock({
           <p className="mt-3 text-xs text-slate-400">Sem legenda</p>
         )}
       </div>
+    </div>
+  );
+}
+
+function GalleryItem({
+  item,
+  isHero,
+  isCard,
+}: {
+  item: DroneGalleryItem;
+  isHero: boolean;
+  isCard: boolean;
+}) {
+  const src = absUrl(item.media_path);
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <div className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 hover:bg-white/10 transition">
+      <div className="relative">
+        {item.media_type === "VIDEO" ? (
+          <video
+            className="block w-full aspect-video object-cover bg-black/30 min-h-[180px]"
+            src={src}
+            controls
+            playsInline
+          />
+        ) : imgError ? (
+          <div className="flex w-full aspect-video min-h-[180px] items-center justify-center bg-white/10 text-xs text-slate-400">
+            Imagem indisponível
+          </div>
+        ) : (
+          <img
+            className="block w-full aspect-video object-cover bg-black/30 min-h-[180px]"
+            src={src}
+            alt={item.caption || "Galeria"}
+            width={1280}
+            height={720}
+            loading="lazy"
+            onLoad={() => console.log(`[GallerySection] Gallery image loaded: ${src}`)}
+            onError={() => {
+              console.warn(`[GallerySection] Gallery image failed to load: ${src}`);
+              setImgError(true);
+            }}
+          />
+        )}
+
+        {/* ✅ badges (opcional, mas ajuda a visualizar) */}
+        {(isHero || isCard) && (
+          <div className="absolute left-3 top-3 flex gap-2">
+            {isHero && (
+              <span className="text-[10px] px-2 py-1 rounded-full bg-white/15 text-white">
+                DESTAQUE
+              </span>
+            )}
+            {isCard && (
+              <span className="text-[10px] px-2 py-1 rounded-full bg-white/15 text-white">
+                CARD
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+      </div>
+
+      {item.caption ? (
+        <div className="p-4">
+          <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
+            {item.caption}
+          </p>
+        </div>
+      ) : (
+        <div className="p-4">
+          <p className="text-xs text-slate-400">Sem legenda</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -92,66 +181,18 @@ export default function GallerySection({
       {items.length ? (
         <div className="mt-6 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((it) => {
-            const src = absUrl(it.media_path);
-
             const isHero =
               heroItemId != null && Number(it.id) === Number(heroItemId);
             const isCard =
               cardItemId != null && Number(it.id) === Number(cardItemId);
 
             return (
-              <div
+              <GalleryItem
                 key={it.id}
-                className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
-              >
-                <div className="relative">
-                  {it.media_type === "VIDEO" ? (
-                    <video
-                      className="w-full aspect-video object-cover bg-black/30"
-                      src={src}
-                      controls
-                      playsInline
-                    />
-                  ) : (
-                    <img
-                      className="w-full aspect-video object-cover bg-black/30"
-                      src={src}
-                      alt={it.caption || "Galeria"}
-                      loading="lazy"
-                    />
-                  )}
-
-                  {/* ✅ badges (opcional, mas ajuda a visualizar) */}
-                  {(isHero || isCard) && (
-                    <div className="absolute left-3 top-3 flex gap-2">
-                      {isHero && (
-                        <span className="text-[10px] px-2 py-1 rounded-full bg-white/15 text-white">
-                          DESTAQUE
-                        </span>
-                      )}
-                      {isCard && (
-                        <span className="text-[10px] px-2 py-1 rounded-full bg-white/15 text-white">
-                          CARD
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                </div>
-
-                {it.caption ? (
-                  <div className="p-4">
-                    <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
-                      {it.caption}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-4">
-                    <p className="text-xs text-slate-400">Sem legenda</p>
-                  </div>
-                )}
-              </div>
+                item={it}
+                isHero={isHero}
+                isCard={isCard}
+              />
             );
           })}
         </div>
