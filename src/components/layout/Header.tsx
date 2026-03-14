@@ -15,6 +15,7 @@ import UserMenu from "@/components/ui/UserMenu";
 import MainNavCategories from "@/components/layout/MainNavCategories";
 
 import type { PublicShopSettings } from "@/server/data/shopSettings"; // mantém seu tipo atual
+import { absUrl } from "@/utils/absUrl";
 
 const SearchBar = dynamic(() => import("@/components/ui/SearchBar"), {
   ssr: false,
@@ -85,14 +86,10 @@ export default function Header({ categories, shop }: HeaderProps) {
   const isDronePage = pathname.startsWith("/drones");
   const isNewsPage = pathname.startsWith("/news");
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
   const logoSrc = isDronePage
     ? "/kavita-drone.png"
     : shop?.logo_url?.trim()
-      ? shop.logo_url.startsWith("http")
-        ? shop.logo_url
-        : `${apiBase}${shop.logo_url}`
+      ? absUrl(shop.logo_url)
       : "/images/kavita2.png";
 
   const logoAlt = shop?.store_name?.trim() ? shop.store_name : "Kavita";

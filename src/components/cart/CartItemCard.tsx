@@ -5,9 +5,9 @@ import React, { useEffect, useState } from "react";
 import { CartItem } from "../../types/CartCarProps";
 import { useCart } from "../../context/CartContext";
 import CustomButton from "../buttons/CustomButton";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, API_BASE } from "@/utils/absUrl";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "";
+const API = API_BASE;
 
 /* Helpers de preço/imagem */
 function normalizePrice(price: unknown): number {

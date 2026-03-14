@@ -89,6 +89,7 @@ export default function HeroSection() {
 
   const heroImg = useMemo(() => {
     const raw = cfg.hero_image_url || cfg.hero_image_path || DEFAULT_IMG;
+    // Assets estáticos em /public/images/ não passam por absUrl (não são do backend)
     if (raw.startsWith("/images/")) return raw;
     return absUrl(raw);
   }, [cfg.hero_image_url, cfg.hero_image_path]);

@@ -7,9 +7,8 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import type { AdminConfig } from "../../../types/adminConfig";
+import { absUrl } from "@/utils/absUrl";
 import FormattedInput from "@/components/layout/FormattedInput";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type AdminConfigForm = Partial<AdminConfig>;
 
@@ -246,9 +245,7 @@ export default function ConfiguracoesPage() {
 
   const logoPreviewSrc =
     settings?.logo_url && typeof settings.logo_url === "string"
-      ? settings.logo_url.startsWith("http")
-        ? settings.logo_url
-        : `${API_BASE}${settings.logo_url}`
+      ? absUrl(settings.logo_url)
       : null;
 
   // ============================================================

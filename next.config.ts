@@ -1,5 +1,25 @@
 import type { NextConfig } from "next";
 
+// Deriva hostname e protocol diretamente de NEXT_PUBLIC_API_URL para que
+// next/image aceite imagens do backend em qualquer ambiente (dev, staging, prod).
+function apiRemotePattern(): import("next/dist/shared/lib/image-config").RemotePattern | null {
+  const raw = process.env.NEXT_PUBLIC_API_URL;
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    return {
+      protocol: url.protocol.replace(":", "") as "http" | "https",
+      hostname: url.hostname,
+      ...(url.port ? { port: url.port } : {}),
+      pathname: "/uploads/**",
+    };
+  } catch {
+    return null;
+  }
+}
+
+const envPattern = apiRemotePattern();
+
 const nextConfig: NextConfig = {
   eslint: {
     // Impede que o ESLint quebre o build
@@ -9,6 +29,7 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: [
+      // Padrões fixos para desenvolvimento local
       {
         protocol: "http",
         hostname: "localhost",
@@ -27,6 +48,8 @@ const nextConfig: NextConfig = {
         port: "5000",
         pathname: "/uploads/**",
       },
+      // Padrão dinâmico derivado de NEXT_PUBLIC_API_URL (cobre staging e produção)
+      ...(envPattern ? [envPattern] : []),
     ],
     unoptimized: process.env.NODE_ENV === "development",
   },
