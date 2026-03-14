@@ -8,15 +8,12 @@ import {
   useRef,
   useState,
 } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { usePathname } from "next/navigation";
 import { Product, CartItem } from "@/types/CartCarProps";
 import { useAuth } from "@/context/AuthContext";
 import { handleApiError } from "@/lib/handleApiError";
-
-/* Config API */
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 /* ===== Tipos de resposta da API ===== */
 type CartApiItem = {
@@ -161,11 +158,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
     (async () => {
       try {
-        const res = await axios.get<CartGetResponse>(`${API_BASE}/api/cart`, {
-          withCredentials: true,
-        });
-
-        const data = res.data;
+        const data = await apiClient.get<CartGetResponse>("/api/cart");
         const itemsFromApi = Array.isArray(data.items) ? data.items : [];
         const normalized = normalizeApiItems(itemsFromApi);
 
@@ -220,10 +213,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const refetchServerCart = async () => {
     if (!userId) return;
     try {
-      const res = await axios.get<CartGetResponse>(`${API_BASE}/api/cart`, {
-        withCredentials: true,
-      });
-      const itemsFromApi = Array.isArray(res.data.items) ? res.data.items : [];
+      const data = await apiClient.get<CartGetResponse>("/api/cart");
+      const itemsFromApi = Array.isArray(data.items) ? data.items : [];
       setCartItems(normalizeApiItems(itemsFromApi));
     } catch {
       // ignore
@@ -307,17 +298,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
     // logado: sincroniza no servidor
     if (userId) {
-      axios
-        .post(
-          `${API_BASE}/api/cart/items`,
-          { produto_id: product.id, quantidade: increment },
-          { withCredentials: true },
-        )
+      apiClient
+        .post("/api/cart/items", { produto_id: product.id, quantidade: increment })
         .catch((err) => {
           // Tratamento específico para STOCK_LIMIT (409)
-          const status = err?.response?.status;
-          const code =
-            err?.response?.data?.code || err?.response?.data?.error?.code;
+          const status = (err as any)?.status;
+          const code = (err as any)?.code;
 
           if (status === 409 && code === "STOCK_LIMIT") {
             toast.error("Limite de estoque atingido.");
@@ -368,24 +354,19 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (userId && finalQty !== null) {
       if (finalQty <= 0) {
-        axios
-          .delete(`${API_BASE}/api/cart/items/${id}`, { withCredentials: true })
+        apiClient
+          .del(`/api/cart/items/${id}`)
           .catch((err) =>
             handleApiError(err, {
               fallbackMessage: "Erro ao remover item do carrinho no servidor.",
             }),
           );
       } else {
-        axios
-          .patch(
-            `${API_BASE}/api/cart/items`,
-            { produto_id: id, quantidade: finalQty },
-            { withCredentials: true },
-          )
+        apiClient
+          .patch("/api/cart/items", { produto_id: id, quantidade: finalQty })
           .catch((err) => {
-            const status = err?.response?.status;
-            const code =
-              err?.response?.data?.code || err?.response?.data?.error?.code;
+            const status = (err as any)?.status;
+            const code = (err as any)?.code;
 
             if (status === 409 && code === "STOCK_LIMIT") {
               toast.error("Limite de estoque atingido.");
@@ -407,8 +388,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setCartItems((prev) => prev.filter((i) => i.id !== id));
 
     if (userId) {
-      axios
-        .delete(`${API_BASE}/api/cart/items/${id}`, { withCredentials: true })
+      apiClient
+        .del(`/api/cart/items/${id}`)
         .catch((err) =>
           handleApiError(err, {
             fallbackMessage: "Erro ao remover item do carrinho no servidor.",
@@ -464,8 +445,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     if (userId) {
-      axios
-        .delete(`${API_BASE}/api/cart`, { withCredentials: true })
+      apiClient
+        .del("/api/cart")
         .catch((err) =>
           handleApiError(err, {
             fallbackMessage: "Erro ao limpar o carrinho no servidor.",

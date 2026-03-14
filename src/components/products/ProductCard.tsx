@@ -8,7 +8,7 @@ import AddToCartButton from "@/components/buttons/AddToCartButton";
 import type { Product } from "@/types/product";
 import { resolveStockValue } from "../../utils/stock";
 import { useAuth } from "@/context/AuthContext";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, API_BASE } from "@/utils/absUrl";
 
 type Props = {
   product: Product;
@@ -17,7 +17,6 @@ type Props = {
   initialIsFavorite?: boolean;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const PLACEHOLDER = "/placeholder.png";
 
 /** formatador BRL determinístico */
@@ -51,11 +50,8 @@ export default function ProductCard({
   // === Imagens ===
   const images = useMemo(() => {
     if (externalImages?.length) {
-      console.log(`[TRACE][ProductCard] externalImages recebidos:`, externalImages);
       const norm = externalImages.map((img) => {
-        console.log(`[TRACE][ProductCard] antes absUrl (external): ${img} (length: ${String(img).length})`);
         const result = absUrl(img);
-        console.log(`[TRACE][ProductCard] após absUrl (external): ${result} (length: ${result.length})`);
         return result;
       }).filter(Boolean) as string[];
       return norm.length ? norm : [PLACEHOLDER];
@@ -63,24 +59,14 @@ export default function ProductCard({
     const extras: string[] = Array.isArray(product.images)
       ? (product.images as unknown as string[])
       : [];
-    console.log(`[TRACE][ProductCard] product.image: ${product.image} (length: ${String(product.image).length})`);
-    console.log(`[TRACE][ProductCard] product.images (extras):`, extras);
     const all = [product.image, ...extras].filter(Boolean) as string[];
     const uniq = Array.from(new Set(all))
-      .map((img) => {
-        console.log(`[TRACE][ProductCard] antes absUrl: ${img} (length: ${String(img).length})`);
-        const result = absUrl(img);
-        console.log(`[TRACE][ProductCard] após absUrl: ${result} (length: ${result.length})`);
-        return result;
-      })
+      .map((img) => absUrl(img))
       .filter(Boolean) as string[];
     return uniq.length ? uniq : [PLACEHOLDER];
   }, [externalImages, product.image, product.images]);
 
   const cover = images[0] ?? PLACEHOLDER;
-  useEffect(() => {
-    console.log(`[TRACE][ProductCard] cover (src final renderizado): ${cover} (length: ${cover.length})`);
-  }, [cover]);
 
   // === Estoque ===
   const stock = resolveStockValue(

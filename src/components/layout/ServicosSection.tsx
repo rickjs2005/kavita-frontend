@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ServiceCard from "./ServiceCard";
+import { API_BASE } from "@/utils/absUrl";
 
 type Servico = {
   id: number;
@@ -14,8 +15,6 @@ type Servico = {
   images?: string[];
   [k: string]: any;
 };
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 function normalize(payload: any): Servico[] {
   if (!payload) return [];
@@ -56,7 +55,7 @@ export default function ServicosSection() {
         setErrorMsg(null);
         setServicos([]);
 
-        const url = `${API}/api/public/servicos`;
+        const url = `${API_BASE}/api/public/servicos`;
         const res = await fetch(url, {
           signal: ctrl.signal,
           cache: "no-store",

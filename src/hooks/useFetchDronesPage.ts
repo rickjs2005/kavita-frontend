@@ -8,13 +8,8 @@ import type {
   DronePageSettings,
   DroneComment,
 } from "@/types/drones";
-
-/**
- * =========================================================
- * CONFIG
- * =========================================================
- */
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { ApiError } from "@/lib/errors";
+import { API_BASE } from "@/utils/absUrl";
 
 /**
  * =========================================================
@@ -27,20 +22,6 @@ export type ApiErrorPayload = {
   message?: string;
   details?: any;
 };
-
-class ApiError extends Error {
-  status: number;
-  code?: string;
-  details?: any;
-
-  constructor(message: string, status = 500, code?: string, details?: any) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.code = code;
-    this.details = details;
-  }
-}
 
 export type ModelKey = string;
 
@@ -136,12 +117,12 @@ async function fetchJsonOrThrow<T>(
     const payload = (
       json && typeof json === "object" ? (json as any) : {}
     ) as ApiErrorPayload;
-    throw new ApiError(
-      pickErrorMessage(json, "Falha na requisição."),
-      res.status,
-      payload.code,
-      payload.details,
-    );
+    throw new ApiError({
+      message: pickErrorMessage(json, "Falha na requisição."),
+      status: res.status,
+      code: payload.code,
+      details: payload.details,
+    });
   }
 
   return json as T;
