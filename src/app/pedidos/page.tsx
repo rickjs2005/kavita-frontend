@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import CustomButton from "@/components/buttons/CustomButton";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 // ----- Tipos -----
 type PedidoResumo = {
@@ -46,24 +44,16 @@ export default function PedidosClientePage() {
         setLoading(true);
         setError(null);
 
-        const { data } = await axios.get<PedidoResumo[]>(
-          `${API_BASE}/api/pedidos`,
-          {
-            withCredentials: true,
-          },
-        );
+        const data = await apiClient.get<PedidoResumo[]>("/api/pedidos");
 
         setPedidos(Array.isArray(data) ? data : []);
       } catch (err: any) {
-        const status = err?.response?.status;
+        const status = err?.status;
         if (status === 401 || status === 403) {
           setError("Sessão expirada. Faça login novamente.");
           router.push("/login");
         } else {
-          setError(
-            err?.response?.data?.message ||
-              "Não foi possível carregar seus pedidos.",
-          );
+          setError(err?.message || "Não foi possível carregar seus pedidos.");
         }
       } finally {
         setLoading(false);

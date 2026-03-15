@@ -9,6 +9,7 @@ import type { Product } from "@/types/product";
 import { resolveStockValue } from "../../utils/stock";
 import { useAuth } from "@/context/AuthContext";
 import { absUrl, API_BASE } from "@/utils/absUrl";
+import { useProductPromotion, type ProductPromotion } from "@/hooks/useProductPromotion";
 
 type Props = {
   product: Product;
@@ -26,18 +27,6 @@ function formatBRL(value: unknown): string {
   const mil = int.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return `R$ ${mil},${dec}`;
 }
-
-// Promoção vinda da rota pública
-type ProductPromotion = {
-  id: number;
-  product_id?: number;
-  title?: string | null;
-  original_price?: number | string | null;
-  final_price?: number | string | null;
-  discount_percent?: number | string | null;
-  promo_price?: number | string | null;
-  ends_at?: string | null;
-};
 
 export default function ProductCard({
   product,
@@ -104,39 +93,7 @@ export default function ProductCard({
     !Number.isNaN(ratingAvg) && ratingAvg > 0 && ratingCount > 0;
 
   // === Promoção / desconto ===
-  const [promotion, setPromotion] = useState<ProductPromotion | null>(null);
-
-  useEffect(() => {
-    let ignore = false;
-
-    async function fetchPromotion() {
-      try {
-        if (!product?.id) return;
-
-        const res = await fetch(
-          `${API_BASE}/api/public/promocoes/${product.id}`,
-        );
-
-        if (!res.ok) {
-          // 404 = não tem promo pra esse produto, só ignora
-          return;
-        }
-
-        const data = await res.json();
-        if (!ignore) {
-          setPromotion(data as ProductPromotion);
-        }
-      } catch (err) {
-        console.error("[ProductCard] erro ao buscar promoção:", err);
-      }
-    }
-
-    fetchPromotion();
-
-    return () => {
-      ignore = true;
-    };
-  }, [product?.id]);
+  const { promotion } = useProductPromotion(product?.id);
 
   // === Cálculo de preço final (mesma lógica do produto) ===
   const precoBase = Number(product.price ?? 0);

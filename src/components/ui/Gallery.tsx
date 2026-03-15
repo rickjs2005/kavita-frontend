@@ -19,24 +19,15 @@ export default function Gallery({
   thumbSize = 80,
 }: Props) {
   const safeImages = useMemo(
-    () => {
-      const result = Array.isArray(images) && images.length ? images : [PLACEHOLDER];
-      console.log(`[TRACE][Gallery] images recebidas (prop):`, images);
-      console.log(`[TRACE][Gallery] safeImages (após normalização):`, result);
-      return result;
-    },
+    () => (Array.isArray(images) && images.length ? images : [PLACEHOLDER]),
     [images],
   );
 
   const [active, setActive] = useState(safeImages[0]);
 
   useEffect(() => {
-    console.log(`[TRACE][Gallery] imagem ativa inicial (src enviado ao <Image>): ${safeImages[0]} (length: ${String(safeImages[0]).length})`);
+    setActive(safeImages[0]);
   }, [safeImages]);
-
-  useEffect(() => {
-    console.log(`[TRACE][Gallery] src final enviado ao <Image> principal: ${active} (length: ${String(active).length})`);
-  }, [active]);
 
   return (
     <div className={`w-full flex flex-col items-center gap-4 ${className}`}>

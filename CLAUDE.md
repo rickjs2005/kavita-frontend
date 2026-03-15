@@ -117,10 +117,24 @@ src/app/
 - Coverage exclui `src/app/**` (páginas RSC são difíceis de testar em isolamento)
 - `NEXT_PUBLIC_API_URL` deve ser definido via `vi.stubEnv()` nos testes que testam comportamento dependente da env var — não mute `process.env` diretamente
 
+### Convenção de data fetching
+
+| Cenário | Padrão correto |
+|---|---|
+| Dados públicos renderizados no servidor (categorias, configurações de loja) | `src/server/data/*.ts` (server functions, `cache: "no-store"`) |
+| Dados do usuário logado (pedidos, carrinho, favoritos) | `apiClient` em hook ou diretamente no componente cliente |
+| Listas públicas reutilizadas (serviços, produtos) | hook em `src/hooks/` usando `apiClient` |
+| Promoções por produto | `useProductPromotion(id)` — tem cache em memória, evita N+1 |
+| Axios | **Proibido** — completamente removido |
+| `fetch()` direto em componente | **Proibido** — usar `apiClient` ou hook |
+| `process.env.NEXT_PUBLIC_API_URL` inline | **Proibido** — usar `import { API_BASE } from "@/utils/absUrl"` |
+
 ### Regras de projeto (evitar regressões)
 
 - **Toda URL de mídia** passa por `absUrl()` — nunca concatenar manualmente
 - **Todo request HTTP** usa `apiClient` — nunca `fetch()` direto em componentes
+- **`API_BASE`** sempre importado de `@/utils/absUrl`, nunca redefinido localmente
 - `src/server/data/` é server-only — nunca importar em Client Components
 - O campo de imagem de produto é `image` (string) e `images` (array); serviços usam `imagem` (string) e `images` (array) — os nomes diferem intencionalmente
 - `absUrl` conhece os prefixos de subpasta `products/`, `colaboradores/`, `logos/`, `news/`, `drones/` — ao adicionar novo módulo com uploads, adicionar o prefixo correspondente
+- `console.log` com debug/trace é proibido em produção — usar `console.warn`/`console.error` apenas para erros reais

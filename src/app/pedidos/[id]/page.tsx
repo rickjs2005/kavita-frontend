@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import { absUrl } from "@/utils/absUrl";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 type PedidoItem = {
   id: number; // id na tabela pedidos_produtos
@@ -75,20 +73,17 @@ export default function PedidoPage() {
         setLoading(true);
         setError(null);
 
-        const headers: Record<string, string> = {};
-        // Ajuste: usa token real (quando existir)
-        if (token) headers.Authorization = `Bearer ${token}`;
+        const extraHeaders: Record<string, string> = {};
+        if (token) extraHeaders.Authorization = `Bearer ${token}`;
 
-        const { data } = await axios.get<PedidoDetalhe>(
-          `${API_BASE}/api/pedidos/${pedidoId}`,
-          {
-            headers,
-          },
+        const data = await apiClient.get<PedidoDetalhe>(
+          `/api/pedidos/${pedidoId}`,
+          { headers: extraHeaders },
         );
 
         setPedido(data);
       } catch (err: any) {
-        const status = err?.response?.status;
+        const status = err?.status;
         if (status === 404) {
           setError("Pedido não encontrado.");
         } else if (status === 401 || status === 403) {
@@ -97,10 +92,7 @@ export default function PedidoPage() {
           );
           router.push("/login");
         } else {
-          setError(
-            err?.response?.data?.message ||
-              "Não foi possível carregar esta compra.",
-          );
+          setError(err?.message || "Não foi possível carregar esta compra.");
         }
       } finally {
         setLoading(false);

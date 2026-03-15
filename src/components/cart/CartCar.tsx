@@ -2,15 +2,14 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
+import { API_BASE } from "@/utils/absUrl";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import CartItemCard from "./CartItemCard";
 import CustomButton from "../buttons/CustomButton";
 import CloseButton from "../buttons/CloseButton";
 import toast from "react-hot-toast";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 interface CouponPreviewResponse {
   success: boolean;
@@ -213,10 +212,9 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
       setCouponError(null);
       setCouponMessage(null);
 
-      const { data } = await axios.post<CouponPreviewResponse>(
-        `${API_BASE}/api/checkout/preview-cupom`,
+      const data = await apiClient.post<CouponPreviewResponse>(
+        "/api/checkout/preview-cupom",
         { codigo: code, total: subtotal },
-        { withCredentials: true },
       );
 
       if (!data?.success) {
@@ -239,8 +237,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
         localStorage.setItem("kavita_current_coupon", code);
       }
     } catch (err: any) {
-      const msgBackend = err?.response?.data?.message;
-      const msg = msgBackend || "Não foi possível aplicar este cupom.";
+      const msg = err?.message || "Não foi possível aplicar este cupom.";
       setDiscount(0);
       setCouponError(msg);
       toast.error(msg);
