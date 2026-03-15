@@ -11,6 +11,7 @@ import React, {
 import apiClient from "@/lib/apiClient";
 import { handleApiError } from "@/lib/handleApiError";
 import { isApiError } from "@/lib/errors";
+import { AdminUserSchema, isSchemaError } from "@/lib/schemas/api";
 
 export type AdminRole =
   | "master"
@@ -112,14 +113,21 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           // P0-4 (server-truth): permissões e role SEMPRE vêm de /api/admin/me.
           // Nunca leia adminRole / adminPermissions do localStorage — isso exporia
           // o painel a XSS que eleva privilégios sem passar pelo servidor.
-          const data = await apiClient.get<{
-            id: number;
-            nome: string;
-            email: string;
-            role: AdminRole;
-            role_id: number | null;
-            permissions: string[];
-          }>("/api/admin/me");
+          const raw = await apiClient.get<unknown>("/api/admin/me");
+
+          // Valida schema — rejeita shape inesperado sem poluir state.
+          const result = AdminUserSchema.safeParse(raw);
+          if (!result.success) {
+            if (!silent) {
+              handleApiError(new Error("Resposta de sessão admin inválida."), {
+                fallback: "Erro ao validar sessão do administrador.",
+              });
+            }
+            clearState();
+            return null;
+          }
+
+          const data = result.data;
 
           const user: AdminUser = {
             id: data.id,
@@ -130,9 +138,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
           };
 
           setAdminUser(user);
-          setPermissions(
-            Array.isArray(data.permissions) ? data.permissions : [],
-          );
+          setPermissions(data.permissions);
           return user;
         } catch (err) {
           // 401/403 é esperado quando não logado

@@ -1,14 +1,13 @@
-export type ShippingQuote = {
-  price: number;
-  prazo_dias: number | null;
-  is_free?: boolean;
-  ruleApplied?: "PRODUCT_FREE" | "ZONE" | "CEP_RANGE" | "PICKUP";
-  zone?: any;
-  freeItems?: Array<{ id: number; quantidade: number }>;
-  cep?: string;
-};
+// src/services/shippingQuote.ts
+// Serviço de cotação de frete.
+// Usa apiClient para garantir credentials condicionais e parse seguro.
+// Valida a resposta com ShippingQuoteSchema antes de retornar dados ao caller.
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
+import { ShippingQuoteSchema, strictParse } from "@/lib/schemas/api";
+import type { ShippingQuote } from "@/lib/schemas/api";
+
+export type { ShippingQuote };
 
 export async function fetchShippingQuote(args: {
   cep: string;
@@ -29,36 +28,18 @@ export async function fetchShippingQuote(args: {
 
   if (!items.length) throw new Error("Carrinho vazio");
 
-  const url =
-    `${API_BASE}/api/shipping/quote` +
+  const qs =
     `?cep=${encodeURIComponent(cepDigits)}` +
     `&items=${encodeURIComponent(JSON.stringify(items))}`;
 
-  const res = await fetch(url, { method: "GET", cache: "no-store" });
-  const text = await res.text();
+  // apiClient.get já garante: parse seguro, erro padronizado (ApiError), sem credentials
+  // para /api (condicional no client — GET público não precisa, mas não prejudica).
+  const raw = await apiClient.get<unknown>(`/api/shipping/quote${qs}`, {
+    // Frete é público — não precisa de cache do browser
+    cache: "no-store" as RequestCache,
+  } as Parameters<typeof apiClient.get>[1]);
 
-  if (!res.ok) {
-    // backend pode mandar JSON com message; aqui mantemos robusto
-    try {
-      const j = JSON.parse(text);
-      throw new Error(j?.message || `Falha ao cotar frete (${res.status}).`);
-    } catch {
-      throw new Error(text || `Falha ao cotar frete (${res.status}).`);
-    }
-  }
-
-  const data = JSON.parse(text);
-  // route retorna { success: true, ...quote } :contentReference[oaicite:3]{index=3}
-  return {
-    price: Number(data?.price || 0),
-    prazo_dias:
-      data?.prazo_dias === null || data?.prazo_dias === undefined
-        ? null
-        : Number(data.prazo_dias),
-    is_free: Boolean(data?.is_free),
-    ruleApplied: data?.ruleApplied,
-    zone: data?.zone,
-    freeItems: data?.freeItems,
-    cep: data?.cep,
-  };
+  // Valida schema: rejeita preço inválido, NaN, Infinity, campos ausentes.
+  // strictParse lança SchemaError se falhar — não retorna 0 silenciosamente.
+  return strictParse(ShippingQuoteSchema, raw, "shipping/quote");
 }

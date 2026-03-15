@@ -15,18 +15,18 @@ import CloseButton from "@/components/buttons/CloseButton";
 import LoadingButton from "@/components/buttons/LoadingButton";
 import { apiClient } from "@/lib/apiClient";
 import { ENDPOINTS } from "@/services/api/endpoints";
+import { isApiError } from "@/lib/errors";
+import { formatApiError } from "@/lib/formatApiError";
+import {
+  CheckoutResponseSchema,
+  PaymentResponseSchema,
+  CouponPreviewSchema,
+} from "@/lib/schemas/api";
+import { sanitizeUrl } from "@/lib/sanitizeHtml";
 
-interface CheckoutResponse {
-  pedido_id: number;
-  nota_fiscal_aviso?: string;
-}
-
-interface PaymentResponse {
-  init_point?: string;
-  sandbox_init_point?: string;
-}
-
-interface CartItem {
+// CartItem local apenas para o payload de checkout (formato enviado ao backend).
+// Difere do CartItem do contexto (que é normalizado).
+interface CheckoutCartItem {
   id?: number | string;
   productId?: number | string;
   product_id?: number | string;
@@ -39,20 +39,6 @@ interface CartItem {
   quantity?: number | string;
   quantidade?: number | string;
   qtd?: number | string;
-}
-
-interface CouponPreviewResponse {
-  success: boolean;
-  message?: string;
-  desconto?: number;
-  total_original?: number;
-  total_com_desconto?: number;
-  cupom?: {
-    id: number;
-    codigo: string;
-    tipo: string;
-    valor: number;
-  };
 }
 
 /** Promoção vinda da API pública */
@@ -102,7 +88,7 @@ type SavedAddress = {
 type EntregaTipo = "ENTREGA" | "RETIRADA";
 
 const money = (v: number) =>
-  `R$ ${Number(v || 0)
+  `R$ ${Number(v ?? 0)
     .toFixed(2)
     .replace(".", ",")}`;
 
@@ -222,7 +208,7 @@ export default function CheckoutPage() {
    * NORMALIZA ITENS DO CARRINHO
    */
   const normalizedCartItems = useMemo(() => {
-    const raw = (cartItems || []) as CartItem[];
+    const raw = (cartItems || []) as CheckoutCartItem[];
 
     return raw
       .map((it, index) => {
@@ -730,7 +716,7 @@ export default function CheckoutPage() {
       setCouponError(null);
       setCouponMessage(null);
 
-      const data = await apiClient.post<CouponPreviewResponse>(
+      const rawCoupon = await apiClient.post<unknown>(
         ENDPOINTS.CHECKOUT.PREVIEW_COUPON,
         {
           codigo: couponCode.trim(),
@@ -738,26 +724,31 @@ export default function CheckoutPage() {
         },
       );
 
-      if (!data?.success) {
-        const msg = data?.message || "Não foi possível aplicar este cupom.";
+      // Valida schema antes de usar os valores numéricos do desconto.
+      const couponParsed = CouponPreviewSchema.safeParse(rawCoupon);
+      if (!couponParsed.success || !couponParsed.data.success) {
+        const msg =
+          (couponParsed.success ? couponParsed.data.message : null) ||
+          "Não foi possível aplicar este cupom.";
         setDiscount(0);
         setCouponError(msg);
         toast.error(msg);
         return;
       }
 
-      const desconto = Number(data.desconto || 0);
+      const couponData = couponParsed.data;
+      const desconto = couponData.desconto ?? 0;
       setDiscount(desconto > 0 ? desconto : 0);
 
-      const msg = data.message || "Cupom aplicado com sucesso!";
+      const msg = couponData.message || "Cupom aplicado com sucesso!";
       setCouponMessage(msg);
       setCouponError(null);
       toast.success(msg);
-    } catch (err: any) {
-      const msg = err?.message || "Não foi possível aplicar este cupom.";
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Não foi possível aplicar este cupom.");
       setDiscount(0);
-      setCouponError(msg);
-      toast.error(msg);
+      setCouponError(ui.message);
+      toast.error(ui.message);
     } finally {
       setCouponLoading(false);
     }
@@ -840,12 +831,19 @@ export default function CheckoutPage() {
     try {
       setSubmitting(true);
 
-      const data = await apiClient.post<CheckoutResponse>(
+      const rawCheckout = await apiClient.post<unknown>(
         ENDPOINTS.CHECKOUT.PLACE_ORDER,
         payload,
       );
 
-      const pedidoId = data.pedido_id;
+      // Valida schema: garante que pedido_id é inteiro positivo antes de usá-lo.
+      const checkoutParsed = CheckoutResponseSchema.safeParse(rawCheckout);
+      if (!checkoutParsed.success) {
+        toast.error("Resposta inesperada ao criar pedido. Contate o suporte.");
+        return;
+      }
+
+      const pedidoId = checkoutParsed.data.pedido_id;
 
       if (typeof window !== "undefined" && userId) {
         const key = `lastOrder_${userId}`;
@@ -872,18 +870,23 @@ export default function CheckoutPage() {
       );
 
       if (isGatewayPayment) {
-        const paymentData = await apiClient.post<PaymentResponse>(
+        const rawPayment = await apiClient.post<unknown>(
           ENDPOINTS.PAYMENT.START,
           { pedidoId },
         );
 
-        const initPoint =
-          paymentData?.init_point || paymentData?.sandbox_init_point || null;
+        const paymentParsed = PaymentResponseSchema.safeParse(rawPayment);
+        const rawUrl = paymentParsed.success
+          ? (paymentParsed.data.init_point ?? paymentParsed.data.sandbox_init_point ?? null)
+          : null;
+
+        // sanitizeUrl bloqueia javascript:, data:, vbscript: e URLs malformadas.
+        const safeUrl = rawUrl ? sanitizeUrl(rawUrl) : null;
 
         clearCart?.();
 
-        if (initPoint) {
-          window.location.href = initPoint;
+        if (safeUrl) {
+          window.location.href = safeUrl;
           return;
         }
 
@@ -896,17 +899,12 @@ export default function CheckoutPage() {
       clearCart?.();
       toast.success("Pedido criado com sucesso!");
       router.push(`/pedidos/${pedidoId}`);
-    } catch (err: any) {
-      const status = err?.status;
-      const msgBackend = err?.message as string | undefined;
+    } catch (err: unknown) {
+      const uiErr = formatApiError(err, "Erro ao processar pedido.");
 
-      if (
-        status === 401 ||
-        status === 403 ||
-        (msgBackend && msgBackend.toLowerCase().includes("token"))
-      ) {
+      if (isApiError(err) && (err.status === 401 || err.status === 403)) {
         toast.error(
-          msgBackend ||
+          uiErr.message ||
             "Sua sessão expirou. Faça login novamente para finalizar a compra.",
         );
 
@@ -921,7 +919,7 @@ export default function CheckoutPage() {
       }
 
       const msg =
-        msgBackend ||
+        uiErr.message ||
         "Erro ao finalizar a compra. Verifique os dados e tente novamente.";
       toast.error(msg);
     } finally {

@@ -13,24 +13,16 @@ import { usePathname } from "next/navigation";
 import { Product, CartItem } from "@/types/CartCarProps";
 import { useAuth } from "@/context/AuthContext";
 import { handleApiError } from "@/lib/handleApiError";
+import { isApiError } from "@/lib/errors";
 import apiClient from "@/lib/apiClient";
+import {
+  CartApiItemSchema,
+  CartGetResponseSchema,
+  safeParseSilent,
+} from "@/lib/schemas/api";
 
-/* ===== Tipos de resposta da API ===== */
-type CartApiItem = {
-  item_id?: number;
-  produto_id: number;
-  nome?: string;
-  valor_unitario?: number | string;
-  quantidade?: number | string;
-  image?: string | null;
-  stock?: number | string; // ✅ novo (retornado do backend)
-};
-
-type CartGetResponse = {
-  success?: boolean;
-  items?: CartApiItem[];
-  carrinho_id?: number | null;
-};
+// Tipos de resposta da API derivados dos schemas Zod (fonte única da verdade).
+// Nunca defina tipos de resposta manualmente aqui — use os schemas em src/lib/schemas/api.ts.
 
 /* Helpers */
 const toNum = (v: any, fallback = 0) => {
@@ -74,21 +66,36 @@ const CartContext = createContext<CartContextProps | undefined>(undefined);
 const makeCartKey = (userId: number | null | undefined) =>
   userId ? `cartItems_${userId}` : "cartItems_guest";
 
-function normalizeApiItems(itemsFromApi: CartApiItem[]): CartItem[] {
-  return itemsFromApi.map((it) => {
-    const stockNum = toNum((it as any).stock, NaN);
-    const stock =
-      Number.isFinite(stockNum) && stockNum >= 0 ? stockNum : undefined;
+/**
+ * Normaliza itens vindos da API para CartItem.
+ * Valida cada item via CartApiItemSchema (Zod).
+ * Itens com shape inválido (ex: preço 0, produto_id ausente) são descartados silenciosamente
+ * em vez de poluir o state com dados inconsistentes.
+ */
+function normalizeApiItems(rawItems: unknown[]): CartItem[] {
+  const result: CartItem[] = [];
 
-    return {
-      id: Number(it.produto_id),
-      name: it.nome ?? `Produto #${it.produto_id}`,
-      price: toNum(it.valor_unitario, 0),
-      image: it.image ?? null,
-      quantity: Math.max(1, toNum(it.quantidade, 1)),
-      _stock: stock, // ✅ agora vem do backend
-    };
-  });
+  for (const raw of rawItems) {
+    const parsed = safeParseSilent(CartApiItemSchema, raw);
+
+    if (!parsed) {
+      // Item malformado: descarta sem quebrar fluxo.
+      // Em produção, isso indica inconsistência no backend — não mascaramos com fallback.
+      console.warn("[CartContext] Item ignorado: schema inválido", raw);
+      continue;
+    }
+
+    result.push({
+      id: parsed.produto_id,
+      name: parsed.nome ?? `Produto #${parsed.produto_id}`,
+      price: parsed.valor_unitario, // garantido: número finito positivo pelo schema
+      image: parsed.image ?? null,
+      quantity: Math.max(1, parsed.quantidade),
+      _stock: parsed.stock,
+    });
+  }
+
+  return result;
 }
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
@@ -158,8 +165,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
     (async () => {
       try {
-        const data = await apiClient.get<CartGetResponse>("/api/cart");
-        const itemsFromApi = Array.isArray(data.items) ? data.items : [];
+        const raw = await apiClient.get<unknown>("/api/cart");
+        const data = CartGetResponseSchema.safeParse(raw);
+        const itemsFromApi = data.success ? (data.data.items ?? []) : [];
         const normalized = normalizeApiItems(itemsFromApi);
 
         // logado: reflete servidor sempre (mesmo vazio)
@@ -213,8 +221,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const refetchServerCart = async () => {
     if (!userId) return;
     try {
-      const data = await apiClient.get<CartGetResponse>("/api/cart");
-      const itemsFromApi = Array.isArray(data.items) ? data.items : [];
+      const raw = await apiClient.get<unknown>("/api/cart");
+      const data = CartGetResponseSchema.safeParse(raw);
+      const itemsFromApi = data.success ? (data.data.items ?? []) : [];
       setCartItems(normalizeApiItems(itemsFromApi));
     } catch {
       // ignore
@@ -301,11 +310,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       apiClient
         .post("/api/cart/items", { produto_id: product.id, quantidade: increment })
         .catch((err) => {
-          // Tratamento específico para STOCK_LIMIT (409)
-          const status = (err as any)?.status;
-          const code = (err as any)?.code;
-
-          if (status === 409 && code === "STOCK_LIMIT") {
+          if (isApiError(err) && err.status === 409 && err.code === "STOCK_LIMIT") {
             toast.error("Limite de estoque atingido.");
             refetchServerCart();
             return;
@@ -315,7 +320,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             fallbackMessage: "Erro ao salvar item no carrinho no servidor.",
           });
 
-          // reconciliar com servidor (fallback)
           refetchServerCart();
         });
     }
@@ -365,10 +369,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         apiClient
           .patch("/api/cart/items", { produto_id: id, quantidade: finalQty })
           .catch((err) => {
-            const status = (err as any)?.status;
-            const code = (err as any)?.code;
-
-            if (status === 409 && code === "STOCK_LIMIT") {
+            if (isApiError(err) && err.status === 409 && err.code === "STOCK_LIMIT") {
               toast.error("Limite de estoque atingido.");
               refetchServerCart();
               return;

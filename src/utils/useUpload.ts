@@ -1,35 +1,70 @@
-// src/hooks/useUpload.ts
-export function useUpload() {
-  const upload = async (file: File, type: string) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("type", type);
+// src/utils/useUpload.ts
+// Hook genérico de upload de arquivo para o painel admin.
+//
+// COMO USAR:
+//   const { upload, uploading, error } = useUpload();
+//   const result = await upload(file, "/api/admin/produtos", "images");
+//
+// O `endpoint` deve ser a rota exata do backend que aceita multipart/form-data.
+// O `fieldName` deve corresponder ao campo esperado pelo backend (ex: "images", "logo", "cover").
+//
+// A resposta é validada contra UploadResponseSchema — se inválida, lança SchemaError.
 
-    const res = await fetch("http://localhost:5000/api/upload", {
-      method: "POST",
-      body: fd,
-    });
+import { useCallback, useState } from "react";
+import apiClient from "@/lib/apiClient";
+import { UploadResponseSchema, strictParse } from "@/lib/schemas/api";
+import type { UploadResponse } from "@/lib/schemas/api";
 
-    const data = await res.json();
-    return data.path; // "uploads/produtos/123-abc.jpg"
-  };
-
-  return { upload };
+export interface UseUploadReturn {
+  upload: (file: File, endpoint: string, fieldName?: string) => Promise<UploadResponse>;
+  uploading: boolean;
+  error: string | null;
+  reset: () => void;
 }
 
-// src/components/ProductForm.tsx
-const { upload } = useUpload();
+export function useUpload(): UseUploadReturn {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-const handleUpload = async (file: File) => {
-  const imagePath = await upload(file, "produtos"); // Salva no backend
-  
-  // Agora salva o caminho no banco (via API)
-  await saveProduct({
-    name: "Produto X",
-    image: imagePath, // "uploads/produtos/123-abc.jpg"
-  });
-};
+  const reset = useCallback(() => {
+    setError(null);
+    setUploading(false);
+  }, []);
 
-function saveProduct(arg0: { name: string; image: any; }) {
-    throw new Error("Function not implemented.");
+  const upload = useCallback(
+    async (file: File, endpoint: string, fieldName = "images"): Promise<UploadResponse> => {
+      setUploading(true);
+      setError(null);
+
+      try {
+        const fd = new FormData();
+        fd.append(fieldName, file);
+
+        // apiClient.post garante:
+        // - credentials: "include" para /api (cookies HttpOnly)
+        // - CSRF token injetado automaticamente (POST)
+        // - parse seguro e erro padronizado (ApiError)
+        // skipContentType: true — não seta Content-Type manualmente para FormData
+        // (o browser precisa definir boundary automaticamente)
+        const raw = await apiClient.post<unknown>(endpoint, fd, {
+          skipContentType: true,
+        });
+
+        // Valida a resposta — não aceita shape inesperado silenciosamente.
+        // UploadResponseSchema exige ao menos "url" ou "path".
+        const result = strictParse(UploadResponseSchema, raw, "upload response");
+        return result;
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Falha ao enviar arquivo.";
+        setError(msg);
+        throw err;
+      } finally {
+        setUploading(false);
+      }
+    },
+    [],
+  );
+
+  return { upload, uploading, error, reset };
 }

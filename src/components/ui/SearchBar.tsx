@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FaSearch, FaCartPlus } from "react-icons/fa";
 import { useCart } from "@/context/CartContext";
 import { absUrl } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
 
 type ResultItem =
   | {
@@ -27,18 +28,6 @@ type ResultItem =
 type CartItem = Parameters<ReturnType<typeof useCart>["addToCart"]>[0];
 
 const ORANGE = "#FF7A00";
-
-/** Blindado: nunca gera /api/api */
-function getApiBase(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:5000";
-  const base = raw.replace(/\/+$/, "");
-  return base.endsWith("/api") ? base : `${base}/api`;
-}
-
-const API_BASE = getApiBase();
 
 function safeNumber(v: unknown, fallback = 0): number {
   const n = Number(v);
@@ -137,16 +126,20 @@ export default function SearchBar() {
     setLoading(true);
 
     try {
-      const produtosUrl = `${API_BASE}/products/search?q=${encodeURIComponent(q)}&page=1&limit=6&sort=newest`;
-      const servicosUrl = `${API_BASE}/public/servicos?busca=${encodeURIComponent(q)}&page=1&limit=6&sort=id&order=desc`;
-
-      const [prodRes, servRes] = await Promise.all([
-        fetch(produtosUrl, { signal: ctrl.signal, credentials: "include" }),
-        fetch(servicosUrl, { signal: ctrl.signal, credentials: "include" }),
+      // apiClient.get garante credentials condicional e parse seguro.
+      // Passa o signal do AbortController para suportar cancelamento por debounce.
+      const [produtosJson, servicosJson] = await Promise.all([
+        apiClient.get<unknown>(
+          `/api/products/search?q=${encodeURIComponent(q)}&page=1&limit=6&sort=newest`,
+          { signal: ctrl.signal },
+        ).catch(() => null),
+        apiClient.get<unknown>(
+          `/api/public/servicos?busca=${encodeURIComponent(q)}&page=1&limit=6&sort=id&order=desc`,
+          { signal: ctrl.signal },
+        ).catch(() => null),
       ]);
 
-      const produtosJson = prodRes.ok ? await prodRes.json() : null;
-      const servicosJson = servRes.ok ? await servRes.json() : null;
+      if (ctrl.signal.aborted) return;
 
       const produtosRaw = toArray<any>(produtosJson);
       const servicosRaw = toArray<any>(servicosJson);
@@ -154,13 +147,12 @@ export default function SearchBar() {
       const produtos: ResultItem[] = produtosRaw.map(mapProduto);
       const servicos: ResultItem[] = servicosRaw.map(mapServico);
 
-      // ✅ agora TS entende que é ResultItem[]
       setResults([...produtos, ...servicos].slice(0, 12));
       setCursor(-1);
       setOpen(true);
     } catch (e: any) {
       if (e?.name === "AbortError") return;
-      console.error("Search error:", e);
+      // erro de busca não é crítico — limpa resultados silenciosamente
       setResults([]);
       setCursor(-1);
     } finally {

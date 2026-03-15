@@ -16,11 +16,12 @@ const hoisted = vi.hoisted(() => {
 
   return {
     toast,
-    axios: {
+    // CartContext agora usa apiClient diretamente (não axios)
+    apiClient: {
       get: vi.fn(),
       post: vi.fn(),
       patch: vi.fn(),
-      delete: vi.fn(),
+      del: vi.fn(),
     },
     handleApiError: vi.fn(),
     state: {
@@ -36,8 +37,9 @@ vi.mock("react-hot-toast", () => ({
   default: hoisted.toast,
 }));
 
-vi.mock("axios", () => ({
-  default: hoisted.axios,
+vi.mock("@/lib/apiClient", () => ({
+  default: hoisted.apiClient,
+  apiClient: hoisted.apiClient,
 }));
 
 vi.mock("@/lib/handleApiError", () => ({
@@ -156,10 +158,10 @@ describe("CartContext (CartProvider/useCart)", () => {
     hoisted.state.pathname = "/";
     hoisted.state.user = null;
 
-    hoisted.axios.get.mockReset();
-    hoisted.axios.post.mockReset();
-    hoisted.axios.patch.mockReset();
-    hoisted.axios.delete.mockReset();
+    hoisted.apiClient.get.mockReset();
+    hoisted.apiClient.post.mockReset();
+    hoisted.apiClient.patch.mockReset();
+    hoisted.apiClient.del.mockReset();
 
     hoisted.toast.mockReset();
     hoisted.toast.success.mockReset();
@@ -167,7 +169,6 @@ describe("CartContext (CartProvider/useCart)", () => {
 
     hoisted.handleApiError.mockReset();
 
-    // IMPORTANTE: use o helper do seu testUtils (corrige o "setItem is not a function")
     installMockStorage();
 
     await loadCartModule();
@@ -206,10 +207,7 @@ describe("CartContext (CartProvider/useCart)", () => {
     expect(screen.getByTestId("qty").textContent).toBe("1");
     expect(screen.getByTestId("stock").textContent).toBe("3");
 
-    // addToCart visitante não faz POST no servidor
-    expect(hoisted.axios.post).not.toHaveBeenCalled();
-
-    // NÃO validamos toast aqui porque no React 19 o padrão "after[]" não é garantido.
+    expect(hoisted.apiClient.post).not.toHaveBeenCalled();
   });
 
   it("visitante: com estoque 0, não adiciona item (estado permanece vazio)", async () => {
@@ -249,13 +247,9 @@ describe("CartContext (CartProvider/useCart)", () => {
 
     await user.click(screen.getByRole("button", { name: "add" }));
 
-    // O estado é o que importa e é garantido
     await waitFor(() =>
       expect(screen.getByTestId("count").textContent).toBe("0"),
     );
-
-    // O retorno {ok:false,...} NÃO é estável no padrão atual do código (React 19).
-    // Então não testamos "OUT_OF_STOCK" via return; testamos via estado.
   });
 
   it("visitante: ao tentar ultrapassar estoque, quantidade fica clampada no máximo do stock", async () => {
@@ -274,7 +268,6 @@ describe("CartContext (CartProvider/useCart)", () => {
 
     await user.click(screen.getByRole("button", { name: "add10" }));
 
-    // clamp para 3 (stock)
     await waitFor(() =>
       expect(screen.getByTestId("qty").textContent).toBe("3"),
     );
@@ -314,8 +307,6 @@ describe("CartContext (CartProvider/useCart)", () => {
     await loadCartModule();
     installMockStorage();
 
-    // chave correta no código:
-    // user => cartItems_<id>
     localStorage.setItem(
       "cartItems_1",
       JSON.stringify([
@@ -329,7 +320,7 @@ describe("CartContext (CartProvider/useCart)", () => {
       </Wrapper>,
     );
 
-    expect(hoisted.axios.get).not.toHaveBeenCalled();
+    expect(hoisted.apiClient.get).not.toHaveBeenCalled();
 
     await waitFor(() =>
       expect(screen.getByTestId("count").textContent).toBe("1"),
@@ -342,19 +333,18 @@ describe("CartContext (CartProvider/useCart)", () => {
     hoisted.state.pathname = "/";
     hoisted.state.user = { id: 7 };
 
-    hoisted.axios.get.mockResolvedValueOnce({
-      data: {
-        items: [
-          {
-            produto_id: 10,
-            nome: "Milho API",
-            valor_unitario: "12.5",
-            quantidade: "0", // normaliza para 1 (Math.max(1,...))
-            stock: "3",
-            image: null,
-          },
-        ],
-      },
+    // apiClient.get retorna dados diretamente (sem wrapper .data)
+    hoisted.apiClient.get.mockResolvedValueOnce({
+      items: [
+        {
+          produto_id: 10,
+          nome: "Milho API",
+          valor_unitario: "12.5", // string coercida para number pelo schema
+          quantidade: "1",
+          stock: "3",
+          image: null,
+        },
+      ],
     });
 
     await loadCartModule();
@@ -366,17 +356,51 @@ describe("CartContext (CartProvider/useCart)", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => expect(hoisted.axios.get).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(hoisted.apiClient.get).toHaveBeenCalledTimes(1));
     await waitFor(() =>
       expect(screen.getByTestId("count").textContent).toBe("1"),
     );
 
     expect(screen.getByTestId("qty").textContent).toBe("1");
     expect(screen.getByTestId("stock").textContent).toBe("3");
+  });
 
-    // Observação importante:
-    // O primeiro ciclo do effect de persistência NÃO grava (lastCartKeyRef evita gravar na primeira troca de chave).
-    // Então não dá para exigir setItem aqui sem uma segunda atualização de estado.
+  it("logado: item com valor_unitario=0 é descartado pelo schema (não polui state)", async () => {
+    hoisted.state.pathname = "/";
+    hoisted.state.user = { id: 7 };
+
+    hoisted.apiClient.get.mockResolvedValueOnce({
+      items: [
+        {
+          produto_id: 10,
+          nome: "Produto Zerado",
+          valor_unitario: 0, // schema rejeita: não é positivo
+          quantidade: 1,
+        },
+        {
+          produto_id: 20,
+          nome: "Produto Válido",
+          valor_unitario: 9.99,
+          quantidade: 1,
+        },
+      ],
+    });
+
+    await loadCartModule();
+    installMockStorage();
+
+    render(
+      <Wrapper>
+        <TestConsumer />
+      </Wrapper>,
+    );
+
+    await waitFor(() => expect(hoisted.apiClient.get).toHaveBeenCalledTimes(1));
+
+    // Apenas o item com preço válido deve aparecer
+    await waitFor(() =>
+      expect(screen.getByTestId("count").textContent).toBe("1"),
+    );
   });
 
   it("logado: falha no GET /api/cart chama handleApiError e faz fallback para cache local", async () => {
@@ -400,7 +424,7 @@ describe("CartContext (CartProvider/useCart)", () => {
       ]),
     );
 
-    hoisted.axios.get.mockRejectedValueOnce(new Error("boom"));
+    hoisted.apiClient.get.mockRejectedValueOnce(new Error("boom"));
 
     render(
       <Wrapper>
@@ -424,24 +448,28 @@ describe("CartContext (CartProvider/useCart)", () => {
     hoisted.state.pathname = "/";
     hoisted.state.user = { id: 9 };
 
-    hoisted.axios.get.mockResolvedValueOnce({ data: { items: [] } });
+    // GET inicial retorna vazio
+    hoisted.apiClient.get.mockResolvedValueOnce({ items: [] });
 
-    hoisted.axios.post.mockRejectedValueOnce({
-      response: { status: 409, data: { code: "STOCK_LIMIT" } },
+    // POST falha com 409 STOCK_LIMIT (formato ApiError)
+    const stockErr = Object.assign(new Error("STOCK_LIMIT"), {
+      name: "ApiError",
+      status: 409,
+      code: "STOCK_LIMIT",
     });
+    hoisted.apiClient.post.mockRejectedValueOnce(stockErr);
 
-    hoisted.axios.get.mockResolvedValueOnce({
-      data: {
-        items: [
-          {
-            produto_id: 10,
-            nome: "Servidor",
-            valor_unitario: 12.5,
-            quantidade: 3,
-            stock: 3,
-          },
-        ],
-      },
+    // GET refetch retorna item com estoque correto
+    hoisted.apiClient.get.mockResolvedValueOnce({
+      items: [
+        {
+          produto_id: 10,
+          nome: "Servidor",
+          valor_unitario: 12.5,
+          quantidade: 3,
+          stock: 3,
+        },
+      ],
     });
 
     await loadCartModule();
@@ -453,15 +481,14 @@ describe("CartContext (CartProvider/useCart)", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => expect(hoisted.axios.get).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(hoisted.apiClient.get).toHaveBeenCalledTimes(1));
 
     await user.click(screen.getByRole("button", { name: "add1" }));
 
-    // axios.post não depende do updater do setState, então é estável
-    expect(hoisted.axios.post).toHaveBeenCalled();
+    expect(hoisted.apiClient.post).toHaveBeenCalled();
 
     await flushMicrotasks();
-    await waitFor(() => expect(hoisted.axios.get).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(hoisted.apiClient.get).toHaveBeenCalledTimes(2));
   });
 
   it("logado: updateQuantity clampa para o estoque no estado (independente de toast)", async () => {
@@ -470,21 +497,19 @@ describe("CartContext (CartProvider/useCart)", () => {
     hoisted.state.pathname = "/";
     hoisted.state.user = { id: 11 };
 
-    hoisted.axios.get.mockResolvedValueOnce({
-      data: {
-        items: [
-          {
-            produto_id: 10,
-            nome: "A",
-            valor_unitario: 10,
-            quantidade: 1,
-            stock: 2,
-          },
-        ],
-      },
+    hoisted.apiClient.get.mockResolvedValueOnce({
+      items: [
+        {
+          produto_id: 10,
+          nome: "A",
+          valor_unitario: 10,
+          quantidade: 1,
+          stock: 2,
+        },
+      ],
     });
 
-    hoisted.axios.patch.mockResolvedValueOnce({ data: { ok: true } });
+    hoisted.apiClient.patch.mockResolvedValueOnce({ ok: true });
 
     await loadCartModule();
     installMockStorage();
@@ -501,12 +526,9 @@ describe("CartContext (CartProvider/useCart)", () => {
 
     await user.click(screen.getByRole("button", { name: "setQty99" }));
 
-    // Estado deve clamped para 2
     await waitFor(() =>
       expect(screen.getByTestId("qty").textContent).toBe("2"),
     );
-
-    // NÃO validamos toast aqui (padrão after[]), e NÃO validamos patch porque depende do finalQty setado no updater.
   });
 
   it("logado: updateQuantity para 0 remove item do estado", async () => {
@@ -515,21 +537,19 @@ describe("CartContext (CartProvider/useCart)", () => {
     hoisted.state.pathname = "/";
     hoisted.state.user = { id: 12 };
 
-    hoisted.axios.get.mockResolvedValueOnce({
-      data: {
-        items: [
-          {
-            produto_id: 10,
-            nome: "A",
-            valor_unitario: 10,
-            quantidade: 1,
-            stock: 0,
-          },
-        ],
-      },
+    hoisted.apiClient.get.mockResolvedValueOnce({
+      items: [
+        {
+          produto_id: 10,
+          nome: "A",
+          valor_unitario: 10,
+          quantidade: 1,
+          stock: 0,
+        },
+      ],
     });
 
-    hoisted.axios.delete.mockResolvedValueOnce({ data: { ok: true } });
+    hoisted.apiClient.del.mockResolvedValueOnce({ ok: true });
 
     await loadCartModule();
     installMockStorage();
@@ -592,9 +612,9 @@ describe("CartContext (CartProvider/useCart)", () => {
     hoisted.state.pathname = "/";
     hoisted.state.user = { id: 33 };
 
-    hoisted.axios.get.mockResolvedValueOnce({ data: { items: [] } });
-    hoisted.axios.post.mockResolvedValueOnce({ data: { ok: true } });
-    hoisted.axios.delete.mockResolvedValueOnce({ data: { ok: true } });
+    hoisted.apiClient.get.mockResolvedValueOnce({ items: [] });
+    hoisted.apiClient.post.mockResolvedValueOnce({ ok: true });
+    hoisted.apiClient.del.mockResolvedValueOnce({ ok: true });
 
     await loadCartModule();
     const { local } = installMockStorage();
@@ -605,7 +625,7 @@ describe("CartContext (CartProvider/useCart)", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => expect(hoisted.axios.get).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(hoisted.apiClient.get).toHaveBeenCalledTimes(1));
 
     await user.click(screen.getByRole("button", { name: "add1" }));
     await waitFor(() =>
@@ -624,15 +644,10 @@ describe("CartContext (CartProvider/useCart)", () => {
       expect(screen.getByTestId("open").textContent).toBe("closed"),
     );
 
-    // removeItem é spy no helper local.storage.removeItem
     expect(local.storage.removeItem).toHaveBeenCalledWith("cartItems_33");
 
-    expect(hoisted.axios.delete).toHaveBeenCalledWith(
-      expect.stringMatching(/\/api\/cart$/),
-      { withCredentials: true },
-    );
+    expect(hoisted.apiClient.del).toHaveBeenCalledWith("/api/cart");
 
-    // toast("Carrinho limpo.") é uma chamada na função principal toast()
     expect(hoisted.toast).toHaveBeenCalledWith("Carrinho limpo.");
   });
 });

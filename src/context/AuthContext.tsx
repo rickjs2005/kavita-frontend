@@ -8,10 +8,17 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import { api } from "@/lib/api";
+import apiClient from "@/lib/apiClient";
+import { isApiError } from "@/lib/errors";
+import { formatApiError } from "@/lib/formatApiError";
+import {
+  AuthUserSchema,
+  extractAuthUser,
+  isSchemaError,
+} from "@/lib/schemas/api";
 
 // --------------------------------------------------
-// Tipos
+// Tipos (derivados do schema — fonte única da verdade)
 // --------------------------------------------------
 export type AuthUser = {
   id: number;
@@ -23,7 +30,7 @@ export type RegisterPayload = {
   nome: string;
   email: string;
   senha: string;
-  cpf?: string; // <-- para não quebrar o /register
+  cpf?: string;
 };
 
 type AuthContextValue = {
@@ -50,12 +57,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   // -----------------------------
-  // Carrega usuário pelo cookie
+  // Carrega usuário pelo cookie (/api/users/me)
+  // Valida schema antes de popular state — rejeita payload malformado.
   // -----------------------------
   const refreshUser = async () => {
     try {
-      const data = await api<AuthUser>("/api/users/me");
-      setUser(data);
+      const data = await apiClient.get<unknown>("/api/users/me");
+
+      // Valida schema: se o backend retornar shape inesperado, não popula state.
+      const result = AuthUserSchema.safeParse(data);
+      if (!result.success) {
+        // Sessão ausente ou resposta malformada → trata como não autenticado.
+        setUser(null);
+        return;
+      }
+
+      setUser(result.data);
     } catch {
       setUser(null);
     } finally {
@@ -68,34 +85,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // -----------------------------
-  // LOGIN (consistente e silencioso)
+  // LOGIN
+  // Usa extractAuthUser() que valida o envelope e o user shape via Zod.
+  // Rejeita: email nulo, id=0, id string, campos ausentes.
   // -----------------------------
   const login = async (email: string, senha: string) => {
     const invalidMsg = "Credenciais inválidas.";
 
     try {
-      const data = await api<any>("/api/login", {
-        method: "POST",
-        body: JSON.stringify({ email, senha }),
+      const data = await apiClient.post<unknown>("/api/login", {
+        email,
+        senha,
       });
 
-      const rawUser = data?.user ?? data;
-
-      if (!rawUser?.id) {
-        setUser(null);
-        return { ok: false, message: invalidMsg };
+      // extractAuthUser lança SchemaError se o shape for inválido.
+      // Isso impede fallback para email do formulário (bug anterior: rawUser.email ?? email).
+      let validated: AuthUser;
+      try {
+        validated = extractAuthUser(data);
+      } catch (schemaErr) {
+        if (isSchemaError(schemaErr)) {
+          // Backend retornou shape inesperado — não popula state.
+          setUser(null);
+          return { ok: false, message: invalidMsg };
+        }
+        throw schemaErr;
       }
 
-      const finalUser: AuthUser = {
-        id: Number(rawUser.id),
-        nome: rawUser.nome ?? "",
-        email: rawUser.email ?? email,
-      };
-
-      setUser(finalUser);
+      setUser(validated);
       return { ok: true };
-    } catch {
+    } catch (err) {
       setUser(null);
+
+      // Erros HTTP (401, 403, etc.) têm mensagem útil do backend.
+      if (isApiError(err)) {
+        const ui = formatApiError(err, invalidMsg);
+        return { ok: false, message: ui.message };
+      }
+
       return { ok: false, message: invalidMsg };
     }
   };
@@ -107,36 +134,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const fallbackMsg = "Não foi possível criar sua conta.";
 
     try {
-      await api<any>("/api/users/register", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
-      // Se sua API já loga e seta cookie ao registrar, descomente:
-      // await refreshUser();
-
+      await apiClient.post<unknown>("/api/users/register", payload);
       return { ok: true };
-    } catch (err: any) {
-      const msg =
-        err?.message ||
-        err?.response?.data?.message ||
-        err?.data?.message ||
-        fallbackMsg;
-
-      return { ok: false, message: msg };
+    } catch (err: unknown) {
+      const ui = formatApiError(err, fallbackMsg);
+      return { ok: false, message: ui.message };
     }
   };
 
   // -----------------------------
   // LOGOUT
+  // Limpa state local primeiro, notifica backend em seguida (não-bloqueante).
   // -----------------------------
   const logout = async () => {
-    try {
-      await api("/api/logout", { method: "POST" });
-    } catch {
-      // silencioso
-    }
     setUser(null);
+    apiClient.post("/api/logout").catch(() => {
+      // silencioso — state local já foi limpo
+    });
   };
 
   const value: AuthContextValue = useMemo(

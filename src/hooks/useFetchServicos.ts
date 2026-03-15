@@ -4,8 +4,7 @@
 import useSWR from "swr";
 import { apiFetch } from "@/lib/apiClient";
 import { handleApiError } from "@/lib/handleApiError";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { API_BASE } from "@/utils/absUrl";
 
 type Params = {
   q?: string;
