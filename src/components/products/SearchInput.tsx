@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
+import { formatCurrency } from "@/utils/formatters";
 
 type Produto = {
   id: number;
@@ -168,7 +169,7 @@ export default function SearchInputProdutos({
                     </p>
                     {!!p.price && (
                       <p className="text-xs text-green-700">
-                        R$ {Number(p.price).toFixed(2)}
+                        {formatCurrency(p.price)}
                       </p>
                     )}
                   </div>

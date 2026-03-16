@@ -12,6 +12,7 @@ import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 import { useProductPromotion } from "@/hooks/useProductPromotion";
 import { computeProductPrice } from "@/utils/pricing";
+import { formatCurrency } from "@/utils/formatters";
 
 type Props = {
   product: Product;
@@ -22,13 +23,6 @@ type Props = {
 
 const PLACEHOLDER = "/placeholder.png";
 
-/** formatador BRL determinístico */
-function formatBRL(value: unknown): string {
-  const n = Number(value ?? 0);
-  const [int, dec] = n.toFixed(2).split(".");
-  const mil = int.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return `R$ ${mil},${dec}`;
-}
 
 export default function ProductCard({
   product,
@@ -247,11 +241,11 @@ export default function ProductCard({
         <div className="mt-3 space-y-0.5">
           {hasDiscount && (
             <div className="text-xs text-gray-400 line-through">
-              {formatBRL(originalPrice)}
+              {formatCurrency(originalPrice)}
             </div>
           )}
           <span className="text-lg sm:text-xl font-extrabold text-emerald-600">
-            {formatBRL(finalPrice)}
+            {formatCurrency(finalPrice)}
           </span>
         </div>
 

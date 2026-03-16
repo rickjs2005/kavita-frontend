@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Product } from "@/types/product";
 import { api } from "@/lib/api";
 import { absUrl } from "@/utils/absUrl";
+import { formatCurrency } from "@/utils/formatters";
 
 type PromoProduct = Product & {
   image?: string | null;
@@ -137,11 +138,11 @@ export default function PromocoesHero() {
               <div className="mt-3 flex flex-wrap items-baseline gap-2 text-sm">
                 {original > final && (
                   <span className="text-xs text-emerald-200 line-through">
-                    R$ {original.toFixed(2)}
+                    {formatCurrency(original)}
                   </span>
                 )}
                 <span className="text-xl font-extrabold text-amber-200">
-                  R$ {final.toFixed(2)}
+                  {formatCurrency(final)}
                 </span>
                 {desconto > 0 && (
                   <span className="rounded-full bg-amber-300/90 px-2 py-0.5 text-[11px] font-bold text-emerald-900">

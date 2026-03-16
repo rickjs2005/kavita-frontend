@@ -8,6 +8,7 @@ import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { computeProductPrice } from "@/utils/pricing";
+import { formatCurrency } from "@/utils/formatters";
 
 interface Props {
   produto: Product;
@@ -84,15 +85,8 @@ export default function ProdutoContent({ produto }: Props) {
     promocao,
   );
 
-  const priceBRL = finalPrice.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-
-  const originalPriceBRL = originalPrice.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
+  const priceBRL = formatCurrency(finalPrice);
+  const originalPriceBRL = formatCurrency(originalPrice);
 
   const promoEndsAt =
     (promocao?.ends_at as string | null) ??

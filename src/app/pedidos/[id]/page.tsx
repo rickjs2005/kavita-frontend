@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
+import { formatCurrency } from "@/utils/formatters";
 
 type PedidoItem = {
   id: number; // id na tabela pedidos_produtos
@@ -35,10 +36,6 @@ type PedidoDetalhe = {
   itens: PedidoItem[];
 };
 
-const money = (v: number) =>
-  `R$ ${Number(v || 0)
-    .toFixed(2)
-    .replace(".", ",")}`;
 
 export default function PedidoPage() {
   const router = useRouter();
@@ -218,14 +215,14 @@ export default function PedidoPage() {
                 <div className="flex-1 min-w-0 self-stretch flex flex-col justify-center">
                   <p className="font-medium truncate">{item.nome}</p>
                   <p className="text-gray-500">
-                    {item.quantidade} x {money(item.preco)}
+                    {item.quantidade} x {formatCurrency(item.preco)}
                   </p>
                 </div>
 
                 {/* Total + botão */}
                 <div className="flex flex-col items-end gap-2">
                   <span className="font-semibold">
-                    {money(item.preco * item.quantidade)}
+                    {formatCurrency(item.preco * item.quantidade)}
                   </span>
 
                   <button
@@ -245,7 +242,7 @@ export default function PedidoPage() {
       {/* Total geral */}
       <section className="flex items-center justify-between mt-4 text-lg font-bold">
         <span>Total</span>
-        <span className="text-[#EC5B20]">{money(pedido.total)}</span>
+        <span className="text-[#EC5B20]">{formatCurrency(pedido.total)}</span>
       </section>
 
       {/* Botão voltar em mobile */}

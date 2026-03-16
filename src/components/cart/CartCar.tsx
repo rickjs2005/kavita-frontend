@@ -4,6 +4,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { formatCurrency } from "@/utils/formatters";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import CartItemCard from "./CartItemCard";
@@ -25,10 +26,6 @@ interface CouponPreviewResponse {
   };
 }
 
-const money = (v: number) =>
-  `R$ ${Number(v || 0)
-    .toFixed(2)
-    .replace(".", ",")}`;
 
 // Promoção normalizada para o carrinho
 type Promotion = {
@@ -305,20 +302,20 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
           <div className="space-y-1 text-sm">
             <div className="flex items-center justify-between text-gray-700">
               <span>Subtotal</span>
-              <span>{money(subtotal)}</span>
+              <span>{formatCurrency(subtotal)}</span>
             </div>
 
             {discount > 0 && (
               <div className="flex items-center justify-between text-emerald-700">
                 <span>Desconto (cupom)</span>
-                <span>- {money(discount)}</span>
+                <span>- {formatCurrency(discount)}</span>
               </div>
             )}
 
             <div className="flex items-center justify-between font-semibold pt-1 border-t border-gray-100 mt-1">
               <span>Total</span>
               <span className="text-lg font-extrabold text-green-600">
-                {money(total)}
+                {formatCurrency(total)}
               </span>
             </div>
           </div>

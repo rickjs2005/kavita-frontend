@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import apiClient from "@/lib/apiClient";
+import { formatCurrency } from "@/utils/formatters";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type StatusPagamento = "pendente" | "pago" | "falhou" | "estornado";
@@ -86,12 +87,6 @@ const CLASSE_BADGE_ENTREGA: Record<StatusEntrega, string> = {
     "border-rose-500/40 bg-rose-500/10 text-rose-100 dark:border-rose-400/30 dark:bg-rose-500/15 dark:text-rose-200",
 };
 
-function money(v: number) {
-  return v.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -602,7 +597,7 @@ export default function PedidosAdminPage() {
                       {/* Total / data */}
                       <div className="table-cell px-4 py-4 align-top text-right">
                         <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">
-                          {money(pedido.total)}
+                          {formatCurrency(pedido.total)}
                         </div>
                         <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           {formatDate(pedido.data_pedido)}
@@ -641,7 +636,7 @@ export default function PedidosAdminPage() {
                       </div>
                       <div className="text-right text-xs">
                         <p className="font-semibold text-gray-900 dark:text-gray-50">
-                          {money(pedido.total)}
+                          {formatCurrency(pedido.total)}
                         </p>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400">
                           {formatDate(pedido.data_pedido)}

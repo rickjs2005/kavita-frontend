@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import CustomButton from "@/components/buttons/CustomButton";
 import apiClient from "@/lib/apiClient";
+import { formatCurrency } from "@/utils/formatters";
 
 // ----- Tipos -----
 type PedidoResumo = {
@@ -127,10 +128,7 @@ export default function PedidosClientePage() {
 
                 <div className="text-right">
                   <p className="font-semibold">
-                    R${" "}
-                    {Number(p.total || 0)
-                      .toFixed(2)
-                      .replace(".", ",")}
+                    {formatCurrency(p.total || 0)}
                   </p>
                   <p className="text-sm text-gray-600">{p.forma_pagamento}</p>
                 </div>

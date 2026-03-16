@@ -15,6 +15,7 @@ import CloseButton from "@/components/buttons/CloseButton";
 import LoadingButton from "@/components/buttons/LoadingButton";
 import { apiClient } from "@/lib/apiClient";
 import { ENDPOINTS } from "@/services/api/endpoints";
+import { formatCurrency } from "@/utils/formatters";
 import { isApiError } from "@/lib/errors";
 import { formatApiError } from "@/lib/formatApiError";
 import {
@@ -88,10 +89,6 @@ type SavedAddress = {
 
 type EntregaTipo = "ENTREGA" | "RETIRADA";
 
-const money = (v: number) =>
-  `R$ ${Number(v ?? 0)
-    .toFixed(2)
-    .replace(".", ",")}`;
 
 const Icon = {
   user: () => (
@@ -1313,15 +1310,15 @@ export default function CheckoutPage() {
                         {info.hasDiscount ? (
                           <>
                             <div className="text-gray-400 line-through">
-                              {money(info.originalPrice * item.quantity)}
+                              {formatCurrency(info.originalPrice * item.quantity)}
                             </div>
                             <div className="text-[#EC5B20] font-semibold">
-                              {money(info.finalPrice * item.quantity)}
+                              {formatCurrency(info.finalPrice * item.quantity)}
                             </div>
                           </>
                         ) : (
                           <div className="text-gray-800 font-medium">
-                            {money(info.finalPrice * item.quantity)}
+                            {formatCurrency(info.finalPrice * item.quantity)}
                           </div>
                         )}
                       </div>
@@ -1382,13 +1379,13 @@ export default function CheckoutPage() {
               <div className="border-t border-gray-100 pt-3 space-y-1 text-sm">
                 <div className="flex justify-between text-gray-700">
                   <span>Subtotal</span>
-                  <span>{money(subtotal)}</span>
+                  <span>{formatCurrency(subtotal)}</span>
                 </div>
 
                 {discount > 0 && (
                   <div className="flex justify-between text-emerald-600 text-sm">
                     <span>Desconto</span>
-                    <span>- {money(discount)}</span>
+                    <span>- {formatCurrency(discount)}</span>
                   </div>
                 )}
 
@@ -1435,7 +1432,7 @@ export default function CheckoutPage() {
                     ) : shippingQuote.price === 0 ? (
                       "Grátis"
                     ) : (
-                      money(frete)
+                      formatCurrency(frete)
                     )}
                   </span>
                 </div>
@@ -1452,7 +1449,7 @@ export default function CheckoutPage() {
                     Total
                   </span>
                   <span className="text-lg font-extrabold text-[#EC5B20]">
-                    {money(total)}
+                    {formatCurrency(total)}
                   </span>
                 </div>
 

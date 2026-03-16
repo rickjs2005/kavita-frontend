@@ -5,6 +5,7 @@ import ProductBuyBox from "@/components/products/ProductBuyBox";
 import ProductReviews from "./ProductReviews";
 import { absUrl, API_BASE } from "@/utils/absUrl";
 import { computeProductPrice } from "@/utils/pricing";
+import { formatCurrency } from "@/utils/formatters";
 
 export const dynamic = "force-dynamic";
 
@@ -80,15 +81,8 @@ export default async function Page({ params }: ProductPageProps) {
     promocao,
   );
 
-  const priceBRL = finalPrice.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-
-  const originalPriceBRL = originalPrice.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
+  const priceBRL = formatCurrency(finalPrice);
+  const originalPriceBRL = formatCurrency(originalPrice);
 
   const promoEndsAt =
     (promocao?.ends_at as string | null) ??

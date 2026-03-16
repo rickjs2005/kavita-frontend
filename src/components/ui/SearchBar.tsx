@@ -6,6 +6,7 @@ import { FaSearch, FaCartPlus } from "react-icons/fa";
 import { useCart } from "@/context/CartContext";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
+import { formatCurrency } from "@/utils/formatters";
 
 type ResultItem =
   | {
@@ -44,14 +45,6 @@ function toArray<T = any>(data: any): T[] {
   return [];
 }
 
-function formatPrice(v: unknown): string {
-  const n = parseFloat(
-    String(v ?? "")
-      .replace(/[^0-9,.-]/g, "")
-      .replace(",", "."),
-  );
-  return Number.isFinite(n) ? n.toFixed(2) : "0,00";
-}
 
 export default function SearchBar() {
   const router = useRouter();
@@ -263,7 +256,7 @@ export default function SearchBar() {
                         {item.type === "produto" ? "Produto" : "Serviço"}
                       </p>
                       <p className="text-xs text-green-600 font-semibold">
-                        R$ {formatPrice(item.price)}
+                        {formatCurrency(item.price)}
                       </p>
                     </div>
                   </div>

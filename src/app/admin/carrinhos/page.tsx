@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import apiClient from "@/lib/apiClient";
+import { formatCurrency } from "@/utils/formatters";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
@@ -40,10 +41,6 @@ type WhatsAppLinkResponse = {
 
 /* --------------------------- helpers --------------------------- */
 
-function money(v: number) {
-  const n = Number(v || 0);
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -244,10 +241,10 @@ function ItemsTable({ itens }: { itens: AbandonedCartItem[] }) {
               {Number(i.quantidade || 0)}
             </div>
             <div className="text-right text-slate-200">
-              {money(i.preco_unitario || 0)}
+              {formatCurrency(i.preco_unitario || 0)}
             </div>
             <div className="text-right font-semibold text-slate-50">
-              {money(itemSubtotal(i))}
+              {formatCurrency(itemSubtotal(i))}
             </div>
           </div>
         ))}
@@ -551,7 +548,7 @@ export default function AdminCarrinhosAbandonadosPage() {
           />
           <KpiCard
             label="Total estimado (não recuperados)"
-            value={money(totalNaoRecuperados)}
+            value={formatCurrency(totalNaoRecuperados)}
             helper="Potencial de receita a recuperar"
             variant="danger"
           />
@@ -678,7 +675,7 @@ export default function AdminCarrinhosAbandonadosPage() {
 
                             <div className="px-4 py-4 text-right">
                               <div className="text-sm font-semibold text-slate-50">
-                                {money(c.total_estimado)}
+                                {formatCurrency(c.total_estimado)}
                               </div>
 
                               <div className="mt-3 flex flex-col items-end gap-2">
@@ -730,7 +727,7 @@ export default function AdminCarrinhosAbandonadosPage() {
                                   <div className="mt-1 text-xs text-slate-400">
                                     Total estimado:{" "}
                                     <span className="font-semibold text-slate-200">
-                                      {money(c.total_estimado)}
+                                      {formatCurrency(c.total_estimado)}
                                     </span>
                                   </div>
                                 </div>
@@ -818,7 +815,7 @@ export default function AdminCarrinhosAbandonadosPage() {
 
                       <div className="text-right">
                         <p className="text-sm font-semibold text-slate-50">
-                          {money(c.total_estimado)}
+                          {formatCurrency(c.total_estimado)}
                         </p>
                         {c.recuperado && (
                           <span className="mt-1 inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">

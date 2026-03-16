@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { formatCurrency } from "@/utils/formatters";
 
 type UiProduct = {
   id: number;
@@ -19,9 +20,6 @@ type Props = {
   empty: React.ReactNode;
 };
 
-function formatBRL(n: number) {
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 export function ProductGrid({ loading, products, empty }: Props) {
   if (loading) {
@@ -83,15 +81,15 @@ export function ProductGrid({ loading, products, empty }: Props) {
                 {hasDiscount ? (
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm font-bold text-emerald-700">
-                      {formatBRL(p.final_price!)}
+                      {formatCurrency(p.final_price!)}
                     </span>
                     <span className="text-xs text-zinc-500 line-through">
-                      {formatBRL(p.original_price!)}
+                      {formatCurrency(p.original_price!)}
                     </span>
                   </div>
                 ) : p.final_price != null ? (
                   <span className="text-sm font-bold text-zinc-900">
-                    {formatBRL(p.final_price)}
+                    {formatCurrency(p.final_price)}
                   </span>
                 ) : null}
 

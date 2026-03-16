@@ -7,6 +7,7 @@ import { useCart } from "../../context/CartContext";
 import CustomButton from "../buttons/CustomButton";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
+import { formatCurrency } from "@/utils/formatters";
 
 /* Helpers de preço/imagem */
 function normalizePrice(price: unknown): number {
@@ -19,9 +20,6 @@ function normalizePrice(price: unknown): number {
   return 0;
 }
 
-function formatPriceBRL(n: number): string {
-  return n.toFixed(2).replace(".", ",");
-}
 
 const quantityButtonClasses =
   "min-w-[36px] h-9 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-semibold transition hover:bg-gray-100 disabled:opacity-50";
@@ -135,10 +133,10 @@ export default function CartItemCard({ item }: { item: CartItem }) {
         {hasDiscount ? (
           <div className="mt-1">
             <p className="text-[11px] text-gray-400 line-through">
-              R$ {formatPriceBRL(originalUnit)}
+              {formatCurrency(originalUnit)}
             </p>
             <p className="text-green-600 font-bold text-sm">
-              R$ {formatPriceBRL(finalUnit)}
+              {formatCurrency(finalUnit)}
             </p>
             <span className="inline-block mt-1 text-[10px] px-2 py-1 bg-red-500 text-white rounded-full font-semibold">
               -{promo.discountPercent?.toFixed(0)}% OFF
@@ -146,7 +144,7 @@ export default function CartItemCard({ item }: { item: CartItem }) {
           </div>
         ) : (
           <p className="mt-1 text-gray-700 text-sm">
-            R$ {formatPriceBRL(unitFromCart)}
+            {formatCurrency(unitFromCart)}
           </p>
         )}
 
@@ -197,11 +195,11 @@ export default function CartItemCard({ item }: { item: CartItem }) {
         <div className="text-right mb-1 sm:mb-2">
           {hasDiscount && (
             <p className="text-[11px] text-gray-400 line-through">
-              R$ {formatPriceBRL(lineOriginalTotal)}
+              {formatCurrency(lineOriginalTotal)}
             </p>
           )}
           <p className="text-green-600 font-bold text-sm sm:text-base">
-            R$ {formatPriceBRL(lineTotal)}
+            {formatCurrency(lineTotal)}
           </p>
         </div>
 
