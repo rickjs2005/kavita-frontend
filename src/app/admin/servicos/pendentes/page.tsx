@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import CustomButton from "@/components/buttons/CustomButton";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
+import { isApiError } from "@/lib/errors";
+import { absUrl } from "@/utils/absUrl";
 
-const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const API_BASE = `${BACKEND_BASE}/api/admin/colaboradores`;
+const COLABORADORES_PATH = "/api/admin/colaboradores";
 
 type ColaboradorPendente = {
   id: number;
@@ -35,29 +38,15 @@ export default function ColaboradoresPendentesPage() {
   async function carregar() {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/pending`, {
-        cache: "no-store",
-        credentials: "include", // ✅ cookie HttpOnly
-      });
-
-      if (!res.ok) {
-        console.error("Erro ao buscar pendentes:", res.status);
-        if (res.status === 401 || res.status === 403) {
-          toast.error(
-            "Você não tem permissão para ver colaboradores pendentes. Faça login novamente.",
-          );
-        } else {
-          toast.error("Erro ao carregar colaboradores pendentes.");
-        }
-        setItems([]);
-        return;
-      }
-
-      const data = await res.json();
+      const data = await apiClient.get<unknown>(`${COLABORADORES_PATH}/pending`);
       setItems(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Erro ao carregar colaboradores pendentes:", err);
-      toast.error("Erro de conexão ao carregar colaboradores.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro ao carregar colaboradores pendentes.");
+      if (isApiError(err) && (err.status === 401 || err.status === 403)) {
+        toast.error("Você não tem permissão para ver colaboradores pendentes. Faça login novamente.");
+      } else {
+        toast.error(ui.message);
+      }
       setItems([]);
     } finally {
       setLoading(false);
@@ -72,31 +61,16 @@ export default function ColaboradoresPendentesPage() {
     if (!confirm("Confirmar verificação deste profissional?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/${id}/verify`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // ✅ cookie HttpOnly
-      });
-
-      if (!res.ok) {
-        console.error("Erro ao verificar colaborador:", res.status);
-        if (res.status === 401 || res.status === 403) {
-          toast.error(
-            "Você não tem permissão para aprovar colaboradores. Faça login novamente.",
-          );
-        } else {
-          toast.error("Erro ao verificar colaborador.");
-        }
-        return;
-      }
-
+      await apiClient.put(`${COLABORADORES_PATH}/${id}/verify`);
       toast.success("Colaborador aprovado e liberado com sucesso!");
       await carregar();
-    } catch (err) {
-      console.error("Erro ao verificar colaborador:", err);
-      toast.error("Erro interno ao verificar colaborador.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro ao verificar colaborador.");
+      if (isApiError(err) && (err.status === 401 || err.status === 403)) {
+        toast.error("Você não tem permissão para aprovar colaboradores. Faça login novamente.");
+      } else {
+        toast.error(ui.message);
+      }
     }
   }
 
@@ -104,28 +78,16 @@ export default function ColaboradoresPendentesPage() {
     if (!confirm("Deseja remover este cadastro pendente?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/${id}`, {
-        method: "DELETE",
-        credentials: "include", // ✅ cookie HttpOnly
-      });
-
-      if (!res.ok) {
-        console.error("Erro ao remover colaborador:", res.status);
-        if (res.status === 401 || res.status === 403) {
-          toast.error(
-            "Você não tem permissão para remover colaboradores. Faça login novamente.",
-          );
-        } else {
-          toast.error("Erro ao remover colaborador.");
-        }
-        return;
-      }
-
+      await apiClient.del(`${COLABORADORES_PATH}/${id}`);
       toast.success("Colaborador removido com sucesso.");
       await carregar();
-    } catch (err) {
-      console.error("Erro ao remover colaborador:", err);
-      toast.error("Erro interno ao remover colaborador.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro ao remover colaborador.");
+      if (isApiError(err) && (err.status === 401 || err.status === 403)) {
+        toast.error("Você não tem permissão para remover colaboradores. Faça login novamente.");
+      } else {
+        toast.error(ui.message);
+      }
     }
   }
 
@@ -185,12 +147,7 @@ export default function ColaboradoresPendentesPage() {
                 ? `https://wa.me/55${phoneDigits}`
                 : undefined;
 
-              const avatarUrl =
-                c.imagem && c.imagem.startsWith("http")
-                  ? c.imagem
-                  : c.imagem
-                    ? `${BACKEND_BASE}${c.imagem}`
-                    : null;
+              const avatarUrl = c.imagem ? absUrl(c.imagem) : null;
 
               return (
                 <article

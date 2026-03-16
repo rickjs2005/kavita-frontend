@@ -80,12 +80,10 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
     props?: Partial<React.ComponentProps<typeof SearchInputProdutos>>,
   ) {
     const onPick = vi.fn();
-    const apiBase = "http://api.test";
 
     render(
       <SearchInputProdutos
         onPick={onPick}
-        apiBase={apiBase}
         placeholder="Buscar produto…"
         {...props}
       />,
@@ -94,7 +92,7 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
     const input = screen.getByPlaceholderText(
       "Buscar produto…",
     ) as HTMLInputElement;
-    return { onPick, apiBase, input };
+    return { onPick, input };
   }
 
   it("carrega produtos via fetch (sucesso) e filtra por termo com debounce, renderizando resultados", async () => {
@@ -111,7 +109,7 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
       ],
     });
 
-    const { input, apiBase } = setup();
+    const { input } = setup();
 
     // Act
     await focusInput(input); // abre dropdown + deixa useEffect do fetch “commitar”

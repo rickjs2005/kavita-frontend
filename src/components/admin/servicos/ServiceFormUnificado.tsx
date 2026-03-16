@@ -16,21 +16,24 @@ interface Props {
   onCancel: () => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const API_SERVICOS = `${API_BASE}/api/admin/servicos`;
-const API_ESPECIALIDADES = `${API_BASE}/api/admin/especialidades`;
+import { absUrl } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
+
+const API_SERVICOS = "/api/admin/servicos";
+const API_ESPECIALIDADES = "/api/admin/especialidades";
 
 // Normaliza URL absoluta → para preview
-const toAbs = (p?: string | null) =>
-  !p
-    ? null
-    : p.startsWith("http")
-      ? p
-      : `${API_BASE}${p.startsWith("/") ? p : `/${p}`}`;
+const toAbs = (p?: string | null) => (!p ? null : absUrl(p));
 
 // Converte URL absoluta → para relativa (salvar no banco)
-const toRel = (u: string) =>
-  u?.startsWith(API_BASE) ? u.slice(API_BASE.length) : u;
+const toRel = (u: string) => {
+  try {
+    return new URL(u).pathname;
+  } catch {
+    return u;
+  }
+};
 
 export default function ServiceFormUnificado({
   servicoEditado,
@@ -67,17 +70,10 @@ export default function ServiceFormUnificado({
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(API_ESPECIALIDADES, {
-          credentials: "include", // ✅ cookie HttpOnly
-        });
-        if (!res.ok) {
-          console.error("Falha ao buscar especialidades:", res.status);
-          return;
-        }
-        const data = await res.json();
+        const data = await apiClient.get(API_ESPECIALIDADES);
         setEspecialidades(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Erro ao buscar especialidades:", err);
+      } catch {
+        // silêncio: formulário ainda funciona sem especialidades
       }
     })();
   }, []);
@@ -142,19 +138,6 @@ export default function ServiceFormUnificado({
     return null;
   }
 
-  async function safeText(res: Response) {
-    try {
-      const ct = res.headers.get("content-type") || "";
-      if (ct.includes("application/json")) {
-        const j = await res.json();
-        return (j as any)?.message || JSON.stringify(j);
-      }
-      return await res.text();
-    } catch {
-      return "";
-    }
-  }
-
   /* ------------------------------- eventos ------------------------------- */
   function handleChange(
     e:
@@ -214,27 +197,16 @@ export default function ServiceFormUnificado({
       fd.append("keepImages", JSON.stringify(kept));
     }
 
-    const method = isEditing ? "PUT" : "POST";
-    const url = isEditing
-      ? `${API_SERVICOS}/${servicoEditado!.id}`
-      : API_SERVICOS;
-
     setLoading(true);
     try {
-      const res = await fetch(url, {
-        method,
-        body: fd,
-        credentials: "include", // ✅ cookie HttpOnly
-      });
+      const path = isEditing
+        ? `${API_SERVICOS}/${servicoEditado!.id}`
+        : API_SERVICOS;
 
-      if (!res.ok) {
-        const txt = await safeText(res);
-        const msg =
-          txt ||
-          (res.status === 401 || res.status === 403
-            ? "Você não tem permissão para salvar serviço. Faça login novamente."
-            : "Falha ao salvar serviço.");
-        throw new Error(msg);
+      if (isEditing) {
+        await apiClient.put(path, fd, { skipContentType: true });
+      } else {
+        await apiClient.post(path, fd, { skipContentType: true });
       }
 
       setMsg({
@@ -247,12 +219,9 @@ export default function ServiceFormUnificado({
       resetForm();
       onSaved();
       onCancel();
-    } catch (err: any) {
-      console.error("Erro ao salvar:", err);
-      setMsg({
-        type: "error",
-        text: err.message || "Erro ao salvar serviço.",
-      });
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro ao salvar serviço.");
+      setMsg({ type: "error", text: ui.message });
     } finally {
       setLoading(false);
     }

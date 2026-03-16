@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import type { ProductReview } from "@/types/product";
 import CustomButton from "@/components/buttons/CustomButton";
 import { toast } from "react-hot-toast";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
 
 type ProductReviewsProps = {
   produtoId: number;
@@ -33,27 +33,14 @@ export default function ProductReviews({
     async function carregarAvaliacoes() {
       try {
         setLoadingReviews(true);
-
-        const res = await fetch(
-          `${API_BASE}/api/public/produtos/${produtoId}/avaliacoes`,
-          {
-            // ✅ ESSENCIAL p/ cookie HttpOnly ir junto
-            credentials: "include",
-            cache: "no-store",
-          },
+        const data = await apiClient.get(
+          `/api/public/produtos/${produtoId}/avaliacoes`,
         );
-
-        if (!res.ok) {
-          console.error("Erro ao buscar avaliações:", res.status);
-          return;
-        }
-
-        const data = await res.json();
         setReviews(
           Array.isArray(data) ? (data as ProductReviewWithUser[]) : [],
         );
-      } catch (err) {
-        console.error("Erro ao carregar avaliações:", err);
+      } catch {
+        // avaliações indisponíveis — não quebra a página
       } finally {
         setLoadingReviews(false);
       }
@@ -72,53 +59,23 @@ export default function ProductReviews({
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/public/produtos/avaliacoes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-
-        // ✅ ESSENCIAL p/ cookie HttpOnly ir junto
-        credentials: "include",
-
-        body: JSON.stringify({
-          produto_id: produtoId,
-          nota,
-          comentario: comentario.trim() || null,
-        }),
+      await apiClient.post("/api/public/produtos/avaliacoes", {
+        produto_id: produtoId,
+        nota,
+        comentario: comentario.trim() || null,
       });
-
-      if (!res.ok) {
-        const txt = await res.text();
-        console.error("Erro ao enviar avaliação:", txt);
-
-        // tenta mostrar a msg real quando vier JSON
-        try {
-          const j = JSON.parse(txt);
-          toast.error(j?.message || "Erro ao enviar sua avaliação.");
-        } catch {
-          toast.error("Erro ao enviar sua avaliação.");
-        }
-
-        return;
-      }
 
       toast.success("Avaliação enviada com sucesso!");
       setNota(0);
       setComentario("");
 
-      // Recarrega lista
-      const resList = await fetch(
-        `${API_BASE}/api/public/produtos/${produtoId}/avaliacoes`,
-        {
-          credentials: "include",
-          cache: "no-store",
-        },
+      const data = await apiClient.get(
+        `/api/public/produtos/${produtoId}/avaliacoes`,
       );
-
-      const data = await resList.json();
       setReviews(Array.isArray(data) ? (data as ProductReviewWithUser[]) : []);
-    } catch (err) {
-      console.error("Erro ao enviar avaliação:", err);
-      toast.error("Erro ao enviar sua avaliação.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro ao enviar sua avaliação.");
+      toast.error(ui.message);
     }
   }
 

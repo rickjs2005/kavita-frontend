@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { absUrl } from "@/utils/absUrl";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 type HeroConfig = {
   hero_video_url?: string;
@@ -49,13 +48,7 @@ export default function HeroSection() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API_BASE}/api/public/site-hero`, {
-          method: "GET",
-          cache: "no-store",
-        });
-        if (!res.ok) return;
-
-        const data = (await res.json()) as Partial<HeroConfig>;
+        const data = (await apiClient.get("/api/public/site-hero")) as Partial<HeroConfig>;
 
         setCfg((p) => ({
           ...p,

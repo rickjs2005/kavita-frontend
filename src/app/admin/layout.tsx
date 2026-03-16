@@ -33,6 +33,19 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
     }
   }, [isLogin, loadSession]);
 
+  // Escuta evento global disparado pelo apiClient quando qualquer request retorna 401.
+  // Redireciona para login sem precisar que cada componente admin trate 401 individualmente.
+  useEffect(() => {
+    if (isLogin) return;
+
+    function handleAuthExpired() {
+      router.replace(fromUrl);
+    }
+
+    window.addEventListener("auth:expired", handleAuthExpired);
+    return () => window.removeEventListener("auth:expired", handleAuthExpired);
+  }, [isLogin, fromUrl, router]);
+
   // ✅ 4) Sem sessão: redirect via effect (não durante render)
   useEffect(() => {
     if (isLogin) return;

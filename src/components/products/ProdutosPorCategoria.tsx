@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ProductCard from "./ProductCard";
 import type { Product } from "@/types/product";
+import apiClient from "@/lib/apiClient";
 
 type Props = { categoria: string; limit?: number };
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 function normalizeProducts(payload: any): Product[] {
   if (!payload) return [];
@@ -54,24 +53,15 @@ export default function ProdutosPorCategoria({ categoria, limit = 12 }: Props) {
         setErrorMsg(null);
         setList([]);
 
-        const url = `${API}/api/products?category=${encodeURIComponent(
-          categoria,
-        )}`;
-        const res = await fetch(url, {
-          signal: ctrl.signal,
-          cache: "no-store",
-        });
-        const text = await res.text();
-
-        if (!res.ok) throw new Error(text || res.statusText);
-
-        const json = text ? JSON.parse(text) : [];
+        const json = await apiClient.get(
+          `/api/products?category=${encodeURIComponent(categoria)}`,
+          { signal: ctrl.signal },
+        );
         const arr = normalizeProducts(json).slice(0, limit);
         setList(arr);
-      } catch (e: any) {
-        if (e?.name !== "AbortError")
-          setErrorMsg("Não foi possível carregar produtos.");
-        console.warn("ProdutosPorCategoria:", e);
+      } catch (err: unknown) {
+        if ((err as any)?.name === "AbortError") return;
+        setErrorMsg("Não foi possível carregar produtos.");
       } finally {
         setLoading(false);
       }

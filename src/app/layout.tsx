@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
 import Header from "../components/layout/Header";
+import AuthExpiredHandler from "@/components/auth/AuthExpiredHandler";
 
 import { fetchPublicCategories } from "@/server/data/categories";
 import { fetchPublicShopSettings } from "@/server/data/shopSettings";
@@ -47,6 +48,7 @@ export default async function RootLayout({
           <CartProvider>
             <Header categories={categories} shop={shop} />
             <main id="conteudo">{children}</main>
+            <AuthExpiredHandler />
             <Toaster position="top-right" />
           </CartProvider>
         </AuthProvider>

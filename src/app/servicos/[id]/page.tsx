@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Service } from "@/types/service";
 import ServicoContent from "./ServicoContent";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { API_BASE } from "@/utils/absUrl";
 
 type PageProps = {
   params: Promise<{ id: string }>;

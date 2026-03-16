@@ -5,9 +5,10 @@ import { absUrl } from "@/utils/absUrl";
 import type { Service } from "@/types/service";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
 
 const PLACEHOLDER = "/placeholder.png";
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 function parseMaybeJson(x: unknown): any {
   if (typeof x !== "string") return x;
@@ -92,18 +93,18 @@ export default function ServicoContent({ servico }: { servico: Service }) {
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [loadingAval, setLoadingAval] = useState(true);
 
-  // registra visualização
+  // registra visualização (fire-and-forget)
   useEffect(() => {
-    fetch(`${API}/api/public/servicos/${servico.id}/view`, {
-      method: "POST",
-    }).catch(() => {});
+    apiClient
+      .post(`/api/public/servicos/${servico.id}/view`)
+      .catch(() => {});
   }, [servico.id]);
 
   const handleWhatsAppClick = () => {
     if (!whatsappHref) return;
-    fetch(`${API}/api/public/servicos/${servico.id}/whatsapp-click`, {
-      method: "POST",
-    }).catch(() => {});
+    apiClient
+      .post(`/api/public/servicos/${servico.id}/whatsapp-click`)
+      .catch(() => {});
     window.open(whatsappHref, "_blank");
   };
 
@@ -111,16 +112,12 @@ export default function ServicoContent({ servico }: { servico: Service }) {
   async function carregarAvaliacoes() {
     try {
       setLoadingAval(true);
-      const res = await fetch(
-        `${API}/api/public/servicos/${servico.id}/avaliacoes`,
+      const data = await apiClient.get<Avaliacao[]>(
+        `/api/public/servicos/${servico.id}/avaliacoes`,
       );
-      if (!res.ok) {
-        throw new Error(await res.text());
-      }
-      const data = (await res.json()) as Avaliacao[];
-      setAvaliacoes(data);
-    } catch (err) {
-      console.error("Erro ao carregar avaliações:", err);
+      setAvaliacoes(Array.isArray(data) ? data : []);
+    } catch {
+      // falha silenciosa — avaliações são conteúdo secundário
     } finally {
       setLoadingAval(false);
     }
@@ -139,22 +136,18 @@ export default function ServicoContent({ servico }: { servico: Service }) {
 
     setSendingRating(true);
     try {
-      await fetch(`${API}/api/public/servicos/avaliacoes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          colaborador_id: servico.id,
-          nota,
-          comentario,
-          autor_nome: autorNome,
-        }),
+      await apiClient.post("/api/public/servicos/avaliacoes", {
+        colaborador_id: servico.id,
+        nota,
+        comentario,
+        autor_nome: autorNome,
       });
       toast.success("Obrigado pela avaliação!");
       setComentario("");
       await carregarAvaliacoes();
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao enviar avaliação, tente novamente.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro ao enviar avaliação, tente novamente.");
+      toast.error(ui.message);
     } finally {
       setSendingRating(false);
     }
@@ -167,24 +160,20 @@ export default function ServicoContent({ servico }: { servico: Service }) {
     }
     setSendingLead(true);
     try {
-      await fetch(`${API}/api/public/servicos/solicitacoes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          colaborador_id: servico.id,
-          nome_contato: nomeContato,
-          whatsapp: whatsContato,
-          descricao: descPedido,
-          origem: "pagina_servico",
-        }),
+      await apiClient.post("/api/public/servicos/solicitacoes", {
+        colaborador_id: servico.id,
+        nome_contato: nomeContato,
+        whatsapp: whatsContato,
+        descricao: descPedido,
+        origem: "pagina_servico",
       });
       toast.success("Pedido enviado! O profissional irá entrar em contato.");
       setNomeContato("");
       setWhatsContato("");
       setDescPedido("");
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao enviar pedido, tente novamente.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro ao enviar pedido, tente novamente.");
+      toast.error(ui.message);
     } finally {
       setSendingLead(false);
     }

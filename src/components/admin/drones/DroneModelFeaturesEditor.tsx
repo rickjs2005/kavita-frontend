@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
 
 type TextItem = { title?: string; text?: string };
 
@@ -10,23 +10,6 @@ type Toast = { type: "success" | "error" | "info"; text: string } | null;
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
-}
-
-function isAuthError(res: Response) {
-  return res.status === 401 || res.status === 403;
-}
-
-function redirectToLogin() {
-  if (typeof window !== "undefined") window.location.assign("/admin/login");
-}
-
-async function readSafe(res: Response) {
-  const txt = await res.text();
-  try {
-    return { txt, data: JSON.parse(txt) };
-  } catch {
-    return { txt, data: null as any };
-  }
 }
 
 function normalizeItems(v: any): TextItem[] {
@@ -137,30 +120,16 @@ export default function DroneModelFeaturesEditor({
     try {
       const payload = sanitizePayload();
 
-      const res = await fetch(
-        `${API_BASE}/api/admin/drones/models/${modelKey}`,
-        {
-          method: "PUT",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) {
-        throw new Error(data?.message || "Erro ao salvar funcionalidades.");
-      }
+      await apiClient.put(`/api/admin/drones/models/${modelKey}`, payload);
 
       setToast({
         type: "success",
         text: "Funcionalidades salvas com sucesso.",
       });
       onSaved?.(payload);
-    } catch (e: any) {
-      setToast({ type: "error", text: e?.message || "Falha ao salvar." });
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Falha ao salvar.");
+      setToast({ type: "error", text: ui.message });
     } finally {
       setSaving(false);
     }

@@ -11,7 +11,7 @@ import ClimaSection from "@/components/admin/kavita-news/clima/ClimaSection";
 import CotacoesSection from "@/components/admin/kavita-news/cotacoes/CotacoesSection";
 import PostsTab from "@/components/admin/kavita-news/posts/PostsTab";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { API_BASE } from "@/utils/absUrl";
 
 export default function AdminKavitaNewsPage() {
   const router = useRouter();

@@ -5,6 +5,29 @@
 import { ApiError, type ApiErrorPayload } from "./errors";
 
 // ---------------------------------------------------------------------------
+// Tratamento global de sessão expirada (401)
+// Componentes não precisam tratar 401 individualmente — o cliente despacha
+// um evento customizado que os contextos de auth podem capturar para redirecionar.
+// ---------------------------------------------------------------------------
+
+/**
+ * Dispara evento global "auth:expired" quando o servidor retorna 401.
+ * Escute com: window.addEventListener("auth:expired", handler).
+ * Ignora rotas de login para evitar loop infinito.
+ */
+function dispatchAuthExpired(url: string) {
+  // Evita disparar em rotas de login/logout para não criar loop
+  if (
+    typeof window === "undefined" ||
+    url.includes("/login") ||
+    url.includes("/logout")
+  ) {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent("auth:expired", { detail: { url } }));
+}
+
+// ---------------------------------------------------------------------------
 // CSRF token cache (P0-2)
 // TTL de 10 minutos; dedup de requisições simultâneas; falha silenciosa.
 // ---------------------------------------------------------------------------
@@ -250,6 +273,11 @@ export async function apiRequest<T = any>(
       (typeof data === "string" && data) ||
       (text && text) ||
       `HTTP ${res.status}`;
+
+    // Despacha evento global para tratamento centralizado de sessão expirada
+    if (res.status === 401) {
+      dispatchAuthExpired(url);
+    }
 
     throw new ApiError({
       status: res.status,

@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { FormattedInput } from "@/components/layout/FormattedInput";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
 
 type Especialidade = {
   id: number;
@@ -44,22 +44,17 @@ export default function CadastroColaboradorPage() {
   useEffect(() => {
     async function loadEspecialidades() {
       try {
-        const res = await fetch(`${API_URL}/api/admin/especialidades/public`);
-
-        if (!res.ok) {
-          throw new Error("Erro ao buscar especialidades");
-        }
-
-        const data = await res.json();
+        const data = await apiClient.get<Especialidade[]>(
+          "/api/admin/especialidades/public",
+        );
         setEspecialidades(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error(err);
-        setErrorMessage(
+      } catch (err: unknown) {
+        const ui = formatApiError(
+          err,
           "Não foi possível carregar a lista de especialidades. Tente novamente mais tarde.",
         );
-        toast.error(
-          "Erro ao carregar especialidades. Tente novamente mais tarde.",
-        );
+        setErrorMessage(ui.message);
+        toast.error(ui.message);
       } finally {
         setLoadingEspecialidades(false);
       }
@@ -117,15 +112,11 @@ export default function CadastroColaboradorPage() {
         formData.append("imagem", imagemFile);
       }
 
-      const res = await fetch(`${API_URL}/api/admin/colaboradores/public`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Erro ao enviar cadastro.");
-      }
+      await apiClient.post(
+        "/api/admin/colaboradores/public",
+        formData,
+        { skipContentType: true }, // FormData: não sobrescrever Content-Type
+      );
 
       const okMsg =
         "Cadastro enviado com sucesso! A equipe da Kavita vai analisar seus dados e, se aprovado, você receberá um e-mail de confirmação.";
@@ -142,11 +133,10 @@ export default function CadastroColaboradorPage() {
       });
       setImagemFile(null);
       setImagemPreview(null);
-    } catch (err: any) {
-      console.error(err);
-      const msg = err.message || "Erro ao enviar cadastro. Tente novamente.";
-      setErrorMessage(msg);
-      toast.error(msg);
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro ao enviar cadastro. Tente novamente.");
+      setErrorMessage(ui.message);
+      toast.error(ui.message);
     } finally {
       setSubmitting(false);
     }

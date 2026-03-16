@@ -19,6 +19,7 @@ import LoadingButton from "../../components/buttons/LoadingButton";
 
 import type { Category, ProductsResponse } from "@/types/search";
 import { absUrl } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
 import {
   buildQueryString,
   clamp,
@@ -26,8 +27,6 @@ import {
   toNum,
   toNumberParam,
 } from "@/utils/search";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const PLACEHOLDER = "/placeholder.png";
 
 type Params = {
@@ -207,20 +206,8 @@ export default function BuscaClient() {
     (async () => {
       setCatsLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/api/public/categorias`, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        const text = await res.text();
-        if (!res.ok) throw new Error(text || res.statusText);
-
-        const json = safeJsonParse(text) ?? [];
-        const normalized = normalizeCategories(json);
+        const json = await apiClient.get("/api/public/categorias");
+        const normalized = normalizeCategories(json ?? []);
 
         if (!mounted) return;
         setCats(normalized);
@@ -253,23 +240,9 @@ export default function BuscaClient() {
           page: params.page,
         });
 
-        const res = await fetch(`${API_BASE}/api/products/search?${qs}`, {
-          method: "GET",
-          credentials: "include",
+        const json = (await apiClient.get(`/api/products/search?${qs}`, {
           signal: ctrl.signal,
-          headers: { "Content-Type": "application/json" },
-        });
-
-        if (!res.ok) {
-          let msg = `HTTP ${res.status}`;
-          try {
-            const j = await res.json();
-            msg = j?.message || j?.mensagem || msg;
-          } catch {}
-          throw new Error(msg);
-        }
-
-        const json = (await res.json()) as ProductsResponse;
+        })) as ProductsResponse;
         setProductsData(json);
       } catch (e: any) {
         if (e?.name === "AbortError") return;

@@ -8,7 +8,8 @@ import AddToCartButton from "@/components/buttons/AddToCartButton";
 import type { Product } from "@/types/product";
 import { resolveStockValue } from "../../utils/stock";
 import { useAuth } from "@/context/AuthContext";
-import { absUrl, API_BASE } from "@/utils/absUrl";
+import { absUrl } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
 import { useProductPromotion, type ProductPromotion } from "@/hooks/useProductPromotion";
 
 type Props = {
@@ -166,12 +167,6 @@ export default function ProductCard({
       return;
     }
 
-    const token = (user as any).token;
-    if (!token) {
-      console.warn("Usuário logado mas sem token. Faça login novamente.");
-      return;
-    }
-
     if (favLoading) return;
 
     const wasFavorite = isFavorite;
@@ -179,31 +174,12 @@ export default function ProductCard({
     setFavLoading(true);
 
     try {
-      const url = wasFavorite
-        ? `${API_BASE}/api/favorites/${product.id}`
-        : `${API_BASE}/api/favorites`;
-
-      const options: RequestInit = {
-        method: wasFavorite ? "DELETE" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-
-      if (!wasFavorite) {
-        options.body = JSON.stringify({ productId: product.id });
+      if (wasFavorite) {
+        await apiClient.del(`/api/favorites/${product.id}`);
+      } else {
+        await apiClient.post("/api/favorites", { productId: product.id });
       }
-
-      const res = await fetch(url, options);
-
-      if (!res.ok) {
-        // desfaz se der erro
-        setIsFavorite(wasFavorite);
-        console.error("Falha ao atualizar favorito");
-      }
-    } catch (err) {
-      console.error("Erro ao chamar /api/favorites:", err);
+    } catch {
       setIsFavorite(wasFavorite);
     } finally {
       setFavLoading(false);

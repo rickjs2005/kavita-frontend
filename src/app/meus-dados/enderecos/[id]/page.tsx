@@ -9,14 +9,7 @@ import {
   UserAddressPayload,
 } from "@/hooks/useUserAddresses";
 import { ESTADOS_BR } from "@/utils/brasil";
-
-type ViaCepResponse = {
-  erro?: boolean;
-  logradouro?: string;
-  bairro?: string;
-  localidade?: string;
-  uf?: string;
-};
+import { useCep } from "@/hooks/useCep";
 
 type IbgeMunicipio = { nome: string };
 
@@ -40,9 +33,9 @@ export default function EditarEnderecoPage() {
     return Number(raw);
   }, [params]);
 
+  const { lookup: lookupCep, loading: cepLoading } = useCep();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<UserAddressPayload | null>(null);
-  const [cepLoading, setCepLoading] = useState(false);
   const [cities, setCities] = useState<string[]>([]);
 
   useEffect(() => {
@@ -74,45 +67,32 @@ export default function EditarEnderecoPage() {
   };
 
   useEffect(() => {
-    const cepValue = form?.cep ?? "";
-    const digits = cepValue.replace(/\D/g, "");
+    const digits = (form?.cep ?? "").replace(/\D/g, "");
     if (digits.length !== 8) return;
 
-    let aborted = false;
+    let mounted = true;
 
     (async () => {
-      try {
-        setCepLoading(true);
-        const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-        if (!res.ok) return;
+      const data = await lookupCep(digits);
+      if (!mounted || !data) return;
 
-        const raw = (await res.json()) as unknown;
-        if (!isRecord(raw)) return;
-
-        const data = raw as ViaCepResponse;
-        if (aborted || data.erro) return;
-
-        setForm((prev) =>
-          prev
-            ? {
-                ...prev,
-                endereco: data.logradouro || prev.endereco,
-                bairro: data.bairro || prev.bairro,
-                cidade: data.localidade || prev.cidade,
-                estado: data.uf || prev.estado,
-              }
-            : prev,
-        );
-      } catch {
-        // silêncio: não quebra UX em falhas momentâneas
-      } finally {
-        if (!aborted) setCepLoading(false);
-      }
+      setForm((prev) =>
+        prev
+          ? {
+              ...prev,
+              endereco: data.logradouro || prev.endereco,
+              bairro: data.bairro || prev.bairro,
+              cidade: data.localidade || prev.cidade,
+              estado: data.uf || prev.estado,
+            }
+          : prev,
+      );
     })();
 
     return () => {
-      aborted = true;
+      mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form?.cep]);
 
   useEffect(() => {

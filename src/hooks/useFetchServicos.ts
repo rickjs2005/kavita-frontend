@@ -4,7 +4,6 @@
 import useSWR from "swr";
 import { apiFetch } from "@/lib/apiClient";
 import { handleApiError } from "@/lib/handleApiError";
-import { API_BASE } from "@/utils/absUrl";
 
 type Params = {
   q?: string;
@@ -88,25 +87,27 @@ export function useFetchServicos({
   order = "desc",
 }: Params = {}) {
   // ✅ ROTA PÚBLICA (coerente com ServicosSection)
-  const url = new URL("/api/public/servicos", API_BASE);
+  const params = new URLSearchParams();
 
-  if (q && String(q).trim().length > 0) url.searchParams.set("q", String(q));
+  if (q && String(q).trim().length > 0) params.set("q", String(q));
 
   if (
     especialidade !== undefined &&
     especialidade !== null &&
     String(especialidade).length > 0
   ) {
-    url.searchParams.set("especialidade", String(especialidade));
+    params.set("especialidade", String(especialidade));
   }
 
-  url.searchParams.set("page", String(page));
-  url.searchParams.set("limit", String(limit));
-  url.searchParams.set("sort", String(sort));
-  url.searchParams.set("order", order);
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+  params.set("sort", String(sort));
+  params.set("order", order);
+
+  const url = `/api/public/servicos?${params.toString()}`;
 
   const { data, error, isLoading } = useSWR<ApiListResponse<any>>(
-    url.toString(),
+    url,
     fetcher,
   );
 

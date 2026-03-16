@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserAddresses, UserAddressPayload } from "@/hooks/useUserAddresses";
 import { ESTADOS_BR } from "@/utils/brasil";
+import { useCep } from "@/hooks/useCep";
 
 export default function NovoEnderecoPage() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function NovoEnderecoPage() {
     is_default: true,
   });
 
-  const [cepLoading, setCepLoading] = useState(false);
+  const { lookup: lookupCep, loading: cepLoading } = useCep();
   const [cities, setCities] = useState<string[]>([]);
 
   const set =
@@ -43,32 +44,25 @@ export default function NovoEnderecoPage() {
     const digits = form.cep.replace(/\D/g, "");
     if (digits.length !== 8) return;
 
-    let aborted = false;
+    let mounted = true;
 
     (async () => {
-      try {
-        setCepLoading(true);
-        const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (aborted || data.erro) return;
+      const data = await lookupCep(digits);
+      if (!mounted || !data) return;
 
-        setForm((prev) => ({
-          ...prev,
-          endereco: data.logradouro || prev.endereco,
-          bairro: data.bairro || prev.bairro,
-          cidade: data.localidade || prev.cidade,
-          estado: data.uf || prev.estado,
-        }));
-      } catch {
-      } finally {
-        if (!aborted) setCepLoading(false);
-      }
+      setForm((prev) => ({
+        ...prev,
+        endereco: data.logradouro || prev.endereco,
+        bairro: data.bairro || prev.bairro,
+        cidade: data.localidade || prev.cidade,
+        estado: data.uf || prev.estado,
+      }));
     })();
 
     return () => {
-      aborted = true;
+      mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.cep]);
 
   useEffect(() => {

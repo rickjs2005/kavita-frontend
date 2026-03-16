@@ -6,9 +6,9 @@ import { useAdminAuth, AdminRole } from "@/context/AdminAuthContext";
 import { KpiCard } from "@/components/admin/KpiCard";
 import CloseButton from "@/components/buttons/CloseButton";
 import { FiUsers, FiUserCheck, FiClock } from "react-icons/fi";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const API_URL = `${API_BASE}/api`;
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
+import { isApiError } from "@/lib/errors";
 
 type AdminRow = {
   id: number;
@@ -115,26 +115,10 @@ export default function EquipePage() {
         setLoading(true);
         setErrorMsg(null);
 
-        const [adminsRes, rolesRes] = await Promise.all([
-          fetch(`${API_URL}/admin/admins`, {
-            credentials: "include", // ⬅️ AGORA É ASSIM
-          }),
-          fetch(`${API_URL}/admin/roles`, {
-            credentials: "include",
-          }),
+        const [adminsData, rolesData] = await Promise.all([
+          apiClient.get<AdminRow[]>("/api/admin/admins"),
+          apiClient.get<RoleRow[]>("/api/admin/roles"),
         ]);
-
-        if (adminsRes.status === 401 || rolesRes.status === 401) {
-          logout();
-          router.replace("/admin/login");
-          return;
-        }
-
-        if (!adminsRes.ok) throw new Error("Erro ao carregar administradores.");
-        if (!rolesRes.ok) throw new Error("Erro ao carregar papéis.");
-
-        const adminsData: AdminRow[] = await adminsRes.json();
-        const rolesData: RoleRow[] = await rolesRes.json();
 
         const orderedAdmins = [...adminsData].sort((a, b) => {
           const da = parseAdminDate(a.criado_em);
@@ -144,9 +128,14 @@ export default function EquipePage() {
 
         setAdmins(orderedAdmins);
         setRoles(rolesData);
-      } catch (err: any) {
-        console.error(err);
-        setErrorMsg(err.message || "Erro inesperado ao carregar equipe.");
+      } catch (err: unknown) {
+        if (isApiError(err) && (err.status === 401 || err.status === 403)) {
+          logout();
+          router.replace("/admin/login");
+          return;
+        }
+        const ui = formatApiError(err, "Erro ao carregar equipe.");
+        setErrorMsg(ui.message);
       } finally {
         setLoading(false);
       }
@@ -165,52 +154,34 @@ export default function EquipePage() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/admin/admins`, {
-        method: "POST",
-        credentials: "include", // 🔐 obrigatório agora
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nome,
-          email,
-          senha,
-          role: roleSlug.toLowerCase(),
-        }),
+      await apiClient.post("/api/admin/admins", {
+        nome,
+        email,
+        senha,
+        role: roleSlug.toLowerCase(),
       });
 
-      const data = await res.json().catch(() => null);
-
-      if (res.status === 401) {
-        logout();
-        router.replace("/admin/login");
-        return;
-      }
-
-      if (!res.ok) throw new Error(data?.message || "Erro ao criar admin.");
-
-      const refetch = await fetch(`${API_URL}/admin/admins`, {
-        credentials: "include",
+      const adminsData = await apiClient.get<AdminRow[]>("/api/admin/admins");
+      const ordered = [...adminsData].sort((a, b) => {
+        const da = parseAdminDate(a.criado_em);
+        const db = parseAdminDate(b.criado_em);
+        return (db?.getTime() ?? 0) - (da?.getTime() ?? 0);
       });
-
-      if (refetch.ok) {
-        const adminsData: AdminRow[] = await refetch.json();
-        const ordered = [...adminsData].sort((a, b) => {
-          const da = parseAdminDate(a.criado_em);
-          const db = parseAdminDate(b.criado_em);
-          return (db?.getTime() ?? 0) - (da?.getTime() ?? 0);
-        });
-        setAdmins(ordered);
-      }
+      setAdmins(ordered);
 
       setNome("");
       setEmail("");
       setSenha("");
       setRoleSlug("");
       setShowForm(false);
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Erro ao criar administrador.");
+    } catch (err: unknown) {
+      if (isApiError(err) && err.status === 401) {
+        logout();
+        router.replace("/admin/login");
+        return;
+      }
+      const ui = formatApiError(err, "Erro ao criar administrador.");
+      alert(ui.message);
     }
   }
 

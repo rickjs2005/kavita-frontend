@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import apiClient from "@/lib/apiClient";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { absUrl } from "@/utils/absUrl";
 
 type CommentMedia = {
   id: number;
@@ -160,7 +159,7 @@ export default function CommentsModerationTable() {
                 {c.media?.length ? (
                   <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {c.media.map((m) => {
-                      const src = `${API_BASE}${m.media_path}`;
+                      const src = absUrl(m.media_path);
                       return m.media_type === "VIDEO" ? (
                         <video
                           key={m.id}

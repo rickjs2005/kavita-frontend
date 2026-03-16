@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CheckoutFormChangeHandler, Endereco } from "@/hooks/useCheckoutForm";
 import { ESTADOS_BR } from "@/utils/brasil";
+import { useCep } from "@/hooks/useCep";
 
 type AddressFormProps = {
   endereco: Endereco;
@@ -22,7 +23,7 @@ function normalizeTipoLocalidade(v: any): "URBANA" | "RURAL" {
 }
 
 export function AddressForm({ endereco, onChange }: AddressFormProps) {
-  const [cepLoading, setCepLoading] = useState(false);
+  const { lookup: lookupCep, loading: cepLoading } = useCep();
   const [cities, setCities] = useState<string[]>([]);
 
   const cepValue = endereco.cep ?? "";
@@ -40,35 +41,25 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
     const digits = cepValue.replace(/\D/g, "");
     if (digits.length !== 8) return;
 
-    let aborted = false;
+    let mounted = true;
 
     (async () => {
-      try {
-        setCepLoading(true);
-        const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (aborted || data.erro) return;
+      const data = await lookupCep(digits);
+      if (!mounted || !data) return;
 
-        // Sempre preenche cidade/estado (serve tanto urbano quanto rural)
-        onChange("endereco.cidade", data.localidade || "");
-        onChange("endereco.estado", data.uf || "");
+      onChange("endereco.cidade", data.localidade || "");
+      onChange("endereco.estado", data.uf || "");
 
-        // Só preenche rua/bairro quando for URBANA
-        if (!isRural) {
-          onChange("endereco.logradouro", data.logradouro || "");
-          onChange("endereco.bairro", data.bairro || "");
-        }
-      } catch {
-        // se falhar, o usuário ainda consegue digitar manualmente
-      } finally {
-        if (!aborted) setCepLoading(false);
+      if (!isRural) {
+        onChange("endereco.logradouro", data.logradouro || "");
+        onChange("endereco.bairro", data.bairro || "");
       }
     })();
 
     return () => {
-      aborted = true;
+      mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cepValue, onChange, isRural]);
 
   // Estado → carrega cidades (IBGE) e usa datalist como sugestão

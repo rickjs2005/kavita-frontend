@@ -7,6 +7,7 @@ import CustomButton from "@/components/buttons/CustomButton";
 import LoadingButton from "@/components/buttons/LoadingButton";
 import DeleteButton from "@/components/buttons/DeleteButton";
 import apiClient from "@/lib/apiClient";
+import { useCep, type CepResult } from "@/hooks/useCep";
 
 type ShippingZone = {
   id: number;
@@ -20,15 +21,6 @@ type ShippingZone = {
   is_active: boolean;
 };
 
-type CepLookup = {
-  cep: string;
-  uf: string;
-  localidade: string;
-  bairro?: string;
-  logradouro?: string;
-  erro?: boolean;
-};
-
 type FormState = {
   id?: number;
   name: string;
@@ -39,7 +31,7 @@ type FormState = {
   cities: string[];
 
   cepInput: string;
-  cepInfo: CepLookup | null;
+  cepInfo: CepResult | null;
 
   is_free: boolean;
   priceStr: string;
@@ -89,29 +81,6 @@ function toCepDigits(v: string) {
   return String(v || "")
     .replace(/\D/g, "")
     .slice(0, 8);
-}
-
-async function fetchViaCep(cepDigits: string): Promise<CepLookup | null> {
-  try {
-    const res = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`, {
-      method: "GET",
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!data || data?.erro) {
-      return { cep: cepDigits, uf: "", localidade: "", erro: true };
-    }
-    return {
-      cep: data.cep || cepDigits,
-      uf: (data.uf || "").toUpperCase(),
-      localidade: data.localidade || "",
-      bairro: data.bairro || "",
-      logradouro: data.logradouro || "",
-    };
-  } catch {
-    return null;
-  }
 }
 
 /* =========================
@@ -418,7 +387,7 @@ export default function FreteAdminPage() {
   }, [zones, query]);
 
   // CEP -> preenche UF e adiciona localidade como chip
-  const [cepLoading, setCepLoading] = useState(false);
+  const { lookup: lookupCep, loading: cepLoading, error: cepError } = useCep();
 
   useEffect(() => {
     const cepDigits = toCepDigits(form.cepInput);
@@ -428,30 +397,25 @@ export default function FreteAdminPage() {
     }
 
     let alive = true;
-    setCepLoading(true);
 
-    fetchViaCep(cepDigits)
-      .then((info) => {
-        if (!alive) return;
+    (async () => {
+      const info = await lookupCep(cepDigits);
+      if (!alive) return;
 
-        setForm((p) => ({ ...p, cepInfo: info }));
+      setForm((p) => ({ ...p, cepInfo: info }));
 
-        if (info && !info.erro) {
-          if (info.uf) setForm((p) => ({ ...p, state: info.uf }));
+      if (info) {
+        if (info.uf) setForm((p) => ({ ...p, state: info.uf }));
 
-          if (!form.all_cities && info.localidade) {
-            setForm((p) => ({
-              ...p,
-              cities: uniqueList([...(p.cities || []), info.localidade]),
-            }));
-            flash(`Localidade adicionada: ${info.localidade}/${info.uf}`);
-          }
+        if (!form.all_cities && info.localidade) {
+          setForm((p) => ({
+            ...p,
+            cities: uniqueList([...(p.cities || []), info.localidade]),
+          }));
+          flash(`Localidade adicionada: ${info.localidade}/${info.uf}`);
         }
-      })
-      .finally(() => {
-        if (!alive) return;
-        setCepLoading(false);
-      });
+      }
+    })();
 
     return () => {
       alive = false;
@@ -579,7 +543,7 @@ export default function FreteAdminPage() {
                   hint={
                     cepLoading
                       ? "Consultando CEP..."
-                      : form.cepInfo?.erro
+                      : cepError
                         ? "CEP não encontrado."
                         : ""
                   }
@@ -600,7 +564,7 @@ export default function FreteAdminPage() {
                     Resultado
                   </div>
                   <div className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900">
-                    {form.cepInfo && !form.cepInfo.erro ? (
+                    {form.cepInfo ? (
                       <div className="flex flex-col">
                         <span className="font-semibold">
                           {form.cepInfo.localidade}/{form.cepInfo.uf}

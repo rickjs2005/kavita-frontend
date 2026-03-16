@@ -77,13 +77,16 @@ const nextConfig: NextConfig = {
       "default-src 'self'",
       scriptSrc,
       "style-src 'self' 'unsafe-inline'",
-      `img-src 'self' data: blob: ${apiHosts} https://via.placeholder.com`,
+      // Removido https://via.placeholder.com — usar placeholder local em /public/
+      `img-src 'self' data: blob: ${apiHosts}`,
       "font-src 'self' data:",
       `connect-src 'self' ${apiHosts}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",
+      // Força upgrade de recursos HTTP para HTTPS em produção
+      ...(!isDev ? ["upgrade-insecure-requests"] : []),
     ]
       .filter((d) => !d.trim().endsWith(" ")) // remove diretivas com hosts vazios
       .join("; ");

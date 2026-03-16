@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminAuth, AdminRole } from "@/context/AdminAuthContext";
 import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
+import { safeInternalRedirect } from "@/utils/safeInternalRedirect";
 
 type LoginResponse = {
   token: string; // ainda existe na resposta, mas não é usado pelo front
@@ -28,26 +30,29 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
-  const redirectTo = useMemo(() => search.get("from") || "/admin", [search]);
+  // safeInternalRedirect bloqueia open redirect via ?from=//evil.com
+  const redirectTo = useMemo(
+    () => safeInternalRedirect(search.get("from"), "/admin"),
+    [search],
+  );
 
-  // Ao abrir a tela: limpa cache local e tenta encerrar sessão no backend
+  // Ao abrir a tela: limpa vestígios de versões anteriores e encerra sessão no backend
   useEffect(() => {
-    // limpa dados do admin no localStorage (cache visual)
     try {
+      // Remove chaves legadas de versões anteriores que usavam localStorage para auth
       localStorage.removeItem("adminRole");
       localStorage.removeItem("adminNome");
       localStorage.removeItem("adminPermissions");
-      // limpa também possível token antigo de versões anteriores
       localStorage.removeItem("adminToken");
     } catch {
-      // ignore
+      // ignore — localStorage pode não estar disponível
     }
 
     (async () => {
       try {
         await apiClient.post("/api/admin/logout");
       } catch {
-        // se der erro, não quebra o fluxo de login
+        // sem sessão ativa — não quebra o fluxo
       }
     })();
   }, []);
@@ -65,13 +70,7 @@ export default function LoginClient() {
 
       // NÃO guarda token em localStorage, nem seta cookie via JS.
       // O cookie HttpOnly já foi definido pelo backend.
-
-      // Mantemos apenas o nome para UX; role/permissions vêm sempre do servidor (server-truth).
-      try {
-        localStorage.setItem("adminNome", data.admin.nome);
-      } catch {
-        // ignore
-      }
+      // role/permissions vêm sempre do servidor (server-truth) — nunca do storage local.
 
       // Atualiza contexto de autenticação
       markAsAdmin({
@@ -86,9 +85,9 @@ export default function LoginClient() {
       });
 
       router.replace(redirectTo);
-    } catch (e: any) {
-      console.error("Erro de login:", e);
-      setErrMsg(e?.message || "Credenciais inválidas.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Credenciais inválidas.");
+      setErrMsg(ui.message);
       setLoading(false);
     }
   }, [email, senha, loading, redirectTo, router, markAsAdmin]);

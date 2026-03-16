@@ -8,21 +8,13 @@ import type {
   DronePageSettings,
   DroneComment,
 } from "@/types/drones";
-import { ApiError } from "@/lib/errors";
-import { API_BASE } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
 
 /**
  * =========================================================
  * TYPES / ERRORS
  * =========================================================
  */
-export type ApiErrorPayload = {
-  status?: number;
-  code?: string;
-  message?: string;
-  details?: any;
-};
-
 export type ModelKey = string;
 
 export type DroneModel = {
@@ -77,56 +69,6 @@ function extractItemsArray<T>(payload: AnyJson): T[] {
   return [];
 }
 
-async function readJsonSafely(
-  res: Response,
-): Promise<{ text: string; json: AnyJson }> {
-  const text = await res.text();
-  try {
-    return { text, json: JSON.parse(text) as AnyJson };
-  } catch {
-    return { text, json: null };
-  }
-}
-
-function pickErrorMessage(json: AnyJson, fallback: string) {
-  if (json && typeof json === "object") {
-    const msg = (json as any).message;
-    if (typeof msg === "string" && msg.trim()) return msg.trim();
-  }
-  return fallback;
-}
-
-/**
- * fetchJsonOrThrow:
- * - suporta AbortController via init.signal
- * - aplica cache: "no-store" por padrão (você pode sobrescrever)
- * - captura payload padrão do backend (status/code/message/details)
- */
-async function fetchJsonOrThrow<T>(
-  url: string,
-  init: RequestInit = {},
-): Promise<T> {
-  const res = await fetch(url, {
-    cache: "no-store",
-    ...init,
-  });
-
-  const { json } = await readJsonSafely(res);
-
-  if (!res.ok) {
-    const payload = (
-      json && typeof json === "object" ? (json as any) : {}
-    ) as ApiErrorPayload;
-    throw new ApiError({
-      message: pickErrorMessage(json, "Falha na requisição."),
-      status: res.status,
-      code: payload.code,
-      details: payload.details,
-    });
-  }
-
-  return json as T;
-}
 
 /**
  * ✅ Normaliza modelos para o formato do front (key/label + ids)
@@ -211,10 +153,7 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
     setLoading(true);
     setError(null);
 
-    const fetchInit: RequestInit = {
-      cache: "no-store",
-      signal: ac.signal,
-    };
+    const signal = ac.signal;
 
     try {
       /**
@@ -225,20 +164,20 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
        * E buscamos em paralelo com:
        * - root agregado (sem modelKey) OU aggregate do modelo (com modelKey)
        */
-      const modelsPromise = fetchJsonOrThrow<any>(
-        `${API_BASE}/api/public/drones/models`,
-        fetchInit,
+      const modelsPromise = apiClient.get<any>(
+        "/api/public/drones/models",
+        { signal },
       );
 
-      const repsPromise = fetchJsonOrThrow<any>(
-        `${API_BASE}/api/public/drones/representantes?page=1&limit=12`,
-        fetchInit,
+      const repsPromise = apiClient.get<any>(
+        "/api/public/drones/representantes?page=1&limit=12",
+        { signal },
       );
 
       if (normalizedModelKey) {
-        const aggPromise = fetchJsonOrThrow<PublicDronesModelAggregateResponse>(
-          `${API_BASE}/api/public/drones/models/${normalizedModelKey}`,
-          fetchInit,
+        const aggPromise = apiClient.get<PublicDronesModelAggregateResponse>(
+          `/api/public/drones/models/${normalizedModelKey}`,
+          { signal },
         );
 
         const [modelsRes, repsRes, agg] = await Promise.all([
@@ -259,9 +198,9 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
       }
 
       // sem modelKey: root agregado
-      const rootPromise = fetchJsonOrThrow<PublicDronesRootResponse>(
-        `${API_BASE}/api/public/drones`,
-        fetchInit,
+      const rootPromise = apiClient.get<PublicDronesRootResponse>(
+        "/api/public/drones",
+        { signal },
       );
 
       const [modelsRes, repsRes, root] = await Promise.all([
@@ -301,9 +240,9 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
       if (needLegacyGallery) {
         legacyReqs.push(
           (async () => {
-            const gal = await fetchJsonOrThrow<any>(
-              `${API_BASE}/api/public/drones/galeria`,
-              fetchInit,
+            const gal = await apiClient.get<any>(
+              "/api/public/drones/galeria",
+              { signal },
             );
             setGallery(extractItemsArray<DroneGalleryItem>(gal));
           })(),
@@ -313,9 +252,9 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
       if (needLegacyComments) {
         legacyReqs.push(
           (async () => {
-            const com = await fetchJsonOrThrow<any>(
-              `${API_BASE}/api/public/drones/comentarios?page=1&limit=10`,
-              fetchInit,
+            const com = await apiClient.get<any>(
+              "/api/public/drones/comentarios?page=1&limit=10",
+              { signal },
             );
             setComments(extractItemsArray<DroneComment>(com));
           })(),
@@ -323,10 +262,10 @@ export function useFetchDronesPage(modelKey?: ModelKey) {
       }
 
       if (legacyReqs.length) await Promise.all(legacyReqs);
-    } catch (e: any) {
-      if (e?.name === "AbortError") return;
+    } catch (err: unknown) {
+      if ((err as any)?.name === "AbortError") return;
 
-      setError(e?.message || "Erro ao carregar Kavita Drones.");
+      setError((err as any)?.message || "Erro ao carregar Kavita Drones.");
       hardResetState();
     } finally {
       setLoading(false);

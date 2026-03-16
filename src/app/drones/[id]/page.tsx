@@ -15,7 +15,7 @@ import FeaturesSection from "@/components/drones/FeaturesSection";
 import BenefitsSection from "@/components/drones/BenefitsSection";
 import GallerySection from "@/components/drones/GallerySection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, API_BASE } from "@/utils/absUrl";
 
 // ✅ ajuste o path se seus types estiverem em outro lugar
 import type {
@@ -23,8 +23,6 @@ import type {
   DronePageSettings,
   DroneRepresentative,
 } from "@/types/drones";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type MediaType = "image" | "video" | "";
 type Dict = Record<string, unknown>;

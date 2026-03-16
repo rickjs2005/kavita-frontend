@@ -4,7 +4,9 @@ import Gallery from "@/components/ui/Gallery";
 import ProductBuyBox from "@/components/products/ProductBuyBox";
 import CustomButton from "@/components/buttons/CustomButton";
 import { toast } from "react-hot-toast";
-import { absUrl, API_BASE } from "@/utils/absUrl";
+import { absUrl } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
 
 interface Props {
   produto: Product;
@@ -59,24 +61,16 @@ export default function ProdutoContent({ produto }: Props) {
       try {
         if (!produto?.id) return;
 
-        // espera-se rota GET /api/public/promocoes/:productId
-        const res = await fetch(
-          `${API_BASE}/api/public/promocoes/${produto.id}`,
+        const data = await apiClient.get(
+          `/api/public/promocoes/${produto.id}`,
         );
-
-        if (!res.ok) {
-          // se não tiver promo para esse produto, só ignora
-          return;
-        }
-
-        const data = await res.json();
         const promo = Array.isArray(data)
           ? ((data[0] as ProductPromotion) ?? null)
           : (data as ProductPromotion);
 
         setPromocao(promo);
-      } catch (err) {
-        console.error("Erro ao carregar promoção do produto:", err);
+      } catch {
+        // sem promoção para este produto — ignora silenciosamente
       }
     }
 
@@ -151,17 +145,12 @@ export default function ProdutoContent({ produto }: Props) {
     async function carregarAvaliacoes() {
       try {
         setLoadingReviews(true);
-        const res = await fetch(
-          `${API_BASE}/api/public/produtos/${produto.id}/avaliacoes`,
+        const data = await apiClient.get(
+          `/api/public/produtos/${produto.id}/avaliacoes`,
         );
-        if (!res.ok) {
-          console.error("Erro ao buscar avaliações:", res.status);
-          return;
-        }
-        const data = await res.json();
         setReviews(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Erro ao carregar avaliações:", err);
+      } catch {
+        // silêncio: avaliações indisponíveis
       } finally {
         setLoadingReviews(false);
       }
@@ -179,35 +168,23 @@ export default function ProdutoContent({ produto }: Props) {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/public/produtos/avaliacoes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          produto_id: produto.id,
-          nota,
-          comentario: comentario.trim() || null,
-        }),
+      await apiClient.post("/api/public/produtos/avaliacoes", {
+        produto_id: produto.id,
+        nota,
+        comentario: comentario.trim() || null,
       });
-
-      if (!res.ok) {
-        const txt = await res.text();
-        console.error("Erro ao enviar avaliação:", txt);
-        toast.error("Erro ao enviar sua avaliação.");
-        return;
-      }
 
       toast.success("Avaliação enviada com sucesso!");
       setNota(0);
       setComentario("");
 
-      const resList = await fetch(
-        `${API_BASE}/api/public/produtos/${produto.id}/avaliacoes`,
+      const data = await apiClient.get(
+        `/api/public/produtos/${produto.id}/avaliacoes`,
       );
-      const data = await resList.json();
       setReviews(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Erro ao enviar avaliação:", err);
-      toast.error("Erro ao enviar sua avaliação.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro ao enviar sua avaliação.");
+      toast.error(ui.message);
     }
   }
 

@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/apiClient";
-import { API_BASE } from "@/utils/absUrl";
+import { formatApiError } from "@/lib/formatApiError";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import CartItemCard from "./CartItemCard";
@@ -97,13 +97,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
         const results = await Promise.all(
           uniqueIds.map(async (id) => {
             try {
-              const res = await fetch(`${API_BASE}/api/public/promocoes/${id}`);
-
-              if (!res.ok) {
-                return { id, promo: null };
-              }
-
-              const data = await res.json();
+              const data = await apiClient.get(`/api/public/promocoes/${id}`);
 
               const original = Number(data.original_price ?? data.price ?? 0);
               const final = Number(
@@ -232,15 +226,12 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
       setCouponMessage(msg);
       setCouponError(null);
       toast.success(msg);
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("kavita_current_coupon", code);
-      }
-    } catch (err: any) {
-      const msg = err?.message || "Não foi possível aplicar este cupom.";
+      // Cupom mantido apenas em estado React — sem persistência em localStorage
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Não foi possível aplicar este cupom.");
       setDiscount(0);
-      setCouponError(msg);
-      toast.error(msg);
+      setCouponError(ui.message);
+      toast.error(ui.message);
     } finally {
       setCouponLoading(false);
     }

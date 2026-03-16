@@ -12,7 +12,7 @@ import TrustBar from "@/components/layout/TrustBar";
 import Footer from "@/components/layout/Footer";
 import type { PublicShopSettings } from "@/server/data/shopSettings";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 function defaultShop(): PublicShopSettings {
   return {
@@ -70,15 +70,7 @@ export default function HomeClient({ categories }: Props) {
 
     async function loadPublicConfig() {
       try {
-        const res = await fetch(`${API_BASE}/api/config`, {
-          method: "GET",
-          // evita cache “grudado” em alguns proxies
-          headers: { "Cache-Control": "no-store" },
-        });
-
-        if (!res.ok) return;
-
-        const data = (await res.json()) as Partial<PublicShopSettings>;
+        const data = (await apiClient.get(“/api/config”)) as Partial<PublicShopSettings>;
 
         if (!alive) return;
 

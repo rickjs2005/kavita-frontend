@@ -3,33 +3,12 @@
 import { useMemo, useState } from "react";
 import type { DroneComment } from "@/types/drones";
 import { absUrl } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
+import { isApiError } from "@/lib/errors";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-function safeJson(text: string) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
-function isAuthError(res: Response) {
-  return res.status === 401 || res.status === 403;
-}
-
-/**
- * Ajuste aqui caso a rota de login pública seja diferente no seu projeto.
- * (ex: "/auth/login" ou "/entrar")
- */
 function redirectToPublicLogin() {
   if (typeof window !== "undefined") window.location.assign("/login");
-}
-
-async function readSafe(res: Response) {
-  const txt = await res.text();
-  const data = safeJson(txt);
-  return { txt, data };
 }
 
 type Props = {
@@ -86,33 +65,23 @@ export default function CommentsSection({
 
     setSending(true);
     try {
-      const res = await fetch(`${API_BASE}/api/public/drones/comentarios`, {
-        method: "POST",
-        body: fd,
-        credentials: "include", // precisa estar logado
-      });
-
-      if (isAuthError(res)) {
-        setMsg(
-          "Você precisa estar logado para postar comentários e anexar mídias.",
-        );
-        return;
-      }
-
-      const { data } = await readSafe(res);
-      if (!res.ok) {
-        setMsg(data?.message || "Falha ao enviar comentário.");
-        return;
-      }
+      await apiClient.post(
+        "/api/public/drones/comentarios",
+        fd,
+        { skipContentType: true }, // FormData: não sobrescrever Content-Type
+      );
 
       setMsg("Comentário enviado com sucesso!");
       setText("");
       setFiles(null);
-
-      // ✅ recarrega comentários/galeria no pai (sem refresh manual)
       onCreated?.();
-    } catch {
-      setMsg("Erro de rede ao enviar comentário.");
+    } catch (err: unknown) {
+      if (isApiError(err) && (err.status === 401 || err.status === 403)) {
+        setMsg("Você precisa estar logado para postar comentários e anexar mídias.");
+      } else {
+        const ui = formatApiError(err, "Falha ao enviar comentário.");
+        setMsg(ui.message);
+      }
     } finally {
       setSending(false);
     }

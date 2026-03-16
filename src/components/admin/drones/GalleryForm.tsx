@@ -3,8 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { absUrl } from "@/utils/absUrl";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
 
 type MediaType = "IMAGE" | "VIDEO";
 
@@ -33,23 +33,6 @@ type PickTarget = "HERO" | "CARD";
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(" ");
-}
-
-function isAuthError(res: Response) {
-  return res.status === 401 || res.status === 403;
-}
-
-function redirectToLogin() {
-  if (typeof window !== "undefined") window.location.assign("/admin/login");
-}
-
-async function readSafe(res: Response) {
-  const txt = await res.text();
-  try {
-    return { data: JSON.parse(txt) };
-  } catch {
-    return { data: null as any };
-  }
 }
 
 function toBool(v: any) {
@@ -263,20 +246,9 @@ export default function GalleryForm({
     setMsg(null);
 
     try {
-      const res = await fetch(
-        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery`,
-        {
-          credentials: "include",
-        },
+      const data = await apiClient.get(
+        `/api/admin/drones/models/${modelKey}/gallery`,
       );
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Erro ao listar galeria.");
-      }
 
       const raw = Array.isArray(data)
         ? data
@@ -294,7 +266,6 @@ export default function GalleryForm({
           model_key: it.model_key ?? null,
           media_type: normalizeMediaType(it.media_type ?? it.type),
           media_path: String(it.media_path || ""),
-          // ✅ tolerante: backend às vezes manda `title`
           caption: it.caption ?? it.title ?? null,
           sort_order: Number(it.sort_order) || 0,
           is_active: it.is_active ?? it.active ?? 1,
@@ -302,8 +273,9 @@ export default function GalleryForm({
         .filter((x: { id: any; media_path: any }) => x.id && x.media_path);
 
       setItems(normalized);
-    } catch (e: any) {
-      setMsg(e?.message || "Falha ao carregar galeria.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Falha ao carregar galeria.");
+      setMsg(ui.message);
       setItems([]);
     } finally {
       setLoading(false);
@@ -392,23 +364,16 @@ export default function GalleryForm({
         fd.append("sort_order", String(Number(p.sort_order) || 0));
         fd.append("is_active", p.is_active ? "1" : "0");
 
-        const res = await fetch(
-          `${API_BASE}/api/admin/drones/models/${modelKey}/gallery`,
-          {
-            method: "POST",
-            credentials: "include",
-            body: fd,
-          },
-        );
-
-        if (isAuthError(res)) return redirectToLogin();
-
-        const { data } = await readSafe(res);
-
-        if (!res.ok) {
-          updatePending(p.id, { error: data?.message || "Falha no upload." });
-        } else {
+        try {
+          await apiClient.post(
+            `/api/admin/drones/models/${modelKey}/gallery`,
+            fd,
+            { skipContentType: true },
+          );
           updatePending(p.id, { error: null });
+        } catch (err: unknown) {
+          const ui = formatApiError(err, "Falha no upload.");
+          updatePending(p.id, { error: ui.message });
         }
       }
 
@@ -421,8 +386,9 @@ export default function GalleryForm({
       });
 
       await fetchList();
-    } catch (e: any) {
-      setMsg(e?.message || "Falha ao enviar arquivos.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Falha ao enviar arquivos.");
+      setMsg(ui.message);
     } finally {
       setUploading(false);
     }
@@ -444,23 +410,16 @@ export default function GalleryForm({
       fd.append("sort_order", String(Number(it.sort_order) || 0));
       fd.append("is_active", toBool(it.is_active) ? "1" : "0");
 
-      const res = await fetch(
-        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${it.id}`,
-        {
-          method: "PUT",
-          credentials: "include",
-          body: fd,
-        },
+      await apiClient.put(
+        `/api/admin/drones/models/${modelKey}/gallery/${it.id}`,
+        fd,
+        { skipContentType: true },
       );
 
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) throw new Error(data?.message || "Erro ao salvar item.");
-
       await fetchList();
-    } catch (e: any) {
-      setMsg(e?.message || "Falha ao salvar item.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Falha ao salvar item.");
+      setMsg(ui.message);
     } finally {
       setSavingIds((m) => ({ ...m, [it.id]: false }));
     }
@@ -480,25 +439,18 @@ export default function GalleryForm({
       fd.append("sort_order", String(Number(current.sort_order) || 0));
       fd.append("is_active", toBool(current.is_active) ? "1" : "0");
 
-      const res = await fetch(
-        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`,
-        {
-          method: "PUT",
-          credentials: "include",
-          body: fd,
-        },
+      await apiClient.put(
+        `/api/admin/drones/models/${modelKey}/gallery/${id}`,
+        fd,
+        { skipContentType: true },
       );
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) throw new Error(data?.message || "Erro ao trocar mídia.");
 
       toast.success("Mídia trocada com sucesso.");
       await fetchList();
-    } catch (e: any) {
-      setMsg(e?.message || "Falha ao trocar mídia.");
-      toast.error(e?.message || "Falha ao trocar mídia.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Falha ao trocar mídia.");
+      setMsg(ui.message);
+      toast.error(ui.message);
     } finally {
       setReplacingIds((m) => ({ ...m, [id]: false }));
     }
@@ -509,18 +461,9 @@ export default function GalleryForm({
     setMsg(null);
 
     try {
-      const res = await fetch(
-        `${API_BASE}/api/admin/drones/models/${modelKey}/gallery/${id}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        },
+      await apiClient.del(
+        `/api/admin/drones/models/${modelKey}/gallery/${id}`,
       );
-
-      if (isAuthError(res)) return redirectToLogin();
-
-      const { data } = await readSafe(res);
-      if (!res.ok) throw new Error(data?.message || "Erro ao remover item.");
 
       toast.success("Mídia removida com sucesso.");
 
@@ -528,9 +471,10 @@ export default function GalleryForm({
       setPickedHeroId((prev) => (prev === id ? null : prev));
 
       await fetchList();
-    } catch (e: any) {
-      setMsg(e?.message || "Falha ao remover item.");
-      toast.error(e?.message || "Falha ao remover item.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Falha ao remover item.");
+      setMsg(ui.message);
+      toast.error(ui.message);
     } finally {
       setDeletingIds((m) => ({ ...m, [id]: false }));
     }
@@ -570,8 +514,9 @@ export default function GalleryForm({
       setPickedHeroId(item.id);
       await onPickForHero?.(item);
       toast.success("Mídia selecionada para Destaque.");
-    } catch (e: any) {
-      toast.error(e?.message || "Falha ao selecionar mídia.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Falha ao selecionar mídia.");
+      toast.error(ui.message);
     }
   }
 

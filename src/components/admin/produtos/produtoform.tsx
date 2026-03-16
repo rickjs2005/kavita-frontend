@@ -3,6 +3,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ProductShippingSection from "./ProductShippingSection";
 import { absUrl } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
+import { isApiError } from "@/lib/errors";
 
 type Msg = { type: "success" | "error"; text: string };
 
@@ -30,13 +33,10 @@ type Props = {
 };
 
 export default function ProdutoForm({
-  API_BASE,
   produtoEditado,
   onProdutoAdicionado,
   onLimparEdicao,
-}: Props) {
-  const BASE =
-    API_BASE || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+}: Omit<Props, "API_BASE">) {
 
   const isEditing = !!produtoEditado;
 
@@ -212,27 +212,6 @@ export default function ProdutoForm({
     });
   }
 
-  async function getCsrfToken() {
-    const res = await fetch(`${BASE}/api/csrf-token`, {
-      method: "GET",
-      credentials: "include",
-    });
-
-    if (!res.ok) {
-      const txt = await safeText(res);
-      throw new Error(txt || "Falha ao obter CSRF token.");
-    }
-
-    const data = await res.json();
-    return (
-      data?.csrfToken ||
-      data?.csrf ||
-      data?.token ||
-      data?.data?.csrfToken ||
-      ""
-    );
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMsg(null);
@@ -263,42 +242,18 @@ export default function ProdutoForm({
       fd.append("keepImages", JSON.stringify(kept));
     }
 
-    const method = isEditing ? "PUT" : "POST";
-    const url = isEditing
-      ? `${BASE}/api/admin/produtos/${produtoEditado!.id}`
-      : `${BASE}/api/admin/produtos`;
+    const path = isEditing
+      ? `/api/admin/produtos/${produtoEditado!.id}`
+      : `/api/admin/produtos`;
 
     setLoading(true);
 
     try {
-      const csrfToken = await getCsrfToken();
-
-      if (!csrfToken) {
-        throw new Error("CSRF token ausente.");
-      }
-
-      const res = await fetch(url, {
-        method,
-        body: fd,
-        credentials: "include",
-        headers: {
-          "x-csrf-token": csrfToken,
-        },
-      });
-
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          const txt = await safeText(res);
-          throw new Error(
-            txt ||
-              "Você não tem permissão para salvar este produto. Faça login novamente.",
-          );
-        }
-
-        const txt = await safeText(res);
-        throw new Error(
-          `Falha ao ${isEditing ? "atualizar" : "salvar"} (${res.status}). ${txt || ""}`,
-        );
+      // apiClient injeta CSRF token automaticamente e gerencia credentials
+      if (isEditing) {
+        await apiClient.put(path, fd, { skipContentType: true });
+      } else {
+        await apiClient.post(path, fd, { skipContentType: true });
       }
 
       setMsg({
@@ -311,23 +266,15 @@ export default function ProdutoForm({
       resetForm();
       onProdutoAdicionado?.();
       onLimparEdicao?.();
-    } catch (e: any) {
-      setMsg({ type: "error", text: e?.message || "Erro ao salvar produto." });
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro ao salvar produto.");
+      const msg =
+        isApiError(err) && (err.status === 401 || err.status === 403)
+          ? "Você não tem permissão para salvar este produto. Faça login novamente."
+          : ui.message;
+      setMsg({ type: "error", text: msg });
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function safeText(res: Response) {
-    try {
-      const ct = res.headers.get("content-type") || "";
-      if (ct.includes("application/json")) {
-        const j = await res.json();
-        return (j as any)?.message || (j as any)?.error || JSON.stringify(j);
-      }
-      return await res.text();
-    } catch {
-      return "";
     }
   }
 

@@ -4,7 +4,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ServiceCard from "./ServiceCard";
-import { API_BASE } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
 
 type Servico = {
   id: number;
@@ -55,27 +56,19 @@ export default function ServicosSection() {
         setErrorMsg(null);
         setServicos([]);
 
-        const url = `${API_BASE}/api/public/servicos`;
-        const res = await fetch(url, {
+        const json = await apiClient.get("/api/public/servicos", {
           signal: ctrl.signal,
-          cache: "no-store",
         });
-
-        const text = await res.text();
-        if (!res.ok) throw new Error(text || res.statusText);
-
-        const json = text ? JSON.parse(text) : [];
-        const list = normalize(json).map((s) => ({
+        const list = normalize(json).map((s: Servico) => ({
           ...s,
           images: Array.isArray(s.images) ? s.images : [],
         }));
 
         setServicos(list);
-      } catch (e: any) {
-        if (e?.name !== "AbortError") {
-          console.warn("ServicosSection:", e);
-          setErrorMsg("Não foi possível carregar os serviços.");
-        }
+      } catch (err: unknown) {
+        if ((err as any)?.name === "AbortError") return;
+        const ui = formatApiError(err, "Não foi possível carregar os serviços.");
+        setErrorMsg(ui.message);
       } finally {
         setLoading(false);
       }

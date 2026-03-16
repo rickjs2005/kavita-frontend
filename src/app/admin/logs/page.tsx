@@ -6,9 +6,9 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { KpiCard } from "@/components/admin/KpiCard";
 import CloseButton from "@/components/buttons/CloseButton";
 import { FiDatabase, FiUsers, FiClock } from "react-icons/fi";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const API_URL = `${API_BASE}/api`;
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
+import { isApiError } from "@/lib/errors";
 
 type AdminLog = {
   id: number;
@@ -117,23 +117,7 @@ export default function AdminLogsPage() {
         setLoading(true);
         setErrorMsg(null);
 
-        const res = await fetch(`${API_URL}/admin/logs`, {
-          // 🔐 usa apenas o cookie HttpOnly; nada de Authorization nem localStorage
-          credentials: "include",
-        });
-
-        if (res.status === 401 || res.status === 403) {
-          logout();
-          router.replace("/admin/login");
-          return;
-        }
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => null);
-          throw new Error(data?.message || "Erro ao carregar logs.");
-        }
-
-        const data: AdminLog[] = await res.json();
+        const data = await apiClient.get<AdminLog[]>("/api/admin/logs");
 
         // Ordenar por data (mais recentes primeiro)
         const ordered = [...data].sort((a, b) => {
@@ -145,9 +129,14 @@ export default function AdminLogsPage() {
         });
 
         setLogs(ordered);
-      } catch (err: any) {
-        console.error("Erro ao carregar logs:", err);
-        setErrorMsg(err.message || "Erro inesperado ao carregar logs.");
+      } catch (err: unknown) {
+        if (isApiError(err) && (err.status === 401 || err.status === 403)) {
+          logout();
+          router.replace("/admin/login");
+          return;
+        }
+        const ui = formatApiError(err, "Erro ao carregar logs.");
+        setErrorMsg(ui.message);
       } finally {
         setLoading(false);
       }

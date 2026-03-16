@@ -3,11 +3,11 @@ import type { Product } from "@/types/product";
 import Gallery from "@/components/ui/Gallery";
 import ProductBuyBox from "@/components/products/ProductBuyBox";
 import ProductReviews from "./ProductReviews";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, API_BASE } from "@/utils/absUrl";
 
 export const dynamic = "force-dynamic";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API = API_BASE;
 
 async function getProduto(id: string): Promise<Product | null> {
   try {

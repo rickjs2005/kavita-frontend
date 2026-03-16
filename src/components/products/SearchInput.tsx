@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { absUrl } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
 
 type Produto = {
   id: number;
@@ -16,14 +17,7 @@ type Props = {
   className?: string;
   /** chamado quando o usuário escolhe um produto (clique ou Enter) */
   onPick: (produto: Produto) => void;
-  /** base do backend; opcional (usa env/localhost por padrão) */
-  apiBase?: string;
 };
-
-const API_DEFAULT =
-  process.env.NEXT_PUBLIC_API_BASE ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000";
 
 /* ------------------------- Utils de normalização ------------------------- */
 
@@ -42,7 +36,6 @@ export default function SearchInputProdutos({
   placeholder = "Buscar produto…",
   className = "",
   onPick,
-  apiBase = API_DEFAULT,
 }: Props) {
   const [all, setAll] = useState<Produto[]>([]);
   const [q, setQ] = useState("");
@@ -55,15 +48,9 @@ export default function SearchInputProdutos({
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(
-          `${apiBase}/api/products?category=all&limit=1000&sort=name&order=asc`,
-          { cache: "no-store" },
+        const json = await apiClient.get(
+          "/api/products?category=all&limit=1000&sort=name&order=asc",
         );
-        if (!res.ok) {
-          const txt = await res.text().catch(() => "");
-          throw new Error(`Falha ao listar produtos (${res.status}): ${txt}`);
-        }
-        const json = await res.json();
         const arr = toArray(json);
 
         const list: Produto[] = arr.map((p: any) => ({
@@ -79,14 +66,13 @@ export default function SearchInputProdutos({
         }));
 
         setAll(list);
-      } catch (err) {
-        console.warn("[SearchInput] Erro ao carregar produtos:", err);
-        setAll([]); // evita quebrar o UI
+      } catch {
+        setAll([]);
       } finally {
         setLoading(false);
       }
     })();
-  }, [apiBase]);
+  }, []);
 
   // Debounce do termo
   const [debounced, setDebounced] = useState(q);
@@ -99,7 +85,6 @@ export default function SearchInputProdutos({
   const results = useMemo(() => {
     const term = debounced.trim().toLowerCase();
     if (!term) return [];
-    return all;
     return all.filter((p) => p.name.toLowerCase().includes(term));
   }, [debounced, all]);
 

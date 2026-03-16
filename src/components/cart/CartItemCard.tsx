@@ -5,9 +5,8 @@ import React, { useEffect, useState } from "react";
 import { CartItem } from "../../types/CartCarProps";
 import { useCart } from "../../context/CartContext";
 import CustomButton from "../buttons/CustomButton";
-import { absUrl, API_BASE } from "@/utils/absUrl";
-
-const API = API_BASE;
+import { absUrl } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
 
 /* Helpers de preço/imagem */
 function normalizePrice(price: unknown): number {
@@ -64,10 +63,7 @@ export default function CartItemCard({ item }: { item: CartItem }) {
 
     (async () => {
       try {
-        const res = await fetch(`${API}/api/public/promocoes/${item.id}`);
-        if (!res.ok) return; // 404 = sem promo, só ignora
-
-        const data = await res.json();
+        const data = await apiClient.get(`/api/public/promocoes/${item.id}`);
 
         // normaliza para sempre ter number (sem null)
         const original = Number(
@@ -93,8 +89,8 @@ export default function CartItemCard({ item }: { item: CartItem }) {
             discountPercent,
           });
         }
-      } catch (err) {
-        console.warn("[CartItemCard] erro ao buscar promoção:", err);
+      } catch {
+        // 404 = sem promoção, ignora silenciosamente
       }
     })();
 

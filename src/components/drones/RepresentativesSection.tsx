@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import type { DronePageSettings, DroneRepresentative } from "@/types/drones";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
 
 function digitsOnly(s: string) {
   return String(s || "").replace(/\D/g, "");
@@ -55,22 +56,15 @@ export default function RepresentativesSection({
       params.set("orderBy", "sort_order");
       params.set("orderDir", "asc");
 
-      const res = await fetch(
-        `${API_BASE}/api/public/drones/representantes?${params.toString()}`,
-        { cache: "no-store" },
+      const data = await apiClient.get<PagedResp>(
+        `/api/public/drones/representantes?${params.toString()}`,
       );
-
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        setMsg(data?.message || "Falha ao buscar representantes.");
-        setPaged(null);
-        return;
-      }
 
       setPaged(data);
       setCurPage(Number(data?.page || p));
-    } catch {
-      setMsg("Erro de rede ao buscar representantes.");
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Erro de rede ao buscar representantes.");
+      setMsg(ui.message);
       setPaged(null);
     } finally {
       setLoading(false);

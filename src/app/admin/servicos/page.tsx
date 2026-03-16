@@ -6,11 +6,11 @@ import CustomButton from "@/components/buttons/CustomButton";
 import ServiceFormUnificado from "@/components/admin/servicos/ServiceFormUnificado";
 import ServiceCard from "@/components/admin/servicos/ServiceCard";
 import { Service } from "@/types/service";
+import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
+import { isApiError } from "@/lib/errors";
 
-const API_BASE =
-  (process.env.NEXT_PUBLIC_API_URL
-    ? `${process.env.NEXT_PUBLIC_API_URL}`
-    : "http://localhost:5000") + "/api/admin/servicos";
+const SERVICOS_PATH = "/api/admin/servicos";
 
 // Tipos mínimos para parsear o retorno da API sem usar `any`
 type ServiceApiItem = Service & {
@@ -33,23 +33,7 @@ export default function ServicosPage() {
     setErro(null);
 
     try {
-      const res = await fetch(API_BASE, {
-        cache: "no-store",
-        credentials: "include", // ✅ envia cookie HttpOnly
-      });
-
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        if (res.status === 401 || res.status === 403) {
-          throw new Error(
-            txt ||
-              "Você não tem permissão para listar serviços. Faça login novamente.",
-          );
-        }
-        throw new Error(`Falha ao buscar serviços (${res.status}). ${txt}`);
-      }
-
-      const data: unknown = await res.json();
+      const data = await apiClient.get<unknown>(SERVICOS_PATH);
 
       const lista: Service[] = Array.isArray(data)
         ? (data as ServiceApiItem[]).map((s) => ({
@@ -63,10 +47,12 @@ export default function ServicosPage() {
 
       setServicos(lista);
     } catch (err: unknown) {
-      console.error("Erro ao carregar serviços:", err);
-      const msg =
-        err instanceof Error ? err.message : "Erro ao carregar serviços.";
-      setErro(msg);
+      const ui = formatApiError(err, "Erro ao carregar serviços.");
+      if (isApiError(err) && (err.status === 401 || err.status === 403)) {
+        setErro("Você não tem permissão para listar serviços. Faça login novamente.");
+      } else {
+        setErro(ui.message);
+      }
       setServicos([]);
     } finally {
       setLoading(false);
@@ -84,30 +70,15 @@ export default function ServicosPage() {
     if (!confirm("Tem certeza que deseja remover este serviço?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/${id}`, {
-        method: "DELETE",
-        credentials: "include", // ✅ cookie HttpOnly
-      });
-
-      if (!res.ok) {
-        const j: unknown = await res.json().catch(() => ({}));
-        const maybe = j as { message?: string };
-
-        const msg =
-          maybe?.message ||
-          (res.status === 401 || res.status === 403
-            ? "Você não tem permissão para remover serviços. Faça login novamente."
-            : "Erro ao remover serviço.");
-
-        throw new Error(msg);
-      }
-
+      await apiClient.del(`${SERVICOS_PATH}/${id}`);
       setServicos((prev) => prev.filter((s) => s.id !== id));
     } catch (err: unknown) {
-      console.error("Erro ao remover:", err);
-      const msg =
-        err instanceof Error ? err.message : "Erro ao remover serviço.";
-      alert(msg);
+      const ui = formatApiError(err, "Erro ao remover serviço.");
+      alert(
+        isApiError(err) && (err.status === 401 || err.status === 403)
+          ? "Você não tem permissão para remover serviços. Faça login novamente."
+          : ui.message,
+      );
     }
   };
 
@@ -126,38 +97,19 @@ export default function ServicosPage() {
   ========================== */
   const toggleVerificado = async (id: number, novoValor: boolean) => {
     try {
-      const res = await fetch(`${API_BASE}/${id}/verificado`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // ✅ cookie HttpOnly
-        body: JSON.stringify({ verificado: novoValor }),
+      await apiClient.patch(`${SERVICOS_PATH}/${id}/verificado`, {
+        verificado: novoValor,
       });
-
-      if (!res.ok) {
-        const j: unknown = await res.json().catch(() => ({}));
-        const maybe = j as { message?: string };
-
-        const msg =
-          maybe?.message ||
-          (res.status === 401 || res.status === 403
-            ? "Você não tem permissão para atualizar verificação. Faça login novamente."
-            : "Erro ao atualizar verificação.");
-
-        throw new Error(msg);
-      }
-
       setServicos((prev) =>
         prev.map((s) => (s.id === id ? { ...s, verificado: novoValor } : s)),
       );
     } catch (err: unknown) {
-      console.error("Erro ao atualizar verificação:", err);
-      const msg =
-        err instanceof Error
-          ? err.message
-          : "Erro ao atualizar verificação do serviço.";
-      alert(msg);
+      const ui = formatApiError(err, "Erro ao atualizar verificação.");
+      alert(
+        isApiError(err) && (err.status === 401 || err.status === 403)
+          ? "Você não tem permissão para atualizar verificação. Faça login novamente."
+          : ui.message,
+      );
     }
   };
 

@@ -15,8 +15,7 @@ import HeroSection from "@/components/drones/HeroSection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import CommentsSection from "@/components/drones/CommentsSection";
 import { absUrl } from "@/utils/absUrl";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import apiClient from "@/lib/apiClient";
 
 type MediaTypeLower = "image" | "video";
 type MediaTypeUpper = "IMAGE" | "VIDEO";
@@ -419,12 +418,12 @@ export default function DronesPublicPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchModels = useCallback(async (): Promise<DroneModel[]> => {
-    const res = await fetch(`${API_BASE}/api/public/drones/models`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return fallbackModels();
-
-    const json = await res.json();
+    let json: unknown;
+    try {
+      json = await apiClient.get("/api/public/drones/models");
+    } catch {
+      return fallbackModels();
+    }
     const raw = extractArray(json);
 
     const normalized = raw
@@ -488,22 +487,23 @@ export default function DronesPublicPage() {
   }, []);
 
   const fetchPage = useCallback(async (modelKey?: string) => {
-    const url = modelKey
-      ? `${API_BASE}/api/public/drones?model=${modelKey}`
-      : `${API_BASE}/api/public/drones`;
-
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return null;
-    return (await res.json()) as RootResponse;
+    const path = modelKey
+      ? `/api/public/drones?model=${modelKey}`
+      : `/api/public/drones`;
+    try {
+      return (await apiClient.get(path)) as RootResponse;
+    } catch {
+      return null;
+    }
   }, []);
 
   const fetchRepresentatives = useCallback(async () => {
-    const res = await fetch(`${API_BASE}/api/public/drones/representantes`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    const json = await res.json();
-    return extractArray(json);
+    try {
+      const json = await apiClient.get("/api/public/drones/representantes");
+      return extractArray(json);
+    } catch {
+      return [];
+    }
   }, []);
 
   useEffect(() => {

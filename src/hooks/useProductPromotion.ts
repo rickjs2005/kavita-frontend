@@ -2,7 +2,7 @@
 // Cache em memória compartilhado entre todas as instâncias do hook.
 // Múltiplos ProductCards pedindo o mesmo id fazem apenas 1 requisição.
 import { useEffect, useState } from "react";
-import { API_BASE } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
 
 export type ProductPromotion = {
   id: number;
@@ -26,14 +26,9 @@ async function fetchPromotion(productId: number): Promise<ProductPromotion | nul
 
   const promise = (async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/public/promocoes/${productId}`, {
-        cache: "default",
-      });
-      if (!res.ok) {
-        _cache.set(productId, null);
-        return null;
-      }
-      const data: ProductPromotion = await res.json();
+      const data = await apiClient.get<ProductPromotion>(
+        `/api/public/promocoes/${productId}`,
+      );
       _cache.set(productId, data);
       return data;
     } catch {
