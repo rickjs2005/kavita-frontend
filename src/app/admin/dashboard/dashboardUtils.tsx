@@ -1,0 +1,93 @@
+// Pure functions and shared UI primitives for the admin dashboard.
+
+import type { AlertNivel } from "./dashboardTypes";
+
+// ---------------------------------------------------------------------------
+// Formatters
+// ---------------------------------------------------------------------------
+
+export function formatNumber(n: number) {
+  return new Intl.NumberFormat("pt-BR").format(n || 0);
+}
+
+export function formatMoney(n: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 2,
+  }).format(n || 0);
+}
+
+export function formatShortDate(dateStr: string) {
+  const [y, m, d] = dateStr.split("-").map((v) => parseInt(v, 10));
+  const dt = new Date(y || 2000, (m || 1) - 1, d || 1);
+  return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
+
+export function formatLogDate(dateStr: string) {
+  const dt = new Date(dateStr);
+  if (Number.isNaN(dt.getTime())) return "—";
+  return dt.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "America/Sao_Paulo",
+  });
+}
+
+export function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export function getAlertColors(nivel: AlertNivel) {
+  switch (nivel) {
+    case "danger":
+      return {
+        badge: "bg-rose-500/10 text-rose-300 border border-rose-500/60",
+        dot: "bg-rose-500",
+      };
+    case "warning":
+      return {
+        badge: "bg-amber-500/10 text-amber-200 border border-amber-500/60",
+        dot: "bg-amber-400",
+      };
+    default:
+      return {
+        badge: "bg-sky-500/10 text-sky-200 border border-sky-500/60",
+        dot: "bg-sky-400",
+      };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared UI atoms (used in multiple sections)
+// ---------------------------------------------------------------------------
+
+export function LoadingSpinner({ size = "md" }: { size?: "sm" | "md" }) {
+  const base =
+    "inline-block animate-spin rounded-full border-2 border-emerald-400 border-t-transparent";
+  const sizes = size === "sm" ? "h-4 w-4 border-[1.5px]" : "h-5 w-5 border-2";
+  return <span className={`${base} ${sizes}`} aria-hidden="true" />;
+}
+
+// Recharts passes arbitrary props dynamically — intentionally typed as any.
+export function SalesTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const value: number = payload[0]?.value ?? 0;
+  return (
+    <div className="rounded-lg border border-slate-700 bg-slate-900/95 px-3 py-2 text-xs text-slate-50 shadow-xl">
+      <div className="font-medium text-emerald-300">{label}</div>
+      <div className="mt-1 text-[11px] text-slate-300">
+        Faturamento:{" "}
+        <span className="font-semibold text-emerald-400">
+          {formatMoney(value)}
+        </span>
+      </div>
+    </div>
+  );
+}
