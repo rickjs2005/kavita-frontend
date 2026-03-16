@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
+import { sanitizeUrl } from "@/lib/sanitizeHtml";
 
 type HeroConfig = {
   hero_video_url?: string;
@@ -25,9 +26,13 @@ const DEFAULT_IMG = "/images/drone/fallback-hero1.jpg";
 function normalizeHref(href?: string | null) {
   const v = String(href || "").trim();
   if (!v) return "/drones";
-  if (v.startsWith("/") || v.startsWith("http://") || v.startsWith("https://"))
-    return v;
-  return `/${v}`;
+  // Normaliza primeiro (garante que paths sem barra inicial ficam relativos)
+  const normalized =
+    v.startsWith("/") || v.startsWith("http://") || v.startsWith("https://")
+      ? v
+      : `/${v}`;
+  // Bloqueia javascript:, data:, vbscript: e URLs malformadas
+  return sanitizeUrl(normalized) || "/drones";
 }
 
 export default function HeroSection() {
@@ -122,7 +127,7 @@ export default function HeroSection() {
       ) : (
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url('${heroImg}')` }}
+          style={{ backgroundImage: `url('${sanitizeUrl(heroImg) || DEFAULT_IMG}')` }}
         />
       )}
 

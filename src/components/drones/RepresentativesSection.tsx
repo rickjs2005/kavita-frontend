@@ -5,6 +5,7 @@ import type { DronePageSettings, DroneRepresentative } from "@/types/drones";
 
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { sanitizeUrl } from "@/lib/sanitizeHtml";
 
 function digitsOnly(s: string) {
   return String(s || "").replace(/\D/g, "");
@@ -136,9 +137,9 @@ export default function RepresentativesSection({
               <span>WhatsApp: {rep.whatsapp}</span>
               <span>CNPJ: {rep.cnpj}</span>
 
-              {rep.instagram_url ? (
+              {rep.instagram_url && sanitizeUrl(rep.instagram_url) ? (
                 <a
-                  href={rep.instagram_url}
+                  href={sanitizeUrl(rep.instagram_url)}
                   target="_blank"
                   rel="noreferrer"
                   className="text-emerald-300 hover:underline"
@@ -162,9 +163,9 @@ export default function RepresentativesSection({
                 Falar no WhatsApp
               </a>
 
-              {rep.instagram_url ? (
+              {rep.instagram_url && sanitizeUrl(rep.instagram_url) ? (
                 <a
-                  href={rep.instagram_url}
+                  href={sanitizeUrl(rep.instagram_url)}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-white/10 transition focus:outline-none focus:ring-2 focus:ring-white/20"

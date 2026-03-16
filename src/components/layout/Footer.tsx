@@ -6,6 +6,7 @@ import { MdEmail } from "react-icons/md";
 import { HiOutlineMapPin } from "react-icons/hi2";
 import Link from "next/link";
 import type { PublicShopSettings } from "@/server/data/shopSettings";
+import { sanitizeUrl } from "@/lib/sanitizeHtml";
 
 type FooterProps = {
   shop?: PublicShopSettings;
@@ -106,7 +107,7 @@ export default function Footer({ shop }: FooterProps) {
     if (Array.isArray(raw) && raw.length) {
       return raw.map((x: any) => ({
         label: String(x.label),
-        href: String(x.href),
+        href: sanitizeUrl(String(x.href)) || "/",
         highlight: !!x.highlight,
       }));
     }
@@ -124,15 +125,17 @@ export default function Footer({ shop }: FooterProps) {
   const email = (shop as any)?.contact_email || footer.contact_email || "";
   const cnpj = (shop as any)?.cnpj ? formatCnpj((shop as any).cnpj) : "";
 
-  const instagram =
+  const instagram = sanitizeUrl(
     (shop as any)?.social_instagram_url ||
     footer.social_instagram_url ||
-    "https://instagram.com";
+    "https://instagram.com",
+  );
 
-  const whatsappUrl =
+  const whatsappUrl = sanitizeUrl(
     (shop as any)?.social_whatsapp_url ||
     footer.social_whatsapp_url ||
-    (whatsapp ? toWaMe(whatsapp) : "");
+    (whatsapp ? toWaMe(whatsapp) : ""),
+  );
 
   // Endereço (flat ou compat)
   const address_city = (shop as any)?.address_city ?? footer.address_city ?? "";

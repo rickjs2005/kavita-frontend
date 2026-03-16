@@ -362,7 +362,19 @@ export default function AdminCarrinhosAbandonadosPage() {
         return;
       }
 
-      window.open(wa_link, "_blank", "noopener,noreferrer");
+      // Valida que o link é realmente um URL wa.me antes de abrir
+      const safeWaLink =
+        typeof wa_link === "string" && wa_link.startsWith("https://wa.me/")
+          ? wa_link
+          : null;
+
+      if (!safeWaLink) {
+        console.warn("[carrinhos] wa_link rejeitado: não é URL wa.me válida.");
+        toast.error("Link de WhatsApp inválido.");
+        return;
+      }
+
+      window.open(safeWaLink, "_blank", "noopener,noreferrer");
     } catch (err: any) {
       console.error("Erro ao gerar link de WhatsApp:", err);
 
