@@ -1,14 +1,50 @@
 // src/services/services.ts
-import type { Service } from "@/types/service";
+import type { NormalizedService } from "@/types/service";
 import { apiFetch } from "@/lib/apiClient";
 
-export interface GetServicesParams {
-  q?: string;
-  specialty?: string; // será convertido para "especialidade"
-  page?: number;
-  limit?: number;
-  sort?: "id" | "nome" | "cargo" | "especialidade";
-  order?: "asc" | "desc";
+// ---------------------------------------------------------------------------
+// Adapter: backend raw → NormalizedService
+// ---------------------------------------------------------------------------
+
+/**
+ * Converte um objeto raw do backend em `NormalizedService` com tipos limpos.
+ * Nenhum componente precisa checar se `verificado` é `0|1` ou `false|true`,
+ * se `especialidade_id` pode ser string, ou se `images` é null.
+ */
+export function normalizeService(raw: any): NormalizedService {
+  // images: string, array, ou null → sempre string[]
+  let images: string[];
+  if (Array.isArray(raw?.images)) {
+    images = raw.images.filter((x: any) => typeof x === "string");
+  } else if (typeof raw?.images === "string" && raw.images) {
+    images = [raw.images];
+  } else {
+    images = [];
+  }
+
+  // verificado: 0|1 ou false|true → sempre boolean
+  const verificado = raw?.verificado === true || raw?.verificado === 1;
+
+  // especialidade_id: string ou number → sempre number | null
+  const rawEspId = raw?.especialidade_id;
+  const especialidade_id =
+    rawEspId != null && rawEspId !== ""
+      ? Number(rawEspId) || null
+      : null;
+
+  return {
+    id: Number(raw?.id),
+    nome: String(raw?.nome ?? ""),
+    descricao: String(raw?.descricao ?? ""),
+    cargo: raw?.cargo != null ? String(raw.cargo) : null,
+    imagem: raw?.imagem != null ? String(raw.imagem) : null,
+    images,
+    whatsapp: raw?.whatsapp != null ? String(raw.whatsapp) : null,
+    especialidade_nome:
+      raw?.especialidade_nome != null ? String(raw.especialidade_nome) : null,
+    especialidade_id,
+    verificado,
+  };
 }
 
 function normText(v?: string) {
@@ -16,8 +52,18 @@ function normText(v?: string) {
   return s ? s.toLowerCase() : "";
 }
 
+export interface GetServicesParams {
+  q?: string;
+  specialty?: string;
+  page?: number;
+  limit?: number;
+  sort?: "id" | "nome" | "cargo" | "especialidade";
+  order?: "asc" | "desc";
+}
+
 /**
- * Lista serviços com paginação/filtros (contrato com backend).
+ * Lista serviços com paginação/filtros.
+ * Retorna `{ items: NormalizedService[]; ... }` — os serviços já normalizados.
  */
 export async function getServices(params: GetServicesParams = {}) {
   const {
@@ -38,7 +84,6 @@ export async function getServices(params: GetServicesParams = {}) {
   const qNorm = (q ?? "").trim();
   if (qNorm) qs.set("q", qNorm);
 
-  // specialty -> especialidade (normalizado)
   const esp = normText(specialty);
   if (esp) qs.set("especialidade", esp);
 
@@ -46,35 +91,27 @@ export async function getServices(params: GetServicesParams = {}) {
   const path = query ? `/api/servicos?${query}` : `/api/servicos`;
 
   try {
-    return await apiFetch(path, { cache: "no-store" });
+    const res: any = await apiFetch(path, { cache: "no-store" });
+
+    // Normaliza lista independente do shape (array direto ou { items: [...] })
+    if (Array.isArray(res)) return res.map(normalizeService);
+    if (Array.isArray(res?.items)) {
+      return { ...res, items: res.items.map(normalizeService) };
+    }
+    return res;
   } catch {
-    // erro limpo (não vaza stack/erro bruto)
     throw new Error("Failed to fetch services");
   }
 }
 
-/**
- * Um serviço por ID.
- * Normaliza images para array.
- */
-export async function getServiceById(id: string | number): Promise<Service> {
+/** Um serviço por ID, normalizado. */
+export async function getServiceById(id: string | number): Promise<NormalizedService> {
   if (!id && id !== 0) throw new Error("Service id is required");
 
   try {
-    const json: any = await apiFetch(`/api/servicos/${id}`, {
-      cache: "no-store",
-    });
-
-    return {
-      ...json,
-      images: Array.isArray(json.images)
-        ? json.images
-        : typeof json.images === "string" && json.images
-          ? [json.images]
-          : [],
-    } as Service;
+    const raw: any = await apiFetch(`/api/servicos/${id}`, { cache: "no-store" });
+    return normalizeService(raw);
   } catch {
-    // erro limpo
     throw new Error("Failed to fetch service");
   }
 }

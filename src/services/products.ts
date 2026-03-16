@@ -1,25 +1,78 @@
 // src/services/products.ts
 import { apiFetch } from "@/lib/apiClient";
+import type { NormalizedProduct } from "@/types/product";
 
-// Normaliza o slug da categoria (mantém a mesma lógica: trim + lowercase)
+// ---------------------------------------------------------------------------
+// Adapter: backend raw → NormalizedProduct
+// Isola todas as inconsistências do backend nesta função.
+// ---------------------------------------------------------------------------
+
+/**
+ * Converte um objeto raw do backend em `NormalizedProduct` com tipos limpos.
+ * Nenhum componente precisa saber que `price` pode vir como string,
+ * que o estoque pode se chamar `estoque` ou `quantity`, ou que
+ * `shipping_free` pode ser `0 | 1` em vez de `boolean`.
+ */
+export function normalizeProduct(raw: any): NormalizedProduct {
+  // price: backend pode enviar string ("29.90") ou number
+  const price = Number(raw?.price ?? 0) || 0;
+
+  // stock: unifica quantity e estoque (backends divergem)
+  const quantity =
+    typeof raw?.quantity === "number"
+      ? raw.quantity
+      : typeof raw?.estoque === "number"
+        ? raw.estoque
+        : Number(raw?.quantity ?? raw?.estoque ?? 0) || 0;
+
+  // shipping_free: 0/1 ou false/true
+  const shipping_free = raw?.shipping_free === true || raw?.shipping_free === 1;
+
+  // images: garante que é sempre array
+  const images = Array.isArray(raw?.images) ? raw.images : [];
+
+  return {
+    id: Number(raw?.id),
+    name: String(raw?.name ?? ""),
+    description: String(raw?.description ?? ""),
+    price,
+    image: String(raw?.image ?? ""),
+    images,
+    quantity,
+    category_id: raw?.category_id != null ? String(raw.category_id) : null,
+    third_category: raw?.third_category != null ? String(raw.third_category) : null,
+    destaque: raw?.destaque ?? null,
+    rating_avg: raw?.rating_avg != null ? Number(raw.rating_avg) : null,
+    rating_count: raw?.rating_count != null ? Number(raw.rating_count) : null,
+    shipping_free,
+    shipping_free_from_qty:
+      raw?.shipping_free_from_qty != null
+        ? Number(raw.shipping_free_from_qty)
+        : null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Normaliza o slug da categoria (trim + lowercase)
+// ---------------------------------------------------------------------------
 function normalizeCategory(category?: string): string | undefined {
   if (!category) return undefined;
   return String(category).trim().toLowerCase();
 }
 
 export interface GetProductsParams {
-  q?: string; // busca
-  category?: string; // categoria (slug)
-  subcategory?: string; // subcategoria (slug)
+  q?: string;
+  category?: string;
+  subcategory?: string;
   page?: number;
   limit?: number;
-  sort?: string; // mantém flexível pra não quebrar seu backend se aceitar outros campos
+  sort?: string;
   order?: "asc" | "desc";
 }
 
 /**
  * Lista produtos com paginação/filtros.
- * Mantém a mesma ideia: criar URLSearchParams e chamar GET /api/products
+ * Retorna `{ items: NormalizedProduct[]; ... }` — os produtos já normalizados.
  */
 export async function getProducts(params: GetProductsParams = {}) {
   const {
@@ -49,12 +102,19 @@ export async function getProducts(params: GetProductsParams = {}) {
   const query = qs.toString();
   const path = query ? `/api/products?${query}` : `/api/products`;
 
-  // apiFetch já padroniza erro (ApiError) e mantém cookies (credentials: include)
-  return apiFetch(path, { cache: "no-store" });
+  const res: any = await apiFetch(path, { cache: "no-store" });
+
+  // Normaliza lista independente do shape (array direto ou { items: [...] })
+  if (Array.isArray(res)) return res.map(normalizeProduct);
+  if (Array.isArray(res?.items)) {
+    return { ...res, items: res.items.map(normalizeProduct) };
+  }
+  return res;
 }
 
-// Um único produto (mantém a validação do id)
-export async function getProductById(id: string | number) {
+/** Um único produto normalizado. */
+export async function getProductById(id: string | number): Promise<NormalizedProduct> {
   if (!id && id !== 0) throw new Error("Product id is required");
-  return apiFetch(`/api/products/${id}`, { cache: "no-store" });
+  const raw = await apiFetch(`/api/products/${id}`, { cache: "no-store" });
+  return normalizeProduct(raw);
 }
