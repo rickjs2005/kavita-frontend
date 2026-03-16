@@ -32,8 +32,6 @@ const Form = () => {
   // Função chamada ao enviar o formulário
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault(); // Evita o recarregamento da página
-    console.log("Formulário enviado:", formData); // Exibe os dados no console
-
     setIsSubmitted(true); // Mostra mensagem de sucesso
 
     // Limpa todos os campos após o envio

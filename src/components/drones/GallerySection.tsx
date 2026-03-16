@@ -43,7 +43,6 @@ function MediaBlock({
             width={1280}
             height={720}
             loading="eager"
-            onLoad={() => console.log(`[GallerySection] MediaBlock image loaded: ${src}`)}
             onError={() => {
               console.warn(`[GallerySection] MediaBlock image failed to load: ${src}`);
               setImgError(true);
@@ -97,7 +96,6 @@ function GalleryItem({
             width={1280}
             height={720}
             loading="lazy"
-            onLoad={() => console.log(`[GallerySection] Gallery image loaded: ${src}`)}
             onError={() => {
               console.warn(`[GallerySection] Gallery image failed to load: ${src}`);
               setImgError(true);
