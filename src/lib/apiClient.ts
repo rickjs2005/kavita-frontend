@@ -53,7 +53,20 @@ async function fetchCsrfToken(baseUrl: string): Promise<string | null> {
   _csrfInflight = (async () => {
     try {
       const url = joinUrl(baseUrl, "/api/csrf-token");
-      const res = await fetch(url, { credentials: "include" });
+      const csrfController = new AbortController();
+      const csrfTimeoutId = setTimeout(
+        () => csrfController.abort(),
+        CSRF_TIMEOUT_MS,
+      );
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          credentials: "include",
+          signal: csrfController.signal,
+        });
+      } finally {
+        clearTimeout(csrfTimeoutId);
+      }
       if (!res.ok) {
         console.warn(`[apiClient] CSRF token fetch falhou: HTTP ${res.status}`);
         return null;
@@ -98,12 +111,25 @@ export type ApiRequestOptions = RequestInit & {
 
   /** Se true, não adiciona header Content-Type automaticamente (útil para FormData). */
   skipContentType?: boolean;
+
+  /**
+   * Timeout em milissegundos antes de abortar a requisição.
+   * Default: 15000 (15 segundos).
+   * Use 0 para desabilitar (ex: uploads grandes).
+   */
+  timeout?: number;
 };
 
 const DEFAULT_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   "http://localhost:5000";
+
+/** Timeout padrão para todas as requisições (15 segundos). Use options.timeout=0 para desabilitar. */
+const DEFAULT_TIMEOUT_MS = 15_000;
+
+/** Timeout fixo para o fetch do CSRF token (operação interna, não configurável). */
+const CSRF_TIMEOUT_MS = 5_000;
 
 function joinUrl(base: string, path: string) {
   if (!base) return path;
@@ -253,13 +279,59 @@ export async function apiRequest<T = any>(
     }
   }
 
-  const res = await fetch(url, {
-    ...options,
-    method,
-    credentials,
-    headers,
-    body,
-  });
+  // ---------------------------------------------------------------------------
+  // Timeout via AbortController
+  // ---------------------------------------------------------------------------
+  const timeoutMs =
+    options.timeout !== undefined ? options.timeout : DEFAULT_TIMEOUT_MS;
+
+  let timeoutController: AbortController | undefined;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  // Determina o signal final:
+  // - Se caller passou signal e temos timeout: combina via AbortSignal.any() quando disponível
+  // - Se só timeout: usa nosso controller
+  // - Se só caller signal: usa o dele
+  // - Se nenhum: undefined
+  let signal: AbortSignal | undefined = options.signal ?? undefined;
+
+  if (timeoutMs > 0) {
+    timeoutController = new AbortController();
+    timeoutId = setTimeout(() => timeoutController!.abort(), timeoutMs);
+
+    if (signal && typeof (AbortSignal as any).any === "function") {
+      // Node 18.17+ / Chrome 116+: combina os dois signals
+      signal = (AbortSignal as any).any([signal, timeoutController.signal]);
+    } else {
+      // Fallback: timeout tem prioridade (comportamento mais seguro para produção)
+      signal = timeoutController.signal;
+    }
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...options,
+      method,
+      credentials,
+      headers,
+      body,
+      signal,
+    });
+  } catch (err) {
+    // Distingue timeout de outros erros de rede
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new ApiError({
+        status: 0,
+        code: "TIMEOUT",
+        message: `A requisição excedeu ${timeoutMs / 1000}s sem resposta. Verifique sua conexão e tente novamente.`,
+        url,
+      });
+    }
+    throw err;
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId);
+  }
 
   if (options.raw) return res as unknown as T;
 

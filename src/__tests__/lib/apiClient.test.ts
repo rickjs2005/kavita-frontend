@@ -496,4 +496,73 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
     expect(headerGet(init.headers, "content-type")).toBeNull();
     expect(headerGet(init.headers, "accept")).toBe("application/json");
   });
+
+  // ─── Timeout ────────────────────────────────────────────────────────────────
+
+  it("quando fetch lança AbortError, deve rejeitar com ApiError code=TIMEOUT e status=0", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
+
+    const abortError = new DOMException("signal is aborted", "AbortError");
+    (globalThis.fetch as unknown as FetchMock).mockRejectedValueOnce(abortError);
+
+    await expect(apiFetch("/api/ping", { timeout: 100 })).rejects.toMatchObject({
+      name: "ApiError",
+      status: 0,
+      code: "TIMEOUT",
+    });
+  });
+
+  it("quando timeout=0, não cria AbortController e repassa sinal do caller intacto", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
+
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true }),
+      }),
+    );
+
+    const callerController = new AbortController();
+    await apiFetch("/api/ping", { timeout: 0, signal: callerController.signal });
+
+    const { init } = getFirstFetchCall();
+    // Signal deve ser o do caller (não foi substituído por timeout controller)
+    expect(init.signal).toBe(callerController.signal);
+  });
+
+  it("quando fetch lança erro de rede (não AbortError), repassa o erro original", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
+
+    const networkError = new TypeError("Failed to fetch");
+    (globalThis.fetch as unknown as FetchMock).mockRejectedValueOnce(networkError);
+
+    await expect(apiFetch("/api/ping")).rejects.toThrow("Failed to fetch");
+    // Não deve ser ApiError com code TIMEOUT
+    await expect(apiFetch("/api/ping").catch((e) => e.code)).resolves.not.toBe("TIMEOUT");
+  });
+
+  it("passa signal no fetch mesmo com timeout padrão ativo", async () => {
+    vi.resetModules();
+    const { apiFetch } = await importClient();
+
+    (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
+      makeResponse({
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        json: async () => ({ ok: true }),
+      }),
+    );
+
+    await apiFetch("/api/ping");
+
+    const { init } = getFirstFetchCall();
+    // Deve ter signal (do AbortController de timeout)
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
 });
