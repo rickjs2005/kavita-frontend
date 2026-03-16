@@ -1,0 +1,32 @@
+"use client";
+
+import { PersonalInfoForm } from "@/components/checkout/PersonalInfoForm";
+import { CheckoutIcon } from "../checkoutUtils";
+
+type Props = {
+  formData: any;
+  updateForm: (field: string, value: any) => void;
+};
+
+export function PersonalInfoSection({ formData, updateForm }: Props) {
+  return (
+    <section className="rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-6 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EC5B20]/10 text-[#EC5B20] text-xs font-bold">
+          1
+        </div>
+        <div>
+          <h2 className="flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-800">
+            <CheckoutIcon.user />
+            Dados do cliente
+          </h2>
+          <p className="text-xs text-gray-500">
+            Nome, CPF, e contato para confirmação do pedido.
+          </p>
+        </div>
+      </div>
+
+      <PersonalInfoForm formData={formData} onChange={updateForm} />
+    </section>
+  );
+}
