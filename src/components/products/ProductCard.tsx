@@ -10,7 +10,8 @@ import { resolveStockValue } from "../../utils/stock";
 import { useAuth } from "@/context/AuthContext";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
-import { useProductPromotion, type ProductPromotion } from "@/hooks/useProductPromotion";
+import { useProductPromotion } from "@/hooks/useProductPromotion";
+import { computeProductPrice } from "@/utils/pricing";
 
 type Props = {
   product: Product;
@@ -96,53 +97,10 @@ export default function ProductCard({
   // === Promoção / desconto ===
   const { promotion } = useProductPromotion(product?.id);
 
-  // === Cálculo de preço final (mesma lógica do produto) ===
-  const precoBase = Number(product.price ?? 0);
-
-  const originalFromPromo =
-    promotion?.original_price != null ? Number(promotion.original_price) : null;
-  const finalFromPromo =
-    promotion?.final_price != null
-      ? Number(promotion.final_price)
-      : promotion?.promo_price != null
-        ? Number(promotion.promo_price)
-        : null;
-
-  const originalPrice =
-    originalFromPromo !== null ? originalFromPromo : precoBase || 0;
-
-  let finalPrice = finalFromPromo !== null ? finalFromPromo : originalPrice;
-
-  let discountPercent: number | null = null;
-
-  if (promotion) {
-    const explicitDiscount =
-      promotion.discount_percent != null
-        ? Number(promotion.discount_percent)
-        : NaN;
-
-    // se veio só % de desconto sem final_price calculado
-    if (
-      finalFromPromo === null &&
-      !Number.isNaN(explicitDiscount) &&
-      explicitDiscount > 0 &&
-      originalPrice > 0
-    ) {
-      finalPrice = originalPrice * (1 - explicitDiscount / 100);
-    }
-
-    // calcula % real
-    if (originalPrice > 0 && finalPrice < originalPrice) {
-      discountPercent = ((originalPrice - finalPrice) / originalPrice) * 100;
-    } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
-      discountPercent = explicitDiscount;
-    }
-  }
-
-  const hasDiscount =
-    discountPercent !== null &&
-    discountPercent > 0 &&
-    finalPrice < originalPrice;
+  const { originalPrice, finalPrice, discountPercent, hasDiscount } = useMemo(
+    () => computeProductPrice(product.price, promotion),
+    [product.price, promotion],
+  );
 
   // produto que vai para o carrinho com o PREÇO FINAL
   const productForCart: Product = {

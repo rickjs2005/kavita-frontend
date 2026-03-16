@@ -4,6 +4,7 @@ import Gallery from "@/components/ui/Gallery";
 import ProductBuyBox from "@/components/products/ProductBuyBox";
 import ProductReviews from "./ProductReviews";
 import { absUrl, API_BASE } from "@/utils/absUrl";
+import { computeProductPrice } from "@/utils/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -74,36 +75,10 @@ export default async function Page({ params }: ProductPageProps) {
       : null;
 
   // ===== PREÇO / DESCONTO =====
-  const precoBase = Number(produto.price ?? 0);
-
-  const originalFromPromo = promocao?.original_price ?? promocao?.price ?? null;
-  const finalFromPromo =
-    promocao?.final_price ?? promocao?.promo_price ?? promocao?.price ?? null;
-
-  const originalPrice =
-    originalFromPromo != null ? Number(originalFromPromo) : precoBase;
-
-  let finalPrice =
-    finalFromPromo != null ? Number(finalFromPromo) : originalPrice;
-
-  let discountPercent: number | null = null;
-
-  if (promocao) {
-    const explicit =
-      promocao.discount_percent != null
-        ? Number(promocao.discount_percent)
-        : NaN;
-
-    if (!finalFromPromo && !Number.isNaN(explicit) && explicit > 0) {
-      finalPrice = originalPrice * (1 - explicit / 100);
-    }
-
-    if (originalPrice > 0 && finalPrice < originalPrice) {
-      discountPercent = ((originalPrice - finalPrice) / originalPrice) * 100;
-    } else if (!Number.isNaN(explicit) && explicit > 0) {
-      discountPercent = explicit;
-    }
-  }
+  const { originalPrice, finalPrice, discountPercent } = computeProductPrice(
+    produto.price,
+    promocao,
+  );
 
   const priceBRL = finalPrice.toLocaleString("pt-BR", {
     style: "currency",

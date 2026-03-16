@@ -23,6 +23,7 @@ import {
   CouponPreviewSchema,
 } from "@/lib/schemas/api";
 import { sanitizeUrl } from "@/lib/sanitizeHtml";
+import { computeProductPrice } from "@/utils/pricing";
 
 // CartItem local apenas para o payload de checkout (formato enviado ao backend).
 // Difere do CartItem do contexto (que é normalizado).
@@ -276,61 +277,6 @@ export default function CheckoutPage() {
     })();
   }, [normalizedCartItems]);
 
-  /** Calcula preço original/final e desconto com base na promoção */
-  const getPriceInfo = (item: { id: number; price: number }) => {
-    const basePrice = Number(item.price ?? 0);
-    const promo = promotions[item.id];
-
-    if (!promo) {
-      return {
-        originalPrice: basePrice,
-        finalPrice: basePrice,
-        discountValue: 0,
-        hasDiscount: false,
-      };
-    }
-
-    const originalFromPromo =
-      promo.original_price != null ? Number(promo.original_price) : null;
-    const finalFromPromo =
-      promo.final_price != null
-        ? Number(promo.final_price)
-        : promo.promo_price != null
-          ? Number(promo.promo_price)
-          : null;
-
-    const originalPrice =
-      originalFromPromo !== null ? originalFromPromo : basePrice || 0;
-    let finalPrice = finalFromPromo !== null ? finalFromPromo : originalPrice;
-
-    let discountPercent: number | null = null;
-
-    const explicitDiscount =
-      promo.discount_percent != null ? Number(promo.discount_percent) : NaN;
-
-    if (
-      finalFromPromo === null &&
-      !Number.isNaN(explicitDiscount) &&
-      explicitDiscount > 0 &&
-      originalPrice > 0
-    ) {
-      finalPrice = originalPrice * (1 - explicitDiscount / 100);
-    }
-
-    if (originalPrice > 0 && finalPrice < originalPrice) {
-      discountPercent = ((originalPrice - finalPrice) / originalPrice) * 100;
-    } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
-      discountPercent = explicitDiscount;
-    }
-
-    const hasDiscount =
-      discountPercent !== null &&
-      discountPercent > 0 &&
-      finalPrice < originalPrice;
-    const discountValue = hasDiscount ? originalPrice - finalPrice : 0;
-
-    return { originalPrice, finalPrice, discountValue, hasDiscount };
-  };
 
   // -----------------------------
   // CUPOM
@@ -353,7 +299,7 @@ export default function CheckoutPage() {
   // Subtotal SEM cupom (apenas promoções)
   const subtotal = useMemo(() => {
     return normalizedCartItems.reduce((acc, it) => {
-      const info = getPriceInfo({ id: it.id as number, price: it.price });
+      const info = computeProductPrice(it.price, promotions[it.id as number]);
       return acc + info.finalPrice * Number(it.quantity ?? 1);
     }, 0);
   }, [normalizedCartItems, promotions]);
@@ -1328,10 +1274,10 @@ export default function CheckoutPage() {
 
               <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
                 {normalizedCartItems.map((item) => {
-                  const info = getPriceInfo({
-                    id: item.id as number,
-                    price: item.price,
-                  });
+                  const info = computeProductPrice(
+                    item.price,
+                    promotions[item.id as number],
+                  );
 
                   return (
                     <div

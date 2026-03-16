@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { computeProductPrice } from "@/utils/pricing";
 
 interface Props {
   produto: Product;
@@ -77,42 +78,11 @@ export default function ProdutoContent({ produto }: Props) {
     carregarPromocao();
   }, [produto?.id]);
 
-  // ===== LÓGICA DE PREÇO / DESCONTO (mesma da page.tsx) =====
-  const precoBase = Number(produto.price ?? 0);
-
-  const originalFromPromo = promocao?.original_price ?? promocao?.price ?? null;
-  const finalFromPromo =
-    promocao?.final_price ?? promocao?.promo_price ?? promocao?.price ?? null;
-
-  const originalPrice =
-    originalFromPromo != null ? Number(originalFromPromo) : precoBase || 0;
-
-  let finalPrice =
-    finalFromPromo != null ? Number(finalFromPromo) : originalPrice;
-
-  let discountPercent: number | null = null;
-
-  if (promocao) {
-    const explicitDiscount =
-      promocao.discount_percent != null
-        ? Number(promocao.discount_percent)
-        : NaN;
-
-    if (
-      !finalFromPromo &&
-      !Number.isNaN(explicitDiscount) &&
-      explicitDiscount > 0 &&
-      originalPrice > 0
-    ) {
-      finalPrice = originalPrice * (1 - explicitDiscount / 100);
-    }
-
-    if (originalPrice > 0 && finalPrice < originalPrice) {
-      discountPercent = ((originalPrice - finalPrice) / originalPrice) * 100;
-    } else if (!Number.isNaN(explicitDiscount) && explicitDiscount > 0) {
-      discountPercent = explicitDiscount;
-    }
-  }
+  // ===== LÓGICA DE PREÇO / DESCONTO =====
+  const { originalPrice, finalPrice, discountPercent } = computeProductPrice(
+    produto.price,
+    promocao,
+  );
 
   const priceBRL = finalPrice.toLocaleString("pt-BR", {
     style: "currency",
