@@ -6,6 +6,7 @@ import {
   sanitizeAsText,
   sanitizeAsTextWithLineBreaks,
   sanitizeUrl,
+  isMercadoPagoUrl,
 } from "../../lib/sanitizeHtml";
 
 describe("sanitizeAsText", () => {
@@ -117,5 +118,75 @@ describe("sanitizeUrl", () => {
 
   it("deve retornar string vazia para string vazia", () => {
     expect(sanitizeUrl("")).toBe("");
+  });
+});
+
+describe("isMercadoPagoUrl", () => {
+  // ─── casos válidos ────────────────────────────────────────────────────────
+  it("aceita mercadopago.com com https", () => {
+    expect(isMercadoPagoUrl("https://mercadopago.com/checkout/v1/redirect")).toBe(true);
+  });
+
+  it("aceita www.mercadopago.com.br", () => {
+    expect(isMercadoPagoUrl("https://www.mercadopago.com.br/checkout/pro/pay")).toBe(true);
+  });
+
+  it("aceita sandbox.mercadopago.com.br", () => {
+    expect(isMercadoPagoUrl("https://sandbox.mercadopago.com.br/checkout/v1/redirect")).toBe(true);
+  });
+
+  it("aceita mercadopago.com.ar", () => {
+    expect(isMercadoPagoUrl("https://mercadopago.com.ar/checkout/pro/pay")).toBe(true);
+  });
+
+  it("aceita mercadolibre.com", () => {
+    expect(isMercadoPagoUrl("https://mercadolibre.com/checkout")).toBe(true);
+  });
+
+  it("aceita www.mercadolibre.com.br", () => {
+    expect(isMercadoPagoUrl("https://www.mercadolibre.com.br/checkout")).toBe(true);
+  });
+
+  it("aceita subdomínio múltiplo legítimo (a.b.mercadopago.com)", () => {
+    expect(isMercadoPagoUrl("https://a.b.mercadopago.com/pay")).toBe(true);
+  });
+
+  // ─── casos inválidos — protocolo ─────────────────────────────────────────
+  it("rejeita http:// mesmo em domínio válido", () => {
+    expect(isMercadoPagoUrl("http://mercadopago.com/checkout")).toBe(false);
+  });
+
+  it("rejeita ftp:// mesmo em domínio válido", () => {
+    expect(isMercadoPagoUrl("ftp://mercadopago.com/file")).toBe(false);
+  });
+
+  // ─── casos inválidos — domínio errado ────────────────────────────────────
+  it("rejeita domínio arbitrário", () => {
+    expect(isMercadoPagoUrl("https://evil.com/checkout")).toBe(false);
+  });
+
+  it("rejeita mercadopago como path, não hostname (https://evil.com/mercadopago)", () => {
+    expect(isMercadoPagoUrl("https://evil.com/mercadopago/checkout")).toBe(false);
+  });
+
+  it("rejeita mercadopago como subdomínio de domínio malicioso (mercadopago.evil.com)", () => {
+    expect(isMercadoPagoUrl("https://mercadopago.evil.com/checkout")).toBe(false);
+  });
+
+  it("rejeita domínio que contém 'mercadopago' mas não como marca principal", () => {
+    expect(isMercadoPagoUrl("https://notmercadopago.com/checkout")).toBe(false);
+  });
+
+  // ─── casos inválidos — entrada degenerada ────────────────────────────────
+  it("rejeita string vazia", () => {
+    expect(isMercadoPagoUrl("")).toBe(false);
+  });
+
+  it("rejeita URL malformada", () => {
+    expect(isMercadoPagoUrl("not-a-url")).toBe(false);
+  });
+
+  it("rejeita javascript: com domínio mercadopago no path", () => {
+    expect(isMercadoPagoUrl("javascript:mercadopago.com")).toBe(false);
   });
 });

@@ -22,7 +22,7 @@ import {
   PaymentResponseSchema,
   CouponPreviewSchema,
 } from "@/lib/schemas/api";
-import { sanitizeUrl } from "@/lib/sanitizeHtml";
+import { sanitizeUrl, isMercadoPagoUrl } from "@/lib/sanitizeHtml";
 import { computeProductPrice } from "@/utils/pricing";
 
 // CartItem local apenas para o payload de checkout (formato enviado ao backend).
@@ -826,8 +826,19 @@ export default function CheckoutPage() {
           ? (paymentParsed.data.init_point ?? paymentParsed.data.sandbox_init_point ?? null)
           : null;
 
-        // sanitizeUrl bloqueia javascript:, data:, vbscript: e URLs malformadas.
-        const safeUrl = rawUrl ? sanitizeUrl(rawUrl) : null;
+        // 1ª camada: sanitizeUrl bloqueia javascript:, data:, vbscript: e URLs malformadas.
+        // 2ª camada: isMercadoPagoUrl garante que o hostname é do MercadoPago/MercadoLibre
+        //            via https, impedindo redirect para domínios arbitrários.
+        const sanitized = rawUrl ? sanitizeUrl(rawUrl) : null;
+        const safeUrl =
+          sanitized && isMercadoPagoUrl(sanitized) ? sanitized : null;
+
+        if (!safeUrl && sanitized) {
+          // URL passou pelo sanitize mas o domínio não é do MercadoPago — rejeita.
+          console.warn(
+            "[checkout] URL de pagamento rejeitada: domínio não pertence ao MercadoPago.",
+          );
+        }
 
         clearCart?.();
 

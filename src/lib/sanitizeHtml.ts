@@ -32,6 +32,36 @@ export function sanitizeAsTextWithLineBreaks(value: unknown): string {
 }
 
 /**
+ * Verifies that a URL belongs to a legitimate MercadoPago / MercadoLibre hostname
+ * and uses the https protocol.
+ *
+ * Accepts:
+ *   - mercadopago.<tld>   (e.g. mercadopago.com, mercadopago.com.br)
+ *   - *.mercadopago.<tld> (e.g. www.mercadopago.com.br, sandbox.mercadopago.com.br)
+ *   - mercadolibre.<tld>  and its subdomains (same rules)
+ *
+ * Rejects:
+ *   - http:// URLs (only https allowed)
+ *   - Anything where the brand name isn't immediately before the TLD
+ *     (e.g. evil.com/mercadopago, mercadopago.evil.com)
+ */
+export function isMercadoPagoUrl(url: string): boolean {
+  if (!url) return false;
+  try {
+    const { protocol, hostname } = new URL(url);
+    if (protocol !== "https:") return false;
+    // TLD aceito: .com  |  .com.XX (país 2 letras)  |  .XX (ccTLD 2 letras, ex: .cl)
+    // Isso previne aceitar hostnames como mercadopago.evil.com onde "evil.com" não é TLD
+    const TLD = "(com(\\.[a-z]{2})?|[a-z]{2})";
+    const MP = new RegExp(`^([a-z0-9-]+\\.)*mercadopago\\.${TLD}$`).test(hostname);
+    const ML = new RegExp(`^([a-z0-9-]+\\.)*mercadolibre\\.${TLD}$`).test(hostname);
+    return MP || ML;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Validates and sanitizes a URL for use in `href` / `src` attributes.
  *
  * - Blocks `javascript:`, `data:`, and `vbscript:` URIs.
