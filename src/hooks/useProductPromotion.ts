@@ -1,6 +1,7 @@
 // src/hooks/useProductPromotion.ts
 // Cache em memória compartilhado entre todas as instâncias do hook.
 // Múltiplos ProductCards pedindo o mesmo id fazem apenas 1 requisição.
+// TTL de 5 minutos: promoções expiradas não ficam presas em cache.
 import { useEffect, useState } from "react";
 import apiClient from "@/lib/apiClient";
 
@@ -15,12 +16,28 @@ export type ProductPromotion = {
   ends_at?: string | null;
 };
 
+/** TTL de 5 minutos para entradas de promoção em cache. */
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+type CacheEntry = { value: ProductPromotion | null; fetchedAt: number };
+
 // Cache compartilhado no módulo — persiste durante a sessão do browser
-const _cache = new Map<number, ProductPromotion | null>();
+const _cache = new Map<number, CacheEntry>();
 const _inflight = new Map<number, Promise<ProductPromotion | null>>();
 
+function getCached(productId: number): { hit: true; value: ProductPromotion | null } | { hit: false } {
+  const entry = _cache.get(productId);
+  if (!entry) return { hit: false };
+  if (Date.now() - entry.fetchedAt > CACHE_TTL_MS) {
+    _cache.delete(productId);
+    return { hit: false };
+  }
+  return { hit: true, value: entry.value };
+}
+
 async function fetchPromotion(productId: number): Promise<ProductPromotion | null> {
-  if (_cache.has(productId)) return _cache.get(productId)!;
+  const cached = getCached(productId);
+  if (cached.hit) return cached.value;
 
   if (_inflight.has(productId)) return _inflight.get(productId)!;
 
@@ -29,10 +46,10 @@ async function fetchPromotion(productId: number): Promise<ProductPromotion | nul
       const data = await apiClient.get<ProductPromotion>(
         `/api/public/promocoes/${productId}`,
       );
-      _cache.set(productId, data);
+      _cache.set(productId, { value: data, fetchedAt: Date.now() });
       return data;
     } catch {
-      _cache.set(productId, null);
+      _cache.set(productId, { value: null, fetchedAt: Date.now() });
       return null;
     } finally {
       _inflight.delete(productId);
@@ -44,21 +61,22 @@ async function fetchPromotion(productId: number): Promise<ProductPromotion | nul
 }
 
 export function useProductPromotion(productId?: number) {
+  const cached = productId != null ? getCached(productId) : { hit: false as const };
+
   const [promotion, setPromotion] = useState<ProductPromotion | null>(
-    productId != null && _cache.has(productId)
-      ? _cache.get(productId)!
-      : null,
+    cached.hit ? cached.value : null,
   );
   const [loading, setLoading] = useState(
-    productId != null && !_cache.has(productId),
+    productId != null && !cached.hit,
   );
 
   useEffect(() => {
     if (productId == null) return;
 
-    // já está em cache — não faz nada
-    if (_cache.has(productId)) {
-      setPromotion(_cache.get(productId)!);
+    // verifica cache com TTL (pode ter expirado desde o render inicial)
+    const hit = getCached(productId);
+    if (hit.hit) {
+      setPromotion(hit.value);
       setLoading(false);
       return;
     }
