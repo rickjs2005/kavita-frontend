@@ -3,6 +3,9 @@
 import { useEffect, useState, useMemo } from "react";
 import apiClient from "@/lib/apiClient";
 import { formatCurrency } from "@/utils/formatters";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type StatusPagamento = "pendente" | "pago" | "falhou" | "estornado";
@@ -303,9 +306,9 @@ export default function PedidosAdminPage() {
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
             Pedidos
           </h1>
-          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Carregando pedidos...
-          </p>
+          <div className="mt-4">
+            <LoadingState message="Carregando pedidos…" />
+          </div>
         </div>
       </main>
     );
@@ -318,7 +321,9 @@ export default function PedidosAdminPage() {
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
             Pedidos
           </h1>
-          <p className="mt-4 text-sm text-red-500">{erro}</p>
+          <div className="mt-4">
+            <ErrorState message={erro} />
+          </div>
         </div>
       </main>
     );
@@ -378,9 +383,7 @@ export default function PedidosAdminPage() {
 
         {/* Lista / tabela */}
         {pedidosFiltrados.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
-            Nenhum pedido encontrado.
-          </div>
+          <EmptyState message="Nenhum pedido encontrado." />
         ) : (
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
             {/* Desktop */}

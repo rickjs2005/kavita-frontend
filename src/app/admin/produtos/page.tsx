@@ -8,6 +8,9 @@ import apiClient from "@/lib/apiClient";
 import ProdutoForm from "@/components/admin/produtos/produtoform";
 import ProdutoCard from "@/components/admin/produtos/produtocard";
 import type { Product } from "@/components/admin/produtos/produtocard";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const ProdutoFormAny = ProdutoForm as unknown as (props: any) => JSX.Element;
 
@@ -130,22 +133,12 @@ export default function ProdutosPage() {
           />
         </section>
 
-        {loading && (
-          <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
-            Carregando produtos…
-          </div>
-        )}
+        {loading && <LoadingState message="Carregando produtos…" />}
 
-        {!loading && erro && (
-          <div className="rounded-2xl border border-red-300 bg-red-50 p-4 text-red-700 sm:p-5">
-            {erro}
-          </div>
-        )}
+        {!loading && erro && <ErrorState message={erro} />}
 
         {!loading && !erro && produtos.length === 0 && (
-          <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
-            Nenhum produto cadastrado.
-          </div>
+          <EmptyState message="Nenhum produto cadastrado." />
         )}
 
         {!loading && !erro && produtos.length > 0 && (

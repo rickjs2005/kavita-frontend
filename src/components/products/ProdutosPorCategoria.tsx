@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ProductCard from "./ProductCard";
 import type { Product } from "@/types/product";
 import apiClient from "@/lib/apiClient";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 type Props = { categoria: string; limit?: number };
 
@@ -139,14 +141,14 @@ export default function ProdutosPorCategoria({ categoria, limit = 12 }: Props) {
               ))}
 
             {!loading && errorMsg && (
-              <div className="py-6 text-sm font-medium text-red-600">
-                {errorMsg}
+              <div className="py-6">
+                <ErrorState message={errorMsg} variant="inline" />
               </div>
             )}
 
             {!loading && !errorMsg && list.length === 0 && (
-              <div className="py-6 text-sm text-emerald-900/80">
-                Sem produtos nessa categoria.
+              <div className="py-6">
+                <EmptyState message="Sem produtos nessa categoria." variant="inline" />
               </div>
             )}
 

@@ -9,6 +9,9 @@ import { Service } from "@/types/service";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { isApiError } from "@/lib/errors";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const SERVICOS_PATH = "/api/admin/servicos";
 
@@ -210,17 +213,11 @@ export default function ServicosPage() {
 
         {/* ESTADOS (loading / erro / lista) */}
         {loading ? (
-          <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
-            Carregando serviços…
-          </div>
+          <LoadingState message="Carregando serviços…" />
         ) : erro ? (
-          <div className="rounded-2xl border border-red-300 bg-red-50 p-4 text-red-700 sm:p-5">
-            {erro}
-          </div>
+          <ErrorState message={erro} />
         ) : servicosAprovados.length === 0 ? (
-          <div className="rounded-2xl bg-white/95 p-4 text-gray-700 shadow-sm sm:p-6">
-            Nenhum serviço verificado no momento.
-          </div>
+          <EmptyState message="Nenhum serviço verificado no momento." />
         ) : (
           <section className="mt-4">
             <div className="mb-3 flex items-center justify-between sm:mb-4">

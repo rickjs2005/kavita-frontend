@@ -6,6 +6,8 @@ import CustomButton from "@/components/buttons/CustomButton";
 import DeleteButton from "@/components/buttons/DeleteButton";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 type AdminUser = {
   id: number;
@@ -111,7 +113,7 @@ export default function AdminClientesPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <p className="text-sm text-gray-500">Carregando clientes…</p>
+        <LoadingState message="Carregando clientes…" />
       </div>
     );
   }
@@ -144,8 +146,8 @@ export default function AdminClientesPage() {
 
       {/* Lista de clientes */}
       {filtered.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
-          Nenhum cliente encontrado para essa busca.
+        <div className="mt-4">
+          <EmptyState message="Nenhum cliente encontrado para essa busca." />
         </div>
       ) : (
         <div className="mt-4 space-y-4">

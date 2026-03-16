@@ -5,6 +5,9 @@ import ProductCard from "@/components/products/ProductCard";
 import CartCar from "@/components/cart/CartCar";
 import { useCart } from "@/context/CartContext";
 import { useFetchProducts } from "@/hooks/useFetchProducts";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export default function ProductsPageClient() {
   const { data: products, loading, error } = useFetchProducts();
@@ -12,26 +15,21 @@ export default function ProductsPageClient() {
 
   const content = useMemo(() => {
     if (loading) {
-      return (
-        <p className="text-gray-500 col-span-full text-center">
-          Carregando produtos...
-        </p>
-      );
+      return <LoadingState message="Carregando produtos…" variant="inline" />;
     }
 
     if (error) {
       return (
-        <p className="text-red-500 col-span-full text-center">
-          Não foi possível carregar os produtos. Tente novamente mais tarde.
-        </p>
+        <ErrorState
+          message="Não foi possível carregar os produtos. Tente novamente mais tarde."
+          variant="inline"
+        />
       );
     }
 
     if (!products.length) {
       return (
-        <p className="text-gray-500 col-span-full text-center">
-          Nenhum produto encontrado.
-        </p>
+        <EmptyState message="Nenhum produto encontrado." variant="inline" />
       );
     }
 
