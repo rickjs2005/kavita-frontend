@@ -1,5 +1,5 @@
 // src/services/products.ts
-import { apiFetch } from "@/lib/apiClient";
+import { apiRequest } from "@/lib/apiClient";
 import type { NormalizedProduct } from "@/types/product";
 
 // ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ export async function getProducts(params: GetProductsParams = {}) {
   const query = qs.toString();
   const path = query ? `/api/products?${query}` : `/api/products`;
 
-  const res: any = await apiFetch(path, { cache: "no-store" });
+  const res: any = await apiRequest(path, { cache: "no-store" });
 
   // Normaliza lista independente do shape (array direto ou { items: [...] })
   if (Array.isArray(res)) return res.map(normalizeProduct);
@@ -115,6 +115,6 @@ export async function getProducts(params: GetProductsParams = {}) {
 /** Um único produto normalizado. */
 export async function getProductById(id: string | number): Promise<NormalizedProduct> {
   if (!id && id !== 0) throw new Error("Product id is required");
-  const raw = await apiFetch(`/api/products/${id}`, { cache: "no-store" });
+  const raw = await apiRequest(`/api/products/${id}`, { cache: "no-store" });
   return normalizeProduct(raw);
 }

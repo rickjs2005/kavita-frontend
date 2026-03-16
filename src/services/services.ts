@@ -1,6 +1,6 @@
 // src/services/services.ts
 import type { NormalizedService } from "@/types/service";
-import { apiFetch } from "@/lib/apiClient";
+import { apiRequest } from "@/lib/apiClient";
 
 // ---------------------------------------------------------------------------
 // Adapter: backend raw → NormalizedService
@@ -91,7 +91,7 @@ export async function getServices(params: GetServicesParams = {}) {
   const path = query ? `/api/servicos?${query}` : `/api/servicos`;
 
   try {
-    const res: any = await apiFetch(path, { cache: "no-store" });
+    const res: any = await apiRequest(path, { cache: "no-store" });
 
     // Normaliza lista independente do shape (array direto ou { items: [...] })
     if (Array.isArray(res)) return res.map(normalizeService);
@@ -109,7 +109,7 @@ export async function getServiceById(id: string | number): Promise<NormalizedSer
   if (!id && id !== 0) throw new Error("Service id is required");
 
   try {
-    const raw: any = await apiFetch(`/api/servicos/${id}`, { cache: "no-store" });
+    const raw: any = await apiRequest(`/api/servicos/${id}`, { cache: "no-store" });
     return normalizeService(raw);
   } catch {
     throw new Error("Failed to fetch service");

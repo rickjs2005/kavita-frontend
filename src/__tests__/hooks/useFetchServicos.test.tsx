@@ -16,7 +16,9 @@ vi.mock("swr", () => ({
 
 const apiFetchMock = vi.fn();
 vi.mock("@/lib/apiClient", () => ({
-  apiFetch: (url: string, init?: RequestInit) => apiFetchMock(url, init),
+  default: {
+    request: (url: string, init?: RequestInit) => apiFetchMock(url, init),
+  },
 }));
 
 const handleApiErrorMock = vi.fn();

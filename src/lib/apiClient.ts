@@ -365,9 +365,8 @@ export async function apiRequest<T = any>(
 }
 
 /**
- * Alias legado (compatibilidade)
- * Alguns hooks/services antigos ainda importam `apiFetch`.
- * Internamente, continua sendo o mesmo client (apiRequest) com credentials condicional e parse seguro.
+ * @deprecated Use `apiRequest` or `apiClient` instead.
+ * Kept only for test files that still reference the alias directly.
  */
 export const apiFetch = apiRequest;
 

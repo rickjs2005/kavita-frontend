@@ -1,13 +1,13 @@
 // src/__tests__/services/products.test.ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getProducts, getProductById } from "@/services/products";
-import { apiFetch } from "@/lib/apiClient";
+import { apiRequest } from "@/lib/apiClient";
 
 vi.mock("@/lib/apiClient", () => ({
-  apiFetch: vi.fn(),
+  apiRequest: vi.fn(),
 }));
 
-const apiFetchMock = vi.mocked(apiFetch);
+const apiFetchMock = vi.mocked(apiRequest);
 
 describe("services/products", () => {
   beforeEach(() => {

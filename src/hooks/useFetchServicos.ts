@@ -2,7 +2,7 @@
 "use client";
 
 import useSWR from "swr";
-import { apiFetch } from "@/lib/apiClient";
+import apiClient from "@/lib/apiClient";
 import { handleApiError } from "@/lib/handleApiError";
 
 type Params = {
@@ -75,7 +75,7 @@ function pickMeta(payload: any, fallbackPage: number) {
 }
 
 const fetcher = async (url: string) => {
-  return apiFetch(url);
+  return apiClient.request(url);
 };
 
 export function useFetchServicos({
