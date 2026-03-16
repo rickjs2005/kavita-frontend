@@ -756,7 +756,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="mt-3 flex-1 overflow-y-auto">
-                  <div className="h-[260px] min-w-full">
+                  <div className="h-[260px] w-full">
                     {chartData.length === 0 ? (
                       <div className="flex h-full items-center justify-center text-xs text-slate-400">
                         Nenhum dado de vendas recente.

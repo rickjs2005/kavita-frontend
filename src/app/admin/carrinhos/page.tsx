@@ -563,8 +563,8 @@ export default function AdminCarrinhosAbandonadosPage() {
             {/* Desktop/tablet */}
             <div className="hidden sm:block">
               <div className="overflow-x-auto">
-                <div className="min-w-[1040px]">
-                  <div className="grid grid-cols-[340px_1fr_200px_260px] border-b border-slate-800 bg-slate-950/60 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <div className="min-w-[720px] md:min-w-[1040px]">
+                  <div className="grid grid-cols-[240px_1fr_160px_200px] border-b border-slate-800 bg-slate-950/60 text-xs font-semibold uppercase tracking-wide text-slate-400 md:grid-cols-[340px_1fr_200px_260px]">
                     <div className="px-4 py-3">Cliente</div>
                     <div className="px-4 py-3">Itens</div>
                     <div className="px-4 py-3">Data do abandono</div>
@@ -588,7 +588,7 @@ export default function AdminCarrinhosAbandonadosPage() {
                       return (
                         <div key={c.id} className="bg-transparent">
                           {/* Linha principal */}
-                          <div className="grid grid-cols-[340px_1fr_200px_260px] hover:bg-slate-950/60">
+                          <div className="grid grid-cols-[240px_1fr_160px_200px] hover:bg-slate-950/60 md:grid-cols-[340px_1fr_200px_260px]">
                             <div className="px-4 py-4">
                               <div className="flex items-start gap-3">
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-800 bg-slate-950/60 text-xs font-semibold text-slate-200">
