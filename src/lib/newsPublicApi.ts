@@ -62,6 +62,8 @@ export type PublicPost = {
   content?: string | null;
   cover_url?: string | null;
   cover_image?: string | null;
+  cover_image_url?: string | null;
+  tags?: string | null;
   category?: string | null;
   published_at?: string | null;
   created_at?: string | null;

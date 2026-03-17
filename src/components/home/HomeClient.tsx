@@ -1,15 +1,15 @@
 // src/components/home/HomeClient.tsx
-“use client”;
+"use client";
 
-import type { PublicCategory } from “@/server/data/categories”;
-import type { PublicShopSettings } from “@/server/data/shopSettings”;
+import type { PublicCategory } from "@/server/data/categories";
+import type { PublicShopSettings } from "@/server/data/shopSettings";
 
-import HeroSection from “@/components/layout/HeroSection”;
-import DestaquesSection from “@/components/products/DestaquesSection”;
-import ServicosSection from “@/components/layout/ServicosSection”;
-import ProdutosPorCategoria from “@/components/products/ProdutosPorCategoria”;
-import TrustBar from “@/components/layout/TrustBar”;
-import Footer from “@/components/layout/Footer”;
+import HeroSection from "@/components/layout/HeroSection";
+import DestaquesSection from "@/components/products/DestaquesSection";
+import ServicosSection from "@/components/layout/ServicosSection";
+import ProdutosPorCategoria from "@/components/products/ProdutosPorCategoria";
+import TrustBar from "@/components/layout/TrustBar";
+import Footer from "@/components/layout/Footer";
 
 type Props = {
   categories: PublicCategory[];

@@ -1,11 +1,12 @@
 "use client";
 
 import { PersonalInfoForm } from "@/components/checkout/PersonalInfoForm";
+import type { CheckoutFormChangeHandler } from "@/hooks/useCheckoutForm";
 import { CheckoutIcon } from "../checkoutUtils";
 
 type Props = {
   formData: any;
-  updateForm: (field: string, value: any) => void;
+  updateForm: CheckoutFormChangeHandler;
 };
 
 export function PersonalInfoSection({ formData, updateForm }: Props) {

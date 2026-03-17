@@ -97,7 +97,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
   });
 
   it("renderiza modo Adicionar e bloqueia submit com validação (nome obrigatório)", async () => {
-    render(<ProdutoForm API_BASE="http://localhost:5000" />);
+    render(<ProdutoForm />);
 
     // ✅ “Adicionar Produto” aparece no heading e no botão.
     // Para evitar ambiguidade, validamos o modo via heading.
@@ -120,7 +120,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
   });
 
   it("modo Adicionar: sempre valida categoria antes de validar preço (como no código)", async () => {
-    render(<ProdutoForm API_BASE="http://localhost:5000" />);
+    render(<ProdutoForm />);
 
     fillRequiredInAddModeExceptCategory({ price: "0" });
 
@@ -141,7 +141,6 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     render(
       <ProdutoForm
-        API_BASE="http://localhost:5000"
         produtoEditado={produtoEditado as any}
       />,
     );
@@ -172,7 +171,6 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     render(
       <ProdutoForm
-        API_BASE="http://localhost:5000"
         produtoEditado={produtoEditado as any}
       />,
     );
@@ -232,7 +230,6 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     render(
       <ProdutoForm
-        API_BASE="http://localhost:5000"
         produtoEditado={produtoEditado as any}
         onLimparEdicao={onLimparEdicao}
       />,
@@ -314,7 +311,6 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     render(
       <ProdutoForm
-        API_BASE="http://localhost:5000"
         produtoEditado={produtoEditado as any}
       />,
     );
@@ -360,7 +356,6 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     render(
       <ProdutoForm
-        API_BASE="http://localhost:5000"
         produtoEditado={produtoEditado as any}
       />,
     );
@@ -385,7 +380,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
   });
 
   it("botão Limpar reseta campos e não chama fetch", async () => {
-    render(<ProdutoForm API_BASE="http://localhost:5000" />);
+    render(<ProdutoForm />);
 
     fillRequiredInAddModeExceptCategory({
       name: "Produto X",
@@ -402,7 +397,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
   });
 
   it("upload de imagens: cria preview via URL.createObjectURL e remove ao clicar em 'x'", async () => {
-    render(<ProdutoForm API_BASE="http://localhost:5000" />);
+    render(<ProdutoForm />);
 
     const file = new File(["fake"], "foto.png", { type: "image/png" });
 
@@ -438,7 +433,6 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     render(
       <ProdutoForm
-        API_BASE="http://localhost:5000"
         produtoEditado={produtoEditado as any}
         onLimparEdicao={onLimparEdicao}
       />,

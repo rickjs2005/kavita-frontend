@@ -1,11 +1,12 @@
 "use client";
 
 import { PaymentMethodForm } from "@/components/checkout/PaymentMethodForm";
+import type { CheckoutFormChangeHandler } from "@/hooks/useCheckoutForm";
 import { CheckoutIcon } from "../checkoutUtils";
 
 type Props = {
   formaPagamento: string;
-  updateForm: (field: string, value: any) => void;
+  updateForm: CheckoutFormChangeHandler;
 };
 
 export function PaymentSection({ formaPagamento, updateForm }: Props) {

@@ -2,6 +2,7 @@
 
 import { AddressForm } from "@/components/checkout/AddressForm";
 import type { EntregaTipo, SavedAddress } from "../checkoutTypes";
+import type { CheckoutFormChangeHandler } from "@/hooks/useCheckoutForm";
 import { normalizeTipoLocalidade, formatCepLabel, CheckoutIcon } from "../checkoutUtils";
 
 type Props = {
@@ -17,7 +18,7 @@ type Props = {
   handleSelectAddress: (addr: SavedAddress) => void;
   handleBackToSavedAddresses: () => void;
   formData: any;
-  updateForm: (field: string, value: any) => void;
+  updateForm: CheckoutFormChangeHandler;
 };
 
 export function ShippingSection({
@@ -139,7 +140,7 @@ type AddressContentProps = {
   handleSelectAddress: (addr: SavedAddress) => void;
   handleBackToSavedAddresses: () => void;
   formData: any;
-  updateForm: (field: string, value: any) => void;
+  updateForm: CheckoutFormChangeHandler;
 };
 
 function AddressContent({

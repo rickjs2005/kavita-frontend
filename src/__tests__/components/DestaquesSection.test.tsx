@@ -26,8 +26,8 @@ vi.mock("next/image", () => ({
 
 const apiMock = vi.fn();
 
-vi.mock("@/lib/api", () => ({
-  api: (...args: any[]) => apiMock(...args),
+vi.mock("@/lib/apiClient", () => ({
+  default: { get: (...args: any[]) => apiMock(...args) },
 }));
 
 // ---------- Helpers ----------
