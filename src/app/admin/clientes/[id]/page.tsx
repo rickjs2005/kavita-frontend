@@ -6,30 +6,14 @@ import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import CustomButton from "@/components/buttons/CustomButton";
 import DeleteButton from "@/components/buttons/DeleteButton";
-
-type StatusConta = "ativo" | "bloqueado" | null;
-
-type AdminUserDetail = {
-  id: number;
-  nome: string;
-  email: string;
-  telefone?: string | null;
-  cpf?: string | null;
-  endereco?: string | null;
-  cidade?: string | null;
-  estado?: string | null;
-  cep?: string | null;
-  pais?: string | null;
-  ponto_referencia?: string | null;
-  status_conta?: StatusConta;
-};
+import type { StatusConta, CustomerDetail } from "@/types/admin";
 
 export default function AdminClienteEditPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const userId = Number(params.id);
 
-  const [user, setUser] = useState<AdminUserDetail | null>(null);
+  const [user, setUser] = useState<CustomerDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [blocking, setBlocking] = useState(false);
@@ -41,7 +25,7 @@ export default function AdminClienteEditPage() {
       try {
         setLoading(true);
 
-        const res = await apiClient.get<AdminUserDetail>(
+        const res = await apiClient.get<CustomerDetail>(
           `/api/users/admin/${userId}`,
         );
 
@@ -65,7 +49,7 @@ export default function AdminClienteEditPage() {
   }, [userId, router]);
 
   const handleChange =
-    (field: keyof AdminUserDetail) =>
+    (field: keyof CustomerDetail) =>
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       if (!user) return;
       setUser({ ...user, [field]: e.target.value });

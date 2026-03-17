@@ -7,50 +7,13 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useSearchParams, useRouter } from "next/navigation";
-
-type StatusPagamento = "pendente" | "pago" | "falhou" | "estornado";
-type StatusEntrega =
-  | "em_separacao"
-  | "processando"
-  | "enviado"
-  | "entregue"
-  | "cancelado";
-
-type PedidoItem = {
-  produto: string;
-  quantidade: number;
-  preco_unitario: number;
-};
-
-type Endereco = {
-  nome?: string;
-  cpf?: string;
-  telefone?: string;
-  rua?: string;
-  numero?: string;
-  bairro?: string;
-  cidade?: string;
-  estado?: string;
-  cep?: string;
-  complemento?: string;
-  [key: string]: any;
-};
-
-type PedidoAdmin = {
-  id: number;
-  usuario_id?: number; // 👈 importante pro filtro por cliente
-  usuario: string;
-  email?: string | null;
-  telefone?: string | null;
-  cpf?: string | null;
-  endereco: Endereco | null;
-  forma_pagamento: string;
-  status_pagamento: StatusPagamento;
-  status_entrega: StatusEntrega;
-  total: number;
-  data_pedido: string;
-  itens: PedidoItem[];
-};
+import type {
+  StatusPagamento,
+  StatusEntrega,
+  PedidoItem,
+  PedidoAdmin,
+} from "@/types/admin";
+import type { OrderAddress } from "@/types/address";
 
 const LABEL_STATUS_PAGAMENTO: Record<StatusPagamento, string> = {
   pendente: "Pendente",
@@ -103,7 +66,7 @@ function formatDate(iso: string) {
   });
 }
 
-function resumoEndereco(endereco: Endereco | null) {
+function resumoEndereco(endereco: OrderAddress | null) {
   if (!endereco) return "—";
   const partes = [
     endereco.rua && `${endereco.rua}, ${endereco.numero ?? ""}`.trim(),

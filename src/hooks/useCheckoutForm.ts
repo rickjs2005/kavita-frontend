@@ -1,36 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import type { TipoLocalidade, Endereco } from "@/types/address";
 
-/** -----------------------------
- * Tipos do formulário de checkout
- * ----------------------------- */
-
-export type TipoLocalidade = "URBANA" | "RURAL";
-
-export type Endereco = {
-  cep: string;
-  estado: string;
-  cidade: string;
-
-  // Urbano (no rural podem ficar vazios, validação é “inteligente” no submit)
-  bairro: string;
-  logradouro: string;
-
-  // pode ser "S/N"
-  numero: string;
-
-  // ✅ Separação correta
-  complemento?: string; // apto/bloco/casa
-  referencia?: string; // ponto de referência
-
-  // ✅ Novo: urbano/rural
-  tipo_localidade?: TipoLocalidade;
-
-  // ✅ Novo: rural
-  comunidade?: string;
-  observacoes_acesso?: string;
-};
+export type { TipoLocalidade, Endereco };
 
 export type CheckoutFormData = {
   nome: string;
@@ -42,7 +15,6 @@ export type CheckoutFormData = {
 };
 
 /**
- * ✅ O AddressForm e outros formulários podem importar isso
  * Mesma assinatura do updateForm (evento | "campo" | objeto) + arg2 opcional
  */
 export type CheckoutFormChangeHandler = (
@@ -70,7 +42,6 @@ const INITIAL_STATE: CheckoutFormData = {
     numero: "",
     complemento: "",
     referencia: "",
-
     tipo_localidade: "URBANA",
     comunidade: "",
     observacoes_acesso: "",
@@ -78,13 +49,9 @@ const INITIAL_STATE: CheckoutFormData = {
   formaPagamento: "Pix",
 };
 
-/** -----------------------------
- * Hook
- * ----------------------------- */
 export function useCheckoutForm() {
   const [formData, setFormData] = useState<CheckoutFormData>(INITIAL_STATE);
 
-  /** Atualiza campo aninhado de endereço (estável) */
   const updateEndereco = useCallback((key: keyof Endereco, value: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -93,8 +60,6 @@ export function useCheckoutForm() {
   }, []);
 
   /**
-   * ✅ updateForm ESTÁVEL (useCallback) — resolve “Maximum update depth exceeded”
-   *
    * Aceita:
    *   - updateForm(e)
    *   - updateForm("campo", valor)
@@ -151,7 +116,6 @@ export function useCheckoutForm() {
     [updateEndereco],
   );
 
-  /** Helpers opcionais */
   const setField = useCallback((field: keyof CheckoutFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);

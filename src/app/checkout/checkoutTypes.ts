@@ -1,6 +1,9 @@
 // Shared types for the checkout flow.
 // Imported by useCheckoutState and section components.
 
+import type { SavedAddress } from "@/types/address";
+export type { SavedAddress };
+
 /** Cart item format accepted by the checkout API payload (differs from CartContext's CartItem). */
 export interface CheckoutCartItem {
   id?: number | string;
@@ -38,25 +41,6 @@ export type ShippingQuote = {
   ruleApplied?: ShippingRuleApplied;
 };
 
-/** Saved address from /api/users/addresses */
-export type SavedAddress = {
-  id: number;
-  apelido?: string | null;
-
-  cep?: string | null;
-  endereco?: string | null;
-  numero?: string | null;
-  bairro?: string | null;
-  cidade?: string | null;
-  estado?: string | null;
-  complemento?: string | null;
-  ponto_referencia?: string | null;
-  is_default?: number | 0 | 1;
-
-  tipo_localidade?: "URBANA" | "RURAL" | string | null;
-  comunidade?: string | null;
-  observacoes_acesso?: string | null;
-};
 
 export type EntregaTipo = "ENTREGA" | "RETIRADA";
 

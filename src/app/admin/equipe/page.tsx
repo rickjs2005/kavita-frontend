@@ -9,23 +9,7 @@ import { FiUsers, FiUserCheck, FiClock } from "react-icons/fi";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { isApiError } from "@/lib/errors";
-
-type AdminRow = {
-  id: number;
-  nome: string;
-  email: string;
-  role: AdminRole | string;
-  ativo: 0 | 1;
-  criado_em: string;
-  ultimo_login: string | null;
-};
-
-type RoleRow = {
-  id: number;
-  nome: string;
-  slug: string;
-  descricao?: string | null;
-};
+import type { AdminRow, RoleRow } from "@/types/admin";
 
 function parseAdminDate(dateStr: string | null | undefined): Date | null {
   if (!dateStr) return null;

@@ -8,15 +8,9 @@
  *   if (result) { setRua(result.logradouro); ... }
  */
 import { useState } from "react";
+import type { CepResult } from "@/types/address";
 
-export type CepResult = {
-  cep: string;
-  logradouro: string;
-  bairro: string;
-  localidade: string; // cidade
-  uf: string; // estado (sigla)
-  erro?: boolean;
-};
+export type { CepResult };
 
 export function useCep() {
   const [loading, setLoading] = useState(false);

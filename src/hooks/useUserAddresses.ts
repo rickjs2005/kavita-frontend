@@ -5,35 +5,9 @@ import toast from "react-hot-toast";
 import { apiClient } from "@/lib/apiClient";
 import { ENDPOINTS } from "@/services/api/endpoints";
 
-export type UserAddress = {
-  id: number;
-  apelido: string | null;
-  cep: string;
-  endereco: string;
-  numero: string;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  complemento: string | null;
-  ponto_referencia: string | null;
-  telefone: string | null;
-  // no banco provavelmente é TINYINT(1), então aceitamos 0/1 ou boolean
-  is_default: 0 | 1 | boolean;
-};
+import type { UserAddress, UserAddressPayload } from "@/types/address";
 
-export type UserAddressPayload = {
-  apelido?: string;
-  cep: string;
-  endereco: string;
-  numero: string;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  complemento?: string;
-  ponto_referencia?: string;
-  telefone?: string;
-  is_default?: boolean;
-};
+export type { UserAddress, UserAddressPayload };
 
 type UseUserAddressesResult = {
   addresses: UserAddress[];

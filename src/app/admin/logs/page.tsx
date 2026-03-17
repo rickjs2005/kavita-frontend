@@ -9,18 +9,7 @@ import { FiDatabase, FiUsers, FiClock } from "react-icons/fi";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { isApiError } from "@/lib/errors";
-
-type AdminLog = {
-  id: number;
-  admin_nome: string;
-  admin_email: string;
-  acao: string;
-  entidade: string;
-  entidade_id: number | null;
-  ip?: string | null;
-  user_agent?: string | null;
-  criado_em: string; // string vinda do backend
-};
+import type { AdminLog } from "@/types/admin";
 
 /**
  * Converte a string de data do backend em Date.
@@ -171,9 +160,9 @@ export default function AdminLogsPage() {
       result = result.filter((l) => {
         return (
           l.admin_nome.toLowerCase().includes(term) ||
-          l.admin_email.toLowerCase().includes(term) ||
+          (l.admin_email ?? "").toLowerCase().includes(term) ||
           l.acao.toLowerCase().includes(term) ||
-          l.entidade.toLowerCase().includes(term) ||
+          (l.entidade ?? "").toLowerCase().includes(term) ||
           String(l.entidade_id ?? "").includes(term)
         );
       });

@@ -1,4 +1,7 @@
 import type { AdminRole } from "@/context/AdminAuthContext";
+import type { AdminLog } from "@/types/admin";
+
+export type { AdminLog };
 
 // ---------------------------------------------------------------------------
 // API response shapes
@@ -19,13 +22,6 @@ export type VendaPoint = {
   total: number;
 };
 
-export type AdminLog = {
-  id: number;
-  admin_nome: string;
-  acao: string;
-  detalhes?: string | null;
-  criado_em: string;
-};
 
 export type TopCliente = {
   id: number;

@@ -12,21 +12,9 @@ import apiClient from "@/lib/apiClient";
 import { handleApiError } from "@/lib/handleApiError";
 import { isApiError } from "@/lib/errors";
 import { AdminUserSchema, isSchemaError } from "@/lib/schemas/api";
+import type { AdminRole, AdminUser } from "@/types/admin";
 
-export type AdminRole =
-  | "master"
-  | "gerente"
-  | "suporte"
-  | "leitura"
-  | (string & {});
-
-export type AdminUser = {
-  id: number;
-  nome: string;
-  email: string;
-  role: AdminRole;
-  role_id: number | null;
-};
+export type { AdminRole, AdminUser };
 
 type AdminAuthContextValue = {
   // Server-truth (novo padrão)

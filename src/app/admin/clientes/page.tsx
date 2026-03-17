@@ -8,17 +8,7 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
-
-type AdminUser = {
-  id: number;
-  nome: string;
-  email: string;
-  telefone?: string | null;
-  cpf?: string | null;
-  cidade?: string | null;
-  estado?: string | null;
-  status_conta?: "ativo" | "bloqueado" | null;
-};
+import type { CustomerRow } from "@/types/admin";
 
 function padId(id: number) {
   return `#${String(id).padStart(4, "0")}`;
@@ -50,14 +40,14 @@ function formatCpf(v?: string | null) {
 
 export default function AdminClientesPage() {
   const router = useRouter();
-  const [list, setList] = useState<AdminUser[]>([]);
+  const [list, setList] = useState<CustomerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     async function load() {
       try {
-        const data = await apiClient.get<AdminUser[]>("/api/admin/users");
+        const data = await apiClient.get<CustomerRow[]>("/api/admin/users");
 
         setList(data ?? []);
       } catch (err: any) {
