@@ -65,19 +65,36 @@ const nextConfig: NextConfig = {
           ? `${envPattern.protocol}://${envPattern.hostname}${envPattern.port ? `:${envPattern.port}` : ""}`
           : "");
 
-    // NOTE: 'unsafe-inline' é exigido pelo Next.js para CSS-in-JS e injeção de styles.
-    // 'unsafe-eval' é exigido pelo Next.js em dev mode e alguns internals do React.
-    // Em produção, 'unsafe-eval' é removido — não é necessário para o bundle de produção.
-    // Migração futura: nonce-based CSP via middleware para eliminar 'unsafe-inline'.
+    // ---------------------------------------------------------------------------
+    // Por que 'unsafe-inline' ainda é necessário:
+    //
+    // script-src — Next.js injeta __NEXT_DATA__, manifests de chunk e o payload RSC
+    //   como tags <script> inline. Remover requer nonce-based CSP:
+    //   1. Criar middleware.ts que gera crypto.randomUUID() por request
+    //   2. Setar CSP com 'nonce-{value}' em vez de 'unsafe-inline'
+    //   3. Ler o nonce via headers() no root layout (layout.tsx é async RSC — viável)
+    //   4. O admin/layout.tsx é "use client" — seria necessário refatorá-lo para RSC
+    //      antes de poder usar nonce no admin (bloqueador atual).
+    //
+    // style-src — react-hot-toast e recharts tooltips aplicam estilos via style=""
+    //   diretamente em elementos DOM. Remover 'unsafe-inline' de style-src quebraria
+    //   os toasts (posicionamento) e os tooltips dos gráficos de relatórios.
+    //   Alternativa futura: 'unsafe-hashes' com SHA256 dos estilos inline estáticos,
+    //   mas estilos dinâmicos (toast position) não têm hash previsível.
+    //
+    // 'unsafe-eval' — necessário apenas no Next.js em modo dev (hot reload / React DevTools).
+    //   Removido do build de produção.
+    // ---------------------------------------------------------------------------
+
     const scriptSrc = isDev
       ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
       : "script-src 'self' 'unsafe-inline'";
 
+    // CSP aplicada ao painel admin — mais restritiva (sem CDNs externas, frame-ancestors none).
     const adminCsp = [
       "default-src 'self'",
       scriptSrc,
-      "style-src 'self' 'unsafe-inline'",
-      // Removido https://via.placeholder.com — usar placeholder local em /public/
+      "style-src 'self' 'unsafe-inline'", // ver nota acima sobre unsafe-inline em style-src
       `img-src 'self' data: blob: ${apiHosts}`,
       "font-src 'self' data:",
       `connect-src 'self' ${apiHosts}`,
@@ -85,30 +102,42 @@ const nextConfig: NextConfig = {
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",
-      // Força upgrade de recursos HTTP para HTTPS em produção
       ...(!isDev ? ["upgrade-insecure-requests"] : []),
     ]
-      .filter((d) => !d.trim().endsWith(" ")) // remove diretivas com hosts vazios
+      .filter((d) => !d.trim().endsWith(" "))
       .join("; ");
 
-    // CSP parcial para rotas públicas.
-    // Não inclui script-src/style-src completos para não bloquear recursos de terceiros.
-    // Inclui apenas as diretivas que protegem sem causar falsos positivos:
-    //   - form-action: impede que formulários enviem dados para domínios externos (phishing)
-    //   - object-src: bloqueia Flash/Java/plugins legados
-    //   - frame-ancestors: reforça X-Frame-Options via CSP (melhor suporte em browsers modernos)
-    const publicCspHeaders = [
-      { key: "Content-Security-Policy", value: "form-action 'self'; object-src 'none'; frame-ancestors 'self'" },
-    ];
+    // CSP aplicada às rotas públicas.
+    // Antes desta revisão não havia script-src nas rotas públicas, o que deixava
+    // o comportamento do browser sem restrição (pior que ter unsafe-inline explícito).
+    // Agora todas as rotas têm um script-src explícito — mesma postura do admin,
+    // mas com frame-ancestors 'self' (páginas públicas podem ser embeddadas no próprio site).
+    const publicCsp = [
+      "default-src 'self'",
+      scriptSrc,
+      "style-src 'self' 'unsafe-inline'",
+      `img-src 'self' data: blob: ${apiHosts}`,
+      "font-src 'self' data:",
+      `connect-src 'self' ${apiHosts}`,
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+      ...(!isDev ? ["upgrade-insecure-requests"] : []),
+    ]
+      .filter((d) => !d.trim().endsWith(" "))
+      .join("; ");
 
-    // Headers básicos aplicados a TODAS as rotas (incluindo públicas).
+    // Headers básicos aplicados a TODAS as rotas.
     // Protegem contra clickjacking, MIME sniffing e information leakage.
     const baseHeaders = [
       { key: "X-Frame-Options", value: "SAMEORIGIN" },
       { key: "X-Content-Type-Options", value: "nosniff" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "X-DNS-Prefetch-Control", value: "off" },
-      ...publicCspHeaders,
+      // camera/microphone/geolocation não são usados pela loja pública
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+      { key: "Content-Security-Policy", value: publicCsp },
     ];
 
     // Em produção, adiciona HSTS (não em dev pois não há HTTPS local).
@@ -120,25 +149,21 @@ const nextConfig: NextConfig = {
     }
 
     return [
-      // Cabeçalhos básicos para todas as rotas
+      // Cabeçalhos para todas as rotas públicas
       {
         source: "/:path*",
         headers: baseHeaders,
       },
-      // Cabeçalhos endurecidos para o painel admin (inclui CSP completa)
+      // Cabeçalhos endurecidos para o painel admin (sobrescreve os públicos)
       {
         source: "/admin/:path*",
         headers: [
-          // X-Frame-Options mais restritivo para o admin
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
-          { key: "Content-Security-Policy", value: adminCsp },
           { key: "X-DNS-Prefetch-Control", value: "off" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Content-Security-Policy", value: adminCsp },
           ...(!isDev
             ? [
                 {
