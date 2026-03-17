@@ -89,6 +89,6 @@ export function useUserAddresses(): UseUserAddressesResult {
     createAddress,
     updateAddress,
     deleteAddress,
-    reload: () => mutate(),
+    reload: async () => { await mutate(); },
   };
 }
