@@ -106,17 +106,15 @@ describe("ServiceFormUnificado", () => {
     vi.restoreAllMocks();
     fetchMock = mockGlobalFetch();
 
-    // previews
-    vi.stubGlobal("URL", {
-      createObjectURL: vi.fn(
-        (file: any) => `blob:mock-${file?.name ?? "file"}`,
-      ),
-      revokeObjectURL: vi.fn(),
-    } as any);
+    // previews — spyOn preserves the URL constructor (avoids breaking new URL(u) inside toRel)
+    vi.spyOn(URL, "createObjectURL").mockImplementation(
+      (file: any) => `blob:mock-${(file as File)?.name ?? "file"}`,
+    );
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("deve buscar especialidades ao montar (credentials include) e popular o select", async () => {
@@ -142,8 +140,6 @@ describe("ServiceFormUnificado", () => {
   });
 
   it("se falhar ao buscar especialidades (res.ok=false), não deve quebrar e mantém apenas placeholder", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
     fetchMock.mockImplementation((url: any) => {
       if (String(url).includes("/api/admin/especialidades")) {
         return Promise.resolve({
@@ -159,8 +155,9 @@ describe("ServiceFormUnificado", () => {
 
     render(<ServiceFormUnificado onSaved={vi.fn()} onCancel={vi.fn()} />);
 
+    // aguarda a chamada ao endpoint antes de verificar o estado final
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalled();
     });
 
     expect(

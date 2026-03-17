@@ -19,6 +19,7 @@ interface Props {
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { isApiError } from "@/lib/errors";
 
 const API_SERVICOS = "/api/admin/servicos";
 const API_ESPECIALIDADES = "/api/admin/especialidades";
@@ -257,7 +258,15 @@ export default function ServiceFormUnificado({
       onCancel();
     } catch (err: unknown) {
       const ui = formatApiError(err, "Erro ao salvar serviço.");
-      setMsg({ type: "error", text: ui.message });
+      const isAuthErr = isApiError(err) && (err.status === 401 || err.status === 403);
+      // Usa mensagem do backend quando é específica (ex: RBAC); caso contrário exibe genérica.
+      const errMsg =
+        isAuthErr && err.message && err.message !== `HTTP ${err.status}`
+          ? err.message
+          : isAuthErr
+            ? "Você não tem permissão para salvar serviço. Faça login novamente."
+            : ui.message;
+      setMsg({ type: "error", text: errMsg });
     } finally {
       setLoading(false);
     }

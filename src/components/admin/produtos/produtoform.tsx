@@ -268,11 +268,20 @@ export default function ProdutoForm({
       onLimparEdicao?.();
     } catch (err: unknown) {
       const ui = formatApiError(err, "Erro ao salvar produto.");
-      const msg =
-        isApiError(err) && (err.status === 401 || err.status === 403)
-          ? "Você não tem permissão para salvar este produto. Faça login novamente."
-          : ui.message;
-      setMsg({ type: "error", text: msg });
+      const isAuthErr = isApiError(err) && (err.status === 401 || err.status === 403);
+      // Usa mensagem do backend quando é específica (ex: RBAC); caso contrário exibe genérica.
+      let errMsg: string;
+      if (isAuthErr && err.message && err.message !== `HTTP ${err.status}`) {
+        errMsg = err.message;
+      } else if (isAuthErr) {
+        errMsg = "Você não tem permissão para salvar este produto. Faça login novamente.";
+      } else if (ui.status) {
+        const action = isEditing ? "atualizar" : "adicionar";
+        errMsg = `Falha ao ${action} (${ui.status}). ${ui.message}`;
+      } else {
+        errMsg = ui.message;
+      }
+      setMsg({ type: "error", text: errMsg });
     } finally {
       setLoading(false);
     }

@@ -283,7 +283,8 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
     const keepImagesRaw = fd.get("keepImages") as string;
     const keepImages = JSON.parse(keepImagesRaw);
     expect(Array.isArray(keepImages)).toBe(true);
-    expect(keepImages).toContain("/img/1.jpg");
+    // absUrl("/img/1.jpg") → "http://localhost:5000/uploads/img/1.jpg" → toRel → "/uploads/img/1.jpg"
+    expect(keepImages).toContain("/uploads/img/1.jpg");
 
     expect(
       await screen.findByText("Produto atualizado com sucesso."),
@@ -336,23 +337,29 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
       category_id: 2,
     };
 
-    fetchMock.mockResolvedValueOnce(
-      makeFetchResponse({
-        ok: true,
-        status: 200,
-        contentType: "application/json",
-        json: { token: "test-token" },
-      }),
-    );
-
-    fetchMock.mockResolvedValueOnce(
-      makeFetchResponse({
-        ok: false,
-        status: 500,
-        contentType: "text/plain",
-        text: "Explodiu no servidor",
-      }),
-    );
+    // mockImplementation por URL para ser independente do cache de CSRF do módulo:
+    // se o token já estiver cacheado de um teste anterior, apenas 1 fetch ocorre (PUT);
+    // se não estiver, 2 fetches ocorrem (CSRF + PUT). Ambos os cenários são cobertos.
+    fetchMock.mockImplementation((url: string) => {
+      if (String(url).includes("/api/csrf-token")) {
+        return Promise.resolve(
+          makeFetchResponse({
+            ok: true,
+            status: 200,
+            contentType: "application/json",
+            json: { token: "test-token" },
+          }),
+        );
+      }
+      return Promise.resolve(
+        makeFetchResponse({
+          ok: false,
+          status: 500,
+          contentType: "text/plain",
+          text: "Explodiu no servidor",
+        }),
+      );
+    });
 
     render(
       <ProdutoForm
@@ -368,7 +375,10 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     await submitForm();
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const calledUrls = fetchMock.mock.calls.map(([u]: any) => String(u));
+    expect(
+      calledUrls.some((u) => u.includes("/api/admin/produtos/56")),
+    ).toBe(true);
     expect(
       await screen.findByText((t) =>
         t.includes("Falha ao atualizar") && t.includes("500"),
