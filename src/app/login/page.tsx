@@ -26,7 +26,7 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
     setError,
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  } = useForm<FormData>({ resolver: zodResolver(schema), mode: "onBlur" });
 
   const onSubmit = async (data: FormData) => {
     setServerMsg(null);
@@ -85,18 +85,21 @@ export default function LoginPage() {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-white/90 mb-1">
+            <label htmlFor="login-email" className="block text-sm font-medium text-white/90 mb-1">
               Email
             </label>
             <input
+              id="login-email"
               type="email"
               {...register("email")}
               placeholder="seu@email.com"
-              className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
+              aria-invalid={errors.email ? true : undefined}
+              aria-describedby={errors.email ? "login-email-error" : undefined}
+              className={`w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 transition ${errors.email ? "ring-red-400" : "ring-transparent focus:ring-[#EC5B20]"}`}
               autoComplete="email"
             />
             {errors.email && (
-              <p className="mt-1 text-xs text-red-200">
+              <p id="login-email-error" role="alert" className="mt-1 text-xs text-red-200">
                 {errors.email.message}
               </p>
             )}
@@ -104,21 +107,24 @@ export default function LoginPage() {
 
           {/* Senha */}
           <div>
-            <label className="block text-sm font-medium text-white/90 mb-1">
+            <label htmlFor="login-senha" className="block text-sm font-medium text-white/90 mb-1">
               Senha
             </label>
             <div className="relative">
               <input
+                id="login-senha"
                 type={showPw ? "text" : "password"}
                 {...register("senha")}
                 placeholder="••••••••"
-                className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 pr-11 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
+                aria-invalid={errors.senha ? true : undefined}
+                aria-describedby={errors.senha ? "login-senha-error" : undefined}
+                className={`w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 pr-11 outline-none ring-2 transition ${errors.senha ? "ring-red-400" : "ring-transparent focus:ring-[#EC5B20]"}`}
                 autoComplete="current-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPw((v) => !v)}
-                className="absolute inset-y-0 right-0 px-3 text-[#0f5e63] hover:text-[#EC5B20]"
+                className="absolute inset-y-0 right-0 px-3 text-[#0f5e63] hover:text-[#EC5B20] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC5B20] rounded"
                 aria-label={showPw ? "Ocultar senha" : "Mostrar senha"}
                 title={showPw ? "Ocultar senha" : "Mostrar senha"}
               >
@@ -126,7 +132,7 @@ export default function LoginPage() {
               </button>
             </div>
             {errors.senha && (
-              <p className="mt-1 text-xs text-red-200">
+              <p id="login-senha-error" role="alert" className="mt-1 text-xs text-red-200">
                 {errors.senha.message}
               </p>
             )}

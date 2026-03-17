@@ -7,17 +7,29 @@ import CloseButton from "@/components/buttons/CloseButton";
 
 type Toast = { type: "success" | "error"; message: string };
 
+function validateEmail(value: string): string | null {
+  if (!value.trim()) return "Informe seu e-mail.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()))
+    return "Informe um e-mail válido.";
+  return null;
+}
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const [loading, setLoading] = useState(false);
 
+  function handleBlur() {
+    setEmailError(validateEmail(email));
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) {
-      setToast({ type: "error", message: "Informe um e-mail válido." });
-      return;
-    }
+
+    const err = validateEmail(email);
+    setEmailError(err);
+    if (err) return;
 
     setLoading(true);
     setToast(null);
@@ -31,6 +43,7 @@ export default function ForgotPasswordPage() {
           "Se este e-mail existir em nossa base, você receberá um link para redefinir a senha.",
       });
       setEmail("");
+      setEmailError(null);
     } catch (err: any) {
       setToast({
         type: "error",
@@ -76,18 +89,28 @@ export default function ForgotPasswordPage() {
 
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="text-left">
-            <label htmlFor="email" className="block text-sm mb-1 text-white/90">
+            <label htmlFor="forgot-email" className="block text-sm mb-1 text-white/90">
               E-mail
             </label>
             <input
-              id="email"
+              id="forgot-email"
               type="email"
-              required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError(validateEmail(e.target.value));
+              }}
+              onBlur={handleBlur}
               placeholder="seu@email.com"
-              className="w-full rounded-md border border-white/30 bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#359293]"
+              aria-invalid={emailError ? true : undefined}
+              aria-describedby={emailError ? "forgot-email-error" : undefined}
+              className={`w-full rounded-md border bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#359293] transition ${emailError ? "border-red-400" : "border-white/30"}`}
             />
+            {emailError && (
+              <p id="forgot-email-error" role="alert" className="mt-1 text-xs text-red-300">
+                {emailError}
+              </p>
+            )}
           </div>
 
           <CustomButton
@@ -107,7 +130,7 @@ export default function ForgotPasswordPage() {
                 ? "bg-green-500/20 text-green-100"
                 : "bg-red-500/20 text-red-100"
             }`}
-            role="status"
+            role={toast.type === "error" ? "alert" : "status"}
           >
             {toast.message}
           </div>

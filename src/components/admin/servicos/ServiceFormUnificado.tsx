@@ -62,6 +62,7 @@ export default function ServiceFormUnificado({
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isEditing = !!servicoEditado?.id;
@@ -124,6 +125,7 @@ export default function ServiceFormUnificado({
       descricao: "",
       especialidade_id: "",
     });
+    setFieldErrors({});
     setExistingImgs([]);
     setRemoveExisting(new Set());
     setNewFiles([]);
@@ -131,10 +133,18 @@ export default function ServiceFormUnificado({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function validate(): string | null {
-    if (!form.nome.trim()) return "Informe o nome do colaborador.";
-    if (!form.whatsapp.trim()) return "Informe o WhatsApp.";
-    if (!form.especialidade_id) return "Selecione uma especialidade.";
+  function validate(): Record<string, string> {
+    const errs: Record<string, string> = {};
+    if (!form.nome.trim()) errs.nome = "Informe o nome do colaborador.";
+    if (!form.whatsapp.trim()) errs.whatsapp = "Informe o WhatsApp.";
+    if (!form.especialidade_id) errs.especialidade_id = "Selecione uma especialidade.";
+    return errs;
+  }
+
+  function validateField(name: string, value: string) {
+    if (name === "nome" && !value.trim()) return "Informe o nome do colaborador.";
+    if (name === "whatsapp" && !value.trim()) return "Informe o WhatsApp.";
+    if (name === "especialidade_id" && !value) return "Selecione uma especialidade.";
     return null;
   }
 
@@ -147,6 +157,31 @@ export default function ServiceFormUnificado({
   ) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // clear inline error on change if it was already shown
+    if (fieldErrors[name]) {
+      const err = validateField(name, value);
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        if (err) next[name] = err;
+        else delete next[name];
+        return next;
+      });
+    }
+  }
+
+  function handleBlur(
+    e:
+      | React.FocusEvent<HTMLInputElement>
+      | React.FocusEvent<HTMLSelectElement>,
+  ) {
+    const { name, value } = e.target;
+    const err = validateField(name, value);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (err) next[name] = err;
+      else delete next[name];
+      return next;
+    });
   }
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -174,11 +209,12 @@ export default function ServiceFormUnificado({
     e.preventDefault();
     setMsg(null);
 
-    const err = validate();
-    if (err) {
-      setMsg({ type: "error", text: err });
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
       return;
     }
+    setFieldErrors({});
 
     const fd = new FormData();
     fd.append("nome", form.nome.trim());
@@ -268,8 +304,9 @@ export default function ServiceFormUnificado({
             name="nome"
             value={form.nome}
             onChange={handleChange}
+            onBlur={handleBlur}
             placeholder="Nome completo"
-            required
+            error={fieldErrors.nome}
           />
 
           {/* Cargo */}
@@ -287,23 +324,31 @@ export default function ServiceFormUnificado({
             name="whatsapp"
             value={form.whatsapp}
             onChange={handleChange}
+            onBlur={handleBlur}
             placeholder="(00) 90000-0000"
             mask="telefone"
-            required
+            error={fieldErrors.whatsapp}
           />
         </div>
 
         {/* Coluna direita */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs">
+            <label
+              htmlFor="service-especialidade"
+              className="text-[11px] font-semibold uppercase tracking-wide text-gray-700 sm:text-xs"
+            >
               Especialidade
             </label>
             <select
+              id="service-especialidade"
               name="especialidade_id"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:border-[#2F7E7F] focus:ring-2 focus:ring-[#2F7E7F]/20"
+              className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:ring-2 ${fieldErrors.especialidade_id ? "border-red-400 focus:border-red-400 focus:ring-red-500" : "border-gray-300 focus:border-[#2F7E7F] focus:ring-[#2F7E7F]/20"}`}
               value={form.especialidade_id}
               onChange={handleChange}
+              onBlur={handleBlur}
+              aria-invalid={fieldErrors.especialidade_id ? true : undefined}
+              aria-describedby={fieldErrors.especialidade_id ? "service-especialidade-error" : undefined}
             >
               <option value="">Selecione a especialidade…</option>
               {especialidades.map((e) => (
@@ -312,6 +357,11 @@ export default function ServiceFormUnificado({
                 </option>
               ))}
             </select>
+            {fieldErrors.especialidade_id && (
+              <span id="service-especialidade-error" role="alert" className="text-xs text-red-500">
+                {fieldErrors.especialidade_id}
+              </span>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -413,6 +463,7 @@ export default function ServiceFormUnificado({
 
       {msg && (
         <div
+          role={msg.type === "error" ? "alert" : "status"}
           className={`rounded-lg px-3 py-2 text-sm ${
             msg.type === "success"
               ? "bg-green-50 text-green-700"

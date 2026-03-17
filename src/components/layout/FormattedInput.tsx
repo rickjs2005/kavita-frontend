@@ -57,6 +57,8 @@ export interface FormattedInputProps extends Omit<
   value: string;
   mask?: MaskType;
   helperText?: string;
+  /** Mensagem de erro inline — exibe borda vermelha e texto abaixo do input. */
+  error?: string;
   variant?: Variant;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -67,6 +69,7 @@ export const FormattedInput: React.FC<FormattedInputProps> = ({
   value,
   mask = "none",
   helperText,
+  error,
   id,
   variant = "light",
   onChange,
@@ -99,15 +102,27 @@ export const FormattedInput: React.FC<FormattedInputProps> = ({
       ? "text-xs font-medium text-slate-200"
       : "text-sm font-medium text-gray-700";
 
-  const inputClass =
+  const baseInputClass =
     variant === "dark"
-      ? "w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2.5 text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
-      : "w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition";
+      ? "w-full rounded-lg border bg-slate-900/80 px-3 py-2.5 text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-2 transition"
+      : "w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border rounded-xl min-h-[44px] focus:outline-none focus:ring-2 transition";
+
+  const borderClass = error
+    ? variant === "dark"
+      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+      : "border-red-400 focus:ring-red-500"
+    : variant === "dark"
+      ? "border-slate-700 focus:border-emerald-500 focus:ring-emerald-500"
+      : "border-gray-300 focus:ring-[#EC5B20]";
+
+  const inputClass = `${baseInputClass} ${borderClass}`;
 
   const helperClass =
     variant === "dark" ? "text-[11px] text-slate-500" : "text-xs text-gray-500";
 
   const helperId = helperText ? `${inputId}-helper` : undefined;
+  const errorId = error ? `${inputId}-error` : undefined;
+  const describedBy = [helperId, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -121,13 +136,20 @@ export const FormattedInput: React.FC<FormattedInputProps> = ({
         value={value}
         onChange={handleChange}
         className={inputClass}
-        aria-describedby={helperId}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy}
         {...rest}
       />
 
       {helperText && (
         <span id={helperId} className={helperClass}>
           {helperText}
+        </span>
+      )}
+
+      {error && (
+        <span id={errorId} role="alert" className="text-xs text-red-500">
+          {error}
         </span>
       )}
     </div>

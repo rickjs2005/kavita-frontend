@@ -8,6 +8,18 @@ import CloseButton from "@/components/buttons/CloseButton";
 
 type Toast = { type: "success" | "error"; message: string };
 
+function validatePassword(value: string): string | null {
+  if (!value) return "Informe a nova senha.";
+  if (value.length < 6) return "A senha deve ter pelo menos 6 caracteres.";
+  return null;
+}
+
+function validateConfirm(password: string, confirm: string): string | null {
+  if (!confirm) return "Confirme a nova senha.";
+  if (confirm !== password) return "As senhas não conferem.";
+  return null;
+}
+
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={<ResetPasswordFallback />}>
@@ -23,6 +35,8 @@ function ResetPasswordContent() {
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -40,17 +54,11 @@ function ResetPasswordContent() {
     e.preventDefault();
     if (!token) return;
 
-    if (!password || password.length < 6) {
-      setToast({
-        type: "error",
-        message: "A nova senha deve ter pelo menos 6 caracteres.",
-      });
-      return;
-    }
-    if (password !== confirm) {
-      setToast({ type: "error", message: "As senhas não conferem." });
-      return;
-    }
+    const pwErr = validatePassword(password);
+    const cfErr = validateConfirm(password, confirm);
+    setPasswordError(pwErr);
+    setConfirmError(cfErr);
+    if (pwErr || cfErr) return;
 
     setLoading(true);
     setToast(null);
@@ -80,7 +88,7 @@ function ResetPasswordContent() {
     <main
       className="relative min-h-screen flex items-center justify-center bg-cover bg-center"
       style={{
-        backgroundImage: "url('/images/cafe.png')", // mesma imagem do forgot
+        backgroundImage: "url('/images/cafe.png')",
       }}
     >
       {/* camada escura por cima da imagem */}
@@ -110,39 +118,60 @@ function ResetPasswordContent() {
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="text-left">
             <label
-              htmlFor="password"
+              htmlFor="reset-password"
               className="block text-sm mb-1 text-white/90"
             >
               Nova senha
             </label>
             <input
-              id="password"
+              id="reset-password"
               type="password"
-              required
-              minLength={6}
               placeholder="••••••••"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-white/30 bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#359293]"
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (passwordError) setPasswordError(validatePassword(e.target.value));
+                // re-validate confirm when password changes
+                if (confirmError) setConfirmError(validateConfirm(e.target.value, confirm));
+              }}
+              onBlur={() => setPasswordError(validatePassword(password))}
+              aria-invalid={passwordError ? true : undefined}
+              aria-describedby={passwordError ? "reset-password-error" : undefined}
+              className={`w-full rounded-md border bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#359293] transition ${passwordError ? "border-red-400" : "border-white/30"}`}
             />
+            {passwordError && (
+              <p id="reset-password-error" role="alert" className="mt-1 text-xs text-red-300">
+                {passwordError}
+              </p>
+            )}
           </div>
 
           <div className="text-left">
             <label
-              htmlFor="confirm"
+              htmlFor="reset-confirm"
               className="block text-sm mb-1 text-white/90"
             >
               Confirmar nova senha
             </label>
             <input
-              id="confirm"
+              id="reset-confirm"
               type="password"
-              required
               placeholder="••••••••"
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className="w-full rounded-md border border-white/30 bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#359293]"
+              onChange={(e) => {
+                setConfirm(e.target.value);
+                if (confirmError) setConfirmError(validateConfirm(password, e.target.value));
+              }}
+              onBlur={() => setConfirmError(validateConfirm(password, confirm))}
+              aria-invalid={confirmError ? true : undefined}
+              aria-describedby={confirmError ? "reset-confirm-error" : undefined}
+              className={`w-full rounded-md border bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#359293] transition ${confirmError ? "border-red-400" : "border-white/30"}`}
             />
+            {confirmError && (
+              <p id="reset-confirm-error" role="alert" className="mt-1 text-xs text-red-300">
+                {confirmError}
+              </p>
+            )}
           </div>
 
           <CustomButton
@@ -162,7 +191,7 @@ function ResetPasswordContent() {
                 ? "bg-green-500/20 text-green-100"
                 : "bg-red-500/20 text-red-100"
             }`}
-            role="status"
+            role={toast.type === "error" ? "alert" : "status"}
           >
             {toast.message}
           </div>
