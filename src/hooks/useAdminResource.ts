@@ -18,8 +18,9 @@
  *     useAdminResource<Coupon>({ endpoint: "/api/admin/cupons" });
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { useAdminAuth } from "@/context/AdminAuthContext";
@@ -135,19 +136,7 @@ export function useAdminResource<T>(
   const { logout } = useAdminAuth();
   const router = useRouter();
 
-  const [items, setItems] = useState<T[]>([]);
-  const [loading, setLoading] = useState(fetchOnMount);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Prevent state updates after unmount
-  const mountedRef = useRef(true);
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
 
   // ---------------------------------------------------------------------------
   // Auth error handler — stable reference
@@ -159,36 +148,37 @@ export function useAdminResource<T>(
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Fetch
+  // Fetch via SWR
   // ---------------------------------------------------------------------------
+  const {
+    data: rawData,
+    error: swrError,
+    isLoading,
+    mutate,
+  } = useSWR(
+    fetchOnMount ? endpoint : null,
+    (url) => apiClient.get<unknown>(url),
+    {
+      revalidateOnFocus: false,
+      onError(err) {
+        if (isApiError(err) && (err.status === 401 || err.status === 403)) {
+          handleUnauthorized();
+          return;
+        }
+        const { message } = formatApiError(err, "Erro ao carregar dados.");
+        toast.error(message);
+      },
+    },
+  );
+
+  const items = rawData !== undefined ? select(rawData) : [];
+  const error = swrError
+    ? (formatApiError(swrError, "Erro ao carregar dados.").message)
+    : null;
+
   const refetch = useCallback(async () => {
-    if (mountedRef.current) {
-      setLoading(true);
-      setError(null);
-    }
-
-    try {
-      const raw = await apiClient.get<unknown>(endpoint);
-      if (!mountedRef.current) return;
-      setItems(select(raw));
-    } catch (err: unknown) {
-      if (!mountedRef.current) return;
-      if (isApiError(err) && (err.status === 401 || err.status === 403)) {
-        handleUnauthorized();
-        return;
-      }
-      const { message } = formatApiError(err, "Erro ao carregar dados.");
-      setError(message);
-      toast.error(message);
-    } finally {
-      if (mountedRef.current) setLoading(false);
-    }
-  }, [endpoint, select, handleUnauthorized]);
-
-  useEffect(() => {
-    if (fetchOnMount) refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    await mutate();
+  }, [mutate]);
 
   // ---------------------------------------------------------------------------
   // Create
@@ -199,7 +189,7 @@ export function useAdminResource<T>(
       try {
         const created = await apiClient.post<T>(endpoint, payload);
         if (msgs.created !== false) toast.success(msgs.created as string);
-        await refetch();
+        await mutate();
         return created;
       } catch (err: unknown) {
         if (isApiError(err) && (err.status === 401 || err.status === 403)) {
@@ -209,10 +199,10 @@ export function useAdminResource<T>(
         toast.error(message);
         throw err;
       } finally {
-        if (mountedRef.current) setSaving(false);
+        setSaving(false);
       }
     },
-    [endpoint, msgs, refetch, handleUnauthorized],
+    [endpoint, msgs, mutate, handleUnauthorized],
   );
 
   // ---------------------------------------------------------------------------
@@ -224,7 +214,7 @@ export function useAdminResource<T>(
       try {
         const updated = await apiClient.put<T>(`${endpoint}/${id}`, payload);
         if (msgs.updated !== false) toast.success(msgs.updated as string);
-        await refetch();
+        await mutate();
         return updated;
       } catch (err: unknown) {
         if (isApiError(err) && (err.status === 401 || err.status === 403)) {
@@ -234,10 +224,10 @@ export function useAdminResource<T>(
         toast.error(message);
         throw err;
       } finally {
-        if (mountedRef.current) setSaving(false);
+        setSaving(false);
       }
     },
-    [endpoint, msgs, refetch, handleUnauthorized],
+    [endpoint, msgs, mutate, handleUnauthorized],
   );
 
   // ---------------------------------------------------------------------------
@@ -248,7 +238,7 @@ export function useAdminResource<T>(
       try {
         await apiClient.del(`${endpoint}/${id}`);
         if (msgs.deleted !== false) toast.success(msgs.deleted as string);
-        await refetch();
+        await mutate();
       } catch (err: unknown) {
         if (isApiError(err) && (err.status === 401 || err.status === 403)) {
           handleUnauthorized();
@@ -259,8 +249,8 @@ export function useAdminResource<T>(
         throw err;
       }
     },
-    [endpoint, msgs, refetch, handleUnauthorized],
+    [endpoint, msgs, mutate, handleUnauthorized],
   );
 
-  return { items, loading, saving, error, refetch, create, update, remove };
+  return { items, loading: isLoading, saving, error, refetch, create, update, remove };
 }

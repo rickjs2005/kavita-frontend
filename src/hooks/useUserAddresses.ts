@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import useSWR from "swr";
 import toast from "react-hot-toast";
 import { apiClient } from "@/lib/apiClient";
 import { ENDPOINTS } from "@/services/api/endpoints";
@@ -18,86 +19,76 @@ type UseUserAddressesResult = {
   reload: () => Promise<void>;
 };
 
-export function useUserAddresses(): UseUserAddressesResult {
-  const [addresses, setAddresses] = useState<UserAddress[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+const fetcher = (url: string) => apiClient.get<UserAddress[]>(url);
 
-  const fetchAddresses = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await apiClient.get<UserAddress[]>(
-        ENDPOINTS.USERS.ADDRESSES,
-      );
-      setAddresses(data || []);
-    } catch (err: any) {
-      console.error("[useUserAddresses] erro ao carregar endereços:", err);
+export function useUserAddresses(): UseUserAddressesResult {
+  const { data, isLoading, mutate } = useSWR(ENDPOINTS.USERS.ADDRESSES, fetcher, {
+    revalidateOnFocus: false,
+    onError(err: any) {
       const msg = err?.message || "Não foi possível carregar seus endereços.";
       toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+  });
 
-  useEffect(() => {
-    fetchAddresses();
-  }, [fetchAddresses]);
+  const addresses = data || [];
 
-  const createAddress = useCallback(async (payload: UserAddressPayload) => {
-    try {
-      const created = await apiClient.post<UserAddress>(
-        ENDPOINTS.USERS.ADDRESSES,
-        payload,
-      );
-      setAddresses((prev) => [...prev, created]);
-      toast.success("Endereço salvo com sucesso! ✅");
-    } catch (err: any) {
-      console.error("[useUserAddresses] erro ao criar endereço:", err);
-      const msg = err?.message || "Não foi possível salvar o endereço.";
-      toast.error(msg);
-      throw err;
-    }
-  }, []);
+  const createAddress = useCallback(
+    async (payload: UserAddressPayload) => {
+      try {
+        const created = await apiClient.post<UserAddress>(ENDPOINTS.USERS.ADDRESSES, payload);
+        await mutate([...addresses, created], false);
+        toast.success("Endereço salvo com sucesso! ✅");
+      } catch (err: any) {
+        const msg = err?.message || "Não foi possível salvar o endereço.";
+        toast.error(msg);
+        throw err;
+      }
+    },
+    [addresses, mutate],
+  );
 
   const updateAddress = useCallback(
     async (id: number, payload: UserAddressPayload) => {
       try {
-        const updated = await apiClient.put<UserAddress>(
-          ENDPOINTS.USERS.ADDRESS(id),
-          payload,
-        );
-        setAddresses((prev) =>
-          prev.map((addr) => (addr.id === id ? updated : addr)),
+        const updated = await apiClient.put<UserAddress>(ENDPOINTS.USERS.ADDRESS(id), payload);
+        await mutate(
+          addresses.map((addr) => (addr.id === id ? updated : addr)),
+          false,
         );
         toast.success("Endereço atualizado com sucesso! ✅");
       } catch (err: any) {
-        console.error("[useUserAddresses] erro ao atualizar endereço:", err);
         const msg = err?.message || "Não foi possível atualizar o endereço.";
         toast.error(msg);
         throw err;
       }
     },
-    [],
+    [addresses, mutate],
   );
 
-  const deleteAddress = useCallback(async (id: number) => {
-    try {
-      await apiClient.del(ENDPOINTS.USERS.ADDRESS(id));
-      setAddresses((prev) => prev.filter((addr) => addr.id !== id));
-      toast.success("Endereço excluído com sucesso.");
-    } catch (err: any) {
-      console.error("[useUserAddresses] erro ao excluir endereço:", err);
-      const msg = err?.message || "Não foi possível excluir o endereço.";
-      toast.error(msg);
-      throw err;
-    }
-  }, []);
+  const deleteAddress = useCallback(
+    async (id: number) => {
+      try {
+        await apiClient.del(ENDPOINTS.USERS.ADDRESS(id));
+        await mutate(
+          addresses.filter((addr) => addr.id !== id),
+          false,
+        );
+        toast.success("Endereço excluído com sucesso.");
+      } catch (err: any) {
+        const msg = err?.message || "Não foi possível excluir o endereço.";
+        toast.error(msg);
+        throw err;
+      }
+    },
+    [addresses, mutate],
+  );
 
   return {
     addresses,
-    loading,
+    loading: isLoading,
     createAddress,
     updateAddress,
     deleteAddress,
-    reload: fetchAddresses,
+    reload: () => mutate(),
   };
 }

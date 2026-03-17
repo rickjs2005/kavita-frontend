@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import useSWR from "swr";
 import type { Product } from "@/types/product";
 export type { Product } from "@/types/product";
 
 import { getProducts, type GetProductsParams } from "@/services/products";
-import { handleApiError } from "@/lib/handleApiError";
 
 /**
  * Opções do hook.
@@ -18,9 +17,27 @@ type Opts = GetProductsParams & {
   search?: number | string;
 };
 
+type SWRKey = [
+  tag: string,
+  category: string | undefined,
+  subcategory: string | undefined,
+  search: number | string | undefined,
+  page: number | undefined,
+  limit: number | undefined,
+  sort: string | undefined,
+  order: string | undefined,
+];
+
+const fetcher = ([, category, subcategory, search, page, limit, sort, order]: SWRKey) =>
+  getProducts({ category, subcategory, search, page, limit, sort, order } as GetProductsParams);
+
+function pickList(res: unknown): Product[] {
+  const list = (res as any)?.products ?? (res as any)?.data ?? (res as any)?.items ?? res;
+  return Array.isArray(list) ? (list as Product[]) : [];
+}
+
 export function useFetchProducts(opts: Opts = {}) {
   const {
-    // compatibilidade: alguns lugares ainda passam categorySlug
     category,
     categorySlug,
     subcategory,
@@ -34,86 +51,21 @@ export function useFetchProducts(opts: Opts = {}) {
 
   const effectiveCategory = category ?? categorySlug;
 
-  const [data, setData] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const key: SWRKey | null = enabled
+    ? ["useFetchProducts", effectiveCategory, subcategory, search, page, limit, sort, order]
+    : null;
 
-  // Mantém a lógica atual de refetch via incremento em ref + rerender por setLoading(true)
-  const trigger = useRef<number>(0);
+  const { data, error, isLoading, mutate } = useSWR(key, fetcher, {
+    revalidateOnFocus: false,
+  });
 
-  useEffect(() => {
-    if (!enabled) return;
+  const list = pickList(data);
 
-    let alive = true;
-    setLoading(true);
-    setError(null);
-
-    async function run() {
-      try {
-        const res = await getProducts({
-          category: effectiveCategory,
-          subcategory,
-          search,
-          page,
-          limit,
-          sort,
-          order,
-        } as GetProductsParams);
-
-        // getProducts pode retornar:
-        // - array direto
-        // - { products: [...] }
-        // - { data: [...] }
-        const list: unknown =
-          (res as any)?.products ?? (res as any)?.data ?? res;
-
-        if (alive) {
-          setData(Array.isArray(list) ? (list as Product[]) : []);
-        }
-      } catch (e) {
-        const ui = handleApiError(e, {
-          silent: true,
-          fallback: "Não foi possível carregar os produtos.",
-        });
-
-        // handleApiError pode retornar objeto (UiError) ou string.
-        // Normalizamos para string para manter error: string | null
-        const msg =
-          typeof ui === "string"
-            ? ui
-            : ((ui as any)?.message ??
-              (ui as any)?.fallback ??
-              "Não foi possível carregar os produtos.");
-
-        if (alive) setError(msg);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    }
-
-    run();
-
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    effectiveCategory,
-    subcategory,
-    search,
-    page,
-    limit,
-    sort,
-    order,
-    enabled,
-    trigger.current,
-  ]);
-
-  const refetch = () => {
-    trigger.current += 1;
-    setLoading(true);
+  return {
+    data: list,
+    products: list, // alias para não quebrar código antigo
+    loading: isLoading,
+    error: (error as any)?.message ?? (typeof error === "string" ? error : null),
+    refetch: () => mutate(),
   };
-
-  // `products` é alias para não quebrar código antigo
-  return { data, products: data, loading, error, refetch };
 }
