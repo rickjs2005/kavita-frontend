@@ -1,17 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import apiClient from "@/lib/apiClient";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
 import toast from "react-hot-toast";
+
+const VendasBarChart = dynamic(() => import("./VendasBarChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center text-xs text-slate-400">
+      Carregando gráfico…
+    </div>
+  ),
+});
 import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 import { KpiCard } from "@/components/admin/KpiCard";
@@ -161,46 +162,7 @@ export default function RelatorioVendasPage() {
                     Faturamento diário
                   </h2>
                   <div className="h-64 rounded-2xl border border-slate-800 bg-slate-950/80 p-3 sm:p-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={chartData}
-                        margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                        <XAxis
-                          dataKey="label"
-                          tick={{ fill: "#9ca3af", fontSize: 11 }}
-                          tickLine={false}
-                          axisLine={{ stroke: "#1f2937" }}
-                        />
-                        <YAxis
-                          tick={{ fill: "#9ca3af", fontSize: 11 }}
-                          tickLine={false}
-                          axisLine={{ stroke: "#1f2937" }}
-                        />
-                        <Tooltip
-                          formatter={(value: number | undefined) =>
-                            value !== undefined ? formatCurrency(value) : "-"
-                          }
-                          labelFormatter={(label) =>
-                            label ? `Dia ${label}` : "-"
-                          }
-                          contentStyle={{
-                            backgroundColor: "#ffffff",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "0.75rem",
-                            color: "#020617",
-                            fontSize: 12,
-                            boxShadow: "0 15px 35px rgba(15,23,42,0,0.22)",
-                          }}
-                        />
-                        <Bar
-                          dataKey="total"
-                          radius={[10, 10, 0, 0]}
-                          fill="#35c2c4"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <VendasBarChart data={chartData} />
                   </div>
                 </div>
 

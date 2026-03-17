@@ -1,17 +1,28 @@
 "use client";
 
 import { JSX, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import CustomButton from "@/components/buttons/CustomButton";
 import apiClient from "@/lib/apiClient";
-
-import ProdutoForm from "@/components/admin/produtos/produtoform";
 import ProdutoCard from "@/components/admin/produtos/produtocard";
 import type { Product } from "@/components/admin/produtos/produtocard";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { API_BASE } from "@/utils/absUrl";
+
+const ProdutoForm = dynamic(
+  () => import("@/components/admin/produtos/produtoform"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="py-4 text-center text-sm text-slate-400">
+        Carregando formulário…
+      </div>
+    ),
+  },
+);
 
 const ProdutoFormAny = ProdutoForm as unknown as (props: any) => JSX.Element;
 

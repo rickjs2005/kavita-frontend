@@ -1,15 +1,25 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import CloseButton from "@/components/buttons/CloseButton";
 import { useDashboardData } from "./dashboard/useDashboardData";
 import { KpiSection } from "./dashboard/sections/KpiSection";
-import { SalesChartSection } from "./dashboard/sections/SalesChartSection";
 import { AlertsAndMetricsSection } from "./dashboard/sections/AlertsAndMetricsSection";
 import { QuickLinksSection } from "./dashboard/sections/QuickLinksSection";
+
+const SalesChartSection = dynamic(
+  () => import("./dashboard/sections/SalesChartSection").then((m) => m.SalesChartSection),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[340px] animate-pulse rounded-2xl border border-slate-800 bg-slate-900/60" />
+    ),
+  },
+);
 import {
   ROLE_LABEL,
   ROLE_SHORT_LABEL,
