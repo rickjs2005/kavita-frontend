@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Product } from "@/types/product";
-import { api } from "@/lib/api";
+import apiClient from "@/lib/apiClient";
 import { absUrl } from "@/utils/absUrl";
 import { formatCurrency } from "@/utils/formatters";
 
@@ -26,7 +26,7 @@ export default function PromocoesHero() {
   useEffect(() => {
     const fetchPromocoes = async () => {
       try {
-        const data = await api("/api/public/promocoes");
+        const data = await apiClient.get("/api/public/promocoes");
         const list = Array.isArray(data) ? data : [];
 
         const mapped: PromoProduct[] = list.map((item: any) => {

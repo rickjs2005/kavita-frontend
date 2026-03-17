@@ -28,8 +28,9 @@ const H = vi.hoisted(() => {
       prefetch: vi.fn(),
     },
     toast: toastFn,
-    axios: {
+    apiClient: {
       post: vi.fn(),
+      get: vi.fn(),
     },
     refs: {
       cartItems: [] as any[],
@@ -52,9 +53,10 @@ vi.mock("react-hot-toast", () => ({
   default: H.toast,
 }));
 
-vi.mock("axios", () => ({
+vi.mock("../../lib/apiClient", () => ({
   default: {
-    post: (...args: any[]) => H.axios.post(...args),
+    post: (...args: any[]) => H.apiClient.post(...args),
+    get: (...args: any[]) => H.apiClient.get(...args),
   },
 }));
 
@@ -230,40 +232,24 @@ describe("CartCar", () => {
       { id: 20, name: "Produto Y", quantity: 1, price: 50 },
     ]);
 
-    (globalThis.fetch as any).mockImplementation((url: string) => {
+    H.apiClient.get.mockImplementation((url: string) => {
       if (String(url).includes("/promocoes/10")) {
-        return Promise.resolve(
-          makeFetchResponse({
-            ok: true,
-            status: 200,
-            json: {
-              original_price: 100,
-              final_price: 80,
-              discount_percent: 20,
-            },
-            contentType: "application/json",
-          }),
-        );
+        return Promise.resolve({
+          original_price: 100,
+          final_price: 80,
+          discount_percent: 20,
+        });
       }
       if (String(url).includes("/promocoes/20")) {
-        return Promise.resolve(
-          makeFetchResponse({
-            ok: false,
-            status: 404,
-            json: { message: "Sem promo" },
-            contentType: "application/json",
-          }),
-        );
+        return Promise.reject(new Error("Sem promo"));
       }
-      return Promise.resolve(
-        makeFetchResponse({ ok: false, status: 500, text: "unexpected" }),
-      );
+      return Promise.reject(new Error("unexpected"));
     });
 
     await renderCartAndReady();
 
     await waitFor(() => {
-      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+      expect(H.apiClient.get).toHaveBeenCalledTimes(2);
     });
 
     // (2*80) + (2*80) + (1*50) = 370
@@ -285,7 +271,7 @@ describe("CartCar", () => {
     await waitFor(() =>
       expect(H.toast.error).toHaveBeenCalledWith("Informe um cupom."),
     );
-    expect(H.axios.post).not.toHaveBeenCalled();
+    expect(H.apiClient.post).not.toHaveBeenCalled();
   });
 
   it("applyDiscount: exige login e redireciona para /login", async () => {
@@ -306,19 +292,17 @@ describe("CartCar", () => {
       expect(H.router.push).toHaveBeenCalledWith("/login");
     });
 
-    expect(H.axios.post).not.toHaveBeenCalled();
+    expect(H.apiClient.post).not.toHaveBeenCalled();
   });
 
   it("applyDiscount: sucesso -> chama preview-cupom com payload normalizado, salva cupom e dispara toast.success", async () => {
     setCartItems([{ id: 1, name: "Produto A", quantity: 2, price: 50 }]); // total 100
     setAuth({ user: { id: 123 }, isAuthenticated: true });
 
-    H.axios.post.mockResolvedValueOnce({
-      data: {
-        success: true,
-        desconto: 10,
-        message: "Cupom aplicado com sucesso!",
-      },
+    H.apiClient.post.mockResolvedValueOnce({
+      success: true,
+      desconto: 10,
+      message: "Cupom aplicado com sucesso!",
     });
 
     await renderCartAndReady();
@@ -328,12 +312,11 @@ describe("CartCar", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
 
-    await waitFor(() => expect(H.axios.post).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(H.apiClient.post).toHaveBeenCalledTimes(1));
 
-    const [url, payload, config] = H.axios.post.mock.calls[0];
+    const [url, payload] = H.apiClient.post.mock.calls[0];
     expect(String(url)).toContain("/api/checkout/preview-cupom");
     expect(payload).toEqual({ codigo: "OFF10", total: 100 });
-    expect(config).toEqual({ withCredentials: true });
 
     await waitFor(() => {
       expect(H.toast.success).toHaveBeenCalledWith(
@@ -350,8 +333,9 @@ describe("CartCar", () => {
     setCartItems([{ id: 1, name: "Produto A", quantity: 1, price: 100 }]);
     setAuth({ user: { id: 1 }, isAuthenticated: true });
 
-    H.axios.post.mockResolvedValueOnce({
-      data: { success: false, message: "Cupom inválido." },
+    H.apiClient.post.mockResolvedValueOnce({
+      success: false,
+      message: "Cupom inválido.",
     });
 
     await renderCartAndReady();
@@ -373,9 +357,7 @@ describe("CartCar", () => {
     setCartItems([{ id: 1, name: "Produto A", quantity: 1, price: 100 }]);
     setAuth({ user: { id: 1 }, isAuthenticated: true });
 
-    H.axios.post.mockRejectedValueOnce({
-      response: { data: { message: "Cupom expirado." } },
-    });
+    H.apiClient.post.mockRejectedValueOnce(new Error("Cupom expirado."));
 
     await renderCartAndReady();
 
@@ -423,8 +405,10 @@ describe("CartCar", () => {
     setCartItems([{ id: 1, name: "Produto A", quantity: 2, price: 50 }]); // 100
     setAuth({ user: { id: 1 }, isAuthenticated: true });
 
-    H.axios.post.mockResolvedValueOnce({
-      data: { success: true, desconto: 10, message: "OK" },
+    H.apiClient.post.mockResolvedValueOnce({
+      success: true,
+      desconto: 10,
+      message: "OK",
     });
 
     const closeCart = vi.fn();
@@ -444,7 +428,7 @@ describe("CartCar", () => {
     fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
 
     await waitFor(() => {
-      expect(H.axios.post).toHaveBeenCalledTimes(1);
+      expect(H.apiClient.post).toHaveBeenCalledTimes(1);
       expect(H.toast.success).toHaveBeenCalled();
     });
 

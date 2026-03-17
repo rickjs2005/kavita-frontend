@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Product } from "@/types/product";
 import ProductCard from "./ProductCard";
-import { api } from "@/lib/api";
+import apiClient from "@/lib/apiClient";
 
 export const Produtos = () => {
   const [produtos, setProdutos] = useState<Product[]>([]);
@@ -12,7 +12,7 @@ export const Produtos = () => {
     (async () => {
       try {
         // ✅ usa diretamente api()
-        const data = await api<Product[]>("/api/products");
+        const data = await apiClient.get<Product[]>("/api/products");
         setProdutos(data);
       } catch (err) {
         console.error("Erro ao buscar produtos:", err);

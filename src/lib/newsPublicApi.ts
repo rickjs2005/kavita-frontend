@@ -1,5 +1,5 @@
-// src/lib/api/newsPublicApi.ts
-import { apiPublic } from "./http";
+// src/lib/newsPublicApi.ts
+import apiClient from "./apiClient";
 
 export type PublicOk<T> = { ok: true; data: T; meta?: any };
 
@@ -74,34 +74,34 @@ export type PublicOverview = {
 };
 
 async function climaList() {
-  return apiPublic<PublicOk<PublicClima[]>>("/api/news/clima");
+  return apiClient.get<PublicOk<PublicClima[]>>("/api/news/clima");
 }
 
 async function climaBySlug(slug: string) {
-  return apiPublic<PublicOk<PublicClima>>(
+  return apiClient.get<PublicOk<PublicClima>>(
     `/api/news/clima/${encodeURIComponent(slug)}`,
   );
 }
 
 async function cotacoesList(groupKey?: string) {
   const q = groupKey ? `?group_key=${encodeURIComponent(groupKey)}` : "";
-  return apiPublic<PublicOk<PublicCotacao[]>>(`/api/news/cotacoes${q}`);
+  return apiClient.get<PublicOk<PublicCotacao[]>>(`/api/news/cotacoes${q}`);
 }
 
 async function cotacaoBySlug(slug: string) {
-  return apiPublic<PublicOk<PublicCotacao>>(
+  return apiClient.get<PublicOk<PublicCotacao>>(
     `/api/news/cotacoes/${encodeURIComponent(slug)}`,
   );
 }
 
 async function postsList(limit = 10, offset = 0) {
-  return apiPublic<PublicOk<PublicPost[]>>(
+  return apiClient.get<PublicOk<PublicPost[]>>(
     `/api/news/posts?limit=${limit}&offset=${offset}`,
   );
 }
 
 async function postBySlug(slug: string) {
-  return apiPublic<PublicOk<PublicPost>>(
+  return apiClient.get<PublicOk<PublicPost>>(
     `/api/news/posts/${encodeURIComponent(slug)}`,
   );
 }

@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import apiClient from "@/lib/apiClient";
 import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 
@@ -56,11 +56,7 @@ function ResetPasswordContent() {
     setToast(null);
 
     try {
-      await api("/api/users/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, novaSenha: password }),
-      });
+      await apiClient.post("/api/users/reset-password", { token, novaSenha: password });
 
       setToast({
         type: "success",

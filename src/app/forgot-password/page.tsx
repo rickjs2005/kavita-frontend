@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/lib/api";
+import apiClient from "@/lib/apiClient";
 import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 
@@ -23,11 +23,7 @@ export default function ForgotPasswordPage() {
     setToast(null);
 
     try {
-      await api("/api/users/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      await apiClient.post("/api/users/forgot-password", { email });
 
       setToast({
         type: "success",

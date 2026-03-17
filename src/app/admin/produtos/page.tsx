@@ -11,12 +11,9 @@ import type { Product } from "@/components/admin/produtos/produtocard";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { API_BASE } from "@/utils/absUrl";
 
 const ProdutoFormAny = ProdutoForm as unknown as (props: any) => JSX.Element;
-
-// IMPORTANTE:
-// API_BASE = host do backend (sem /api), porque seus endpoints já usam `${API_BASE}/api/...`
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function ProdutosPage() {
   const [produtos, setProdutos] = useState<Product[]>([]);
