@@ -20,13 +20,13 @@ export function ErrorState({
 }: Props) {
   if (variant === "inline") {
     return (
-      <p className="col-span-full py-6 text-center text-sm text-red-500">
+      <p role="alert" className="col-span-full py-6 text-center text-sm text-red-500">
         {message}
         {onRetry && (
           <button
             type="button"
             onClick={onRetry}
-            className="ml-2 underline hover:no-underline"
+            className="ml-2 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 rounded"
           >
             Tentar novamente
           </button>
@@ -37,14 +37,17 @@ export function ErrorState({
 
   if (variant === "warning") {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+      <div
+        role="alert"
+        className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"
+      >
         <WarningIcon />
         <span className="flex-1">{message}</span>
         {onRetry && (
           <button
             type="button"
             onClick={onRetry}
-            className="shrink-0 text-xs text-amber-300 underline hover:no-underline"
+            className="shrink-0 text-xs text-amber-300 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 rounded"
           >
             Tentar novamente
           </button>
@@ -55,14 +58,17 @@ export function ErrorState({
 
   if (variant === "dark") {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+      <div
+        role="alert"
+        className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+      >
         <ErrorIcon />
         <span className="flex-1">{message}</span>
         {onRetry && (
           <button
             type="button"
             onClick={onRetry}
-            className="shrink-0 text-xs text-red-400 underline hover:no-underline"
+            className="shrink-0 text-xs text-red-400 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 rounded"
           >
             Tentar novamente
           </button>
@@ -72,14 +78,17 @@ export function ErrorState({
   }
 
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-red-300 bg-red-50 px-4 py-4 text-sm text-red-700 sm:px-5">
+    <div
+      role="alert"
+      className="flex items-start gap-3 rounded-2xl border border-red-300 bg-red-50 px-4 py-4 text-sm text-red-700 sm:px-5"
+    >
       <ErrorIcon />
       <span className="flex-1">{message}</span>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="shrink-0 text-xs text-red-600 underline hover:no-underline"
+          className="shrink-0 text-xs text-red-600 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 rounded"
         >
           Tentar novamente
         </button>

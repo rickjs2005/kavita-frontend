@@ -257,6 +257,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
                   w-full sm:w-[90vw] md:w-[26rem] lg:w-[28rem]
                   ${isCartOpen ? "translate-x-0" : "translate-x-full"}`}
       role="dialog"
+      aria-modal={isCartOpen}
       aria-label="Carrinho de compras"
       aria-hidden={!isCartOpen}
     >
@@ -292,7 +293,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
       {!isEmpty && (
         <footer className="sticky bottom-0 z-10 border-t bg-white px-4 sm:px-5 py-3">
           {warnings.length > 0 && (
-            <div className="mb-2 text-xs text-orange-600 space-y-1">
+            <div role="alert" className="mb-2 text-xs text-orange-600 space-y-1">
               {warnings.map((w, idx) => (
                 <p key={idx}>⚠️ {w}</p>
               ))}
@@ -321,14 +322,22 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
           </div>
 
           {couponMessage && (
-            <p className="mt-1 text-xs text-emerald-600">{couponMessage}</p>
+            <p role="status" aria-live="polite" className="mt-1 text-xs text-emerald-600">
+              {couponMessage}
+            </p>
           )}
           {couponError && (
-            <p className="mt-1 text-xs text-red-600">{couponError}</p>
+            <p role="alert" className="mt-1 text-xs text-red-600">
+              {couponError}
+            </p>
           )}
 
           <div className="mt-3 flex gap-2">
+            <label htmlFor="cart-coupon-input" className="sr-only">
+              Código do cupom de desconto
+            </label>
             <input
+              id="cart-coupon-input"
               type="text"
               value={coupon}
               onChange={(e) => {

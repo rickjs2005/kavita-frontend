@@ -23,13 +23,16 @@ export default function QuantityInput({
     onChange?.(safe);
   };
 
+  const btnClass =
+    "px-3 py-2 text-lg leading-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC5B20] focus-visible:ring-inset";
+
   return (
     <div className="inline-flex items-center rounded-xl border border-gray-300">
       <button
         type="button"
         onClick={() => emit(qty - 1)}
         disabled={disabled || qty <= 1}
-        className="px-3 py-2 text-lg leading-none disabled:opacity-40"
+        className={btnClass}
         aria-label="Diminuir quantidade"
       >
         −
@@ -42,7 +45,8 @@ export default function QuantityInput({
           emit(v);
         }}
         inputMode="numeric"
-        className="w-12 text-center py-2 outline-none"
+        aria-label="Quantidade"
+        className="w-12 text-center py-2 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#EC5B20]"
         disabled={disabled}
       />
 
@@ -53,7 +57,7 @@ export default function QuantityInput({
           disabled ||
           (Number.isFinite(max) && (max ?? 0) > 0 && qty >= (max ?? 0))
         }
-        className="px-3 py-2 text-lg leading-none disabled:opacity-40"
+        className={btnClass}
         aria-label="Aumentar quantidade"
       >
         +

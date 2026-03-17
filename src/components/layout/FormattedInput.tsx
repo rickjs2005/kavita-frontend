@@ -101,11 +101,13 @@ export const FormattedInput: React.FC<FormattedInputProps> = ({
 
   const inputClass =
     variant === "dark"
-      ? "w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2.5 text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+      ? "w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2.5 text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
       : "w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition";
 
   const helperClass =
     variant === "dark" ? "text-[11px] text-slate-500" : "text-xs text-gray-500";
+
+  const helperId = helperText ? `${inputId}-helper` : undefined;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -119,10 +121,15 @@ export const FormattedInput: React.FC<FormattedInputProps> = ({
         value={value}
         onChange={handleChange}
         className={inputClass}
+        aria-describedby={helperId}
         {...rest}
       />
 
-      {helperText && <span className={helperClass}>{helperText}</span>}
+      {helperText && (
+        <span id={helperId} className={helperClass}>
+          {helperText}
+        </span>
+      )}
     </div>
   );
 };

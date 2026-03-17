@@ -180,7 +180,8 @@ export default function AdminSidebar({
                 key={item.href}
                 href={item.href}
                 onClick={onNavigate}
-                className={`${base} ${isActive ? active : inactive}`}
+                aria-current={isActive ? "page" : undefined}
+                className={`${base} ${isActive ? active : inactive} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500`}
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/80 text-base">
                   {item.icon}
@@ -196,8 +197,9 @@ export default function AdminSidebar({
       {!hideLogoutButton && (
         <div className="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-5 py-4">
           <button
+            type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-transform hover:translate-y-[1px] hover:shadow-rose-900/10"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-900/40 transition-transform hover:translate-y-[1px] hover:shadow-rose-900/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
           >
             <span>🚪</span>
             <span>Sair</span>

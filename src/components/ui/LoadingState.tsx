@@ -16,7 +16,7 @@ export function LoadingState({
 }: Props) {
   if (variant === "inline") {
     return (
-      <p className="col-span-full py-6 text-center text-sm text-gray-500">
+      <p role="status" aria-live="polite" className="col-span-full py-6 text-center text-sm text-gray-500">
         <Spinner className="mr-2 inline-block text-gray-400" />
         {message}
       </p>
@@ -25,7 +25,11 @@ export function LoadingState({
 
   if (variant === "dark") {
     return (
-      <div className="flex items-center gap-3 rounded-2xl bg-slate-900/60 px-4 py-5 text-sm text-slate-300 shadow-sm">
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex items-center gap-3 rounded-2xl bg-slate-900/60 px-4 py-5 text-sm text-slate-300 shadow-sm"
+      >
         <Spinner className="text-slate-400" />
         {message}
       </div>
@@ -33,7 +37,11 @@ export function LoadingState({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white/95 px-4 py-5 text-sm text-gray-600 shadow-sm sm:px-6">
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-center gap-3 rounded-2xl bg-white/95 px-4 py-5 text-sm text-gray-600 shadow-sm sm:px-6"
+    >
       <Spinner className="text-gray-400" />
       {message}
     </div>
