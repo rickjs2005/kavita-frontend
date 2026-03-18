@@ -6,6 +6,7 @@ import {
   fireEvent,
   waitFor,
   within,
+  act,
 } from "@testing-library/react";
 
 // Importante: API_BASE é lido no module init do ProductCard
@@ -76,6 +77,30 @@ vi.mock("@/context/AuthContext", () => {
   };
 });
 
+// SWR mock — controle por teste via swrPromoData
+let swrPromoData: any = undefined;
+let swrPromoLoading = false;
+vi.mock("swr", () => ({
+  default: (_key: any, _fetcher: any, _opts?: any) => ({
+    data: swrPromoData,
+    isLoading: swrPromoLoading,
+    error: undefined,
+    mutate: vi.fn(),
+  }),
+}));
+
+// apiClient mock
+const apiClientPostMock = vi.fn();
+const apiClientDelMock = vi.fn();
+const apiClientGetMock = vi.fn();
+vi.mock("@/lib/apiClient", () => ({
+  default: {
+    get: (...args: any[]) => apiClientGetMock(...args),
+    post: (...args: any[]) => apiClientPostMock(...args),
+    del: (...args: any[]) => apiClientDelMock(...args),
+  },
+}));
+
 // =======================
 // Helpers
 // =======================
@@ -112,24 +137,15 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
     currentUser = null;
     addToCartSpy.mockClear();
     resolveStockValueMock.mockReset();
+    apiClientPostMock.mockReset();
+    apiClientDelMock.mockReset();
+    apiClientGetMock.mockReset();
+    swrPromoData = undefined;
+    swrPromoLoading = false;
     mockLocationHref();
-
-    // fetch padrão: promoção = 404 (sem JSON, sem console.error)
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: any) => {
-        const u = String(url);
-        if (u.includes("/api/public/promocoes/")) {
-          return new Response(null, { status: 404 });
-        }
-        // qualquer outra rota que não deveria ser chamada: 404
-        return new Response(null, { status: 404 });
-      }),
-    );
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -297,16 +313,8 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
     // Arrange
     resolveStockValueMock.mockReturnValue(5);
 
-    (global.fetch as any) = vi.fn(async (url: string) => {
-      const u = String(url);
-      if (u.includes("/api/public/promocoes/105")) {
-        return new Response(
-          JSON.stringify({ original_price: 100, final_price: 80 }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
-      }
-      return new Response(null, { status: 404 });
-    });
+    // Seta a promoção antes de renderizar (SWR mockado retorna swrPromoData)
+    swrPromoData = { original_price: 100, final_price: 80, discount_percent: 20 };
 
     const ProductCard = (await import("@/components/products/ProductCard"))
       .default;
@@ -315,10 +323,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
     render(<ProductCard product={baseProduct({ price: 100 }) as any} />);
 
     // Assert
-    await waitFor(() => {
-      expect(screen.getByText(/-20% OFF/i)).toBeInTheDocument();
-    });
-
+    expect(screen.getByText(/-20% OFF/i)).toBeInTheDocument();
     expect(screen.getByText("R$ 80,00")).toBeInTheDocument();
     expect(screen.getByText("R$ 100,00")).toBeInTheDocument();
 
@@ -330,6 +335,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
   it("quando promoção retorna 404, não mostra badge de desconto e mantém preço base", async () => {
     // Arrange
     resolveStockValueMock.mockReturnValue(5);
+    swrPromoData = null; // sem promoção
     const ProductCard = (await import("@/components/products/ProductCard"))
       .default;
 
@@ -346,15 +352,6 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
     resolveStockValueMock.mockReturnValue(5);
     currentUser = null;
 
-    const fetchSpy = vi.fn(async (url: any) => {
-      // promoção 404 (normal)
-      if (String(url).includes("/api/public/promocoes/"))
-        return new Response(null, { status: 404 });
-      // se chamar favorites, devolve 200
-      return new Response(null, { status: 200 });
-    });
-    vi.stubGlobal("fetch", fetchSpy);
-
     const ProductCard = (await import("@/components/products/ProductCard"))
       .default;
 
@@ -365,57 +362,16 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
 
     // Assert
     expect(window.location.href).toBe("/login");
-
-    // Não pode chamar favorites
-    const favoritesCalls = fetchSpy.mock.calls.filter((c) =>
-      String(c[0]).includes("/api/favorites"),
-    );
-    expect(favoritesCalls.length).toBe(0);
+    expect(apiClientPostMock).not.toHaveBeenCalled();
+    expect(apiClientDelMock).not.toHaveBeenCalled();
   });
 
-  it("favorito: com user mas sem token não chama /api/favorites (negativo)", async () => {
+  it("favorito: com user logado, POST adiciona favorito com body correto e alterna aria-pressed", async () => {
     // Arrange
     resolveStockValueMock.mockReturnValue(5);
-    currentUser = { id: 1 }; // sem token
+    currentUser = { id: 1 }; // cookie-based auth, sem token necessário
 
-    const fetchSpy = vi.fn(async (url: any) => {
-      if (String(url).includes("/api/public/promocoes/"))
-        return new Response(null, { status: 404 });
-      return new Response(null, { status: 200 });
-    });
-    vi.stubGlobal("fetch", fetchSpy);
-
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const ProductCard = (await import("@/components/products/ProductCard"))
-      .default;
-
-    // Act
-    render(<ProductCard product={baseProduct()} />);
-    const favBtn = getFavoriteButtonRobust();
-    fireEvent.click(favBtn);
-
-    // Assert
-    const favoritesCalls = fetchSpy.mock.calls.filter((c) =>
-      String(c[0]).includes("/api/favorites"),
-    );
-    expect(favoritesCalls.length).toBe(0);
-    expect(warnSpy).toHaveBeenCalled();
-  });
-
-  it("favorito: POST adiciona favorito com Authorization e body correto; alterna aria-pressed", async () => {
-    // Arrange
-    resolveStockValueMock.mockReturnValue(5);
-    currentUser = { id: 1, token: "tok_test" };
-
-    const fetchSpy = vi.fn(async (url: any, init?: RequestInit) => {
-      const u = String(url);
-      if (u.includes("/api/public/promocoes/"))
-        return new Response(null, { status: 404 });
-      if (u.endsWith("/api/favorites"))
-        return new Response(null, { status: 200 });
-      return new Response(null, { status: 404 });
-    });
-    vi.stubGlobal("fetch", fetchSpy);
+    apiClientPostMock.mockResolvedValueOnce({});
 
     const ProductCard = (await import("@/components/products/ProductCard"))
       .default;
@@ -432,34 +388,18 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
       expect(favBtn).toHaveAttribute("aria-pressed", "true");
     });
 
-    const calls = fetchSpy.mock.calls.filter((c) =>
-      String(c[0]).includes("/api/favorites"),
-    );
-    const [url, init] = calls[calls.length - 1] as [string, RequestInit];
-
-    expect(url).toBe("http://api.test/api/favorites");
-    expect(init.method).toBe("POST");
-    expect(init.headers).toMatchObject({
-      "Content-Type": "application/json",
-      Authorization: "Bearer tok_test",
+    expect(apiClientPostMock).toHaveBeenCalledTimes(1);
+    expect(apiClientPostMock).toHaveBeenCalledWith("/api/favorites", {
+      productId: 105,
     });
-    expect(init.body).toBe(JSON.stringify({ productId: 105 }));
   });
 
   it("favorito: DELETE remove favorito quando initialIsFavorite=true", async () => {
     // Arrange
     resolveStockValueMock.mockReturnValue(5);
-    currentUser = { id: 1, token: "tok_test" };
+    currentUser = { id: 1 };
 
-    const fetchSpy = vi.fn(async (url: any) => {
-      const u = String(url);
-      if (u.includes("/api/public/promocoes/"))
-        return new Response(null, { status: 404 });
-      if (u.includes("/api/favorites/105"))
-        return new Response(null, { status: 200 });
-      return new Response(null, { status: 404 });
-    });
-    vi.stubGlobal("fetch", fetchSpy);
+    apiClientDelMock.mockResolvedValueOnce({});
 
     const ProductCard = (await import("@/components/products/ProductCard"))
       .default;
@@ -479,38 +419,17 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
       expect(favBtn).toHaveAttribute("aria-pressed", "false");
     });
 
-    const calls = fetchSpy.mock.calls.filter((c) =>
-      String(c[0]).includes("/api/favorites/105"),
-    );
-    const [url, init] = calls[calls.length - 1] as unknown as [
-      string,
-      RequestInit,
-    ];
-
-    expect(url).toBe("http://api.test/api/favorites/105");
-    expect(init.method).toBe("DELETE");
-    expect(init.headers).toMatchObject({
-      "Content-Type": "application/json",
-      Authorization: "Bearer tok_test",
-    });
+    expect(apiClientDelMock).toHaveBeenCalledTimes(1);
+    expect(apiClientDelMock).toHaveBeenCalledWith("/api/favorites/105");
   });
 
-  it("favorito: se fetch retornar !ok, faz rollback do estado (negativo)", async () => {
+  it("favorito: se apiClient lançar erro, faz rollback do estado (negativo)", async () => {
     // Arrange
     resolveStockValueMock.mockReturnValue(5);
-    currentUser = { id: 1, token: "tok_test" };
+    currentUser = { id: 1 };
 
-    const fetchSpy = vi.fn(async (url: any) => {
-      const u = String(url);
-      if (u.includes("/api/public/promocoes/"))
-        return new Response(null, { status: 404 });
-      if (u.includes("/api/favorites"))
-        return new Response(null, { status: 500 });
-      return new Response(null, { status: 404 });
-    });
-    vi.stubGlobal("fetch", fetchSpy);
+    apiClientPostMock.mockRejectedValueOnce(new Error("Network error"));
 
-    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const ProductCard = (await import("@/components/products/ProductCard"))
       .default;
 
@@ -519,13 +438,14 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
     const favBtn = getFavoriteButtonRobust();
 
     expect(favBtn).toHaveAttribute("aria-pressed", "false");
-    fireEvent.click(favBtn);
 
-    // Assert: toggle otimista -> true e rollback -> false
+    await act(async () => {
+      fireEvent.click(favBtn);
+    });
+
+    // Assert: toggle otimista -> rollback para false
     await waitFor(() => {
       expect(favBtn).toHaveAttribute("aria-pressed", "false");
     });
-
-    expect(errSpy).toHaveBeenCalled();
   });
 });

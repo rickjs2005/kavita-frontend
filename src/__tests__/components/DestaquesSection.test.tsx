@@ -94,7 +94,7 @@ describe("PromocoesHero (DestaquesSection)", () => {
     // nome aparece em mais de um lugar
     expect(screen.getAllByText("Produto Teste").length).toBeGreaterThan(0);
 
-    expect(screen.getByText("R$ 100.00")).toBeInTheDocument();
+    expect(screen.getByText("R$ 100,00")).toBeInTheDocument();
     expect(screen.getByText("-33% OFF")).toBeInTheDocument();
   });
 
@@ -104,7 +104,7 @@ describe("PromocoesHero (DestaquesSection)", () => {
     render(<PromocoesHero />);
     await screen.findByText("Produtos em Promoção");
 
-    expect(screen.getByText("R$ 150.00")).toBeInTheDocument();
+    expect(screen.getByText("R$ 150,00")).toBeInTheDocument();
   });
 
   it("renderiza data de validade formatada (positivo)", async () => {

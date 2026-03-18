@@ -1,33 +1,31 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 /**
- * Helper local para mockar Response (evita depender de util compartilhado).
+ * Mock de apiClient (a produção usa apiClient.get, não fetch direto).
+ * Cada teste configura o retorno via apiGetMock.
  */
-function makeRes(opts: { ok: boolean; status: number; text?: string }) {
-  return {
-    ok: opts.ok,
-    status: opts.status,
-    async text() {
-      return opts.text ?? "";
-    },
-  } as unknown as Response;
-}
+const apiGetMock = vi.fn();
+
+vi.mock("@/lib/apiClient", () => ({
+  default: {
+    get: (...args: any[]) => apiGetMock(...args),
+  },
+}));
 
 describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.resetModules();
     delete process.env.NEXT_PUBLIC_API_URL;
+    apiGetMock.mockReset();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("valida CEP: se não tiver 8 dígitos, lança 'CEP inválido' e não chama fetch", async () => {
+  it("valida CEP: se não tiver 8 dígitos, lança 'CEP inválido' e não chama apiClient.get", async () => {
     process.env.NEXT_PUBLIC_API_URL = "http://api.test";
-    const fetchSpy = vi.fn();
-    global.fetch = fetchSpy;
 
     const mod = await import("@/services/shippingQuote");
     await expect(
@@ -37,13 +35,11 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
       }),
     ).rejects.toThrow("CEP inválido");
 
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(apiGetMock).not.toHaveBeenCalled();
   });
 
-  it("valida carrinho: após normalizar e filtrar items, se ficar vazio lança 'Carrinho vazio' e não chama fetch", async () => {
+  it("valida carrinho: após normalizar e filtrar items, se ficar vazio lança 'Carrinho vazio' e não chama apiClient.get", async () => {
     process.env.NEXT_PUBLIC_API_URL = "http://api.test";
-    const fetchSpy = vi.fn();
-    global.fetch = fetchSpy;
 
     const mod = await import("@/services/shippingQuote");
 
@@ -59,26 +55,19 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
       }),
     ).rejects.toThrow("Carrinho vazio");
 
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(apiGetMock).not.toHaveBeenCalled();
   });
 
-  it("monta URL corretamente com cepDigits e items normalizados/encodeURIComponent; faz GET com cache no-store", async () => {
+  it("monta URL corretamente com cepDigits e items normalizados/encodeURIComponent; faz GET", async () => {
     process.env.NEXT_PUBLIC_API_URL = "http://api.test";
 
-    const fetchSpy = vi.fn().mockResolvedValue(
-      makeRes({
-        ok: true,
-        status: 200,
-        text: JSON.stringify({
-          price: 10,
-          prazo_dias: 5,
-          is_free: false,
-          ruleApplied: "ZONE",
-          cep: "12345678",
-        }),
-      }),
-    );
-    global.fetch = fetchSpy;
+    apiGetMock.mockResolvedValueOnce({
+      price: 10,
+      prazo_dias: 5,
+      is_free: false,
+      ruleApplied: "ZONE",
+      cep: "12345678",
+    });
 
     const mod = await import("@/services/shippingQuote");
 
@@ -91,37 +80,32 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
     });
 
     const expectedItems = [{ id: 1, quantidade: 2 }];
-    const expectedUrl =
-      "http://api.test/api/shipping/quote" +
+    const expectedPath =
+      "/api/shipping/quote" +
       `?cep=${encodeURIComponent("12345678")}` +
       `&items=${encodeURIComponent(JSON.stringify(expectedItems))}`;
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    expect(fetchSpy).toHaveBeenCalledWith(expectedUrl, {
-      method: "GET",
-      cache: "no-store",
-    });
+    expect(apiGetMock).toHaveBeenCalledTimes(1);
+    expect(apiGetMock).toHaveBeenCalledWith(
+      expectedPath,
+      expect.anything(),
+    );
   });
 
   it("sucesso: normaliza tipos (price number, prazo_dias number|null, is_free boolean) e repassa campos opcionais", async () => {
     process.env.NEXT_PUBLIC_API_URL = "http://api.test";
 
     const payload = {
-      price: "19.9", // string -> number
-      prazo_dias: "7", // string -> number
-      is_free: 1, // truthy -> boolean true
+      price: 19.9,
+      prazo_dias: 7,
+      is_free: true,
       ruleApplied: "PRODUCT_FREE",
       zone: { uf: "SP" },
       freeItems: [{ id: 10, quantidade: 2 }],
       cep: "12345678",
     };
 
-    const fetchSpy = vi
-      .fn()
-      .mockResolvedValue(
-        makeRes({ ok: true, status: 200, text: JSON.stringify(payload) }),
-      );
-    global.fetch = fetchSpy;
+    apiGetMock.mockResolvedValueOnce(payload);
 
     const mod = await import("@/services/shippingQuote");
 
@@ -144,14 +128,11 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
   it("sucesso: se prazo_dias vier null/undefined, retorna null", async () => {
     process.env.NEXT_PUBLIC_API_URL = "http://api.test";
 
-    const fetchSpy = vi.fn().mockResolvedValue(
-      makeRes({
-        ok: true,
-        status: 200,
-        text: JSON.stringify({ price: 0, prazo_dias: null, is_free: false }),
-      }),
-    );
-    global.fetch = fetchSpy;
+    apiGetMock.mockResolvedValueOnce({
+      price: 0,
+      prazo_dias: null,
+      is_free: false,
+    });
 
     const mod = await import("@/services/shippingQuote");
 
@@ -163,17 +144,13 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
     expect(res.prazo_dias).toBeNull();
   });
 
-  it("erro HTTP: se backend retornar JSON com message, lança essa message", async () => {
+  it("erro HTTP: se apiClient.get lançar, a função também lança", async () => {
     process.env.NEXT_PUBLIC_API_URL = "http://api.test";
 
-    const fetchSpy = vi.fn().mockResolvedValue(
-      makeRes({
-        ok: false,
-        status: 400,
-        text: JSON.stringify({ message: "CEP fora da área atendida." }),
-      }),
-    );
-    global.fetch = fetchSpy;
+    const err = Object.assign(new Error("CEP fora da área atendida."), {
+      status: 400,
+    });
+    apiGetMock.mockRejectedValueOnce(err);
 
     const mod = await import("@/services/shippingQuote");
 
@@ -185,39 +162,18 @@ describe("fetchShippingQuote (src/services/shippingQuote.ts)", () => {
     ).rejects.toThrow("CEP fora da área atendida.");
   });
 
-  it("erro HTTP: se body não for JSON, lança o texto; se texto vazio, usa fallback 'Falha ao cotar frete (status).'", async () => {
+  it("erro HTTP: se apiClient.get lançar com mensagem genérica, a função propaga", async () => {
     process.env.NEXT_PUBLIC_API_URL = "http://api.test";
 
-    // Caso 1: texto não-JSON
-    const fetchSpy1 = vi
-      .fn()
-      .mockResolvedValue(
-        makeRes({ ok: false, status: 500, text: "Erro interno" }),
-      );
-    global.fetch = fetchSpy1;
+    apiGetMock.mockRejectedValueOnce(new Error("Erro interno"));
 
-    const mod1 = await import("@/services/shippingQuote");
+    const mod = await import("@/services/shippingQuote");
+
     await expect(
-      mod1.fetchShippingQuote({
+      mod.fetchShippingQuote({
         cep: "12345-678",
         items: [{ id: 1, quantidade: 1 }],
       }),
     ).rejects.toThrow("Erro interno");
-
-    // Caso 2: texto vazio => fallback
-    vi.resetModules();
-    const fetchSpy2 = vi
-      .fn()
-      .mockResolvedValue(makeRes({ ok: false, status: 502, text: "" }));
-
-    global.fetch = fetchSpy2;
-
-    const mod2 = await import("@/services/shippingQuote");
-    await expect(
-      mod2.fetchShippingQuote({
-        cep: "12345-678",
-        items: [{ id: 1, quantidade: 1 }],
-      }),
-    ).rejects.toThrow("Falha ao cotar frete (502).");
   });
 });

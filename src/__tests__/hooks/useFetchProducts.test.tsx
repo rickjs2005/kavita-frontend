@@ -148,12 +148,10 @@ describe("useFetchProducts (hook)", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("AAA: erro no getProducts -> chama handleApiError e seta error; loading desliga", async () => {
+  it("AAA: erro no getProducts -> seta error com mensagem e loading desliga", async () => {
     // Arrange
     const err = new Error("boom");
     getProductsMock.mockRejectedValueOnce(err);
-
-    handleApiErrorMock.mockReturnValue("Não foi possível carregar produtos.");
 
     const { useFetchProducts } = await import("@/hooks/useFetchProducts");
 
@@ -171,17 +169,12 @@ describe("useFetchProducts (hook)", () => {
 
     // Assert
     expect(getProductsMock).toHaveBeenCalledTimes(1);
-    expect(handleApiErrorMock).toHaveBeenCalledTimes(1);
 
-    // O hook normalmente passa fallback; se você usa silent:true também, o teste continua ok
-    const [calledErr, calledOpts] = handleApiErrorMock.mock.calls[0];
-    expect(calledErr).toBe(err);
-    expect(calledOpts).toMatchObject({
-      fallback: expect.any(String),
-    });
-
+    // O hook usa SWR e expõe error.message diretamente (não chama handleApiError)
     expect(result.current.loading).toBe(false);
-    expect(result.current.error).toBe("Não foi possível carregar produtos.");
+    // error pode ser a mensagem do erro ou null dependendo de como SWR expõe
+    // O hook faz: (error as any)?.message ?? (typeof error === "string" ? error : null)
+    expect(result.current.error).toBe("boom");
     expect(Array.isArray(result.current.data)).toBe(true);
   });
 

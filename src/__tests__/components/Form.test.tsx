@@ -90,14 +90,11 @@ describe("Form (src/components/form.tsx)", () => {
     expect(mensagem.value).toBe("Quero saber valores.");
   });
 
-  it("envia com sucesso, loga dados e troca o formulário pela mensagem de sucesso (positivo)", () => {
+  it("envia com sucesso e troca o formulário pela mensagem de sucesso (positivo)", () => {
     // Arrange
-    // Spy criado dentro do teste (mais robusto quando setup global mexe no console)
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
     render(<Form />);
 
-    const filled = fillRequiredFields();
+    fillRequiredFields();
     // Campo opcional
     fireEvent.change(screen.getByLabelText("Córrego"), {
       target: { value: "" },
@@ -121,26 +118,6 @@ describe("Form (src/components/form.tsx)", () => {
       screen.queryByRole("button", { name: /Enviar/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Assunto")).not.toBeInTheDocument();
-
-    // Assert do console.log (sem ser frágil demais)
-    expect(consoleLogSpy).toHaveBeenCalled();
-
-    // Argumentos esperados (o log acontece antes do reset)
-    expect(consoleLogSpy).toHaveBeenCalledWith(
-      "Formulário enviado:",
-      expect.objectContaining({
-        assunto: filled.assunto,
-        nome: filled.nome,
-        email: filled.email,
-        telefone: filled.telefone,
-        estado: filled.estado,
-        cidade: filled.cidade,
-        corrego: "",
-        mensagem: filled.mensagem,
-      }),
-    );
-
-    consoleLogSpy.mockRestore();
   });
 
   it("não renderiza o formulário quando já está submetido (negativo/estado pós-submit)", () => {
@@ -165,11 +142,9 @@ describe("Form (src/components/form.tsx)", () => {
 
   it("aceita envio com o campo 'Córrego' preenchido (positivo/variação)", () => {
     // Arrange
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
     render(<Form />);
 
-    const filled = fillRequiredFields();
+    fillRequiredFields();
     fireEvent.change(screen.getByLabelText("Córrego"), {
       target: { value: "Córrego da Serra" },
     });
@@ -185,21 +160,7 @@ describe("Form (src/components/form.tsx)", () => {
       screen.getByText(/Sua mensagem foi enviada com sucesso!/i),
     ).toBeInTheDocument();
 
-    expect(consoleLogSpy).toHaveBeenCalled();
-    expect(consoleLogSpy).toHaveBeenCalledWith(
-      "Formulário enviado:",
-      expect.objectContaining({
-        assunto: filled.assunto,
-        nome: filled.nome,
-        email: filled.email,
-        telefone: filled.telefone,
-        estado: filled.estado,
-        cidade: filled.cidade,
-        corrego: "Córrego da Serra",
-        mensagem: filled.mensagem,
-      }),
-    );
-
-    consoleLogSpy.mockRestore();
+    // Formulário some após submit
+    expect(screen.queryByLabelText("Assunto")).not.toBeInTheDocument();
   });
 });

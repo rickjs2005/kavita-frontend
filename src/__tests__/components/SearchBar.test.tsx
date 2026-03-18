@@ -38,38 +38,32 @@ vi.mock("react-icons/fa", () => ({
   FaCartPlus: () => <span data-testid="icon-cart" />,
 }));
 
+// apiClient — produção usa apiClient.get(), não fetch direto
+const apiClientGetMock = vi.fn();
+vi.mock("@/lib/apiClient", () => ({
+  default: {
+    get: (...args: any[]) => apiClientGetMock(...args),
+  },
+}));
+
 /* =========================
    Helpers
 ========================= */
 
 const flushMicrotasks = async () => {
-  // React/Promises flush (microtasks)
   await Promise.resolve();
   await Promise.resolve();
 };
 
-type MockPayload = { ok?: boolean; json?: any };
-
-function makeFetchResponse(payload: MockPayload) {
-  return {
-    ok: payload.ok ?? true,
-    json: async () => payload.json,
-  };
-}
-
-function mockFetchByEndpoint(params: {
-  products: MockPayload;
-  servicos: MockPayload;
+function mockApiByEndpoint(params: {
+  products: any;
+  servicos: any;
 }) {
-  (global.fetch as any) = vi.fn(async (url: string) => {
+  apiClientGetMock.mockImplementation(async (url: string) => {
     const u = String(url);
-
-    if (u.includes("/products/search"))
-      return makeFetchResponse(params.products);
-    if (u.includes("/public/servicos"))
-      return makeFetchResponse(params.servicos);
-
-    return makeFetchResponse({ ok: true, json: { data: [] } });
+    if (u.includes("/products/search")) return params.products;
+    if (u.includes("/public/servicos")) return params.servicos;
+    return { data: [] };
   });
 }
 
@@ -113,14 +107,15 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
+    apiClientGetMock.mockReset();
 
     pushMock.mockClear();
     addToCartMock.mockClear();
 
-    // default: fetch vazio
-    mockFetchByEndpoint({
-      products: { ok: true, json: { data: [] } },
-      servicos: { ok: true, json: { data: [] } },
+    // default: api vazia
+    mockApiByEndpoint({
+      products: { data: [] },
+      servicos: { data: [] },
     });
   });
 
@@ -159,25 +154,19 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
       await flushMicrotasks();
     });
 
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(apiClientGetMock).not.toHaveBeenCalled();
   });
 
   it("dispara busca após debounce e renderiza resultados (produto + serviço)", async () => {
     // Arrange
-    mockFetchByEndpoint({
+    mockApiByEndpoint({
       products: {
-        ok: true,
-        json: {
-          products: [
-            { id: 1, name: "Produto A", price: 10, images: ["a.jpg"] },
-          ],
-        },
+        products: [
+          { id: 1, name: "Produto A", price: 10, images: ["a.jpg"] },
+        ],
       },
       servicos: {
-        ok: true,
-        json: {
-          data: [{ id: 2, nome: "Serviço B", preco: 20, imagem: "b.jpg" }],
-        },
+        data: [{ id: 2, nome: "Serviço B", preco: 20, imagem: "b.jpg" }],
       },
     });
 
@@ -186,10 +175,10 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
     // Act
     await typeAndRunDebounce("tes");
 
-    // Assert (sem waitFor/findByText com fake timers)
+    // Assert
     expect(screen.getByText("Produto A")).toBeInTheDocument();
     expect(screen.getByText("Serviço B")).toBeInTheDocument();
-    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(apiClientGetMock).toHaveBeenCalledTimes(2);
   });
 
   it("mostra estado de carregamento enquanto busca (positivo)", async () => {
@@ -197,13 +186,11 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
     const prodDef = createDeferred<any>();
     const servDef = createDeferred<any>();
 
-    (global.fetch as any) = vi.fn((url: string) => {
+    apiClientGetMock.mockImplementation((url: string) => {
       const u = String(url);
       if (u.includes("/products/search")) return prodDef.promise;
       if (u.includes("/public/servicos")) return servDef.promise;
-      return Promise.resolve(
-        makeFetchResponse({ ok: true, json: { data: [] } }),
-      );
+      return Promise.resolve({ data: [] });
     });
 
     render(<SearchBar />);
@@ -225,8 +212,8 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
     expect(screen.getByText("Carregando...")).toBeInTheDocument();
 
     // Cleanup: resolve para não deixar pendurado
-    prodDef.resolve(makeFetchResponse({ ok: true, json: { data: [] } }));
-    servDef.resolve(makeFetchResponse({ ok: true, json: { data: [] } }));
+    prodDef.resolve({ data: [] });
+    servDef.resolve({ data: [] });
 
     await act(async () => {
       await flushMicrotasks();
@@ -235,9 +222,9 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
 
   it("mostra mensagem de nenhum resultado quando API retorna vazio (negativo)", async () => {
     // Arrange
-    mockFetchByEndpoint({
-      products: { ok: true, json: { data: [] } },
-      servicos: { ok: true, json: { data: [] } },
+    mockApiByEndpoint({
+      products: { data: [] },
+      servicos: { data: [] },
     });
 
     render(<SearchBar />);
@@ -251,12 +238,11 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
 
   it("navega para produto ao clicar em um item (positivo)", async () => {
     // Arrange
-    mockFetchByEndpoint({
+    mockApiByEndpoint({
       products: {
-        ok: true,
-        json: { data: [{ id: 10, name: "Produto X", price: 30 }] },
+        data: [{ id: 10, name: "Produto X", price: 30 }],
       },
-      servicos: { ok: true, json: { data: [] } },
+      servicos: { data: [] },
     });
 
     render(<SearchBar />);
@@ -265,7 +251,6 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
     await typeAndRunDebounce("prod");
 
     // o item é <p> dentro do <li> com onMouseDown no <li>.
-    // mousedown no texto bubble -> li
     await act(async () => {
       fireEvent.mouseDown(screen.getByText("Produto X"));
     });
@@ -276,12 +261,11 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
 
   it("adiciona produto ao carrinho ao clicar no ícone (positivo)", async () => {
     // Arrange
-    mockFetchByEndpoint({
+    mockApiByEndpoint({
       products: {
-        ok: true,
-        json: { data: [{ id: 5, name: "Produto Carrinho", price: 99 }] },
+        data: [{ id: 5, name: "Produto Carrinho", price: 99 }],
       },
-      servicos: { ok: true, json: { data: [] } },
+      servicos: { data: [] },
     });
 
     render(<SearchBar />);
@@ -322,12 +306,11 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
 
   it("Escape fecha a lista (negativo)", async () => {
     // Arrange
-    mockFetchByEndpoint({
+    mockApiByEndpoint({
       products: {
-        ok: true,
-        json: { data: [{ id: 1, name: "Item Escape", price: 10 }] },
+        data: [{ id: 1, name: "Item Escape", price: 10 }],
       },
-      servicos: { ok: true, json: { data: [] } },
+      servicos: { data: [] },
     });
 
     render(<SearchBar />);
@@ -346,17 +329,14 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
 
   it("ArrowDown/ArrowUp não quebram e mantém resultados visíveis (controle)", async () => {
     // Arrange
-    mockFetchByEndpoint({
+    mockApiByEndpoint({
       products: {
-        ok: true,
-        json: {
-          data: [
-            { id: 1, name: "Item 1", price: 10 },
-            { id: 2, name: "Item 2", price: 20 },
-          ],
-        },
+        data: [
+          { id: 1, name: "Item 1", price: 10 },
+          { id: 2, name: "Item 2", price: 20 },
+        ],
       },
-      servicos: { ok: true, json: { data: [] } },
+      servicos: { data: [] },
     });
 
     render(<SearchBar />);

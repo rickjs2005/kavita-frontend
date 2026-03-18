@@ -4,34 +4,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, within, act } from "@testing-library/react";
 
 import SearchInputProdutos from "../../components/products/SearchInput";
-import { mockGlobalFetch, flushMicrotasks } from "../testUtils";
+import { flushMicrotasks } from "../testUtils";
 
-type FetchResponseLike = {
-  ok: boolean;
-  status: number;
-  json: () => Promise<any>;
-  text: () => Promise<string>;
-};
-
-function mockFetchOnceJson(
-  payload: any,
-  init?: { ok?: boolean; status?: number },
-) {
-  const ok = init?.ok ?? true;
-  const status = init?.status ?? (ok ? 200 : 500);
-
-  const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
-  fetchMock.mockResolvedValueOnce({
-    ok,
-    status,
-    json: vi.fn().mockResolvedValue(payload),
-    text: vi
-      .fn()
-      .mockResolvedValue(
-        typeof payload === "string" ? payload : JSON.stringify(payload),
-      ),
-  } satisfies FetchResponseLike);
-}
+// Mock de apiClient — produção usa apiClient.get(), não fetch direto
+const apiClientGetMock = vi.fn();
+vi.mock("@/lib/apiClient", () => ({
+  default: {
+    get: (...args: any[]) => apiClientGetMock(...args),
+  },
+}));
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
@@ -68,7 +49,9 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.spyOn(console, "warn").mockImplementation(() => {});
-    mockGlobalFetch();
+    apiClientGetMock.mockReset();
+    // padrão: sem produtos
+    apiClientGetMock.mockResolvedValue({ data: [] });
   });
 
   afterEach(() => {
@@ -95,9 +78,9 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
     return { onPick, input };
   }
 
-  it("carrega produtos via fetch (sucesso) e filtra por termo com debounce, renderizando resultados", async () => {
+  it("carrega produtos via apiClient (sucesso) e filtra por termo com debounce, renderizando resultados", async () => {
     // Arrange
-    mockFetchOnceJson({
+    apiClientGetMock.mockResolvedValueOnce({
       data: [
         { id: 1, name: "Ivermectina", price: 12.5, image: "ivm.png" },
         {
@@ -112,8 +95,9 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
     const { input } = setup();
 
     // Act
-    await focusInput(input); // abre dropdown + deixa useEffect do fetch “commitar”
-    await changeValue(input, "iver");
+    await focusInput(input); // abre dropdown + deixa useEffect do apiClient "commitar"
+    // "ina" combina com "Ivermect**ina**" e "Vitam**ina** B12"
+    await changeValue(input, "ina");
     await advance(300); // debounce
 
     // Assert
@@ -133,7 +117,7 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
 
   it("ao clicar em um item (onMouseDown) chama onPick, fecha dropdown e limpa input", async () => {
     // Arrange
-    mockFetchOnceJson({
+    apiClientGetMock.mockResolvedValueOnce({
       products: [
         {
           id: 10,
@@ -175,7 +159,7 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
 
   it("navegação por teclado: ArrowDown move cursor e Enter não seleciona automaticamente (não chama onPick)", async () => {
     // Arrange
-    mockFetchOnceJson({
+    apiClientGetMock.mockResolvedValueOnce({
       rows: [
         { id: 1, name: "Cálcio", price: 10, image: "calc.png" },
         { id: 2, name: "Cálcio Plus", price: 20, image: "calc-plus.png" },
@@ -198,13 +182,14 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
     // Assert (comportamento observado no componente: Enter não aciona pick)
     expect(onPick).not.toHaveBeenCalled();
 
-    // E a lista continua visível (teclado não “fecha” nem seleciona)
+    // E a lista continua visível (teclado não "fecha" nem seleciona)
     expect(screen.getByRole("list")).toBeInTheDocument();
     expect(screen.getByText("Cálcio")).toBeInTheDocument();
   });
+
   it("não chama onPick ao pressionar Enter com cursor = -1 (mesmo com resultados)", async () => {
     // Arrange
-    mockFetchOnceJson({
+    apiClientGetMock.mockResolvedValueOnce({
       data: [{ id: 7, name: "Antibiótico X", price: 30, image: "a.png" }],
     });
 
@@ -225,11 +210,10 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
     expect(screen.getByRole("list")).toBeInTheDocument();
   });
 
-  it("estado de loading: enquanto fetch está pendente, mostra 'Carregando…' quando aberto", async () => {
+  it("estado de loading: enquanto apiClient está pendente, mostra 'Carregando…' quando aberto", async () => {
     // Arrange
-    const deferred = createDeferred<FetchResponseLike>();
-    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
-    fetchMock.mockReturnValueOnce(deferred.promise);
+    const deferred = createDeferred<any>();
+    apiClientGetMock.mockReturnValueOnce(deferred.promise);
 
     const { input } = setup();
 
@@ -241,27 +225,16 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
     expect(screen.getByText("Carregando…")).toBeInTheDocument();
 
     // encerra promise pra não vazar
-    deferred.resolve({
-      ok: true,
-      status: 200,
-      json: vi.fn().mockResolvedValue({ data: [] }),
-      text: vi.fn().mockResolvedValue(""),
-    });
+    deferred.resolve({ data: [] });
 
     await act(async () => {
       await flushMicrotasks();
     });
   });
 
-  it("falha no fetch: não quebra UI e quando há termo mostra 'Nenhum produto encontrado'", async () => {
+  it("falha no apiClient: não quebra UI e quando há termo mostra 'Nenhum produto encontrado'", async () => {
     // Arrange
-    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
-    fetchMock.mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      json: vi.fn().mockResolvedValue({}),
-      text: vi.fn().mockResolvedValue("Erro interno"),
-    } satisfies FetchResponseLike);
+    apiClientGetMock.mockRejectedValueOnce(new Error("Network error"));
 
     const { input } = setup();
 
@@ -277,7 +250,7 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
 
   it("quando aberto e sem termo (após debounce), mostra 'Digite para buscar…'", async () => {
     // Arrange
-    mockFetchOnceJson({ data: [] });
+    apiClientGetMock.mockResolvedValueOnce({ data: [] });
 
     const { input } = setup();
 
@@ -292,7 +265,7 @@ describe("SearchInputProdutos (src/components/SearchInput.tsx)", () => {
 
   it("onBlur fecha dropdown após 150ms (estável com fake timers)", async () => {
     // Arrange
-    mockFetchOnceJson({ data: [] });
+    apiClientGetMock.mockResolvedValueOnce({ data: [] });
 
     const { input } = setup();
 

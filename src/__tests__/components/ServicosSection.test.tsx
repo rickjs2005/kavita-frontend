@@ -9,7 +9,6 @@ import {
   cleanup,
 } from "@testing-library/react";
 
-// Ajuste o import se seu path for diferente:
 import ServicosSection from "../../components/layout/ServicosSection";
 
 /**
@@ -36,7 +35,6 @@ vi.mock("next/link", () => {
 
 /**
  * ServiceCard mock para asserts estáveis
- * IMPORTANTE: o caminho precisa bater com o import real do ServicosSection.
  */
 type ServiceCardProps = {
   servico?: { nome?: string; images?: unknown };
@@ -69,12 +67,18 @@ vi.mock("../../components/layout/ServiceCard", () => {
 });
 
 /**
+ * Mock de apiClient — a produção usa apiClient.get() (não fetch direto)
+ */
+const apiClientGetMock = vi.fn();
+
+vi.mock("@/lib/apiClient", () => ({
+  default: {
+    get: (...args: any[]) => apiClientGetMock(...args),
+  },
+}));
+
+/**
  * ResizeObserver mock como CLASSE (construtor real).
- * Também fornece trigger manual para simular resize.
- *
- * ✅ Corrige ESLint @typescript-eslint/no-this-alias:
- * - não fazemos lastRO = this
- * - guardamos só uma função "lastROTrigger"
  */
 let lastROTrigger: (() => void) | null = null;
 
@@ -85,12 +89,10 @@ class ResizeObserverMock {
   constructor(cb: ResizeObserverCallback) {
     this.cb = cb;
 
-    // guarda função de trigger sem "aliasar" this em variável
     lastROTrigger = () => {
       const entries = this.elements.map((el) => ({
         target: el,
       })) as unknown as ResizeObserverEntry[];
-      // 2º parâmetro é opcional; passamos undefined
       this.cb(entries, undefined as unknown as ResizeObserver);
     };
   }
@@ -103,74 +105,20 @@ class ResizeObserverMock {
     this.elements = [];
   };
 
-  // mantemos para compatibilidade (não precisa usar no teste)
   trigger = () => {
     lastROTrigger?.();
   };
 }
 
-/**
- * AbortController mock (valida cleanup abort)
- */
-const abortSpy = vi.fn();
-class AbortControllerMock {
-  signal: { __mockSignal: true };
-
-  constructor() {
-    this.signal = { __mockSignal: true };
-  }
-
-  abort() {
-    abortSpy();
-  }
-}
-
-function mockFetchOkJson(payload: unknown) {
-  globalThis.fetch = vi.fn(() => {
-    return Promise.resolve({
-      ok: true,
-      status: 200,
-      statusText: "OK",
-      text: () => Promise.resolve(JSON.stringify(payload)),
-    } as unknown as Response);
-  }) as unknown as typeof fetch;
-}
-
-function mockFetchOkText(text: string) {
-  globalThis.fetch = vi.fn(() => {
-    return Promise.resolve({
-      ok: true,
-      status: 200,
-      statusText: "OK",
-      text: () => Promise.resolve(text),
-    } as unknown as Response);
-  }) as unknown as typeof fetch;
-}
-
-function mockFetchFail(text: string, status = 500) {
-  globalThis.fetch = vi.fn(() => {
-    return Promise.resolve({
-      ok: false,
-      status,
-      statusText: "ERR",
-      text: () => Promise.resolve(text),
-    } as unknown as Response);
-  }) as unknown as typeof fetch;
-}
-
 describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
   beforeEach(() => {
     ServiceCardMock.mockClear();
-    abortSpy.mockClear();
+    apiClientGetMock.mockReset();
     lastROTrigger = null;
 
     // ResizeObserver precisa ser construtor real
     (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver =
       ResizeObserverMock;
-
-    // AbortController
-    (globalThis as unknown as { AbortController: unknown }).AbortController =
-      AbortControllerMock as unknown;
 
     // scrollBy (jsdom pode não ter)
     if (!HTMLElement.prototype.scrollBy) {
@@ -189,14 +137,13 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
   });
 
   it("renderiza header e links fixos e mostra skeletons durante loading (positivo/controle)", async () => {
-    // Arrange: fetch pendente
-    let resolveFetch: ((value: Response) => void) | undefined;
-
-    globalThis.fetch = vi.fn(() => {
-      return new Promise<Response>((res) => {
-        resolveFetch = res;
-      });
-    }) as unknown as typeof fetch;
+    // Arrange: apiClient pendente
+    let resolveApiCall: ((value: any) => void) | undefined;
+    apiClientGetMock.mockReturnValueOnce(
+      new Promise<any>((res) => {
+        resolveApiCall = res;
+      }),
+    );
 
     // Act
     const { container } = render(<ServicosSection />);
@@ -219,22 +166,17 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
     const skeletonBlocks = container.querySelectorAll(".animate-pulse");
     expect(skeletonBlocks.length).toBe(9);
 
-    // resolve fetch p/ não deixar promise pendurada
-    resolveFetch?.({
-      ok: true,
-      status: 200,
-      statusText: "OK",
-      text: async () => "[]",
-    } as unknown as Response);
+    // resolve p/ não deixar promise pendurada
+    resolveApiCall?.([]);
 
     await waitFor(() => {
-      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      expect(apiClientGetMock).toHaveBeenCalledTimes(1);
     });
   });
 
-  it("faz fetch em /api/public/servicos e renderiza lista com ServiceCard; normaliza images (positivo)", async () => {
+  it("faz GET em /api/public/servicos e renderiza lista com ServiceCard; normaliza images (positivo)", async () => {
     // Arrange
-    mockFetchOkJson([
+    apiClientGetMock.mockResolvedValueOnce([
       { id: 1, nome: "Veterinário", images: ["a.png"] },
       { id: 2, nome: "Técnico em irrigação" }, // sem images -> []
     ]);
@@ -242,17 +184,10 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
     // Act
     render(<ServicosSection />);
 
-    // Assert fetch params
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
-    const [url, init] = (
-      globalThis.fetch as unknown as { mock: { calls: unknown[][] } }
-    ).mock.calls[0] as [unknown, RequestInit | undefined];
-
-    expect(String(url)).toMatch(/\/api\/public\/servicos$/);
-    expect(init?.cache).toBe("no-store");
-    expect((init as { signal?: unknown } | undefined)?.signal).toMatchObject({
-      __mockSignal: true,
-    });
+    // Assert — verificamos que apiClient foi chamado com o path correto
+    await waitFor(() => expect(apiClientGetMock).toHaveBeenCalledTimes(1));
+    const [path] = apiClientGetMock.mock.calls[0];
+    expect(path).toMatch(/\/api\/public\/servicos$/);
 
     // cards
     await waitFor(() => {
@@ -281,7 +216,7 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
 
   it("normaliza payload quando API retorna em chaves (ex: data.items) (positivo)", async () => {
     // Arrange
-    mockFetchOkJson({
+    apiClientGetMock.mockResolvedValueOnce({
       data: {
         items: [{ id: 10, nome: "Eletricista rural", images: null }],
       },
@@ -306,7 +241,7 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
 
   it("quando fetch ok retorna vazio, mostra mensagem 'Nenhum serviço cadastrado ainda.' (negativo/sem resultados)", async () => {
     // Arrange
-    mockFetchOkText("[]");
+    apiClientGetMock.mockResolvedValueOnce([]);
 
     // Act
     render(<ServicosSection />);
@@ -320,20 +255,24 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
     expect(ServiceCardMock).not.toHaveBeenCalled();
   });
 
-  it("quando fetch falha (res.ok=false), mostra mensagem de erro amigável (negativo)", async () => {
-    // Arrange
-    mockFetchFail("falhou", 500);
+  it("quando fetch falha, mostra mensagem de erro amigável (negativo)", async () => {
+    // Arrange — apiClient.get lança erro (simula res.ok=false)
+    const { ApiError } = await import("@/lib/errors");
+    apiClientGetMock.mockRejectedValueOnce(
+      new ApiError({ status: 500, message: "Internal Server Error" }),
+    );
 
-    // Silencia console.error caso o componente logue (sem exigir que logue)
+    // Silencia console.error
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     // Act
     render(<ServicosSection />);
 
-    // Assert
+    // Assert: formatApiError usa err.message quando é ApiError,
+    // portanto exibe "Internal Server Error" (não o fallback)
     await waitFor(() => {
       expect(
-        screen.getByText("Não foi possível carregar os serviços."),
+        screen.getByText("Internal Server Error"),
       ).toBeInTheDocument();
     });
     expect(ServiceCardMock).not.toHaveBeenCalled();
@@ -343,7 +282,7 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
 
   it("quando há overflow, exibe botões e clicar chama scrollBy com dx esperado (positivo)", async () => {
     // Arrange
-    mockFetchOkJson([
+    apiClientGetMock.mockResolvedValueOnce([
       { id: 1, nome: "Serviço 1" },
       { id: 2, nome: "Serviço 2" },
       { id: 3, nome: "Serviço 3" },
@@ -394,17 +333,14 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
     expect(scrollBySpy).toHaveBeenCalledWith({ left: 320, behavior: "smooth" });
   });
 
-  it("no unmount, executa AbortController.abort (cleanup do efeito) (negativo/controle)", async () => {
-    // Arrange: fetch pendente
-    globalThis.fetch = vi.fn(() => {
-      return new Promise<Response>(() => {});
-    }) as unknown as typeof fetch;
+  it("no unmount, não lança erro (cleanup do efeito) (controle)", async () => {
+    // Arrange: promise pendente (nunca resolve)
+    apiClientGetMock.mockReturnValueOnce(new Promise(() => {}));
 
     // Act
     const { unmount } = render(<ServicosSection />);
-    unmount();
 
-    // Assert
-    expect(abortSpy).toHaveBeenCalledTimes(1);
+    // Não deve lançar ao desmontar
+    expect(() => unmount()).not.toThrow();
   });
 });

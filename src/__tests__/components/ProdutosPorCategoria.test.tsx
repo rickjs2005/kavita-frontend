@@ -13,6 +13,14 @@ vi.mock("@/components/products/ProductCard", () => ({
   ),
 }));
 
+// Mock de apiClient — produção usa apiClient.get(), não fetch direto
+const apiClientGetMock = vi.fn();
+vi.mock("@/lib/apiClient", () => ({
+  default: {
+    get: (...args: any[]) => apiClientGetMock(...args),
+  },
+}));
+
 class ResizeObserverMock {
   observe() {}
   unobserve() {}
@@ -24,17 +32,10 @@ class ResizeObserverMock {
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-const mockFetchJson = (payload: any, ok = true) => {
-  global.fetch = vi.fn().mockResolvedValue({
-    ok,
-    text: vi.fn().mockResolvedValue(JSON.stringify(payload)),
-    statusText: ok ? "OK" : "Erro",
-  } as any);
-};
-
 describe("ProdutosPorCategoria", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    apiClientGetMock.mockReset();
   });
 
   afterEach(() => {
@@ -43,7 +44,7 @@ describe("ProdutosPorCategoria", () => {
 
   it("renderiza produtos quando sucesso (positivo)", async () => {
     // Arrange
-    mockFetchJson([
+    apiClientGetMock.mockResolvedValueOnce([
       { id: 1, name: "Ração Premium" },
       { id: 2, name: "Milho Selecionado" },
     ]);
@@ -59,22 +60,16 @@ describe("ProdutosPorCategoria", () => {
     expect(screen.getByText("Ração Premium")).toBeInTheDocument();
     expect(screen.getByText("Milho Selecionado")).toBeInTheDocument();
 
-    // URL vem com encodeURIComponent e inclui host base
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining(
-        `/api/products?category=${encodeURIComponent("ração")}`,
-      ),
-      expect.objectContaining({
-        cache: "no-store",
-        // o componente passa AbortSignal
-        signal: expect.any(Object),
-      }),
+    // URL inclui categoria com encode correto
+    const [calledPath] = apiClientGetMock.mock.calls[0];
+    expect(calledPath).toContain(
+      `/api/products?category=${encodeURIComponent("ração")}`,
     );
   });
 
   it("respeita o limit (controle)", async () => {
     // Arrange
-    mockFetchJson([
+    apiClientGetMock.mockResolvedValueOnce([
       { id: 1, name: "Produto 1" },
       { id: 2, name: "Produto 2" },
       { id: 3, name: "Produto 3" },
@@ -91,7 +86,7 @@ describe("ProdutosPorCategoria", () => {
 
   it("renderiza vazio quando não há produtos (negativo)", async () => {
     // Arrange
-    mockFetchJson([]);
+    apiClientGetMock.mockResolvedValueOnce([]);
 
     // Act
     render(<ProdutosPorCategoria categoria="vazia" />);
@@ -102,13 +97,12 @@ describe("ProdutosPorCategoria", () => {
     ).toBeInTheDocument();
   });
 
-  it("renderiza erro quando fetch retorna não-ok (negativo)", async () => {
+  it("renderiza erro quando apiClient.get falha (negativo)", async () => {
     // Arrange
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      text: vi.fn().mockResolvedValue("Erro interno"),
-      statusText: "Erro",
-    } as any);
+    const { ApiError } = await import("@/lib/errors");
+    apiClientGetMock.mockRejectedValueOnce(
+      new ApiError({ status: 500, message: "Erro interno" }),
+    );
 
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -120,12 +114,12 @@ describe("ProdutosPorCategoria", () => {
       await screen.findByText(/não foi possível carregar produtos/i),
     ).toBeInTheDocument();
 
-    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 
   it("renderiza carrossel com scroll horizontal (positivo)", async () => {
     // Arrange
-    mockFetchJson(
+    apiClientGetMock.mockResolvedValueOnce(
       new Array(10).fill(0).map((_, i) => ({
         id: i + 1,
         name: `Produto ${i + 1}`,
@@ -144,7 +138,7 @@ describe("ProdutosPorCategoria", () => {
     const scroller = container.querySelector("div.overflow-x-auto");
     expect(scroller).toBeTruthy();
 
-    // Garante que é um “carrossel” (snap + smooth)
+    // Garante que é um "carrossel" (snap + smooth)
     expect(scroller).toHaveClass("snap-x");
     expect(scroller).toHaveClass("snap-mandatory");
     expect(scroller).toHaveClass("scroll-smooth");
@@ -152,7 +146,7 @@ describe("ProdutosPorCategoria", () => {
 
   it("não renderiza botões de navegação (controle)", async () => {
     // Arrange
-    mockFetchJson([{ id: 1, name: "Produto 1" }]);
+    apiClientGetMock.mockResolvedValueOnce([{ id: 1, name: "Produto 1" }]);
 
     // Act
     render(<ProdutosPorCategoria categoria="sem-setas" />);

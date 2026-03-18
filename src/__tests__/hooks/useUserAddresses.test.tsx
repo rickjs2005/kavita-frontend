@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
+import React from "react";
 
 /**
  * ============================
@@ -18,7 +19,7 @@ vi.mock("react-hot-toast", () => ({
   },
 }));
 
-// next/navigation (padrão fixo — mesmo que este hook não use)
+// next/navigation (padrão fixo)
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
   usePathname: () => "/",
@@ -40,33 +41,51 @@ vi.mock("@/lib/apiClient", () => ({
   },
 }));
 
+// SWR mock: controlamos data/isLoading/mutate por teste
+let swrData: any = undefined;
+let swrIsLoading = true;
+let swrError: any = undefined;
+const swrMutateMock = vi.fn();
+
+// We need a real onError callback capture
+let capturedOnError: ((err: any) => void) | undefined;
+
+vi.mock("swr", () => ({
+  default: (_key: any, _fetcher: any, options?: any) => {
+    capturedOnError = options?.onError;
+    return {
+      data: swrData,
+      isLoading: swrIsLoading,
+      error: swrError,
+      mutate: swrMutateMock,
+    };
+  },
+}));
+
 /**
  * Helpers
  */
 async function flushPromises() {
-  // resolve microtasks pendentes
   await Promise.resolve();
   await Promise.resolve();
-}
-
-async function importHook() {
-  vi.resetModules();
-
-  const mod = await import("@/hooks/useUserAddresses");
-  return mod.useUserAddresses;
 }
 
 describe("useUserAddresses (hook)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    swrData = undefined;
+    swrIsLoading = true;
+    swrError = undefined;
+    capturedOnError = undefined;
+    swrMutateMock.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     delete process.env.NEXT_PUBLIC_API_URL;
   });
 
-  it("AAA: estado inicial: loading true, addresses vazio; após GET sucesso, popula e loading false", async () => {
-    // Arrange
+  it("AAA: estado inicial: loading true, addresses vazio; após SWR resolver, popula e loading false", async () => {
+    // Arrange: SWR retorna dados
     const apiResponse = [
       {
         id: 1,
@@ -84,56 +103,48 @@ describe("useUserAddresses (hook)", () => {
       },
     ];
 
-    apiClientGetMock.mockResolvedValueOnce(apiResponse);
+    swrData = apiResponse;
+    swrIsLoading = false;
 
-    const useUserAddresses = await importHook();
+    const { useUserAddresses } = await import("@/hooks/useUserAddresses");
 
     // Act
     const { result } = renderHook(() => useUserAddresses());
 
-    // Assert (antes de resolver o effect)
-    expect(result.current.addresses).toEqual([]);
-    expect(result.current.loading).toBe(true);
-
-    // Act (resolve effect)
-    await act(async () => {
-      await flushPromises();
-    });
-
-    // Assert (depois do GET)
-    expect(apiClientGetMock).toHaveBeenCalledTimes(1);
-    expect(apiClientGetMock).toHaveBeenCalledWith("/api/users/addresses");
-
+    // Assert
     expect(result.current.addresses).toEqual(apiResponse);
     expect(result.current.loading).toBe(false);
     expect(toastErrorMock).not.toHaveBeenCalled();
   });
 
   it("AAA: GET falha: mostra toast.error com mensagem do backend e loading volta para false", async () => {
-    // Arrange
-    apiClientGetMock.mockRejectedValueOnce({ message: "Sessão expirada" });
+    // Arrange: SWR em estado de erro, mas onError é chamado pelo SWR
+    swrData = undefined;
+    swrIsLoading = false;
+    swrError = { message: "Sessão expirada" };
 
-    const useUserAddresses = await importHook();
+    const { useUserAddresses } = await import("@/hooks/useUserAddresses");
 
     // Act
     const { result } = renderHook(() => useUserAddresses());
 
+    // O hook registra onError no SWR; simulamos o SWR chamando-o
     await act(async () => {
+      capturedOnError?.({ message: "Sessão expirada" });
       await flushPromises();
     });
 
     // Assert
-    expect(apiClientGetMock).toHaveBeenCalledTimes(1);
     expect(toastErrorMock).toHaveBeenCalledTimes(1);
     expect(toastErrorMock).toHaveBeenCalledWith("Sessão expirada");
     expect(result.current.loading).toBe(false);
-    // addresses fica como estava (inicial vazio)
     expect(result.current.addresses).toEqual([]);
   });
 
   it("AAA: createAddress sucesso: POST, adiciona no state e toast.success", async () => {
     // Arrange
-    apiClientGetMock.mockResolvedValueOnce([]);
+    swrData = [];
+    swrIsLoading = false;
 
     const created = {
       id: 99,
@@ -152,14 +163,8 @@ describe("useUserAddresses (hook)", () => {
 
     apiClientPostMock.mockResolvedValueOnce(created);
 
-    const useUserAddresses = await importHook();
-
+    const { useUserAddresses } = await import("@/hooks/useUserAddresses");
     const { result } = renderHook(() => useUserAddresses());
-
-    // resolve load inicial
-    await act(async () => {
-      await flushPromises();
-    });
 
     const payload = {
       cep: created.cep,
@@ -184,7 +189,7 @@ describe("useUserAddresses (hook)", () => {
       payload,
     );
 
-    expect(result.current.addresses).toEqual([created]);
+    expect(swrMutateMock).toHaveBeenCalledTimes(1);
     expect(toastSuccessMock).toHaveBeenCalledTimes(1);
     expect(toastSuccessMock).toHaveBeenCalledWith(
       "Endereço salvo com sucesso! ✅",
@@ -193,17 +198,14 @@ describe("useUserAddresses (hook)", () => {
 
   it("AAA: createAddress falha: toast.error, relança erro (throw)", async () => {
     // Arrange
-    apiClientGetMock.mockResolvedValueOnce([]);
+    swrData = [];
+    swrIsLoading = false;
 
     const err = { message: "Falha ao salvar" };
     apiClientPostMock.mockRejectedValueOnce(err);
 
-    const useUserAddresses = await importHook();
+    const { useUserAddresses } = await import("@/hooks/useUserAddresses");
     const { result } = renderHook(() => useUserAddresses());
-
-    await act(async () => {
-      await flushPromises();
-    });
 
     const payload = {
       cep: "00000-000",
@@ -258,17 +260,14 @@ describe("useUserAddresses (hook)", () => {
       },
     ];
 
-    apiClientGetMock.mockResolvedValueOnce(initial);
+    swrData = initial;
+    swrIsLoading = false;
 
     const updated = { ...initial[1], bairro: "Novo Bairro" };
     apiClientPutMock.mockResolvedValueOnce(updated);
 
-    const useUserAddresses = await importHook();
+    const { useUserAddresses } = await import("@/hooks/useUserAddresses");
     const { result } = renderHook(() => useUserAddresses());
-
-    await act(async () => {
-      await flushPromises();
-    });
 
     // Act
     await act(async () => {
@@ -289,7 +288,7 @@ describe("useUserAddresses (hook)", () => {
       expect.any(Object),
     );
 
-    expect(result.current.addresses).toEqual([initial[0], updated]);
+    expect(swrMutateMock).toHaveBeenCalledTimes(1);
     expect(toastSuccessMock).toHaveBeenCalledWith(
       "Endereço atualizado com sucesso! ✅",
     );
@@ -297,17 +296,14 @@ describe("useUserAddresses (hook)", () => {
 
   it("AAA: updateAddress falha: toast.error e relança erro", async () => {
     // Arrange
-    apiClientGetMock.mockResolvedValueOnce([]);
+    swrData = [];
+    swrIsLoading = false;
 
     const err = { message: "Falha ao atualizar" };
     apiClientPutMock.mockRejectedValueOnce(err);
 
-    const useUserAddresses = await importHook();
+    const { useUserAddresses } = await import("@/hooks/useUserAddresses");
     const { result } = renderHook(() => useUserAddresses());
-
-    await act(async () => {
-      await flushPromises();
-    });
 
     // Act + Assert
     await expect(
@@ -360,15 +356,12 @@ describe("useUserAddresses (hook)", () => {
       },
     ];
 
-    apiClientGetMock.mockResolvedValueOnce(initial);
+    swrData = initial;
+    swrIsLoading = false;
     apiClientDelMock.mockResolvedValueOnce(undefined);
 
-    const useUserAddresses = await importHook();
+    const { useUserAddresses } = await import("@/hooks/useUserAddresses");
     const { result } = renderHook(() => useUserAddresses());
-
-    await act(async () => {
-      await flushPromises();
-    });
 
     // Act
     await act(async () => {
@@ -379,7 +372,7 @@ describe("useUserAddresses (hook)", () => {
     expect(apiClientDelMock).toHaveBeenCalledTimes(1);
     expect(apiClientDelMock).toHaveBeenCalledWith("/api/users/addresses/1");
 
-    expect(result.current.addresses).toEqual([initial[1]]);
+    expect(swrMutateMock).toHaveBeenCalledTimes(1);
     expect(toastSuccessMock).toHaveBeenCalledWith(
       "Endereço excluído com sucesso.",
     );
@@ -387,17 +380,14 @@ describe("useUserAddresses (hook)", () => {
 
   it("AAA: deleteAddress falha: toast.error e relança erro", async () => {
     // Arrange
-    apiClientGetMock.mockResolvedValueOnce([]);
+    swrData = [];
+    swrIsLoading = false;
 
     const err = { message: "Falha ao excluir" };
     apiClientDelMock.mockRejectedValueOnce(err);
 
-    const useUserAddresses = await importHook();
+    const { useUserAddresses } = await import("@/hooks/useUserAddresses");
     const { result } = renderHook(() => useUserAddresses());
-
-    await act(async () => {
-      await flushPromises();
-    });
 
     // Act + Assert
     await expect(
@@ -410,9 +400,9 @@ describe("useUserAddresses (hook)", () => {
     expect(toastErrorMock).toHaveBeenCalledWith("Falha ao excluir");
   });
 
-  it("AAA: reload chama GET novamente e atualiza addresses", async () => {
+  it("AAA: reload chama mutate do SWR novamente", async () => {
     // Arrange
-    const first = [
+    swrData = [
       {
         id: 1,
         apelido: "Casa",
@@ -428,33 +418,10 @@ describe("useUserAddresses (hook)", () => {
         is_default: 1,
       },
     ];
-    const second = [
-      {
-        id: 2,
-        apelido: "Trabalho",
-        cep: "11111-111",
-        endereco: "Rua B",
-        numero: "20",
-        bairro: "Bairro B",
-        cidade: "Y",
-        estado: "ES",
-        complemento: null,
-        ponto_referencia: null,
-        telefone: null,
-        is_default: 0,
-      },
-    ];
+    swrIsLoading = false;
 
-    apiClientGetMock.mockResolvedValueOnce(first).mockResolvedValueOnce(second);
-
-    const useUserAddresses = await importHook();
+    const { useUserAddresses } = await import("@/hooks/useUserAddresses");
     const { result } = renderHook(() => useUserAddresses());
-
-    await act(async () => {
-      await flushPromises();
-    });
-
-    expect(result.current.addresses).toEqual(first);
 
     // Act (reload)
     await act(async () => {
@@ -462,9 +429,8 @@ describe("useUserAddresses (hook)", () => {
       await flushPromises();
     });
 
-    // Assert
-    expect(apiClientGetMock).toHaveBeenCalledTimes(2);
-    expect(result.current.addresses).toEqual(second);
+    // Assert: mutate was called (which triggers SWR revalidation)
+    expect(swrMutateMock).toHaveBeenCalledTimes(1);
     expect(result.current.loading).toBe(false);
   });
 });

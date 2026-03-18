@@ -5,7 +5,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import CartItemCard from "../../components/cart/CartItemCard";
-import { installMockStorage, mockGlobalFetch } from "../testUtils";
+import { installMockStorage } from "../testUtils";
 
 /**
  * =========================
@@ -47,6 +47,14 @@ vi.mock("../../components/buttons/CustomButton", () => ({
   ),
 }));
 
+// apiClient mock — produção usa apiClient.get(), não fetch direto
+const apiClientGetMock = vi.fn();
+vi.mock("@/lib/apiClient", () => ({
+  default: {
+    get: (...args: any[]) => apiClientGetMock(...args),
+  },
+}));
+
 /**
  * =========================
  * BASE ITEM
@@ -61,15 +69,12 @@ const baseItem = {
 };
 
 describe("CartItemCard", () => {
-  let fetchMock: ReturnType<typeof mockGlobalFetch>;
-
   beforeEach(() => {
     vi.clearAllMocks();
     installMockStorage();
 
-    fetchMock = mockGlobalFetch();
-    // padrão: sem promoção
-    fetchMock.mockResolvedValue({ ok: false } as unknown as Response);
+    // padrão: sem promoção (rejeita com erro = silenciosamente ignorado no catch)
+    apiClientGetMock.mockRejectedValue(new Error("404 Not Found"));
   });
 
   it("renderiza nome, imagem placeholder e preço sem promoção (positivo)", async () => {
@@ -91,16 +96,13 @@ describe("CartItemCard", () => {
     }
   });
 
-  it("busca promoção e renderiza preço com desconto quando fetch retorna ok (positivo)", async () => {
+  it("busca promoção e renderiza preço com desconto quando apiClient retorna dados (positivo)", async () => {
     // Arrange
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        original_price: 100,
-        final_price: 80,
-        discount_percent: 20,
-      }),
-    } as unknown as Response);
+    apiClientGetMock.mockResolvedValueOnce({
+      original_price: 100,
+      final_price: 80,
+      discount_percent: 20,
+    });
 
     render(<CartItemCard item={baseItem as never} />);
 
@@ -193,7 +195,7 @@ describe("CartItemCard", () => {
 
   it("não quebra se fetch de promoção falhar (negativo)", async () => {
     // Arrange
-    fetchMock.mockRejectedValue(new Error("network error"));
+    apiClientGetMock.mockRejectedValue(new Error("network error"));
 
     render(<CartItemCard item={baseItem as never} />);
 

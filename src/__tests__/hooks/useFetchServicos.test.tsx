@@ -68,10 +68,12 @@ describe("useFetchServicos (hook)", () => {
     // Assert
     expect(swrDefaultMock).toHaveBeenCalledTimes(1);
 
-    const [key] = swrDefaultMock.mock.calls[0];
-    const url = new URL(String(key));
+    // A chave é relativa (/api/public/servicos?...) — usar URL com base para parse
+    const [keyRaw] = swrDefaultMock.mock.calls[0];
+    const key = String(keyRaw);
+    // Parse como URL relativa, usando base fictícia
+    const url = new URL(key, "http://api.test");
 
-    expect(url.origin).toBe("http://api.test");
     expect(url.pathname).toBe("/api/public/servicos");
 
     expect(url.searchParams.get("page")).toBe("1");
@@ -106,11 +108,12 @@ describe("useFetchServicos (hook)", () => {
       }),
     );
 
-    // Assert
-    const [key] = swrDefaultMock.mock.calls[0];
-    const url = new URL(String(key));
+    // Assert — chave é relativa, usar URL com base fictícia
+    const [keyRaw] = swrDefaultMock.mock.calls[0];
+    const url = new URL(String(keyRaw), "http://api.test");
 
-    expect(url.searchParams.get("q")).toBe("  vacina  "); // lógica atual não trim no valor
+    // A lógica atual só adiciona q se trim() não for vazio; o valor setado é o original
+    expect(url.searchParams.get("q")).toBe("  vacina  ");
     expect(url.searchParams.get("especialidade")).toBe("10");
     expect(url.searchParams.get("page")).toBe("2");
     expect(url.searchParams.get("limit")).toBe("20");
@@ -126,9 +129,9 @@ describe("useFetchServicos (hook)", () => {
     // Act
     renderHook(() => useFetchServicos({ q: "   " }));
 
-    // Assert
-    const [key] = swrDefaultMock.mock.calls[0];
-    const url = new URL(String(key));
+    // Assert — chave é relativa, usar URL com base fictícia
+    const [keyRaw] = swrDefaultMock.mock.calls[0];
+    const url = new URL(String(keyRaw), "http://api.test");
     expect(url.searchParams.get("q")).toBeNull();
   });
 
