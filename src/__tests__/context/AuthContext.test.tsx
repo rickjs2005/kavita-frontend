@@ -2,6 +2,7 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { ApiError } from "@/lib/errors";
 
 // Mock do client HTTP do projeto (obrigatório: nunca chamar rede real).
 // AuthContext agora usa apiClient diretamente (não mais src/lib/api).
@@ -303,5 +304,174 @@ describe("AuthContext (AuthProvider + useAuth)", () => {
       expect(screen.getByTestId("userId").textContent).toBe("77"),
     );
     expect(screen.getByTestId("userNome").textContent).toBe("Atualizado");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// register
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ConsumerRegister() {
+  const { register } = useAuth();
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        const res = await register({
+          nome: "Teste",
+          email: "teste@kavita.com",
+          senha: "abc123",
+        });
+        (window as any).__register_res__ = res;
+      }}
+    >
+      register
+    </button>
+  );
+}
+
+function renderWithRegister() {
+  // refreshUser dispara no mount — sempre rejeitar para isolar o register
+  getMock.mockRejectedValueOnce(new Error("no session"));
+  return render(
+    <AuthProvider>
+      <ConsumerRegister />
+    </AuthProvider>,
+  );
+}
+
+describe("AuthContext — register", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (window as any).__register_res__ = undefined;
+  });
+
+  it("register: sucesso retorna { ok: true } (positivo)", async () => {
+    renderWithRegister();
+    await waitFor(() => expect(getMock).toHaveBeenCalledTimes(1));
+
+    postMock.mockResolvedValueOnce(undefined); // backend aceita o registro
+
+    fireEvent.click(screen.getByText("register"));
+
+    await waitFor(() => {
+      expect((window as any).__register_res__).toEqual({ ok: true });
+    });
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/api/users/register",
+      expect.objectContaining({ email: "teste@kavita.com" }),
+    );
+  });
+
+  it("register: falha com ApiError retorna { ok: false, message } (negativo)", async () => {
+    renderWithRegister();
+    await waitFor(() => expect(getMock).toHaveBeenCalledTimes(1));
+
+    postMock.mockRejectedValueOnce(
+      new ApiError({ status: 400, message: "Email já cadastrado." }),
+    );
+
+    fireEvent.click(screen.getByText("register"));
+
+    await waitFor(() => {
+      expect((window as any).__register_res__).toEqual({
+        ok: false,
+        message: "Email já cadastrado.",
+      });
+    });
+  });
+
+  it("register: falha com Error genérico retorna { ok: false } com fallback (negativo)", async () => {
+    renderWithRegister();
+    await waitFor(() => expect(getMock).toHaveBeenCalledTimes(1));
+
+    postMock.mockRejectedValueOnce(new Error("network error"));
+
+    fireEvent.click(screen.getByText("register"));
+
+    await waitFor(() => {
+      const res = (window as any).__register_res__;
+      expect(res.ok).toBe(false);
+      expect(res.message).toBe("network error");
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// login com ApiError — mensagem do backend propagada
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("AuthContext — login com ApiError e mensagem do backend", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (window as any).__login_res__ = undefined;
+  });
+
+  it("login: ApiError 401 com mensagem → retorna { ok: false, message } com texto do backend", async () => {
+    getMock.mockRejectedValueOnce(new Error("no session")); // refreshUser
+
+    postMock.mockRejectedValueOnce(
+      new ApiError({ status: 401, message: "Senha incorreta." }),
+    );
+
+    // Reutiliza renderWithProvider e Consumer do describe pai via renderização inline
+    function LocalConsumer() {
+      const { login } = useAuth();
+      return (
+        <button
+          type="button"
+          onClick={async () => {
+            const res = await login("a@a.com", "bad");
+            (window as any).__login_apiErr_res__ = res;
+          }}
+        >
+          login-local
+        </button>
+      );
+    }
+
+    render(
+      <AuthProvider>
+        <LocalConsumer />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(getMock).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByText("login-local"));
+
+    await waitFor(() => {
+      expect((window as any).__login_apiErr_res__).toEqual({
+        ok: false,
+        message: "Senha incorreta.",
+      });
+    });
+  });
+
+  it("refreshUser: resposta com schema inválido (não-ApiError) → user=null, loading=false (negativo)", async () => {
+    // Backend retorna dados malformados: id=0 não passa no positiveInt do schema Zod
+    getMock.mockResolvedValueOnce({ id: 0, nome: "X", email: "x@x.com" });
+
+    function LocalConsumer() {
+      const { user, loading } = useAuth();
+      return (
+        <>
+          <div data-testid="lc-loading">{String(loading)}</div>
+          <div data-testid="lc-userId">{user?.id ?? ""}</div>
+        </>
+      );
+    }
+
+    render(
+      <AuthProvider>
+        <LocalConsumer />
+      </AuthProvider>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("lc-loading").textContent).toBe("false"),
+    );
+    expect(screen.getByTestId("lc-userId").textContent).toBe("");
   });
 });

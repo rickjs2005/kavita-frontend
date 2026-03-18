@@ -327,6 +327,54 @@ describe("SearchBar (src/components/SearchBar.tsx)", () => {
     expect(screen.queryByText("Item Escape")).not.toBeInTheDocument();
   });
 
+  it("Enter com item selecionado via ArrowDown navega para o item (positivo)", async () => {
+    // Arrange
+    mockApiByEndpoint({
+      products: {
+        data: [{ id: 7, name: "Item Selecionado", price: 10 }],
+      },
+      servicos: { data: [] },
+    });
+
+    render(<SearchBar />);
+
+    const input = await typeAndRunDebounce("sel");
+
+    // Seleciona o primeiro item via ArrowDown
+    await act(async () => {
+      fireEvent.keyDown(input, { key: "ArrowDown" });
+    });
+
+    // Enter com cursor no primeiro item → deve navegar
+    await act(async () => {
+      fireEvent.keyDown(input, { key: "Enter" });
+    });
+
+    expect(pushMock).toHaveBeenCalledWith("/produtos/7");
+  });
+
+  it("clique em item de serviço navega para /servicos/:id (positivo)", async () => {
+    // Arrange
+    mockApiByEndpoint({
+      products: { data: [] },
+      servicos: {
+        data: [{ id: 99, nome: "Serviço Clicado", preco: 50, imagem: "s.jpg" }],
+      },
+    });
+
+    render(<SearchBar />);
+
+    // Act
+    await typeAndRunDebounce("serv");
+
+    await act(async () => {
+      fireEvent.mouseDown(screen.getByText("Serviço Clicado"));
+    });
+
+    // Assert
+    expect(pushMock).toHaveBeenCalledWith("/servicos/99");
+  });
+
   it("ArrowDown/ArrowUp não quebram e mantém resultados visíveis (controle)", async () => {
     // Arrange
     mockApiByEndpoint({

@@ -1,8 +1,13 @@
 // src/__tests__/components/ServiceCard.test.tsx
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ServiceCard from "@/components/layout/ServiceCard";
+
+// absUrl: pass-through para URLs já absolutas/paths; null → placeholder
+vi.mock("@/utils/absUrl", () => ({
+  absUrl: (raw: string | null | undefined) => raw ?? "/placeholder.png",
+}));
 
 /**
  * Mock do next/link (renderiza <a>)
@@ -137,12 +142,172 @@ describe("ServiceCard (src/components/layout/ServiceCard.tsx)", () => {
   it("não renderiza contador de fotos quando o componente não expõe esse badge (controle)", () => {
     renderCard({ readOnly: true });
 
-    // Pelo DOM atual, não existe badge "foto(s)".
+    // Pelo DOM atual, não existe badge "foto(s)" — baseServico usa campos errados
+    // (imagem_capa / fotos / telefone) que não correspondem ao tipo Service real.
     expect(
       screen.queryByText((_, el) => {
         const t = (el?.textContent ?? "").replace(/\s+/g, " ").toLowerCase();
         return t.includes("foto");
       }),
     ).not.toBeInTheDocument();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Testes com campos corretos do tipo Service real (imagem / images / whatsapp)
+// ─────────────────────────────────────────────────────────────────────────────
+describe("ServiceCard — campos reais do tipo Service", () => {
+  beforeEach(() => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.spyOn(window, "open").mockImplementation(() => null);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const realServico = {
+    id: 10,
+    nome: "Pulverização Aérea",
+    descricao: "Serviço profissional de pulverização",
+    cargo: "Piloto Agrícola",
+    imagem: "/uploads/services/main.jpg",
+    images: ["/uploads/services/main.jpg", "/uploads/services/extra1.jpg", "/uploads/services/extra2.jpg"],
+    whatsapp: "31999990000",
+    especialidade_nome: "Aviação Agrícola",
+  };
+
+  it("retorna null quando servico não é fornecido (negativo)", () => {
+    const { container } = render(<ServiceCard />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("retorna null quando servico=null explícito (negativo)", () => {
+    const { container } = render(<ServiceCard servico={null} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("renderiza imagem principal com src correto quando imagem está no campo certo", () => {
+    render(<ServiceCard servico={realServico as any} readOnly />);
+
+    // A imagem ativa (main) deve ter o src certo
+    const imgs = screen.getAllByRole("img");
+    const mainImg = imgs.find((img) =>
+      img.getAttribute("alt") === "Pulverização Aérea",
+    );
+    expect(mainImg).toBeInTheDocument();
+    expect(mainImg!.getAttribute("src")).toBe("/uploads/services/main.jpg");
+  });
+
+  it("usa /placeholder.png quando imagem e images estão ausentes", () => {
+    const minimal = { id: 5, nome: "Serviço Mínimo" };
+    render(<ServiceCard servico={minimal as any} readOnly />);
+
+    const imgs = screen.getAllByRole("img");
+    const main = imgs.find((img) => img.getAttribute("alt") === "Serviço Mínimo");
+    expect(main!.getAttribute("src")).toBe("/placeholder.png");
+  });
+
+  it("renderiza badge de múltiplas fotos quando há mais de 1 imagem", () => {
+    render(<ServiceCard servico={realServico as any} readOnly />);
+
+    // Badge "3 foto(s)" — o componente renderiza {images.length} foto(s) em um <span>
+    expect(screen.getByText("3 foto(s)")).toBeInTheDocument();
+  });
+
+  it("renderiza miniaturas da galeria quando há múltiplas imagens", () => {
+    render(<ServiceCard servico={realServico as any} readOnly />);
+
+    const thumbs = screen.getAllByAltText(/Miniatura/i);
+    expect(thumbs).toHaveLength(3);
+  });
+
+  it("renderiza especialidade_nome como badge quando presente", () => {
+    render(<ServiceCard servico={realServico as any} readOnly />);
+
+    expect(screen.getByText("Aviação Agrícola")).toBeInTheDocument();
+  });
+
+  it("não renderiza badge de especialidade quando ausente", () => {
+    const sem = { ...realServico, especialidade_nome: undefined };
+    render(<ServiceCard servico={sem as any} readOnly />);
+
+    expect(screen.queryByText("Aviação Agrícola")).not.toBeInTheDocument();
+  });
+
+  it("renderiza WhatsApp como <a> quando não há href no card", () => {
+    render(<ServiceCard servico={realServico as any} readOnly />);
+
+    const wa = screen.getByRole("link", { name: /WhatsApp/i });
+    expect(wa).toBeInTheDocument();
+    expect(wa.getAttribute("href")).toContain("31999990000");
+  });
+
+  it("renderiza WhatsApp como <button> (window.open) quando card tem href", () => {
+    render(<ServiceCard servico={realServico as any} href="/servicos/10" readOnly />);
+
+    // O card inteiro vira link; WhatsApp deve ser <button>, não <a>
+    const waBtn = screen.getByRole("button", { name: /WhatsApp/i });
+    expect(waBtn).toBeInTheDocument();
+
+    fireEvent.click(waBtn);
+    expect(window.open).toHaveBeenCalledWith(
+      expect.stringContaining("31999990000"),
+      "_blank",
+    );
+  });
+
+  it("não renderiza WhatsApp quando whatsapp está ausente", () => {
+    const semWa = { ...realServico, whatsapp: undefined };
+    render(<ServiceCard servico={semWa as any} readOnly />);
+
+    expect(screen.queryByText(/WhatsApp/i)).not.toBeInTheDocument();
+  });
+
+  it("chama onEditar com o servico ao clicar em Editar (positivo)", () => {
+    const onEditar = vi.fn();
+    render(<ServiceCard servico={realServico as any} onEditar={onEditar} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Editar/i }));
+
+    expect(onEditar).toHaveBeenCalledTimes(1);
+    expect(onEditar).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 10, nome: "Pulverização Aérea" }),
+    );
+  });
+
+  it("chama onRemover com o id ao clicar em Remover e confirmar (positivo)", async () => {
+    const onRemover = vi.fn().mockResolvedValue(undefined);
+    const { act } = await import("@testing-library/react");
+    render(
+      <ServiceCard servico={realServico as any} onRemover={onRemover} />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Remover/i }));
+    });
+
+    expect(window.confirm).toHaveBeenCalledTimes(1);
+    expect(onRemover).toHaveBeenCalledWith(10);
+  });
+
+  it("não chama onRemover quando usuário cancela o confirm (negativo)", () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const onRemover = vi.fn();
+    render(
+      <ServiceCard servico={realServico as any} onRemover={onRemover} />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Remover/i }));
+
+    expect(onRemover).not.toHaveBeenCalled();
+  });
+
+  it("não crasha com servico com campos opcionais ausentes (mínimo: id + nome)", () => {
+    const minimal = { id: 99, nome: "Só o básico" };
+    expect(() =>
+      render(<ServiceCard servico={minimal as any} readOnly />),
+    ).not.toThrow();
+    expect(screen.getByRole("heading", { name: /Só o básico/i })).toBeInTheDocument();
   });
 });
