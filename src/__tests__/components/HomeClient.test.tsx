@@ -1,6 +1,7 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import HomeClient from "@/components/home/HomeClient";
 
 /**
  * HomeClient é um componente puramente estático (Server Component pattern):
@@ -9,7 +10,13 @@ import { render, screen } from "@testing-library/react";
  */
 
 type PublicCategory = { id: number; name: string; slug: string };
-type PublicShopSettings = Record<string, any>;
+type PublicShopSettings = {
+  store_name: string;
+  logo_url: string;
+  contact_email?: string;
+  footer_tagline?: string;
+  [key: string]: any;
+};
 
 // -----------------------------
 // Mocks de componentes filhos
@@ -76,14 +83,6 @@ vi.mock("@/components/layout/Footer", () => ({
   },
 }));
 
-async function importHomeClient() {
-  const mod = await import("@/components/home/HomeClient");
-  return mod.default as React.ComponentType<{
-    categories: PublicCategory[];
-    shop: PublicShopSettings;
-  }>;
-}
-
 const defaultShop: PublicShopSettings = {
   store_name: "Kavita",
   logo_url: "/logo.png",
@@ -96,9 +95,7 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
     vi.clearAllMocks();
   });
 
-  it("positivo: renderiza estrutura base e mostra mensagem quando categories.length === 0", async () => {
-    const HomeClient = await importHomeClient();
-
+  it("positivo: renderiza estrutura base e mostra mensagem quando categories.length === 0", () => {
     render(<HomeClient categories={[]} shop={defaultShop} />);
 
     // Componentes base
@@ -117,9 +114,7 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
     expect(screen.queryAllByTestId("ProdutosPorCategoria")).toHaveLength(0);
   });
 
-  it("positivo: quando categories.length > 0, renderiza nome, link 'Ver todos' e chama ProdutosPorCategoria com slug e limit=12", async () => {
-    const HomeClient = await importHomeClient();
-
+  it("positivo: quando categories.length > 0, renderiza nome, link 'Ver todos' e chama ProdutosPorCategoria com slug e limit=12", () => {
     const categories: PublicCategory[] = [
       { id: 1, name: "medicamentos", slug: "medicamentos" },
       { id: 2, name: "pets", slug: "pets" },
@@ -165,9 +160,7 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
     );
   });
 
-  it("positivo: repassa shop para Footer", async () => {
-    const HomeClient = await importHomeClient();
-
+  it("positivo: repassa shop para Footer", () => {
     const shop: PublicShopSettings = {
       store_name: "Kavita X",
       logo_url: "/custom-logo.png",
@@ -204,9 +197,8 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
     );
   });
 
-  it("positivo: quando env não existe, HomeClient ainda renderiza sem fetch", async () => {
+  it("positivo: quando env não existe, HomeClient ainda renderiza sem fetch", () => {
     delete process.env.NEXT_PUBLIC_API_URL;
-    const HomeClient = await importHomeClient();
 
     render(<HomeClient categories={[]} shop={defaultShop} />);
 
