@@ -72,7 +72,7 @@ async function fetchCsrfToken(baseUrl: string): Promise<string | null> {
         return null;
       }
       const json = await res.json();
-      const token = typeof json?.token === "string" ? json.token : null;
+      const token = typeof json?.csrfToken === "string" ? json.csrfToken : null;
       if (token) {
         _csrfToken = token;
         _csrfFetchedAt = Date.now();
