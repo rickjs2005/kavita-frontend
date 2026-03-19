@@ -30,6 +30,7 @@ type PedidoDetalhe = {
   usuario_id: number;
   forma_pagamento: string;
   status: string;
+  status_pagamento?: string | null;
   data_pedido: string;
   endereco: any;
   total: number;
@@ -153,6 +154,12 @@ export default function PedidoPage() {
           <span className="font-semibold">Forma de pagamento:</span>{" "}
           {pedido.forma_pagamento}
         </p>
+        {pedido.status_pagamento && (
+          <p>
+            <span className="font-semibold">Status do pagamento:</span>{" "}
+            {pedido.status_pagamento}
+          </p>
+        )}
         <p>
           <span className="font-semibold">Data:</span>{" "}
           {new Date(pedido.data_pedido).toLocaleString("pt-BR")}

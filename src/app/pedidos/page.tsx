@@ -14,6 +14,7 @@ type PedidoResumo = {
   usuario_id: number;
   forma_pagamento: string;
   status: string;
+  status_pagamento?: string | null;
   data_pedido: string;
   total: number;
 };
@@ -124,6 +125,11 @@ export default function PedidosClientePage() {
                     {new Date(p.data_pedido).toLocaleString("pt-BR")}
                   </p>
                   <p className="text-sm text-gray-600">Status: {p.status}</p>
+                  {p.status_pagamento && (
+                    <p className="text-sm text-gray-600">
+                      Pagamento: {p.status_pagamento}
+                    </p>
+                  )}
                 </div>
 
                 <div className="text-right">
