@@ -420,7 +420,6 @@ export function useCheckoutState() {
         id: Number(i.id),
         quantidade: Number(i.quantity ?? 1),
       })),
-      total: Number(total || 0),
       nome,
       cpf: cpfDigits,
       telefone: telefoneDigits,

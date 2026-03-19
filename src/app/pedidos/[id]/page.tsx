@@ -33,6 +33,7 @@ type PedidoDetalhe = {
   data_pedido: string;
   endereco: any;
   total: number;
+  shipping_price?: number;
   itens: PedidoItem[];
 };
 
@@ -43,9 +44,6 @@ export default function PedidoPage() {
   const pedidoId = params?.id;
 
   const { user } = useAuth();
-
-  // Ajuste mínimo: evita erro de tipo se AuthUser não tiver "token" tipado
-  const token = (user as any)?.token as string | undefined;
 
   const isLoggedIn = !!user?.id;
 
@@ -70,12 +68,8 @@ export default function PedidoPage() {
         setLoading(true);
         setError(null);
 
-        const extraHeaders: Record<string, string> = {};
-        if (token) extraHeaders.Authorization = `Bearer ${token}`;
-
         const data = await apiClient.get<PedidoDetalhe>(
           `/api/pedidos/${pedidoId}`,
-          { headers: extraHeaders },
         );
 
         setPedido(data);
@@ -97,7 +91,7 @@ export default function PedidoPage() {
     };
 
     fetchPedido();
-  }, [pedidoId, token, isLoggedIn, router]);
+  }, [pedidoId, isLoggedIn, router]);
 
   if (loading) {
     return (
@@ -239,10 +233,18 @@ export default function PedidoPage() {
         </div>
       </section>
 
-      {/* Total geral */}
-      <section className="flex items-center justify-between mt-4 text-lg font-bold">
-        <span>Total</span>
-        <span className="text-[#EC5B20]">{formatCurrency(pedido.total)}</span>
+      {/* Frete e total geral */}
+      <section className="mt-4 space-y-2 text-sm text-gray-700">
+        {typeof pedido.shipping_price === "number" && pedido.shipping_price > 0 && (
+          <div className="flex items-center justify-between">
+            <span>Frete</span>
+            <span>{formatCurrency(pedido.shipping_price)}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between text-lg font-bold text-gray-900">
+          <span>Total</span>
+          <span className="text-[#EC5B20]">{formatCurrency(pedido.total)}</span>
+        </div>
       </section>
 
       {/* Botão voltar em mobile */}
