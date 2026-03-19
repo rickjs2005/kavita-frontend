@@ -9,14 +9,14 @@ export type { UserProfile } from "./users";
 
 export interface LoginPayload {
   email: string;
-  password: string;
+  senha: string;
 }
 
 export interface RegisterPayload {
   nome: string;
   email: string;
-  password: string;
-  telefone?: string;
+  senha: string;
+  cpf?: string;
 }
 
 export interface ForgotPasswordPayload {
@@ -25,7 +25,7 @@ export interface ForgotPasswordPayload {
 
 export interface ResetPasswordPayload {
   token: string;
-  password: string;
+  novaSenha: string;
 }
 
 /**

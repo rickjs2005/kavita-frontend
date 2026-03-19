@@ -22,6 +22,9 @@ export default function AuthExpiredHandler() {
       const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
       if (isPublic) return;
 
+      // Área admin tem seu próprio handler em AdminLayoutInner — não interferir
+      if (pathname.startsWith("/admin")) return;
+
       const from = encodeURIComponent(pathname);
       router.replace(`/login?from=${from}`);
     }

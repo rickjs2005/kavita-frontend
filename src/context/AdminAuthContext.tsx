@@ -160,26 +160,20 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(
     async (opts?: { redirectTo?: string }) => {
-      // P1: Limpa o state LOCAL PRIMEIRO (previne "ghost state" se o backend falhar).
-      // O backend é notificado em segundo plano (fire-and-forget tolerante a falhas).
-      clearState();
-
-      // Invalida sessão no backend de forma não-bloqueante
-      apiClient.post("/api/admin/logout").catch((err) => {
-        // não bloqueia UX; limpeza local já foi feita acima
+      // Aguarda o backend limpar o cookie HttpOnly (adminToken).
+      // Cookies HttpOnly só podem ser limpos pelo servidor — fire-and-forget deixaria
+      // o cookie vivo se a requisição falhar, re-autenticando o admin no próximo acesso.
+      try {
+        await apiClient.post("/api/admin/logout");
+      } catch (err) {
         handleApiError(err, {
           fallback: "Falha ao encerrar sessão de administrador.",
-          // debug: true,
         });
-      });
+      } finally {
+        clearState();
+      }
 
-      // Não faz router aqui para não acoplar provider a layout;
-      // quem chama decide se redireciona.
-      // Ainda assim, damos opção de retorno (compat).
       if (opts?.redirectTo) {
-        // Se você realmente quiser manter redirect aqui, faça pelo caller (layout/page)
-        // Este bloco existe para compatibilidade de quem já chama logout({redirectTo})
-        // mas sem importar router neste provider.
         window.location.assign(opts.redirectTo);
       }
     },

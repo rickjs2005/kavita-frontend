@@ -144,13 +144,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // -----------------------------
   // LOGOUT
-  // Limpa state local primeiro, notifica backend em seguida (não-bloqueante).
+  // Aguarda o backend limpar o cookie HttpOnly antes de limpar state local.
+  // Cookies HttpOnly só podem ser limpos pelo servidor — fire-and-forget deixaria
+  // o cookie vivo se a requisição falhar, re-autenticando o usuário no próximo refresh.
   // -----------------------------
   const logout = async () => {
-    setUser(null);
-    apiClient.post("/api/logout").catch(() => {
-      // silencioso — state local já foi limpo
-    });
+    try {
+      await apiClient.post("/api/logout");
+    } catch {
+      // mesmo com falha de rede, limpa state local
+    } finally {
+      setUser(null);
+    }
   };
 
   const value: AuthContextValue = useMemo(
