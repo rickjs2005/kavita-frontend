@@ -51,6 +51,33 @@ export default function PedidoPage() {
   const [pedido, setPedido] = useState<PedidoDetalhe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+
+  const handleRetryPayment = async () => {
+    if (!pedido) return;
+    setRetrying(true);
+    setRetryError(null);
+    try {
+      const data = await apiClient.post<{ init_point?: string; sandbox_init_point?: string }>(
+        "/api/payment/start",
+        { pedidoId: pedido.id }
+      );
+      const url =
+        process.env.NODE_ENV === "production"
+          ? data.init_point
+          : (data.sandbox_init_point ?? data.init_point);
+      if (url) {
+        window.location.href = url;
+      } else {
+        setRetryError("Não foi possível obter o link de pagamento.");
+        setRetrying(false);
+      }
+    } catch (err: any) {
+      setRetryError(err?.message || "Erro ao iniciar pagamento. Tente novamente.");
+      setRetrying(false);
+    }
+  };
 
   // Redireciona se não estiver logado
   useEffect(() => {
@@ -165,6 +192,31 @@ export default function PedidoPage() {
           {new Date(pedido.data_pedido).toLocaleString("pt-BR")}
         </p>
       </section>
+
+      {/* Botão de retentativa de pagamento */}
+      {(pedido.status_pagamento === "falhou" || pedido.status_pagamento === "pendente") &&
+        !pedido.forma_pagamento.toLowerCase().includes("prazo") && (
+          <section className="mb-6">
+            <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+              <p className="text-sm text-orange-800 mb-3">
+                {pedido.status_pagamento === "falhou"
+                  ? "O pagamento deste pedido não foi concluído. Você pode tentar novamente."
+                  : "Este pedido aguarda pagamento. Clique abaixo para pagar."}
+              </p>
+              {retryError && (
+                <p className="text-sm text-red-600 mb-2">{retryError}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleRetryPayment}
+                disabled={retrying}
+                className="inline-flex items-center justify-center rounded-lg bg-[#EC5B20] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#d84e1a] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {retrying ? "Redirecionando..." : "Pagar novamente"}
+              </button>
+            </div>
+          </section>
+        )}
 
       {/* Endereço */}
       {endereco && (
