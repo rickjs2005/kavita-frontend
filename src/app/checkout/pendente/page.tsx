@@ -1,13 +1,22 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
 
 function PendenteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pedidoId = searchParams.get("pedidoId");
+  const { clearCart } = useCart();
+
+  // Pedido criado e encaminhado ao gateway: carrinho pode ser limpo.
+  // O usuário deve concluir o pagamento no pedido existente, não criar um novo.
+  useEffect(() => {
+    if (pedidoId) clearCart?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <main className="max-w-xl mx-auto px-4 py-16 text-center">

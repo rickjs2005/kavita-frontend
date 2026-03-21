@@ -1,13 +1,22 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
 
 function SucessoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pedidoId = searchParams.get("pedidoId");
+  const { clearCart } = useCart();
+
+  // Limpa o carrinho apenas quando o usuário retorna com um pedido confirmado.
+  // Este é o momento seguro para gateway: o MP já processou e redirecionou para /sucesso.
+  useEffect(() => {
+    if (pedidoId) clearCart?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <main className="max-w-xl mx-auto px-4 py-16 text-center">

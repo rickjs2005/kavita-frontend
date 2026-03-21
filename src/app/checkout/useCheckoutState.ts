@@ -582,8 +582,8 @@ export function useCheckoutState() {
           );
         }
 
-        clearCart?.();
-
+        // Não limpar o carrinho aqui: o pagamento externo ainda não foi confirmado.
+        // A limpeza ocorre em /sucesso ou /pendente após o retorno do gateway.
         if (safeUrl) {
           window.location.href = safeUrl;
           return;
