@@ -26,14 +26,15 @@ function SucessoContent() {
       </div>
 
       <h1 className="text-2xl font-bold text-gray-900 mb-3">
-        Pagamento recebido!
+        Pedido registrado!
       </h1>
 
       <p className="text-gray-600 mb-2">
-        Seu pedido foi realizado com sucesso. Estamos processando o pagamento.
+        Seu pedido foi criado com sucesso. O pagamento está sendo processado.
       </p>
       <p className="text-gray-500 text-sm mb-8">
-        Você receberá uma confirmação assim que o pagamento for confirmado.
+        A confirmação do pagamento depende do processador. Você receberá uma
+        notificação assim que o status for atualizado.
       </p>
 
       {pedidoId && (

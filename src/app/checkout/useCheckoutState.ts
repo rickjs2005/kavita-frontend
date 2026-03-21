@@ -165,8 +165,7 @@ export function useCheckoutState() {
       router.push("/login");
       return;
     }
-    const subtotalAtual = Number(subtotal || 0);
-    if (!subtotalAtual || subtotalAtual <= 0) {
+    if (!normalizedCartItems.length) {
       toast.error("Seu carrinho está vazio.");
       return;
     }
@@ -176,9 +175,17 @@ export function useCheckoutState() {
       setCouponError(null);
       setCouponMessage(null);
 
+      // Envia produtos ao backend para que ele calcule o subtotal com a mesma
+      // regra de preço do checkout real (promoção ativa > products.price).
       const rawCoupon = await apiClient.post<unknown>(
         ENDPOINTS.CHECKOUT.PREVIEW_COUPON,
-        { codigo: couponCode.trim(), total: subtotalAtual },
+        {
+          codigo: couponCode.trim(),
+          produtos: normalizedCartItems.map((i) => ({
+            id: Number(i.id),
+            quantidade: Number(i.quantity ?? 1),
+          })),
+        },
       );
 
       const couponParsed = CouponPreviewSchema.safeParse(rawCoupon);

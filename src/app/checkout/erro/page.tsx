@@ -33,8 +33,8 @@ function ErroContent() {
         Houve um problema ao processar seu pagamento.
       </p>
       <p className="text-gray-500 text-sm mb-8">
-        Seu pedido foi registrado, mas o pagamento não foi confirmado. Você pode
-        tentar novamente ou escolher outra forma de pagamento.
+        Seu pedido foi registrado, mas o pagamento não foi confirmado. Acesse o
+        pedido para verificar o status ou entre em contato com o suporte.
       </p>
 
       {pedidoId && (
@@ -55,10 +55,10 @@ function ErroContent() {
         )}
         <button
           type="button"
-          onClick={() => router.push("/checkout")}
+          onClick={() => router.push("/pedidos")}
           className="px-6 py-3 rounded-lg bg-[#EC5B20] text-white font-semibold hover:bg-[#d14d18] transition-colors"
         >
-          Tentar novamente
+          Ir para meus pedidos
         </button>
         <button
           type="button"
