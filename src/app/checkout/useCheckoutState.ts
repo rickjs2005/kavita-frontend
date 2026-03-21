@@ -465,9 +465,14 @@ export function useCheckoutState() {
   // ---------------------------------------------------------------------------
   // Submit
   // ---------------------------------------------------------------------------
+  // Pré-condições reais do backend: nome, CPF (11 dígitos), telefone (≥10 dígitos).
+  // Validados aqui para desabilitar o botão antes do clique, evitando toasts de erro evitáveis.
   const canFinalizeCheckout =
     isLoggedIn &&
     (payload.produtos?.length || 0) > 0 &&
+    !!payload.nome &&
+    payload.cpf.length === 11 &&
+    payload.telefone.length >= 10 &&
     (isPickup ||
       (isCepValid && shippingQuote !== null && !shippingError && !shippingLoading));
 

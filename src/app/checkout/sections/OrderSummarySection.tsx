@@ -221,6 +221,12 @@ export function OrderSummarySection({
             </span>
           </div>
 
+          {!isPickup && shippingQuote !== null && (
+            <p className="text-[10px] text-gray-400">
+              O frete é confirmado pelo servidor no momento do pedido.
+            </p>
+          )}
+
           <p className="mt-2 text-[11px] text-gray-600">
             Nota fiscal será entregue junto com o produto.
           </p>
