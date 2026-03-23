@@ -167,16 +167,15 @@ export type CouponPreview = z.infer<typeof CouponPreviewSchema>;
 // ---------------------------------------------------------------------------
 
 /**
- * Shape garantido pela rota GET /api/public/produtos.
+ * Shape da rota GET /api/public/produtos?busca=xxx (publicProdutos.js).
  *
- * Campos confirmados na query (publicProdutos.js, PUBLIC_PRODUCT_FIELDS):
+ * ATENÇÃO: essa rota não tem consumer ativo no frontend.
+ * A busca de catálogo usa /api/products e /api/products/search.
+ * Este schema não é importado por nenhum arquivo — mantido como documentação.
+ *
+ * Campos retornados pela rota (PUBLIC_PRODUCT_FIELDS):
  *   id, name, CAST(price AS DECIMAL) AS price, image,
  *   rating_avg, rating_count, shipping_free, shipping_free_from_qty
- *
- * Removidos:
- *   - "nome"   → backend retorna "name" (inglês); "nome" nunca estava presente
- *   - "preco"  → backend retorna "price"; "preco" nunca estava presente
- *   - "estoque"/"stock" → rota pública não expõe estoque
  */
 export const PublicProductSchema = z.object({
   id: positiveInt,
