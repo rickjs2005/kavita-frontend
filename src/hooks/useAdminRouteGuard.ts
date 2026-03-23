@@ -1,5 +1,24 @@
 "use client";
 
+/**
+ * Guard de UX para páginas admin que exigem permissão ou role específico.
+ *
+ * CLASSIFICAÇÃO: guard de UX — não é uma camada de segurança.
+ * A segurança real é aplicada pelo backend:
+ *   - autenticação: verifyAdmin (cookie adminToken + tokenVersion)
+ *   - autorização: requirePermission (permissões consultadas no banco)
+ *
+ * SUPOSIÇÃO CRÍTICA: este hook assume que AdminAuthContext já foi hidratado
+ * via loadSession() antes de o componente montar. Isso é garantido por
+ * admin/layout.tsx, que bloqueia o render dos filhos enquanto loading: true.
+ * Não use este hook fora do AdminAuthProvider ou em testes sem mockar o contexto.
+ *
+ * FONTE DE DADOS: permissões vêm de GET /api/admin/me (server-truth),
+ * nunca de localStorage ou JWT local.
+ *
+ * Consumer atual: app/admin/configuracoes/usuarios/page.tsx
+ */
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminAuth, AdminRole } from "@/context/AdminAuthContext";
