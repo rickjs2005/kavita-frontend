@@ -460,7 +460,7 @@ export function useCheckoutState() {
           : null,
       },
     };
-  }, [formData, normalizedCartItems, total, couponCode, entregaTipo]);
+  }, [formData, normalizedCartItems, couponCode, entregaTipo]);
 
   // ---------------------------------------------------------------------------
   // Submit
@@ -554,7 +554,7 @@ export function useCheckoutState() {
             nome: payload.nome,
             endereco: payload.endereco,
             produtos: payload.produtos,
-            total: payload.total,
+            total: total,
             formaPagamento: payload.formaPagamento,
             entrega_tipo: payload.entrega_tipo,
             criadoEm: new Date().toISOString(),
