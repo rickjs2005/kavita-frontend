@@ -23,6 +23,11 @@ export function middleware(req: NextRequest) {
     }
 
     // ✅ usa o MESMO cookie do backend (HttpOnly; Secure; SameSite=Strict)
+    // NOTA DE SEGURANÇA: O Edge Runtime não suporta as APIs de crypto do Node.js,
+    // portanto não é possível verificar a assinatura JWT aqui sem adicionar `jose`.
+    // Esta verificação é apenas de presença de cookie — a barreira real de autenticação
+    // e autorização é o middleware `verifyAdmin` no backend Express, que valida
+    // assinatura, expiração, tokenVersion e busca permissões no banco.
     const token = req.cookies.get("adminToken")?.value;
 
     if (!token) {
