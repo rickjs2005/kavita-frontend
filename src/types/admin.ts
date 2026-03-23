@@ -133,7 +133,10 @@ export type PedidoAdmin = {
   forma_pagamento: string;
   status_pagamento: StatusPagamento;
   status_entrega: StatusEntrega;
+  /** Total final cobrado = subtotal de produtos + frete */
   total: number;
+  /** Custo de frete separado (para conciliação financeira) */
+  shipping_price: number;
   data_pedido: string;
   itens: PedidoItem[];
 };
