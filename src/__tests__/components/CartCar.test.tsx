@@ -316,7 +316,7 @@ describe("CartCar", () => {
 
     const [url, payload] = H.apiClient.post.mock.calls[0];
     expect(String(url)).toContain("/api/checkout/preview-cupom");
-    expect(payload).toEqual({ codigo: "OFF10", total: 100 });
+    expect(payload).toEqual({ codigo: "OFF10", produtos: [{ id: 1, quantidade: 2 }] });
 
     await waitFor(() => {
       expect(H.toast.success).toHaveBeenCalledWith(

@@ -205,7 +205,10 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
 
       const data = await apiClient.post<CouponPreviewResponse>(
         "/api/checkout/preview-cupom",
-        { codigo: code, total: subtotal },
+        {
+          codigo: code,
+          produtos: cartItems.map((it) => ({ id: it.id, quantidade: it.quantity })),
+        },
       );
 
       if (!data?.success) {
