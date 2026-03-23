@@ -218,6 +218,23 @@ export default function PedidoPage() {
           </section>
         )}
 
+      {/* Aviso de confirmação pendente para pedidos a prazo */}
+      {pedido.forma_pagamento.toLowerCase().includes("prazo") &&
+        pedido.status_pagamento === "pendente" && (
+          <section className="mb-6">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm font-semibold text-blue-800 mb-1">
+                Pedido recebido — aguardando confirmação de pagamento
+              </p>
+              <p className="text-sm text-blue-700">
+                Seu pedido foi registrado com pagamento a prazo. Nossa equipe
+                entrará em contato para confirmar as condições e liberar o
+                pedido. Nenhuma ação é necessária da sua parte agora.
+              </p>
+            </div>
+          </section>
+        )}
+
       {/* Endereço */}
       {endereco && (
         <section className="mb-6">

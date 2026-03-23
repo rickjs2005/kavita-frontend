@@ -124,12 +124,19 @@ export default function PedidosClientePage() {
                   <p className="text-sm text-gray-600">
                     {new Date(p.data_pedido).toLocaleString("pt-BR")}
                   </p>
-                  <p className="text-sm text-gray-600">Status: {p.status}</p>
-                  {p.status_pagamento && (
-                    <p className="text-sm text-gray-600">
-                      Pagamento: {p.status_pagamento}
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-600">
+                    Status:{" "}
+                    {p.forma_pagamento?.toLowerCase().includes("prazo") &&
+                    p.status_pagamento === "pendente"
+                      ? "Aguardando confirmação"
+                      : p.status}
+                  </p>
+                  {p.status_pagamento &&
+                    !p.forma_pagamento?.toLowerCase().includes("prazo") && (
+                      <p className="text-sm text-gray-600">
+                        Pagamento: {p.status_pagamento}
+                      </p>
+                    )}
                 </div>
 
                 <div className="text-right">
