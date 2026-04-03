@@ -7,14 +7,16 @@ import { absUrl, API_BASE } from "@/utils/absUrl";
 import { computeProductPrice } from "@/utils/pricing";
 import { formatCurrency } from "@/utils/formatters";
 
-export const dynamic = "force-dynamic";
+// Revalidate every 60 seconds — balances freshness with performance.
+// Product data changes infrequently; promotions are cached server-side.
+export const revalidate = 60;
 
 const API = API_BASE;
 
 async function getProduto(id: string): Promise<Product | null> {
   try {
     const res = await fetch(`${API}/api/products/${id}`, {
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     return (await res.json()) as Product;
@@ -42,7 +44,7 @@ async function getPromocaoProduto(
 ): Promise<ProductPromotion | null> {
   try {
     const res = await fetch(`${API}/api/public/promocoes/${id}`, {
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     const data = await res.json();

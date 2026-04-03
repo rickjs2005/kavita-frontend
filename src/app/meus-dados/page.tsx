@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { formatCpfMask, formatPhoneMask } from "@/utils/formatters";
 import { apiClient } from "@/lib/apiClient";
 import { ENDPOINTS } from "@/services/api/endpoints";
+import { toUserMessage } from "@/lib/formatApiError";
 
 type Perfil = {
   id: number;
@@ -74,8 +75,8 @@ export default function MeusDadosPage() {
           setPerfil(data);
           setOriginal(data);
         }
-      } catch (e: any) {
-        toast.error(e?.message || "Falha ao carregar.");
+      } catch (e: unknown) {
+        toast.error(toUserMessage(e, "Falha ao carregar seus dados."));
       } finally {
         if (alive) setLoading(false);
       }
@@ -140,8 +141,8 @@ export default function MeusDadosPage() {
       setPerfil(updated);
       setOriginal(updated);
       toast.success("Seus dados foram salvos com sucesso! ✅");
-    } catch (e: any) {
-      toast.error(e?.message || "Falha ao salvar.");
+    } catch (e: unknown) {
+      toast.error(toUserMessage(e, "Falha ao salvar seus dados."));
     } finally {
       setSaving(false);
     }

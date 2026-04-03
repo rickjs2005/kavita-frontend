@@ -13,7 +13,7 @@ async function fetchService(id: string): Promise<Service | null> {
 
   try {
     const res = await fetch(`${API_BASE}/api/public/servicos/${id}`, {
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
 
     if (res.status === 404) return null;
