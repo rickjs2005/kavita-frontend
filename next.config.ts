@@ -21,6 +21,10 @@ function apiRemotePattern(): import("next/dist/shared/lib/image-config").RemoteP
 const envPattern = apiRemotePattern();
 
 const nextConfig: NextConfig = {
+  // Standalone output for Docker — produces a self-contained server.js
+  // that bundles only the required node_modules (smaller image, no npm ci in runtime).
+  output: "standalone",
+
   eslint: {
     // Impede que o ESLint quebre o build
     // ESLint continua funcionando via `npm run lint`
