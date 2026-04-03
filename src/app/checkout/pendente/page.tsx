@@ -11,10 +11,20 @@ function PendenteContent() {
   const pedidoId = searchParams.get("pedidoId");
   const { clearCart } = useCart();
 
-  // Pedido criado e encaminhado ao gateway: carrinho pode ser limpo.
-  // O usuário deve concluir o pagamento no pedido existente, não criar um novo.
+  // Limpa o carrinho apenas quando o pedidoId da URL corresponde ao último
+  // pedido criado nesta sessão. Previne limpeza indevida via URL manipulada.
   useEffect(() => {
-    if (pedidoId) clearCart?.();
+    if (!pedidoId) return;
+    try {
+      const keys = Object.keys(sessionStorage).filter((k) => k.startsWith("lastOrder_"));
+      const owns = keys.some((k) => {
+        const parsed = JSON.parse(sessionStorage.getItem(k) || "{}");
+        return String(parsed?.id) === String(pedidoId);
+      });
+      if (owns) clearCart?.();
+    } catch {
+      clearCart?.();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -11,10 +11,21 @@ function SucessoContent() {
   const pedidoId = searchParams.get("pedidoId");
   const { clearCart } = useCart();
 
-  // Limpa o carrinho apenas quando o usuário retorna com um pedido confirmado.
-  // Este é o momento seguro para gateway: o MP já processou e redirecionou para /sucesso.
+  // Limpa o carrinho apenas quando o pedidoId da URL corresponde ao último
+  // pedido criado nesta sessão. Previne limpeza indevida via URL manipulada.
   useEffect(() => {
-    if (pedidoId) clearCart?.();
+    if (!pedidoId) return;
+    try {
+      const keys = Object.keys(sessionStorage).filter((k) => k.startsWith("lastOrder_"));
+      const owns = keys.some((k) => {
+        const parsed = JSON.parse(sessionStorage.getItem(k) || "{}");
+        return String(parsed?.id) === String(pedidoId);
+      });
+      if (owns) clearCart?.();
+    } catch {
+      // sessionStorage indisponível — limpa por segurança para não travar o fluxo
+      clearCart?.();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
