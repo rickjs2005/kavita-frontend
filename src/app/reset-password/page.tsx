@@ -10,7 +10,7 @@ type Toast = { type: "success" | "error"; message: string };
 
 function validatePassword(value: string): string | null {
   if (!value) return "Informe a nova senha.";
-  if (value.length < 6) return "A senha deve ter pelo menos 6 caracteres.";
+  if (value.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
   return null;
 }
 
