@@ -361,6 +361,19 @@ export async function apiRequest<T = any>(
     });
   }
 
+  // Unwrap standard API envelope { ok: true, data?: ... }
+  // Backend (lib/response.js) wraps all success responses in this format.
+  // Consumers expect the inner payload, not the transport envelope.
+  if (
+    data != null &&
+    typeof data === "object" &&
+    !Array.isArray(data) &&
+    (data as any).ok === true &&
+    "data" in (data as any)
+  ) {
+    return ((data as any).data as T) ?? (null as unknown as T);
+  }
+
   return (data as T) ?? (null as unknown as T);
 }
 
