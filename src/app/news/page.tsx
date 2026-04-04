@@ -88,8 +88,7 @@ export default async function NewsHomePage() {
   let data = null as any;
 
   try {
-    const res = await newsPublicApi.overview(6);
-    data = res.data;
+    data = await newsPublicApi.overview(6);
   } catch {
     data = null;
   }

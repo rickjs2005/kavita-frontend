@@ -62,8 +62,7 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
   let item: any = null;
 
   try {
-    const res = await newsPublicApi.cotacaoBySlug((await params).slug);
-    item = res.data;
+    item = await newsPublicApi.cotacaoBySlug((await params).slug);
   } catch {
     item = null;
   }

@@ -7,8 +7,7 @@ import { PostCard } from "@/components/news/PostCard";
 export default async function PostsListPage() {
   let items: any[] = [];
   try {
-    const res = await newsPublicApi.postsList(12, 0);
-    items = res.data || [];
+    items = await newsPublicApi.postsList(12, 0);
   } catch {
     items = [];
   }

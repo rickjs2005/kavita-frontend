@@ -7,8 +7,7 @@ import { CotacaoCard } from "@/components/news/CotacaoCard";
 export default async function CotacoesListPage() {
   let items: any[] = [];
   try {
-    const res = await newsPublicApi.cotacoesList();
-    items = res.data || [];
+    items = await newsPublicApi.cotacoesList();
   } catch {
     items = [];
   }

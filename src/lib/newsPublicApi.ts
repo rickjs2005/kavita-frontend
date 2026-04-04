@@ -1,7 +1,8 @@
 // src/lib/newsPublicApi.ts
+//
+// API client público para o módulo Kavita News.
+// Retorna os payloads já unwrapped (apiClient extrai .data do envelope).
 import apiClient from "./apiClient";
-
-export type PublicOk<T> = { ok: true; data: T; meta?: any };
 
 /**
  * Tipos públicos (News)
@@ -75,35 +76,38 @@ export type PublicOverview = {
   posts: PublicPost[];
 };
 
-async function climaList() {
-  return apiClient.get<PublicOk<PublicClima[]>>("/api/news/clima");
+async function climaList(): Promise<PublicClima[]> {
+  const res = await apiClient.get<PublicClima[]>("/api/news/clima");
+  return Array.isArray(res) ? res : [];
 }
 
-async function climaBySlug(slug: string) {
-  return apiClient.get<PublicOk<PublicClima>>(
+async function climaBySlug(slug: string): Promise<PublicClima | null> {
+  return apiClient.get<PublicClima>(
     `/api/news/clima/${encodeURIComponent(slug)}`,
   );
 }
 
-async function cotacoesList(groupKey?: string) {
+async function cotacoesList(groupKey?: string): Promise<PublicCotacao[]> {
   const q = groupKey ? `?group_key=${encodeURIComponent(groupKey)}` : "";
-  return apiClient.get<PublicOk<PublicCotacao[]>>(`/api/news/cotacoes${q}`);
+  const res = await apiClient.get<PublicCotacao[]>(`/api/news/cotacoes${q}`);
+  return Array.isArray(res) ? res : [];
 }
 
-async function cotacaoBySlug(slug: string) {
-  return apiClient.get<PublicOk<PublicCotacao>>(
+async function cotacaoBySlug(slug: string): Promise<PublicCotacao | null> {
+  return apiClient.get<PublicCotacao>(
     `/api/news/cotacoes/${encodeURIComponent(slug)}`,
   );
 }
 
-async function postsList(limit = 10, offset = 0) {
-  return apiClient.get<PublicOk<PublicPost[]>>(
+async function postsList(limit = 10, offset = 0): Promise<PublicPost[]> {
+  const res = await apiClient.get<PublicPost[]>(
     `/api/news/posts?limit=${limit}&offset=${offset}`,
   );
+  return Array.isArray(res) ? res : [];
 }
 
-async function postBySlug(slug: string) {
-  return apiClient.get<PublicOk<PublicPost>>(
+async function postBySlug(slug: string): Promise<PublicPost | null> {
+  return apiClient.get<PublicPost>(
     `/api/news/posts/${encodeURIComponent(slug)}`,
   );
 }
@@ -114,25 +118,14 @@ async function postBySlug(slug: string) {
 async function overview(
   limit = 6,
   groupKey?: string,
-): Promise<PublicOk<PublicOverview>> {
-  const [climaRes, cotacoesRes, postsRes] = await Promise.all([
+): Promise<PublicOverview> {
+  const [clima, cotacoes, posts] = await Promise.all([
     climaList(),
     cotacoesList(groupKey),
     postsList(limit, 0),
   ]);
 
-  return {
-    ok: true,
-    data: {
-      clima: climaRes?.data ?? [],
-      cotacoes: cotacoesRes?.data ?? [],
-      posts: postsRes?.data ?? [],
-    },
-    meta: {
-      postsLimit: limit,
-      groupKey: groupKey ?? null,
-    },
-  };
+  return { clima, cotacoes, posts };
 }
 
 export const newsPublicApi = {

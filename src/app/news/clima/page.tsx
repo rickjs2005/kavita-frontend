@@ -7,8 +7,7 @@ import { ClimaCard } from "@/components/news/ClimaCard";
 export default async function ClimaListPage() {
   let items: any[] = [];
   try {
-    const res = await newsPublicApi.climaList();
-    items = res.data || [];
+    items = await newsPublicApi.climaList();
   } catch {
     items = [];
   }

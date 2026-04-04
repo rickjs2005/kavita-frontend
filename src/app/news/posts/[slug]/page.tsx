@@ -45,12 +45,10 @@ type PageProps = {
 export default async function PostDetailPage({ params }: PageProps) {
   const { slug } = await params;
 
-  const res = await newsPublicApi.postBySlug(slug);
   let post: any = null;
 
   try {
-    const res = await newsPublicApi.postBySlug((await params).slug);
-    post = res.data;
+    post = await newsPublicApi.postBySlug(slug);
   } catch {
     post = null;
   }

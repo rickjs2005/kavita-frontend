@@ -22,8 +22,7 @@ export default async function ClimaDetailPage({ params }: PageProps) {
   let item: any = null;
 
   try {
-    const res = await newsPublicApi.climaBySlug(slug);
-    item = res.data;
+    item = await newsPublicApi.climaBySlug(slug);
   } catch {
     item = null;
   }
