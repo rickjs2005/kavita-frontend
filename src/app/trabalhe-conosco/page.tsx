@@ -74,7 +74,7 @@ export default function TrabalheConoscoPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       {/* HERO */}
-      <section className="bg-gradient-to-b from-[#083E46] via-[#0b4f56] to-slate-950">
+      <section className="bg-gradient-to-b from-header via-career-via to-slate-950">
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-16 md:flex-row md:items-center">
           {/* Texto */}
           <div className="flex-1 space-y-5">
@@ -94,7 +94,7 @@ export default function TrabalheConoscoPage() {
             <div className="flex flex-wrap gap-3 pt-2">
               <Link
                 href="/trabalhe-conosco/cadastro"
-                className="inline-flex items-center justify-center rounded-full bg-[#2F7E7F] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition hover:bg-[#256567]"
+                className="inline-flex items-center justify-center rounded-full bg-secondary px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition hover:bg-secondary-hover"
               >
                 Quero me cadastrar
               </Link>
@@ -262,7 +262,7 @@ export default function TrabalheConoscoPage() {
                 href="https://wa.me/5531999999999"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-full bg-[#2F7E7F] px-5 py-2 text-xs font-semibold text-white hover:bg-[#256567]"
+                className="inline-flex items-center justify-center rounded-full bg-secondary px-5 py-2 text-xs font-semibold text-white hover:bg-secondary-hover"
               >
                 Falar no WhatsApp
               </a>

@@ -113,7 +113,7 @@ export default function AdminClientesPage() {
       {/* Cabeçalho */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl  sm:text-2xl font-semibold text-[#359293]">
+          <h1 className="text-xl  sm:text-2xl font-semibold text-primary">
             Clientes
           </h1>
           <p className="text-xs sm:text-sm text-gray-500">
@@ -129,7 +129,7 @@ export default function AdminClientesPage() {
             placeholder="Buscar por nome ou email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-full border border-gray-300 bg-white text-black px-4 py-2 text-sm outline-none transition focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20"
+            className="w-full rounded-full border border-gray-300 bg-white text-black px-4 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function AdminClientesPage() {
             return (
               <div
                 key={u.id}
-                className="rounded-2xl bg-[#020617] text-white px-4 py-4 sm:px-6 sm:py-5 shadow-sm border border-[#0f172a]"
+                className="rounded-2xl bg-dark-750 text-white px-4 py-4 sm:px-6 sm:py-5 shadow-sm border border-dark-600"
               >
                 {/* Linha principal */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -200,7 +200,7 @@ export default function AdminClientesPage() {
                     {u.email && (
                       <a
                         href={`mailto:${u.email}`}
-                        className="text-xs sm:text-sm text-[#22c55e] hover:underline break-all"
+                        className="text-xs sm:text-sm text-success hover:underline break-all"
                       >
                         {u.email}
                       </a>
@@ -211,7 +211,7 @@ export default function AdminClientesPage() {
                         href={waLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center rounded-full border border-[#22c55e] px-3 py-1 text-[11px] sm:text-xs font-medium text-[#22c55e] hover:bg-[#22c55e]/10 transition"
+                        className="inline-flex items-center justify-center rounded-full border border-success px-3 py-1 text-[11px] sm:text-xs font-medium text-success hover:bg-success/10 transition"
                       >
                         WhatsApp
                       </a>

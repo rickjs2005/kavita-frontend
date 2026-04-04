@@ -111,7 +111,7 @@ export default function ProdutoCard({
         )}
 
         <div className="mt-1 flex items-center justify-between">
-          <span className="text-sm font-semibold text-[#2F7E7F]">
+          <span className="text-sm font-semibold text-secondary">
             {toBRL(price)}
           </span>
           <span className="text-xs text-gray-500">Qtde: {qty}</span>

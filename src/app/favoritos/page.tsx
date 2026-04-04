@@ -65,7 +65,7 @@ export default function FavoritosPage() {
         </p>
         <Link
           href="/login"
-          className="inline-flex items-center justify-center rounded-lg bg-[#2F7E7F] text-white px-4 py-2 text-sm font-semibold hover:bg-[#2a6f70]"
+          className="inline-flex items-center justify-center rounded-lg bg-secondary text-white px-4 py-2 text-sm font-semibold hover:bg-secondary-hover"
         >
           Fazer login
         </Link>
@@ -78,7 +78,7 @@ export default function FavoritosPage() {
       <div className="flex items-center justify-between gap-2 mb-6 flex-wrap">
         <h1 className="text-2xl font-semibold">Meus Favoritos</h1>
 
-        <Link href="/" className="text-sm text-[#2F7E7F] hover:underline">
+        <Link href="/" className="text-sm text-secondary hover:underline">
           Voltar para a loja
         </Link>
       </div>
@@ -94,7 +94,7 @@ export default function FavoritosPage() {
           </p>
           <Link
             href="/"
-            className="inline-flex items-center justify-center rounded-lg bg-[#2F7E7F] text-white px-4 py-2 text-sm font-semibold hover:bg-[#2a6f70]"
+            className="inline-flex items-center justify-center rounded-lg bg-secondary text-white px-4 py-2 text-sm font-semibold hover:bg-secondary-hover"
           >
             Começar a comprar
           </Link>

@@ -75,7 +75,7 @@ export default function ServicosPage() {
   const totalServicos = meta?.total ?? services.length;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#041a24] via-[#053a3f] to-[#021117] text-white">
+    <main className="min-h-screen bg-gradient-to-b from-service-from via-service-via to-service-to text-white">
       {/* HERO / CABEÇALHO */}
       <section className="container mx-auto px-4 pt-10 pb-10 lg:pt-16 lg:pb-14">
         <div className="flex flex-col lg:flex-row gap-10 lg:items-center">

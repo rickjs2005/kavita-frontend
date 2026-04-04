@@ -281,7 +281,7 @@ export default function ServiceFormUnificado({
       {/* Cabeçalho */}
       <div className="flex flex-col gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-[#2F7E7F] sm:text-lg">
+          <h2 className="text-base font-semibold text-secondary sm:text-lg">
             {isEditing ? "Editar Serviço" : "Adicionar Serviço e Colaborador"}
           </h2>
           <p className="mt-1 text-xs text-gray-500 sm:text-sm">
@@ -352,7 +352,7 @@ export default function ServiceFormUnificado({
             <select
               id="service-especialidade"
               name="especialidade_id"
-              className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:ring-2 ${fieldErrors.especialidade_id ? "border-red-400 focus:border-red-400 focus:ring-red-500" : "border-gray-300 focus:border-[#2F7E7F] focus:ring-[#2F7E7F]/20"}`}
+              className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:ring-2 ${fieldErrors.especialidade_id ? "border-red-400 focus:border-red-400 focus:ring-red-500" : "border-gray-300 focus:border-secondary focus:ring-secondary/20"}`}
               value={form.especialidade_id}
               onChange={handleChange}
               onBlur={handleBlur}
@@ -379,7 +379,7 @@ export default function ServiceFormUnificado({
             </label>
             <textarea
               name="descricao"
-              className="min-h-[96px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#2F7E7F] focus:ring-2 focus:ring-[#2F7E7F]/20"
+              className="min-h-[96px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-secondary focus:ring-2 focus:ring-secondary/20"
               placeholder="Como esse colaborador atua, quais serviços presta, região de atendimento…"
               value={form.descricao}
               onChange={handleChange}
@@ -406,7 +406,7 @@ export default function ServiceFormUnificado({
                   className={`relative overflow-hidden rounded-lg border text-left shadow-sm transition ${
                     marked
                       ? "ring-2 ring-red-500"
-                      : "ring-1 ring-black/5 hover:ring-[#2F7E7F]"
+                      : "ring-1 ring-black/5 hover:ring-secondary"
                   }`}
                   title={marked ? "Remover imagem" : "Manter imagem"}
                 >
@@ -442,7 +442,7 @@ export default function ServiceFormUnificado({
           multiple
           accept="image/*"
           onChange={onPickFiles}
-          className="block w-full text-xs text-gray-600 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-[#2F7E7F] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-white hover:file:bg-[#256466]"
+          className="block w-full text-xs text-gray-600 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-white hover:file:bg-secondary-hover"
         />
 
         {newPreviews.length > 0 && (

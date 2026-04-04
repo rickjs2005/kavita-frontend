@@ -144,7 +144,7 @@ export default function CadastroColaboradorPage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <section className="bg-gradient-to-b from-[#083E46] via-[#0b4f56] to-slate-950">
+      <section className="bg-gradient-to-b from-header via-career-via to-slate-950">
         {/* AGORA TUDO USA A MESMA LARGURA DO CARD (max-w-3xl) */}
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-4 pb-14 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:px-8">
           {/* Header + breadcrumb centralizado dentro de max-w-2xl */}
@@ -279,7 +279,7 @@ export default function CadastroColaboradorPage() {
                     name="especialidade_id"
                     value={form.especialidade_id}
                     onChange={handleChange}
-                    className="w-full min-h-[44px] rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#EC5B20]"
+                    className="w-full min-h-[44px] rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-accent"
                     required
                   >
                     <option value="">Selecione uma opção</option>
@@ -306,7 +306,7 @@ export default function CadastroColaboradorPage() {
                   name="descricao"
                   value={form.descricao}
                   onChange={handleChange}
-                  className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#EC5B20]"
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-accent"
                   rows={4}
                   placeholder="Ex: Atendo fazendas num raio de 80km de Manhuaçu/MG, com foco em bovinos de leite e manejo de pastagens."
                 />
@@ -323,7 +323,7 @@ export default function CadastroColaboradorPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex w-full items-center justify-center rounded-full bg-[#EC5B20] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#d44c19] disabled:opacity-60 sm:w-auto"
+                  className="inline-flex w-full items-center justify-center rounded-full bg-accent px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-accent-hover disabled:opacity-60 sm:w-auto"
                 >
                   {submitting
                     ? "Enviando cadastro..."

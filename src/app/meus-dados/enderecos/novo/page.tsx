@@ -134,15 +134,15 @@ export default function NovoEnderecoPage() {
     input:
       "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 sm:py-3 text-sm " +
       "outline-none transition min-h-[44px] " +
-      "focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20 placeholder:text-gray-400",
+      "focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-gray-400",
     footerButtons:
       "mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3",
     cancelBtn:
       "inline-flex items-center justify-center rounded-lg border border-gray-300 px-4 py-2.5 " +
       "text-sm font-medium text-gray-700 hover:bg-gray-50",
     saveBtn:
-      "inline-flex items-center justify-center rounded-lg bg-[#359293] px-5 py-2.5 text-sm font-semibold " +
-      "text-white shadow-sm hover:bg-[#2b7778] disabled:opacity-60",
+      "inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold " +
+      "text-white shadow-sm hover:bg-primary-hover disabled:opacity-60",
   };
 
   return (

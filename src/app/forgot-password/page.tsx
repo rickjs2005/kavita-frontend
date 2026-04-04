@@ -104,7 +104,7 @@ export default function ForgotPasswordPage() {
               placeholder="seu@email.com"
               aria-invalid={emailError ? true : undefined}
               aria-describedby={emailError ? "forgot-email-error" : undefined}
-              className={`w-full rounded-md border bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#359293] transition ${emailError ? "border-red-400" : "border-white/30"}`}
+              className={`w-full rounded-md border bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-primary transition ${emailError ? "border-red-400" : "border-white/30"}`}
             />
             {emailError && (
               <p id="forgot-email-error" role="alert" className="mt-1 text-xs text-red-300">

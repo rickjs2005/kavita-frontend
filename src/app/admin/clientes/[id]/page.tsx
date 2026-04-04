@@ -177,7 +177,7 @@ export default function AdminClienteEditPage() {
         </div>
 
         {/* Card principal */}
-        <div className="rounded-2xl bg-[#020617] text-white px-4 py-5 sm:px-6 sm:py-6 shadow-sm border border-[#0f172a] space-y-5">
+        <div className="rounded-2xl bg-dark-750 text-white px-4 py-5 sm:px-6 sm:py-6 shadow-sm border border-dark-600 space-y-5">
           {/* Cabeçalho do card + status */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>

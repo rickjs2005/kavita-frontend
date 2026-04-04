@@ -17,7 +17,7 @@ const AtendimentoPage = () => {
     <main className="min-h-screen bg-gray-100 py-10">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-[#359293]">
+          <h1 className="text-3xl font-bold text-primary">
             Aqui tem tudo sobre a Kavita! 🌿
           </h1>
           <p className="text-xl text-gray-600">Líder em preço e qualidade</p>
@@ -32,7 +32,7 @@ const AtendimentoPage = () => {
                 onClick={() => setSelectedTopic(topic.title)}
                 className="bg-white shadow-md rounded-lg p-6 text-center hover:shadow-lg hover:scale-105 transition cursor-pointer w-full"
               >
-                <h2 className="text-lg font-semibold text-[#359293]">
+                <h2 className="text-lg font-semibold text-primary">
                   {topic.title}
                 </h2>
                 <p className="text-sm text-gray-600 mt-2">
@@ -48,12 +48,12 @@ const AtendimentoPage = () => {
             <button
               type="button"
               onClick={() => setSelectedTopic(null)}
-              className="mb-4 text-[#EC5B20] hover:underline"
+              className="mb-4 text-accent hover:underline"
             >
               ← Voltar
             </button>
 
-            <h2 className="text-2xl font-bold text-[#359293] mb-4">
+            <h2 className="text-2xl font-bold text-primary mb-4">
               {selectedTopic}
             </h2>
 

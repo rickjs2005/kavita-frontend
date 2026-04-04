@@ -341,7 +341,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                   <button
                     type="button"
                     onClick={handleWhatsAppClick}
-                    className="inline-flex w-full items-center justify-center rounded-full bg-[#2F7E7F] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#277273] sm:w-auto"
+                    className="inline-flex w-full items-center justify-center rounded-full bg-secondary px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-secondary-hover sm:w-auto"
                   >
                     Falar no WhatsApp
                   </button>
@@ -350,7 +350,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                     href={`/contatos?servico=${encodeURIComponent(
                       titulo,
                     )}&id=${servico.id}`}
-                    className="inline-flex w-full items-center justify-center rounded-full bg-[#2F7E7F] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#277273] sm:w-auto"
+                    className="inline-flex w-full items-center justify-center rounded-full bg-secondary px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-secondary-hover sm:w-auto"
                   >
                     Solicitar orçamento
                   </a>
@@ -387,7 +387,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                   type="button"
                   onClick={enviarAvaliacao}
                   disabled={sendingRating}
-                  className="rounded-full bg-[#2F7E7F] px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#277273] disabled:opacity-60"
+                  className="rounded-full bg-secondary px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-secondary-hover disabled:opacity-60"
                 >
                   {sendingRating ? "Enviando..." : "Enviar avaliação"}
                 </button>
@@ -425,7 +425,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                   type="button"
                   onClick={enviarSolicitacao}
                   disabled={sendingLead}
-                  className="mt-1 w-full rounded-full bg-[#2F7E7F] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#277273] disabled:opacity-60"
+                  className="mt-1 w-full rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary-hover disabled:opacity-60"
                 >
                   {sendingLead ? "Enviando..." : "Enviar pedido"}
                 </button>

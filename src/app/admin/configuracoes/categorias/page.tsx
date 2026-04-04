@@ -173,7 +173,7 @@ export default function AdminCategoriasPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-300/80">
               Painel Admin
             </p>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
               Categorias da Loja
             </h1>
             <p className="mt-1 max-w-2xl text-xs text-slate-300 sm:text-sm">
@@ -192,7 +192,7 @@ export default function AdminCategoriasPage() {
           <div className="absolute right-0 top-0 flex items-center gap-2 sm:static">
             {/* Mobile: só o X */}
             <div className="block sm:hidden">
-              <CloseButton className="text-3xl text-slate-200 hover:text-[#35c2c4]" />
+              <CloseButton className="text-3xl text-slate-200 hover:text-teal-light" />
             </div>
 
             {/* Desktop: botão voltar para configurações */}

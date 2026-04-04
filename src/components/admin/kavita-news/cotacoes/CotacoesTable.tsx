@@ -111,7 +111,7 @@ export default function CotacoesTable({
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Buscar por nome, slug, tipo, fonte..."
-                className="w-full sm:w-[340px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#EC5B20] focus:border-transparent"
+                className="w-full sm:w-[340px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               />
 
               <button
@@ -130,7 +130,7 @@ export default function CotacoesTable({
                   type="checkbox"
                   checked={onlyActive}
                   onChange={(e) => setOnlyActive(e.target.checked)}
-                  className="h-4 w-4 accent-[#EC5B20]"
+                  className="h-4 w-4 accent-accent"
                 />
                 Somente ativos
               </label>
@@ -140,7 +140,7 @@ export default function CotacoesTable({
                   type="checkbox"
                   checked={onlyErrors}
                   onChange={(e) => setOnlyErrors(e.target.checked)}
-                  className="h-4 w-4 accent-[#EC5B20]"
+                  className="h-4 w-4 accent-accent"
                 />
                 Somente com erro
               </label>

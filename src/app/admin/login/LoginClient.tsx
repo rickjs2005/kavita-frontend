@@ -121,7 +121,7 @@ export default function LoginClient() {
           <h1
             className="
               text-2xl sm:text-3xl font-extrabold tracking-tight
-              text-center text-[#39a2a2]
+              text-center text-admin-login-accent
             "
           >
             Acesso Administrativo
@@ -165,7 +165,7 @@ export default function LoginClient() {
               bg-white text-gray-900
               placeholder:text-gray-500
               px-3 py-3 text-base
-              focus:outline-none focus:ring-2 focus:ring-[#39a2a2]/60
+              focus:outline-none focus:ring-2 focus:ring-admin-login-accent/60
             "
           />
         </div>
@@ -191,7 +191,7 @@ export default function LoginClient() {
               bg-white text-gray-900
               placeholder:text-gray-500
               px-3 py-3 text-base
-              focus:outline-none focus:ring-2 focus:ring-[#39a2a2]/60
+              focus:outline-none focus:ring-2 focus:ring-admin-login-accent/60
             "
           />
         </div>
@@ -202,9 +202,9 @@ export default function LoginClient() {
           disabled={loading || !email || !senha}
           className="
             w-full rounded-xl
-            bg-[#2b7c7c] text-white font-semibold
+            bg-admin-login text-white font-semibold
             h-11 leading-none
-            hover:bg-[#256f6f] active:scale-[0.99]
+            hover:bg-admin-login-hover active:scale-[0.99]
             transition disabled:opacity-60 disabled:cursor-not-allowed
           "
         >

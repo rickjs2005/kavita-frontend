@@ -91,7 +91,7 @@ export default function ProdutosPage() {
       <div className="mx-auto w-full max-w-6xl space-y-6 sm:space-y-8">
         <header className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
+            <h1 className="text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
               Produtos
             </h1>
             <p className="mt-1 text-sm text-gray-300">

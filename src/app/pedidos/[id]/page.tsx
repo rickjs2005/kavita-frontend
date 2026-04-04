@@ -210,7 +210,7 @@ export default function PedidoPage() {
                 type="button"
                 onClick={handleRetryPayment}
                 disabled={retrying}
-                className="inline-flex items-center justify-center rounded-lg bg-[#EC5B20] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#d84e1a] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {retrying ? "Redirecionando..." : "Pagar novamente"}
               </button>
@@ -298,7 +298,7 @@ export default function PedidoPage() {
                   <button
                     type="button"
                     onClick={() => router.push(`/produtos/${productId}`)}
-                    className="px-4 py-2 rounded-lg bg-[#359293] text-white font-semibold text-xs sm:text-sm hover:bg-[#2b7778] transition-colors"
+                    className="px-4 py-2 rounded-lg bg-primary text-white font-semibold text-xs sm:text-sm hover:bg-primary-hover transition-colors"
                   >
                     Comprar novamente
                   </button>
@@ -319,7 +319,7 @@ export default function PedidoPage() {
         )}
         <div className="flex items-center justify-between text-lg font-bold text-gray-900">
           <span>Total</span>
-          <span className="text-[#EC5B20]">{formatCurrency(pedido.total)}</span>
+          <span className="text-accent">{formatCurrency(pedido.total)}</span>
         </div>
       </section>
 

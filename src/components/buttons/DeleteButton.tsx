@@ -39,7 +39,7 @@ export default function DeleteButton({
       onClick={handleClick} // Define o que acontece ao clicar no botão
       disabled={loading} // Desativa o botão enquanto está carregando
       className={`bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-1 rounded transition ${
-        loading ? "opacity-50 cursor-not-allowed" : "" // Aplica estilo de "desativado" se estiver carregando
+        loading ? "opacity-60 cursor-not-allowed" : "" // Aplica estilo de "desativado" se estiver carregando
       }`}
     >
       {/* Altera o texto do botão com base no estado */}

@@ -97,7 +97,7 @@ export default function ColaboradoresPendentesPage() {
         {/* Header */}
         <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-extrabold text-[#359293] sm:text-2xl md:text-3xl">
+            <h1 className="text-xl font-extrabold text-primary sm:text-2xl md:text-3xl">
               Colaboradores pendentes
             </h1>
             <p className="mt-1 max-w-xl text-xs text-gray-300 sm:text-sm">

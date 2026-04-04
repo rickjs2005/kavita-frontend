@@ -152,15 +152,15 @@ export default function CuponsPage() {
   // ========= UI =========
 
   return (
-    <div className="min-h-screen bg-[#050816] text-gray-100">
+    <div className="min-h-screen bg-dark-800 text-gray-100">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
         <header className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#38bdf8]/80">
+            <p className="text-xs uppercase tracking-[0.2em] text-info/80">
               Marketing interno
             </p>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
               Cupons e Promoções
             </h1>
             <p className="mt-1 text-sm text-gray-300">
@@ -173,7 +173,7 @@ export default function CuponsPage() {
               - Voltar: só no desktop */}
           <div className="absolute right-0 top-0 flex items-center gap-2 sm:static">
             <div className="block sm:hidden">
-              <CloseButton className="text-3xl text-gray-100 hover:text-[#38bdf8]" />
+              <CloseButton className="text-3xl text-gray-100 hover:text-info" />
             </div>
 
             <Link href="/admin" className="hidden sm:block">
@@ -198,7 +198,7 @@ export default function CuponsPage() {
           {/* Formulário */}
           <section
             ref={formRef}
-            className="rounded-2xl border border-white/5 bg-[#0b1120] p-4 shadow-xl shadow-black/40 sm:p-6"
+            className="rounded-2xl border border-white/5 bg-dark-700 p-4 shadow-xl shadow-black/40 sm:p-6"
           >
             <div className="mb-4 flex items-center justify-between gap-2">
               <div>
@@ -214,7 +214,7 @@ export default function CuponsPage() {
                 <button
                   type="button"
                   onClick={handleNovoCupom}
-                  className="text-xs font-medium text-[#38bdf8] hover:underline"
+                  className="text-xs font-medium text-info hover:underline"
                 >
                   + Criar novo
                 </button>
@@ -230,7 +230,7 @@ export default function CuponsPage() {
                   type="text"
                   value={form.codigo}
                   onChange={(e) => handleChange("codigo", e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-[#020617] px-3 py-2 text-sm text-white outline-none ring-0 focus:border-[#38bdf8]"
+                  className="w-full rounded-lg border border-white/10 bg-dark-750 px-3 py-2 text-sm text-white outline-none ring-0 focus:border-info"
                   placeholder="PROMO10"
                   required
                 />
@@ -249,7 +249,7 @@ export default function CuponsPage() {
                     onChange={(e) =>
                       handleChange("tipo", e.target.value as Coupon["tipo"])
                     }
-                    className="w-full rounded-lg border border-white/10 bg-[#020617] px-3 py-2 text-sm text-white outline-none focus:border-[#38bdf8]"
+                    className="w-full rounded-lg border border-white/10 bg-dark-750 px-3 py-2 text-sm text-white outline-none focus:border-info"
                   >
                     <option value="percentual">% (percentual)</option>
                     <option value="valor">R$ (valor fixo)</option>
@@ -268,7 +268,7 @@ export default function CuponsPage() {
                     onChange={(e) =>
                       handleChange("valor", Number(e.target.value))
                     }
-                    className="w-full rounded-lg border border-white/10 bg-[#020617] px-3 py-2 text-sm text-white outline-none focus:border-[#38bdf8]"
+                    className="w-full rounded-lg border border-white/10 bg-dark-750 px-3 py-2 text-sm text-white outline-none focus:border-info"
                     placeholder="10"
                     required
                   />
@@ -288,7 +288,7 @@ export default function CuponsPage() {
                     onChange={(e) =>
                       handleChange("minimo", Number(e.target.value))
                     }
-                    className="w-full rounded-lg border border-white/10 bg-[#020617] px-3 py-2 text-sm text-white outline-none focus:border-[#38bdf8]"
+                    className="w-full rounded-lg border border-white/10 bg-dark-750 px-3 py-2 text-sm text-white outline-none focus:border-info"
                     placeholder="0"
                   />
                   <p className="text-[11px] text-gray-400">
@@ -310,7 +310,7 @@ export default function CuponsPage() {
                         e.target.value === "" ? null : Number(e.target.value),
                       )
                     }
-                    className="w-full rounded-lg border border-white/10 bg-[#020617] px-3 py-2 text-sm text-white outline-none focus:border-[#38bdf8]"
+                    className="w-full rounded-lg border border-white/10 bg-dark-750 px-3 py-2 text-sm text-white outline-none focus:border-info"
                     placeholder="Ilimitado"
                   />
                   <p className="text-[11px] text-gray-400">
@@ -328,7 +328,7 @@ export default function CuponsPage() {
                     type="datetime-local"
                     value={form.expiracao || ""}
                     onChange={(e) => handleChange("expiracao", e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-[#020617] px-3 py-2 text-sm text-white outline-none focus:border-[#38bdf8]"
+                    className="w-full rounded-lg border border-white/10 bg-dark-750 px-3 py-2 text-sm text-white outline-none focus:border-info"
                   />
                   <p className="text-[11px] text-gray-400">
                     Deixe em branco para não expirar.
@@ -341,7 +341,7 @@ export default function CuponsPage() {
                     type="checkbox"
                     checked={!!form.ativo}
                     onChange={(e) => handleChange("ativo", e.target.checked)}
-                    className="h-4 w-4 rounded border-white/30 bg-[#020617] text-[#38bdf8] focus:ring-0"
+                    className="h-4 w-4 rounded border-white/30 bg-dark-750 text-info focus:ring-0"
                   />
                   <label htmlFor="ativo" className="text-sm text-gray-200">
                     Cupom ativo
@@ -353,7 +353,7 @@ export default function CuponsPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="inline-flex items-center justify-center rounded-lg bg-[#38bdf8] px-4 py-2 text-sm font-semibold text-[#020617] shadow-md shadow-cyan-500/30 transition hover:bg-[#0ea5e9] disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-lg bg-info px-4 py-2 text-sm font-semibold text-dark-750 shadow-md shadow-cyan-500/30 transition hover:bg-info-hover disabled:opacity-60"
                 >
                   {saving
                     ? "Salvando..."
@@ -374,7 +374,7 @@ export default function CuponsPage() {
               <button
                 type="button"
                 onClick={handleNovoCupom}
-                className="text-xs font-medium text-[#38bdf8] hover:underline"
+                className="text-xs font-medium text-info hover:underline"
               >
                 + Novo cupom
               </button>
@@ -391,11 +391,11 @@ export default function CuponsPage() {
                 {cupons.map((c) => (
                   <div
                     key={c.id}
-                    className="flex flex-col gap-3 rounded-2xl border border-white/5 bg-[#020617] p-4 text-sm text-gray-100 shadow-md shadow-black/40 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 rounded-2xl border border-white/5 bg-dark-750 p-4 text-sm text-gray-100 shadow-md shadow-black/40 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-[#38bdf8]/10 px-3 py-1 text-xs font-semibold text-[#38bdf8]">
+                        <span className="rounded-full bg-info/10 px-3 py-1 text-xs font-semibold text-info">
                           {c.codigo}
                         </span>
                         {!c.ativo && (
@@ -438,7 +438,7 @@ export default function CuponsPage() {
                       <button
                         type="button"
                         onClick={() => handleEditarCupom(c)}
-                        className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-gray-100 hover:border-[#38bdf8] hover:text-[#38bdf8]"
+                        className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-gray-100 hover:border-info hover:text-info"
                       >
                         Editar
                       </button>

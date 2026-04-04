@@ -442,14 +442,14 @@ export default function DroneModelPage() {
 
   if (loading && !landing) {
     return (
-      <div className="min-h-svh bg-[#070A0E] flex items-center justify-center">
+      <div className="min-h-svh bg-dark-900 flex items-center justify-center">
         <div className="h-10 w-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-svh bg-[#070A0E] text-slate-100">
+    <div className="min-h-svh bg-dark-900 text-slate-100">
       <style>{`
         html { scroll-behavior: smooth; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -491,7 +491,7 @@ export default function DroneModelPage() {
 
       <section className="pt-8 sm:pt-10 pb-8">
         <div className="max-w-6xl mx-auto px-5">
-          <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#0A0F14]/80 shadow-[0_30px_90px_-50px_rgba(0,0,0,0.95)] backdrop-blur-xl">
+          <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-dark-850/80 shadow-[0_30px_90px_-50px_rgba(0,0,0,0.95)] backdrop-blur-xl">
             <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.18),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(59,130,246,0.14),transparent_55%)] blur-2xl opacity-90" />
 
             <div className="relative aspect-[16/9] bg-gradient-to-br from-white/10 via-white/5 to-transparent">

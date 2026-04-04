@@ -13,7 +13,7 @@ export function PaymentSection({ formaPagamento, updateForm }: Props) {
   return (
     <section className="rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-6 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0EA5E9]/10 text-[#0284C7] text-xs font-bold">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-info/10 text-info-dark text-xs font-bold">
           3
         </div>
         <div>

@@ -262,7 +262,7 @@ export default function DroneModelContentPanel() {
 
   return (
     <div className="space-y-5">
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#0b1220] via-[#0b1220] to-[#070b13] p-5 shadow-[0_18px_50px_-30px_rgba(0,0,0,0.8)]">
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-drone-from via-drone-from to-drone-to p-5 shadow-[0_18px_50px_-30px_rgba(0,0,0,0.8)]">
         <div className="absolute inset-0 opacity-60">
           <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -right-40 -bottom-40 h-96 w-96 rounded-full bg-white/10 blur-3xl" />

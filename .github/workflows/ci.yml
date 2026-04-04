@@ -42,6 +42,9 @@ jobs:
       - name: Lint (non-blocking)
         run: npm run lint || true
 
+      - name: Check color tokens
+        run: npm run lint:colors
+
       - name: Test (non-watch)
         run: npm run test:run
 

@@ -62,23 +62,23 @@ export function SalesChartSection({
                 <BarChart data={chartData} barSize={24}>
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="#1f2933"
+                    stroke="var(--color-chart-grid)"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="date"
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fontSize: 11, fill: "#cbd5f5" }}
+                    tick={{ fontSize: 11, fill: "var(--color-chart-tick-light)" }}
                   />
                   <YAxis
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(value: number) => formatMoney(value)}
-                    tick={{ fontSize: 10, fill: "#94a3b8" }}
+                    tick={{ fontSize: 10, fill: "var(--color-chart-tick)" }}
                   />
                   <RechartsTooltip content={<SalesTooltip />} />
-                  <Bar dataKey="total" radius={[8, 8, 0, 0]} fill="#22c55e" />
+                  <Bar dataKey="total" radius={[8, 8, 0, 0]} fill="var(--color-chart-bar-success)" />
                 </BarChart>
               </ResponsiveContainer>
             )}

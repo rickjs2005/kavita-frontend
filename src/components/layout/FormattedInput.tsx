@@ -113,7 +113,7 @@ export const FormattedInput: React.FC<FormattedInputProps> = ({
       : "border-red-400 focus:ring-red-500"
     : variant === "dark"
       ? "border-slate-700 focus:border-emerald-500 focus:ring-emerald-500"
-      : "border-gray-300 focus:ring-[#EC5B20]";
+      : "border-gray-300 focus:ring-accent";
 
   const inputClass = `${baseInputClass} ${borderClass}`;
 

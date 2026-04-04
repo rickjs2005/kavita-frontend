@@ -13,7 +13,7 @@ export function PersonalInfoSection({ formData, updateForm }: Props) {
   return (
     <section className="rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-6 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EC5B20]/10 text-[#EC5B20] text-xs font-bold">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-accent text-xs font-bold">
           1
         </div>
         <div>

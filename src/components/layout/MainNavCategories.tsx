@@ -22,7 +22,7 @@ export default function MainNavCategories({ categories }: Props) {
         <Link
           key={cat.id}
           href={`/categorias/${cat.slug}`}
-          className="text-sm font-medium text-emerald-50/95 hover:text-[#EC5B20] transition-colors"
+          className="text-sm font-medium text-emerald-50/95 hover:text-accent transition-colors"
         >
           {cat.name}
         </Link>
@@ -30,14 +30,14 @@ export default function MainNavCategories({ categories }: Props) {
 
       <Link
         href="/servicos"
-        className="text-sm font-medium text-emerald-50/95 hover:text-[#EC5B20] transition-colors"
+        className="text-sm font-medium text-emerald-50/95 hover:text-accent transition-colors"
       >
         Serviços
       </Link>
 
       <Link
         href="/drones"
-        className="text-sm font-semibold text-[#38bdf8]/110 hover:text-[#EC5B20] transition-colors"
+        className="text-sm font-semibold text-info/110 hover:text-accent transition-colors"
       >
         Kavita Drone
       </Link>

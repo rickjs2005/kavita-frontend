@@ -129,7 +129,7 @@ export default function SearchInputProdutos({
             height="18"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#FF7A00"
+            stroke="var(--color-accent-bright)"
             strokeWidth="2"
           >
             <circle cx="11" cy="11" r="8"></circle>

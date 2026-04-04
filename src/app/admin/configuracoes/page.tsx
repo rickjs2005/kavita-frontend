@@ -311,13 +311,13 @@ export default function ConfiguracoesPage() {
           </div>
 
           <div className="pr-10">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#38bdf8]/80">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-info/80">
               Painel Admin
             </p>
 
             <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
+                <h1 className="text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
                   Configurações da Loja
                 </h1>
                 <p className="mt-1 max-w-2xl text-sm text-slate-300">

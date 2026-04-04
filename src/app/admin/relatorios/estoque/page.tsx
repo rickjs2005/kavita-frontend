@@ -167,7 +167,7 @@ export default function RelatorioEstoquePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#050816] text-gray-100">
+    <main className="min-h-screen bg-dark-800 text-gray-100">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         {/* ---------------- HEADER ---------------- */}
         <header className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -176,7 +176,7 @@ export default function RelatorioEstoquePage() {
               Monitoramento de estoque
             </p>
 
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#35c2c4] sm:text-3xl">
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-teal-light sm:text-3xl">
               Estoque
             </h1>
 
@@ -189,7 +189,7 @@ export default function RelatorioEstoquePage() {
             {hasData && (
               <p className="mt-2 text-xs font-semibold text-slate-100 sm:text-sm">
                 Valor total em estoque:{" "}
-                <span className="text-[#35c2c4]">
+                <span className="text-teal-light">
                   {formatCurrency(totalValorEstoque)}
                 </span>
               </p>
@@ -199,7 +199,7 @@ export default function RelatorioEstoquePage() {
           {/* Botões — voltar no desktop, close no mobile */}
           <div className="absolute right-0 top-0 flex items-center gap-2 sm:static">
             <div className="block sm:hidden">
-              <CloseButton className="text-3xl text-slate-200 hover:text-[#35c2c4]" />
+              <CloseButton className="text-3xl text-slate-200 hover:text-teal-light" />
             </div>
 
             <div className="hidden sm:block">
@@ -477,7 +477,7 @@ export default function RelatorioEstoquePage() {
                             >
                               Totais do resultado filtrado
                             </td>
-                            <td className="px-4 py-3 text-right text-sm font-semibold text-[#35c2c4]">
+                            <td className="px-4 py-3 text-right text-sm font-semibold text-teal-light">
                               {formatCurrency(visibleValorEstoque)}
                             </td>
                           </tr>
@@ -549,7 +549,7 @@ export default function RelatorioEstoquePage() {
                         <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px]">
                           {visibleProdutos} produtos
                         </span>
-                        <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] text-[#35c2c4]">
+                        <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] text-teal-light">
                           {formatCurrency(visibleValorEstoque)}
                         </span>
                       </div>

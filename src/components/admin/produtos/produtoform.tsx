@@ -294,7 +294,7 @@ export default function ProdutoForm({
     >
       <div className="flex flex-col gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-[#359293] sm:text-lg">
+          <h2 className="text-base font-semibold text-primary sm:text-lg">
             {isEditing ? "Editar Produto" : "Adicionar Produto"}
           </h2>
           <p className="mt-1 text-xs text-gray-500 sm:text-sm">
@@ -323,7 +323,7 @@ export default function ProdutoForm({
               Nome do produto
             </label>
             <input
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#359293]"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex.: Ração Premium 10kg"
@@ -335,7 +335,7 @@ export default function ProdutoForm({
               Categoria
             </label>
             <select
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#359293]"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
               value={String(categoryId)}
               onChange={(e) => setCategoryId(e.target.value)}
             >
@@ -348,7 +348,7 @@ export default function ProdutoForm({
               Descrição
             </label>
             <textarea
-              className="min-h-[120px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#359293]"
+              className="min-h-[120px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Detalhes do produto, recomendações de uso, etc."
@@ -363,7 +363,7 @@ export default function ProdutoForm({
                 Preço
               </label>
               <input
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#359293]"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
                 value={priceStr}
                 onChange={(e) => setPriceStr(e.target.value)}
                 placeholder="Ex.: 200,00"
@@ -375,7 +375,7 @@ export default function ProdutoForm({
                 Quantidade em estoque
               </label>
               <input
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#359293]"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
                 value={quantityStr}
                 onChange={(e) => setQuantityStr(e.target.value)}
                 placeholder="Ex.: 10"
@@ -488,7 +488,7 @@ export default function ProdutoForm({
 
         <button
           type="submit"
-          className="rounded-full bg-[#2F7E7F] px-5 py-2 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
+          className="rounded-full bg-secondary px-5 py-2 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
           disabled={loading}
         >
           {loading

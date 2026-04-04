@@ -28,7 +28,7 @@ type ResultItem =
 
 type CartItem = Parameters<ReturnType<typeof useCart>["addToCart"]>[0];
 
-const ORANGE = "#FF7A00";
+const ORANGE = "var(--color-accent-bright)";
 
 function safeNumber(v: unknown, fallback = 0): number {
   const n = Number(v);

@@ -24,7 +24,7 @@ export default function QuantityInput({
   };
 
   const btnClass =
-    "px-3 py-2 text-lg leading-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC5B20] focus-visible:ring-inset";
+    "px-3 py-2 text-lg leading-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset";
 
   return (
     <div className="inline-flex items-center rounded-xl border border-gray-300">
@@ -46,7 +46,7 @@ export default function QuantityInput({
         }}
         inputMode="numeric"
         aria-label="Quantidade"
-        className="w-12 text-center py-2 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#EC5B20]"
+        className="w-12 text-center py-2 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
         disabled={disabled}
       />
 

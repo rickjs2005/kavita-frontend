@@ -40,7 +40,7 @@ export function ShippingSection({
     <section className="rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-6 shadow-sm">
       {/* Header */}
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#22C55E]/10 text-[#16A34A] text-xs font-bold">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-success/10 text-success-dark text-xs font-bold">
           2
         </div>
         <div>
@@ -64,7 +64,7 @@ export function ShippingSection({
           className={[
             "rounded-2xl border p-3 text-left transition shadow-sm",
             entregaTipo === "ENTREGA"
-              ? "border-[#EC5B20] ring-2 ring-[#EC5B20]/20 bg-[#FFF7F2]"
+              ? "border-accent ring-2 ring-accent/20 bg-surface-light"
               : "border-black/10 bg-white hover:bg-black/[0.03]",
           ].join(" ")}
         >
@@ -83,7 +83,7 @@ export function ShippingSection({
           className={[
             "rounded-2xl border p-3 text-left transition shadow-sm",
             entregaTipo === "RETIRADA"
-              ? "border-[#EC5B20] ring-2 ring-[#EC5B20]/20 bg-[#FFF7F2]"
+              ? "border-accent ring-2 ring-accent/20 bg-surface-light"
               : "border-black/10 bg-white hover:bg-black/[0.03]",
           ].join(" ")}
         >
@@ -204,7 +204,7 @@ function AddressContent({
           <button
             type="button"
             onClick={() => setShowNewAddressForm(true)}
-            className="text-xs font-semibold text-[#EC5B20] hover:underline underline-offset-2"
+            className="text-xs font-semibold text-accent hover:underline underline-offset-2"
           >
             Adicionar novo
           </button>
@@ -255,7 +255,7 @@ function AddressCard({ addr, isSelected, onSelect }: AddressCardProps) {
       className={[
         "text-left rounded-2xl border p-4 transition shadow-sm",
         isSelected
-          ? "border-[#EC5B20] ring-2 ring-[#EC5B20]/20 bg-[#FFF7F2]"
+          ? "border-accent ring-2 ring-accent/20 bg-surface-light"
           : "border-black/10 hover:bg-black/[0.03] bg-white",
       ].join(" ")}
     >
@@ -310,7 +310,7 @@ function AddressCard({ addr, isSelected, onSelect }: AddressCardProps) {
           className={[
             "mt-1 h-4 w-4 flex-none rounded-full border",
             isSelected
-              ? "bg-[#EC5B20] border-[#EC5B20]"
+              ? "bg-accent border-accent"
               : "bg-white border-gray-300",
           ].join(" ")}
           aria-hidden="true"

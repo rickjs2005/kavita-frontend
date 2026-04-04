@@ -59,7 +59,7 @@ export default function ProductShippingSection({ value, onChange }: Props) {
             }}
             placeholder="Ex.: 3"
             inputMode="numeric"
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20"
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
 
           <span className="text-[11px] text-gray-500">
@@ -90,7 +90,7 @@ export default function ProductShippingSection({ value, onChange }: Props) {
             // Marcou => mantém qty como está (ou vazio), mas garante boolean true
             patch({ shippingFree: true });
           }}
-          className="h-4 w-4 rounded border-gray-300 text-[#359293] focus:ring-[#359293]"
+          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
         />
         <label
           htmlFor="shippingFree"
@@ -121,7 +121,7 @@ export default function ProductShippingSection({ value, onChange }: Props) {
               }}
               placeholder="Ex.: 3"
               inputMode="numeric"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
 
             <span className="text-[11px] text-gray-500">

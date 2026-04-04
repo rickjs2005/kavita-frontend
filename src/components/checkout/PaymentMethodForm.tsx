@@ -53,7 +53,7 @@ export function PaymentMethodForm({
         value={formaPagamento}
         onChange={onChange}
         aria-describedby="checkout-payment-hint"
-        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 mt-1 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition"
+        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 mt-1 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-accent transition"
       >
         {OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>

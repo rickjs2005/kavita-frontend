@@ -37,13 +37,13 @@ export function AdminModuleTabs({ tabs }: Props) {
             href={tab.href}
             className={`
               relative shrink-0 px-4 py-3 text-sm font-medium transition-colors
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#35c2c4]
-              ${isActive ? "text-[#35c2c4]" : "text-slate-400 hover:text-slate-200"}
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-light
+              ${isActive ? "text-teal-light" : "text-slate-400 hover:text-slate-200"}
             `}
           >
             {tab.label}
             {isActive && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-sm bg-[#35c2c4]" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-sm bg-teal-light" />
             )}
           </Link>
         );

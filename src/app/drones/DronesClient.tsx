@@ -186,10 +186,10 @@ function ModelCard({
     <div className="relative w-[84vw] sm:w-[430px] md:w-[470px] shrink-0 snap-start">
       <div className="absolute -inset-3 rounded-[32px] bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.22),transparent_55%),radial-gradient(circle_at_70%_70%,rgba(59,130,246,0.18),transparent_60%)] blur-2xl opacity-80" />
 
-      <div className="group relative overflow-hidden rounded-[32px] border border-white/10 bg-[#0A0F14]/80 shadow-[0_30px_90px_-50px_rgba(0,0,0,0.95)] backdrop-blur-xl">
+      <div className="group relative overflow-hidden rounded-[32px] border border-white/10 bg-dark-850/80 shadow-[0_30px_90px_-50px_rgba(0,0,0,0.95)] backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition">
           <div className="absolute -inset-[2px] rounded-[34px] bg-[conic-gradient(from_220deg,rgba(16,185,129,0.0),rgba(16,185,129,0.65),rgba(59,130,246,0.45),rgba(16,185,129,0.0))] blur-sm animate-[spin_7s_linear_infinite]" />
-          <div className="absolute inset-[1px] rounded-[32px] bg-[#0A0F14]" />
+          <div className="absolute inset-[1px] rounded-[32px] bg-dark-850" />
         </div>
 
         <div className="relative">
@@ -373,8 +373,8 @@ function ModelsCarouselSection({
             <div className="absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
           </div>
 
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#070A0E] to-transparent opacity-80" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-[#070A0E] to-transparent opacity-80" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-dark-900 to-transparent opacity-80" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-dark-900 to-transparent opacity-80" />
 
           <div
             ref={scrollerRef}
@@ -610,14 +610,14 @@ export default function DronesPublicPage() {
 
   if (loading && !landing) {
     return (
-      <div className="min-h-svh bg-[#070A0E] flex items-center justify-center">
+      <div className="min-h-svh bg-dark-900 flex items-center justify-center">
         <div className="h-10 w-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-svh bg-[#070A0E] text-slate-100">
+    <div className="min-h-svh bg-dark-900 text-slate-100">
       <div className="sticky top-0 z-40 bg-black/60 backdrop-blur border-b border-white/10">
         <div className="max-w-6xl mx-auto px-5 py-3 flex gap-3 items-center">
           <span className="text-xs font-semibold text-slate-300 shrink-0">

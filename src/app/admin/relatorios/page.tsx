@@ -26,35 +26,35 @@ const CARDS: ReportCard[] = [
     description:
       "Acompanhe o faturamento diário e identifique picos de vendas.",
     icon: BarChart2,
-    accent: "#22c55e", // verde
+    accent: "var(--color-success)", // verde
   },
   {
     href: "/admin/relatorios/produtos",
     title: "Produtos Mais Vendidos",
     description: "Veja quais produtos giram mais e otimize seu estoque.",
     icon: ShoppingBag,
-    accent: "#eab308", // amarelo
+    accent: "var(--color-warning)", // amarelo
   },
   {
     href: "/admin/relatorios/clientes",
     title: "Clientes Top",
     description: "Identifique seus melhores clientes por valor gasto.",
     icon: Users,
-    accent: "#38bdf8", // azul
+    accent: "var(--color-info)", // azul
   },
   {
     href: "/admin/relatorios/estoque",
     title: "Estoque Baixo",
     description: "Produtos com poucos itens em estoque para reposição rápida.",
     icon: AlertTriangle,
-    accent: "#f97316", // laranja
+    accent: "var(--color-alert)", // laranja
   },
   {
     href: "/admin/relatorios/servicos",
     title: "Serviços / Colaboradores",
     description: "Visão geral de serviços cadastrados por especialidade.",
     icon: Wrench,
-    accent: "#a855f7", // roxo
+    accent: "var(--color-purple)", // roxo
   },
 ];
 
@@ -65,7 +65,7 @@ export default function RelatoriosHomePage() {
         {/* Cabeçalho */}
         <header className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#35c2c4] sm:text-3xl">
+            <h1 className="text-2xl font-extrabold tracking-tight text-teal-light sm:text-3xl">
               Relatórios e Métricas
             </h1>
             <p className="max-w-xl text-xs text-slate-300 sm:text-sm">
@@ -112,7 +112,7 @@ export default function RelatoriosHomePage() {
                     bg-slate-950/80 p-4 sm:p-5
                     shadow-[0_10px_30px_rgba(0,0,0,0.35)]
                     transition-transform transition-colors
-                    hover:-translate-y-1 hover:border-[#35c2c4] hover:bg-slate-900/80
+                    hover:-translate-y-1 hover:border-teal-light hover:bg-slate-900/80
                   "
                 >
                   <div className="flex items-start gap-3">

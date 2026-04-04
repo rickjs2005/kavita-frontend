@@ -11,7 +11,8 @@
     "lint:ci": "set ESLINT_USE_FLAT_CONFIG=true&& eslint . --max-warnings=999999",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint:colors": "node scripts/check-color-tokens.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

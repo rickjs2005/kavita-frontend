@@ -264,7 +264,7 @@ export default function MarketingPromocoesPage() {
         {/* Header */}
         <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-1 flex-col gap-1">
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#359293] sm:text-3xl">
+            <h1 className="text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
               Marketing & Promoções
             </h1>
 
@@ -287,7 +287,7 @@ export default function MarketingPromocoesPage() {
               <button
                 type="button"
                 onClick={() => router.push("/admin/destaques/site-hero")}
-                className="inline-flex items-center justify-center rounded-xl border border-[#359293] bg-transparent px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#359293]"
+                className="inline-flex items-center justify-center rounded-xl border border-primary bg-transparent px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary"
               >
                 Configurar Hero Section
               </button>

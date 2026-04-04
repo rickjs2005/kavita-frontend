@@ -53,7 +53,7 @@ const Form = () => {
     <div>
       {/* Caixa com sombra e padding */}
       <div className="bg-white shadow-md rounded-lg p-6">
-        <h2 className="text-2xl font-bold text-[#359293] mb-6">
+        <h2 className="text-2xl font-bold text-primary mb-6">
           Entre em contato
         </h2>
 
@@ -80,7 +80,7 @@ const Form = () => {
                   name="assunto"
                   value={formData.assunto}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-[#359293]"
+                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
                   placeholder="Informe o assunto"
                   required
                 />
@@ -97,7 +97,7 @@ const Form = () => {
                   name="nome"
                   value={formData.nome}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-[#359293]"
+                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
                   placeholder="Seu nome completo"
                   required
                 />
@@ -114,7 +114,7 @@ const Form = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-[#359293]"
+                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
                   placeholder="Seu email"
                   required
                 />
@@ -131,7 +131,7 @@ const Form = () => {
                   name="telefone"
                   value={formData.telefone}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-[#359293]"
+                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
                   placeholder="(XX) XXXXX-XXXX"
                   required
                 />
@@ -148,7 +148,7 @@ const Form = () => {
                   name="estado"
                   value={formData.estado}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-[#359293]"
+                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
                   placeholder="Ex: Minas Gerais"
                   required
                 />
@@ -165,7 +165,7 @@ const Form = () => {
                   name="cidade"
                   value={formData.cidade}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-[#359293]"
+                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
                   placeholder="Sua cidade"
                   required
                 />
@@ -182,7 +182,7 @@ const Form = () => {
                   name="corrego"
                   value={formData.corrego}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-[#359293]"
+                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
                   placeholder="Informe o córrego"
                 />
               </div>
@@ -198,7 +198,7 @@ const Form = () => {
                 name="mensagem"
                 value={formData.mensagem}
                 onChange={handleChange}
-                className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-[#359293]"
+                className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
                 placeholder="Digite sua mensagem"
                 rows={4}
                 required
@@ -208,7 +208,7 @@ const Form = () => {
             {/* Botão de envio */}
             <button
               type="submit"
-              className="bg-[#EC5B20] text-white px-6 py-2 rounded-md hover:bg-[#d44c19] transition"
+              className="bg-accent text-white px-6 py-2 rounded-md hover:bg-accent-hover transition"
             >
               Enviar
             </button>

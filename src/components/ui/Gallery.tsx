@@ -54,7 +54,7 @@ export default function Gallery({
               aria-label={`Ver imagem ${i + 1}`}
               className={`rounded border-2 overflow-hidden transition ${
                 active === src
-                  ? "border-[#2F7E7F]"
+                  ? "border-secondary"
                   : "border-transparent hover:border-gray-300"
               }`}
               style={{ width: thumbSize + 4, height: thumbSize + 4 }}

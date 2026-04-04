@@ -162,7 +162,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#083E46] via-[#0f5e63] to-[#359293]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-header via-teal-dark to-primary" />
       <div
         className="absolute inset-0 opacity-20"
         style={{
@@ -178,10 +178,10 @@ export default function RegisterPage() {
             <div className="absolute top-4 left-4 z-20">
               <CloseButton
                 className="
-                    text-[#0f5e63]
+                    text-teal-dark
                     bg-white/90
                     hover:bg-white
-                    hover:text-[#EC5B20]
+                    hover:text-accent
                     rounded-full
                     p-2
                     shadow-md
@@ -234,7 +234,7 @@ export default function RegisterPage() {
                   {...register("nome")}
                   placeholder="Seu nome"
                   autoComplete="name"
-                  className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
+                  className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-accent transition"
                 />
                 {errors.nome && (
                   <p className="mt-1 text-xs text-red-200">
@@ -254,7 +254,7 @@ export default function RegisterPage() {
                   placeholder="seu@email.com"
                   autoComplete="email"
                   inputMode="email"
-                  className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
+                  className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-accent transition"
                 />
                 {errors.email && (
                   <p className="mt-1 text-xs text-red-200">
@@ -279,7 +279,7 @@ export default function RegisterPage() {
                   inputMode="numeric"
                   autoComplete="off"
                   maxLength={14}
-                  className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
+                  className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 ring-transparent focus:ring-accent transition"
                 />
                 {errors.cpf && (
                   <p className="mt-1 text-xs text-red-200">
@@ -299,12 +299,12 @@ export default function RegisterPage() {
                     {...register("senha")}
                     placeholder="••••••••"
                     autoComplete="new-password"
-                    className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 pr-11 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
+                    className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 pr-11 outline-none ring-2 ring-transparent focus:ring-accent transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
-                    className="absolute inset-y-0 right-0 px-3 text-[#0f5e63] hover:text-[#EC5B20]"
+                    className="absolute inset-y-0 right-0 px-3 text-teal-dark hover:text-accent"
                     aria-label={showPw ? "Ocultar senha" : "Mostrar senha"}
                     title={showPw ? "Ocultar senha" : "Mostrar senha"}
                   >
@@ -329,12 +329,12 @@ export default function RegisterPage() {
                     {...register("confirmSenha")}
                     placeholder="••••••••"
                     autoComplete="new-password"
-                    className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 pr-11 outline-none ring-2 ring-transparent focus:ring-[#EC5B20] transition"
+                    className="w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 pr-11 outline-none ring-2 ring-transparent focus:ring-accent transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPw2((v) => !v)}
-                    className="absolute inset-y-0 right-0 px-3 text-[#0f5e63] hover:text-[#EC5B20]"
+                    className="absolute inset-y-0 right-0 px-3 text-teal-dark hover:text-accent"
                     aria-label={showPw2 ? "Ocultar senha" : "Mostrar senha"}
                     title={showPw2 ? "Ocultar senha" : "Mostrar senha"}
                   >
@@ -353,7 +353,7 @@ export default function RegisterPage() {
                   type="submit"
                   isLoading={isSubmitting}
                   disabled={!canSubmit}
-                  className="w-full justify-center rounded-lg bg-[#359293] hover:bg-[#2e7f81] active:bg-[#2a7476]"
+                  className="w-full justify-center rounded-lg bg-primary hover:bg-primary-hover active:bg-primary-hover"
                 >
                   Cadastrar
                 </LoadingButton>
@@ -366,7 +366,7 @@ export default function RegisterPage() {
               <p className="text-center text-white/90 text-sm">
                 Já tem conta?{" "}
                 <Link
-                  className="underline text-[#EC5B20] hover:text-white transition"
+                  className="underline text-accent hover:text-white transition"
                   href="/login"
                 >
                   Entrar

@@ -350,7 +350,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
               }}
               placeholder="Cupom de desconto"
               className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 min-h-[44px] text-sm
-                         focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20 outline-none"
+                         focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
             />
             <CustomButton
               label={couponLoading ? "Aplicando..." : "Aplicar"}

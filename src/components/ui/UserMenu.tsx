@@ -29,7 +29,7 @@ export default function UserMenu() {
 
   if (!isAuthenticated) {
     return (
-      <Link href="/login" className="text-sm hover:text-[#EC5B20]">
+      <Link href="/login" className="text-sm hover:text-accent">
         Login / Meus Pedidos
       </Link>
     );
@@ -41,7 +41,7 @@ export default function UserMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((s) => !s)}
-        className="hover:text-[#EC5B20] cursor-pointer text-sm"
+        className="hover:text-accent cursor-pointer text-sm"
       >
         {`Bem-vindo, ${userName}`}
       </button>

@@ -156,7 +156,7 @@ export default function RelatorioServicosPage() {
   }, [rankingComAval]);
 
   return (
-    <main className="min-h-screen bg-[#050816] text-gray-100">
+    <main className="min-h-screen bg-dark-800 text-gray-100">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         {/* HEADER */}
         <header className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -164,7 +164,7 @@ export default function RelatorioServicosPage() {
             <p className="text-[11px] uppercase tracking-[0.25em] text-teal-400/80">
               Inteligência de serviços
             </p>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#35c2c4] sm:text-3xl">
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-teal-light sm:text-3xl">
               Relatório de Serviços / Colaboradores
             </h1>
             <p className="mt-1 max-w-xl text-xs text-slate-300 sm:text-sm">
@@ -176,7 +176,7 @@ export default function RelatorioServicosPage() {
             {hasData && (
               <p className="mt-2 text-xs font-semibold text-slate-100 sm:text-sm">
                 Total de serviços cadastrados:{" "}
-                <span className="text-[#35c2c4]">{totalServicos}</span>
+                <span className="text-teal-light">{totalServicos}</span>
               </p>
             )}
           </div>
@@ -184,7 +184,7 @@ export default function RelatorioServicosPage() {
           {/* Navegação (X no mobile / Voltar no desktop) */}
           <div className="absolute right-0 top-0 flex items-center gap-2 sm:static">
             <div className="block sm:hidden">
-              <CloseButton className="text-3xl text-slate-200 hover:text-[#35c2c4]" />
+              <CloseButton className="text-3xl text-slate-200 hover:text-teal-light" />
             </div>
 
             <div className="hidden sm:block">
@@ -405,7 +405,7 @@ export default function RelatorioServicosPage() {
                         <td className="px-4 py-3 text-right font-semibold text-slate-100">
                           {totalServicos}
                         </td>
-                        <td className="px-4 py-3 text-right font-semibold text-[#35c2c4]">
+                        <td className="px-4 py-3 text-right font-semibold text-teal-light">
                           100%
                         </td>
                       </tr>
@@ -457,7 +457,7 @@ export default function RelatorioServicosPage() {
                         </div>
 
                         <div className="text-right">
-                          <p className="text-[11px] font-semibold text-[#35c2c4]">
+                          <p className="text-[11px] font-semibold text-teal-light">
                             {esp.total_servicos} serviço
                             {esp.total_servicos === 1 ? "" : "s"}
                           </p>
@@ -502,7 +502,7 @@ export default function RelatorioServicosPage() {
                 {!loadingRanking && melhorAvaliado && (
                   <p className="text-[11px] text-slate-300 sm:text-xs">
                     Destaque:{" "}
-                    <span className="font-semibold text-[#35c2c4]">
+                    <span className="font-semibold text-teal-light">
                       {melhorAvaliado.nome}
                     </span>{" "}
                     — nota média{" "}

@@ -149,7 +149,7 @@ export default function HeroSection() {
           <div className="max-w-3xl">
             {/* Badge opcional (não depende de backend) */}
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/90 backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#359293]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
               Tecnologia para o campo
             </div>
 
@@ -181,7 +181,7 @@ export default function HeroSection() {
                   inline-flex w-full sm:w-auto items-center justify-center
                   rounded-xl px-6 py-3
                   text-sm font-semibold text-white
-                  bg-[#359293] hover:bg-[#2f7f80]
+                  bg-primary hover:bg-primary-hover
                   shadow-lg shadow-black/30
                   transition
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black/40

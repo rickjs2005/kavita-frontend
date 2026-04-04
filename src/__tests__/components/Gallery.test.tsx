@@ -84,15 +84,15 @@ describe("Gallery (src/components/Gallery.tsx)", () => {
     const btn2 = screen.getByRole("button", { name: "Ver imagem 2" });
 
     // Assert inicial: primeira é ativa
-    expect(btn1.className).toContain("border-[#2F7E7F]");
-    expect(btn2.className).not.toContain("border-[#2F7E7F]");
+    expect(btn1.className).toContain("border-secondary");
+    expect(btn2.className).not.toContain("border-secondary");
 
     // Act
     fireEvent.click(btn2);
 
     // Assert
-    expect(btn2.className).toContain("border-[#2F7E7F]");
-    expect(btn1.className).not.toContain("border-[#2F7E7F]");
+    expect(btn2.className).toContain("border-secondary");
+    expect(btn1.className).not.toContain("border-secondary");
   });
 
   it("se der erro na imagem principal, faz fallback para placeholder (negativo)", () => {

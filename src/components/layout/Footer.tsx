@@ -163,7 +163,7 @@ export default function Footer({ shop }: FooterProps) {
   );
 
   return (
-    <footer className="mt-12 bg-[#083E46] text-white">
+    <footer className="mt-12 bg-header text-white">
       {/* Top container */}
       <div className="mx-auto max-w-6xl px-4 pt-12 pb-10">
         {/* Grid responsivo: 1 col (mobile), 2 (tablet), 4 (desktop) */}

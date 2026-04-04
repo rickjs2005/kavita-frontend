@@ -73,7 +73,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
       </aside>
 
       <div className="relative flex h-screen flex-1 flex-col">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_#0f172a,_#020617_55%)]" />
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_var(--color-dark-600),_var(--color-dark-750)_55%)]" />
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
           {children}
         </main>

@@ -129,6 +129,9 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
     // Mantive conservador para não quebrar a lógica existente.
   };
 
+  const inputClass =
+    "w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-accent transition";
+
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* Tipo de localidade */}
@@ -145,7 +148,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
             className={[
               "w-1/2 rounded-lg px-3 py-2 text-sm font-medium transition min-h-[44px]",
               !isRural
-                ? "bg-[#EC5B20] text-white"
+                ? "bg-accent text-white"
                 : "text-gray-700 hover:bg-gray-50",
             ].join(" ")}
           >
@@ -159,7 +162,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
             className={[
               "w-1/2 rounded-lg px-3 py-2 text-sm font-medium transition min-h-[44px]",
               isRural
-                ? "bg-[#EC5B20] text-white"
+                ? "bg-accent text-white"
                 : "text-gray-700 hover:bg-gray-50",
             ].join(" ")}
           >
@@ -205,7 +208,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
             autoComplete="postal-code"
             inputMode="numeric"
             placeholder="00000-000"
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition"
+            className={inputClass}
           />
           {cepLoading && (
             <span className="text-xs text-gray-500 whitespace-nowrap">
@@ -234,7 +237,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
             id="checkout-estado"
             value={estadoValue}
             onChange={handleEstadoChange}
-            className="mt-1 w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition bg-white"
+            className={`mt-1 ${inputClass} bg-white`}
           >
             <option value="">Selecione o estado</option>
             {ESTADOS_BR.map((uf) => (
@@ -259,7 +262,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
             onChange={handleCidadeChange}
             autoComplete="address-level2"
             placeholder="Digite sua cidade"
-            className="mt-1 w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition"
+            className={`mt-1 ${inputClass}`}
           />
           <datalist id="checkout-cidades">
             {cities.map((city) => (
@@ -284,7 +287,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
               value={((endereco as any)?.comunidade ?? "") as string}
               onChange={handleFieldChange("comunidade")}
               placeholder="Ex.: Córrego do Lageado, Comunidade X"
-              className="mt-1 w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition"
+              className={`mt-1 ${inputClass}`}
             />
           </div>
 
@@ -300,7 +303,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
               value={((endereco as any)?.observacoes_acesso ?? "") as string}
               onChange={handleFieldChange("observacoes_acesso")}
               placeholder="Ex.: após a ponte, 2 km de estrada de chão, porteira azul..."
-              className="mt-1 w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition"
+              className={`mt-1 ${inputClass}`}
             />
             <p className="mt-1 text-[11px] text-gray-500">
               Não é obrigatório informar rua/bairro na zona rural.
@@ -326,7 +329,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
                 value={endereco.bairro ?? ""}
                 onChange={handleFieldChange("bairro")}
                 placeholder="Ex.: Centro"
-                className="mt-1 w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition"
+                className={`mt-1 ${inputClass}`}
               />
             </div>
 
@@ -343,7 +346,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
                 onChange={handleFieldChange("numero")}
                 inputMode="text"
                 placeholder="Ex.: 123"
-                className="mt-1 w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition"
+                className={`mt-1 ${inputClass}`}
               />
             </div>
           </div>
@@ -362,7 +365,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
               onChange={handleFieldChange("logradouro")}
               autoComplete="street-address"
               placeholder="Ex.: Rua São José"
-              className="mt-1 w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition"
+              className={`mt-1 ${inputClass}`}
             />
           </div>
 
@@ -379,7 +382,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
               value={endereco.referencia ?? ""}
               onChange={handleFieldChange("referencia")}
               placeholder="Apartamento, bloco, perto de..."
-              className="mt-1 w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition"
+              className={`mt-1 ${inputClass}`}
             />
           </div>
         </>
@@ -400,7 +403,7 @@ export function AddressForm({ endereco, onChange }: AddressFormProps) {
             onChange={handleFieldChange("numero")}
             inputMode="text"
             placeholder="Ex.: S/N, 123, Km 12..."
-            className="mt-1 w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-800 border border-gray-300 rounded-xl min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[#EC5B20] transition"
+            className={`mt-1 ${inputClass}`}
           />
         </div>
       )}

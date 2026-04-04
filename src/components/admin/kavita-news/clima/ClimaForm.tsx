@@ -432,7 +432,7 @@ export default function ClimaForm({
   const inputBase =
     "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 " +
     "placeholder:text-slate-400 shadow-sm " +
-    "focus:outline-none focus:ring-2 focus:ring-[#EC5B20] focus:border-transparent";
+    "focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent";
   const labelBase =
     "text-xs font-semibold uppercase tracking-wide text-slate-600";
 
@@ -770,7 +770,7 @@ export default function ClimaForm({
               type="checkbox"
               checked={form.ativo}
               onChange={(e) => set("ativo", e.target.checked)}
-              className="h-4 w-4 accent-[#EC5B20]"
+              className="h-4 w-4 accent-accent"
             />
             Ativo
           </label>

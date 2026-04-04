@@ -2,6 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════
+   Design Tokens — Fonte única de verdade para cores
+   ═══════════════════════════════════════════════════ */
+:root {
+  /* ── Brand ── */
+  --color-primary: #359293;
+  --color-primary-hover: #2b797a;
+  --color-secondary: #2F7E7F;
+  --color-secondary-hover: #256567;
+  --color-accent: #EC5B20;
+  --color-accent-hover: #d44c19;
+  --color-accent-bright: #FF7A00;
+
+  /* ── Surfaces ── */
+  --color-header: #083E46;
+  --color-nav: #038284;
+  --color-surface-light: #FFF7F2;
+  --color-surface-gradient-start: #F7FBFA;
+
+  /* ── Teal variants ── */
+  --color-teal-light: #35c2c4;
+  --color-teal-dark: #0f5e63;
+
+  /* ── Info / Sky ── */
+  --color-info: #38bdf8;
+  --color-info-hover: #0ea5e9;
+  --color-info-dark: #0284C7;
+
+  /* ── Dark backgrounds ── */
+  --color-dark-900: #070A0E;
+  --color-dark-850: #0A0F14;
+  --color-dark-800: #050816;
+  --color-dark-750: #020617;
+  --color-dark-700: #0b1120;
+  --color-dark-600: #0f172a;
+
+  /* ── Status ── */
+  --color-success: #22c55e;
+  --color-success-dark: #16A34A;
+  --color-warning: #eab308;
+  --color-alert: #f97316;
+  --color-purple: #a855f7;
+
+  /* ── Gradients: Services ── */
+  --color-service-from: #041a24;
+  --color-service-via: #053a3f;
+  --color-service-to: #021117;
+
+  /* ── Gradients: Career ── */
+  --color-career-via: #0b4f56;
+
+  /* ── Gradients: Drones ── */
+  --color-drone-from: #0b1220;
+  --color-drone-to: #070b13;
+
+  /* ── Admin login ── */
+  --color-admin-login: #2b7c7c;
+  --color-admin-login-hover: #256f6f;
+  --color-admin-login-accent: #39a2a2;
+
+  /* ── Charts ── */
+  --color-chart-bg: #ffffff;
+  --color-chart-text: #020617;
+  --color-chart-primary: #35c2c4;
+  --color-chart-grid: #1e293b;
+  --color-chart-tick: #9ca3af;
+  --color-chart-axis: #1f2937;
+  --color-chart-border: #e5e7eb;
+  --color-chart-bar-success: #22c55e;
+  --color-chart-tick-light: #cbd5f5;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }

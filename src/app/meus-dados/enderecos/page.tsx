@@ -21,7 +21,7 @@ export default function EnderecosPage() {
         <div className="mb-4 sm:mb-6 flex justify-end">
           <Link
             href="/meus-dados/enderecos/novo"
-            className="inline-flex items-center justify-center rounded-lg bg-[#359293] px-4 sm:px-5 py-2.5 text-white text-sm sm:text-base shadow-sm hover:bg-[#2b7778] transition"
+            className="inline-flex items-center justify-center rounded-lg bg-primary px-4 sm:px-5 py-2.5 text-white text-sm sm:text-base shadow-sm hover:bg-primary-hover transition"
           >
             + Novo endereço
           </Link>

@@ -97,7 +97,7 @@ export default function RelatorioVendasPage() {
         {/* Cabeçalho */}
         <header className="relative space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#35c2c4] sm:text-3xl">
+            <h1 className="text-2xl font-extrabold tracking-tight text-teal-light sm:text-3xl">
               Relatório de Vendas
             </h1>
 
@@ -119,7 +119,7 @@ export default function RelatorioVendasPage() {
 
           <p className="text-sm font-semibold text-slate-100 sm:text-base">
             Total faturado:{" "}
-            <span className="text-[#35c2c4]">
+            <span className="text-teal-light">
               {formatCurrency(totalFaturado)}
             </span>
           </p>
@@ -239,7 +239,7 @@ export default function RelatorioVendasPage() {
                         ))}
                         <tr className="bg-slate-900/80">
                           <td className="px-4 py-3 font-semibold">Total</td>
-                          <td className="px-4 py-3 text-right font-semibold text-[#35c2c4]">
+                          <td className="px-4 py-3 text-right font-semibold text-teal-light">
                             {formatCurrency(totalFaturado)}
                           </td>
                         </tr>

@@ -157,8 +157,8 @@ export default function Header({ categories, shop }: HeaderProps) {
   if (hideHeader) return null;
 
   // cores fixas
-  const topBarBg = "bg-[#083E46]";
-  const navBg = "bg-[#038284]";
+  const topBarBg = "bg-header";
+  const navBg = "bg-nav";
   const brandColor = "text-white";
 
   return (
@@ -166,7 +166,7 @@ export default function Header({ categories, shop }: HeaderProps) {
       {/* acessibilidade */}
       <a
         href="#conteudo"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 z-[60] bg-white text-[#083E46] px-3 py-1 rounded"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 z-[60] bg-white text-header px-3 py-1 rounded"
       >
         Pular para o conteúdo
       </a>
@@ -183,7 +183,7 @@ export default function Header({ categories, shop }: HeaderProps) {
               aria-label="Abrir menu"
               aria-controls="mobile-menu"
               aria-expanded={isMenuOpen}
-              className="md:hidden mr-1 rounded-xl p-2 hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-[#359293]"
+              className="md:hidden mr-1 rounded-xl p-2 hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-primary"
               onClick={() => setIsMenuOpen(true)}
             >
               <svg
@@ -257,7 +257,7 @@ export default function Header({ categories, shop }: HeaderProps) {
               <div className="relative">
                 <button
                   aria-label="Abrir carrinho"
-                  className="p-1.5 rounded-full text-[#EC5B20] hover:bg-black/10 transition-colors"
+                  className="p-1.5 rounded-full text-accent hover:bg-black/10 transition-colors"
                   onClick={() => setIsCartOpen(true)}
                 >
                   <svg
@@ -277,7 +277,7 @@ export default function Header({ categories, shop }: HeaderProps) {
                 </button>
 
                 {!!cartCount && (
-                  <span className="absolute -top-1 -right-1 bg-white text-[#083E46] text-[11px] font-bold rounded-full px-1.5 py-0.5 leading-none">
+                  <span className="absolute -top-1 -right-1 bg-white text-header text-[11px] font-bold rounded-full px-1.5 py-0.5 leading-none">
                     {cartCount}
                   </span>
                 )}
@@ -313,7 +313,7 @@ export default function Header({ categories, shop }: HeaderProps) {
           className="fixed z-50 top-0 left-0 h-full w-80 max-w-[80vw] bg-white shadow-2xl p-5 flex flex-col gap-4 overflow-y-auto"
         >
           <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold text-[#083E46]">Menu</span>
+            <span className="text-lg font-semibold text-header">Menu</span>
             <button
               aria-label="Fechar menu"
               className="rounded-full p-2 hover:bg-gray-100"
@@ -333,12 +333,12 @@ export default function Header({ categories, shop }: HeaderProps) {
             {isAuthenticated ? (
               <p className="text-sm text-gray-600">
                 Olá,{" "}
-                <span className="font-semibold text-[#083E46]">
+                <span className="font-semibold text-header">
                   {user?.nome ?? "Usuário"}
                 </span>
                 .{" "}
                 <button
-                  className="text-[#083E46] font-semibold underline"
+                  className="text-header font-semibold underline"
                   onClick={logout}
                 >
                   Sair
@@ -348,7 +348,7 @@ export default function Header({ categories, shop }: HeaderProps) {
               <p className="text-sm text-gray-600">
                 Olá!{" "}
                 <Link
-                  className="text-[#083E46] font-semibold underline"
+                  className="text-header font-semibold underline"
                   href="/login"
                 >
                   Faça login
@@ -363,7 +363,7 @@ export default function Header({ categories, shop }: HeaderProps) {
             <ul className="space-y-1.5">
               <li>
                 <Link
-                  className="block rounded-xl px-3.5 py-2.5 text-sm font-semibold text-[#083E46] hover:bg-gray-100"
+                  className="block rounded-xl px-3.5 py-2.5 text-sm font-semibold text-header hover:bg-gray-100"
                   href="/news"
                 >
                   Kavita News
@@ -372,7 +372,7 @@ export default function Header({ categories, shop }: HeaderProps) {
 
               <li>
                 <Link
-                  className="block rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#083E46] hover:bg-gray-100"
+                  className="block rounded-xl px-3.5 py-2.5 text-sm font-medium text-header hover:bg-gray-100"
                   href="/servicos"
                 >
                   Serviços
@@ -381,7 +381,7 @@ export default function Header({ categories, shop }: HeaderProps) {
 
               <li>
                 <Link
-                  className="block rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#083E46] hover:bg-gray-100"
+                  className="block rounded-xl px-3.5 py-2.5 text-sm font-medium text-header hover:bg-gray-100"
                   href="/contato"
                 >
                   Atendimento
@@ -398,7 +398,7 @@ export default function Header({ categories, shop }: HeaderProps) {
                     {publicActiveCategories.map((cat) => (
                       <li key={cat.id}>
                         <Link
-                          className="block rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#083E46] hover:bg-gray-100"
+                          className="block rounded-xl px-3.5 py-2.5 text-sm font-medium text-header hover:bg-gray-100"
                           href={`/categorias/${cat.slug}`}
                         >
                           {cat.name}
@@ -415,7 +415,7 @@ export default function Header({ categories, shop }: HeaderProps) {
           {!isAuthenticated && (
             <div className="border-top border-t pt-3 mt-2">
               <Link
-                className="block text-sm text-[#083E46] hover:underline"
+                className="block text-sm text-header hover:underline"
                 href="/login"
               >
                 Login / Meus Pedidos

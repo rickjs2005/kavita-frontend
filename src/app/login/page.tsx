@@ -95,7 +95,7 @@ export default function LoginPage() {
               placeholder="seu@email.com"
               aria-invalid={errors.email ? true : undefined}
               aria-describedby={errors.email ? "login-email-error" : undefined}
-              className={`w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 transition ${errors.email ? "ring-red-400" : "ring-transparent focus:ring-[#EC5B20]"}`}
+              className={`w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 outline-none ring-2 transition ${errors.email ? "ring-red-400" : "ring-transparent focus:ring-accent"}`}
               autoComplete="email"
             />
             {errors.email && (
@@ -118,13 +118,13 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 aria-invalid={errors.senha ? true : undefined}
                 aria-describedby={errors.senha ? "login-senha-error" : undefined}
-                className={`w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 pr-11 outline-none ring-2 transition ${errors.senha ? "ring-red-400" : "ring-transparent focus:ring-[#EC5B20]"}`}
+                className={`w-full rounded-lg bg-white/90 focus:bg-white px-4 py-2.5 pr-11 outline-none ring-2 transition ${errors.senha ? "ring-red-400" : "ring-transparent focus:ring-accent"}`}
                 autoComplete="current-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPw((v) => !v)}
-                className="absolute inset-y-0 right-0 px-3 text-[#0f5e63] hover:text-[#EC5B20] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC5B20] rounded"
+                className="absolute inset-y-0 right-0 px-3 text-teal-dark hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
                 aria-label={showPw ? "Ocultar senha" : "Mostrar senha"}
                 title={showPw ? "Ocultar senha" : "Mostrar senha"}
               >
@@ -141,7 +141,7 @@ export default function LoginPage() {
           {/* Botão */}
           <button
             disabled={isSubmitting}
-            className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[#359293] hover:bg-[#2e7f81] active:bg-[#2a7476] text-white font-semibold py-3 shadow-lg transition"
+            className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary hover:bg-primary-hover active:bg-primary-hover text-white font-semibold py-3 shadow-lg transition"
           >
             {isSubmitting ? "Entrando…" : "Entrar"}
           </button>
@@ -151,7 +151,7 @@ export default function LoginPage() {
             Esqueceu a senha?{" "}
             <Link
               href="/forgot-password"
-              className="underline text-[#EC5B20] hover:text-white transition"
+              className="underline text-accent hover:text-white transition"
             >
               Recuperar
             </Link>
@@ -160,7 +160,7 @@ export default function LoginPage() {
             Ainda não tem conta?{" "}
             <Link
               href="/register"
-              className="underline text-[#EC5B20] hover:text-white transition"
+              className="underline text-accent hover:text-white transition"
             >
               Cadastre-se
             </Link>

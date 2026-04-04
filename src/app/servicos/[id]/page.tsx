@@ -50,7 +50,7 @@ export default async function ServicoPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#041a24] via-[#053a3f] to-[#021117] text-white">
+    <main className="min-h-screen bg-gradient-to-b from-service-from via-service-via to-service-to text-white">
       <section className="container mx-auto px-4 pt-6 pb-10 lg:pt-8 lg:pb-16">
         <div className="mb-4 lg:mb-6">
           <a

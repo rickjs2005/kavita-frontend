@@ -137,7 +137,7 @@ function ResetPasswordContent() {
               onBlur={() => setPasswordError(validatePassword(password))}
               aria-invalid={passwordError ? true : undefined}
               aria-describedby={passwordError ? "reset-password-error" : undefined}
-              className={`w-full rounded-md border bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#359293] transition ${passwordError ? "border-red-400" : "border-white/30"}`}
+              className={`w-full rounded-md border bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-primary transition ${passwordError ? "border-red-400" : "border-white/30"}`}
             />
             {passwordError && (
               <p id="reset-password-error" role="alert" className="mt-1 text-xs text-red-300">
@@ -165,7 +165,7 @@ function ResetPasswordContent() {
               onBlur={() => setConfirmError(validateConfirm(password, confirm))}
               aria-invalid={confirmError ? true : undefined}
               aria-describedby={confirmError ? "reset-confirm-error" : undefined}
-              className={`w-full rounded-md border bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#359293] transition ${confirmError ? "border-red-400" : "border-white/30"}`}
+              className={`w-full rounded-md border bg-white/20 placeholder-white/60 text-white px-3 py-2 outline-none focus:ring-2 focus:ring-primary transition ${confirmError ? "border-red-400" : "border-white/30"}`}
             />
             {confirmError && (
               <p id="reset-confirm-error" role="alert" className="mt-1 text-xs text-red-300">

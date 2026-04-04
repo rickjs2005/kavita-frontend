@@ -187,7 +187,7 @@ export default function RelatorioClientesPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#050816] text-gray-100">
+    <main className="min-h-screen bg-dark-800 text-gray-100">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         {/* HEADER */}
         <header className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -195,7 +195,7 @@ export default function RelatorioClientesPage() {
             <p className="text-[11px] uppercase tracking-[0.25em] text-teal-400/80">
               Inteligência de clientes
             </p>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#35c2c4] sm:text-3xl">
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-teal-light sm:text-3xl">
               Relatório de Clientes
             </h1>
             <p className="mt-1 max-w-xl text-xs text-slate-300 sm:text-sm">
@@ -207,7 +207,7 @@ export default function RelatorioClientesPage() {
             {hasData && (
               <p className="mt-2 text-xs font-semibold text-slate-100 sm:text-sm">
                 Total gasto pelo ranking:{" "}
-                <span className="text-[#35c2c4]">
+                <span className="text-teal-light">
                   {formatCurrency(totalGastoGeral)}
                 </span>
               </p>
@@ -217,7 +217,7 @@ export default function RelatorioClientesPage() {
           {/* Navegação (X no mobile / Voltar no desktop) */}
           <div className="absolute right-0 top-0 flex items-center gap-2 sm:static">
             <div className="block sm:hidden">
-              <CloseButton className="text-3xl text-slate-200 hover:text-[#35c2c4]" />
+              <CloseButton className="text-3xl text-slate-200 hover:text-teal-light" />
             </div>
 
             <div className="hidden sm:block">
@@ -538,7 +538,7 @@ export default function RelatorioClientesPage() {
                             <td className="px-4 py-3 text-right font-semibold text-slate-100">
                               {visibleTotalPedidos}
                             </td>
-                            <td className="px-4 py-3 text-right font-semibold text-[#35c2c4]">
+                            <td className="px-4 py-3 text-right font-semibold text-teal-light">
                               {formatCurrency(visibleTotalGasto)}
                             </td>
                           </tr>
@@ -583,7 +583,7 @@ export default function RelatorioClientesPage() {
                           </div>
 
                           <div className="text-right">
-                            <p className="text-[11px] font-semibold text-[#35c2c4]">
+                            <p className="text-[11px] font-semibold text-teal-light">
                               {formatCurrency(Number(cliente.total_gasto || 0))}
                             </p>
                             <p className="text-[11px] text-slate-400">
@@ -608,7 +608,7 @@ export default function RelatorioClientesPage() {
                         <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px]">
                           {visibleTotalPedidos} pedidos
                         </span>
-                        <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] text-[#35c2c4]">
+                        <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] text-teal-light">
                           {formatCurrency(visibleTotalGasto)}
                         </span>
                       </div>

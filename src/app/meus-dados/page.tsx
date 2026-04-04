@@ -45,14 +45,14 @@ export default function MeusDadosPage() {
     input:
       "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 sm:py-3 text-sm " +
       "outline-none transition min-h-[44px] " +
-      "focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20 placeholder:text-gray-400",
+      "focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-gray-400",
     inputDisabled:
       "w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5 sm:py-3 text-sm " +
       "text-gray-600 cursor-not-allowed min-h-[44px]",
     footer: "mt-6 sm:mt-8 flex justify-end",
     btn:
-      "inline-flex items-center justify-center rounded-lg bg-[#359293] px-5 sm:px-6 py-3 " +
-      "text-white text-sm sm:text-base shadow-sm transition hover:bg-[#2b7778] " +
+      "inline-flex items-center justify-center rounded-lg bg-primary px-5 sm:px-6 py-3 " +
+      "text-white text-sm sm:text-base shadow-sm transition hover:bg-primary-hover " +
       "disabled:opacity-60 disabled:cursor-not-allowed w-full sm:w-auto",
     skeletonTitle: "h-7 sm:h-8 w-44 sm:w-48 rounded bg-gray-200 mb-6",
     skeletonCard: "h-64 rounded-2xl bg-gray-200",
@@ -246,7 +246,7 @@ export default function MeusDadosPage() {
               </div>
               <Link
                 href="/meus-dados/enderecos"
-                className="inline-flex items-center justify-center rounded-lg border border-[#359293] px-4 py-2.5 text-sm font-semibold text-[#359293] hover:bg-[#359293]/5"
+                className="inline-flex items-center justify-center rounded-lg border border-primary px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/5"
               >
                 Gerenciar endereços
               </Link>

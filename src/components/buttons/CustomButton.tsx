@@ -29,7 +29,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   type = "button",
 }) => {
   const baseStyles =
-    "text-white rounded-md flex items-center justify-center transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2";
+    "text-white rounded-xl flex items-center justify-center transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2";
   const sizeStyles =
     size === "small"
       ? "px-3 py-2 text-sm"
@@ -38,11 +38,11 @@ const CustomButton: React.FC<CustomButtonProps> = ({
         : "w-full px-6 py-3";
   const variantStyles =
     variant === "primary"
-      ? "bg-[#359293] hover:bg-[#2b797a] focus-visible:outline-[#2b797a]"
-      : "bg-[#EC5B20] hover:bg-[#d44c19] focus-visible:outline-[#d44c19]";
+      ? "bg-primary hover:bg-primary-hover focus-visible:outline-primary-hover"
+      : "bg-accent hover:bg-accent-hover focus-visible:outline-accent-hover";
   const disabledStyles = isLoading
     ? "opacity-60 cursor-not-allowed pointer-events-none"
-    : "disabled:opacity-50 disabled:cursor-not-allowed";
+    : "disabled:opacity-60 disabled:cursor-not-allowed";
   const hoverStyles = "hover:scale-105";
   const buttonStyles =
     `${baseStyles} ${sizeStyles} ${variantStyles} ${hoverStyles} ${disabledStyles} ${className}`.trim();

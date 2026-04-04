@@ -101,7 +101,7 @@ export function OrderSummarySection({
                       <div className="text-gray-400 line-through">
                         {formatCurrency(info.originalPrice * item.quantity)}
                       </div>
-                      <div className="font-semibold text-[#EC5B20]">
+                      <div className="font-semibold text-accent">
                         {formatCurrency(info.finalPrice * item.quantity)}
                       </div>
                     </>
@@ -138,13 +138,13 @@ export function OrderSummarySection({
               value={couponCode}
               onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
               placeholder="Digite o código do cupom"
-              className="flex-1 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#EC5B20]/70"
+              className="flex-1 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent/70"
             />
             <button
               type="button"
               onClick={handleApplyCoupon}
               disabled={couponLoading || !couponCode.trim()}
-              className="inline-flex items-center justify-center rounded-xl bg-[#EC5B20] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#d84e1a] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               {couponLoading ? "Aplicando..." : "Aplicar"}
             </button>
@@ -216,7 +216,7 @@ export function OrderSummarySection({
 
           <div className="mt-1 flex items-center justify-between border-t border-gray-100 pt-2">
             <span className="text-sm font-semibold text-gray-900">Total</span>
-            <span className="text-lg font-extrabold text-[#EC5B20]">
+            <span className="text-lg font-extrabold text-accent">
               {formatCurrency(total)}
             </span>
           </div>
@@ -245,7 +245,7 @@ export function OrderSummarySection({
           onClick={handleSubmit}
           isLoading={submitting}
           disabled={!canFinalizeCheckout || submitting}
-          className="w-full justify-center rounded-2xl bg-[#EC5B20] py-3 text-sm sm:text-base font-semibold text-white shadow-md shadow-[#EC5B20]/30 transition hover:bg-[#d84e1a] disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full justify-center rounded-2xl bg-accent py-3 text-sm sm:text-base font-semibold text-white shadow-md shadow-accent/30 transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           Confirmar pedido
         </LoadingButton>

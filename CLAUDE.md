@@ -129,6 +129,37 @@ src/app/
 | `fetch()` direto em componente | **Proibido** — usar `apiClient` ou hook |
 | `process.env.NEXT_PUBLIC_API_URL` inline | **Proibido** — usar `import { API_BASE } from "@/utils/absUrl"` |
 
+### Design Tokens de Cor
+
+Todas as cores do tema estão centralizadas em design tokens. Veja `COLORS.md` para o catálogo completo.
+
+| Camada | Arquivo | O que contém |
+|---|---|---|
+| CSS vars (fonte de verdade) | `src/app/globals.css` (`:root`) | Valores hex reais |
+| Tailwind config | `tailwind.config.ts` (`colors`) | Mapeamento `nome → var(--color-*)` |
+| Componentes | `src/components/`, `src/app/` | Classes Tailwind semânticas |
+
+**Usar corretamente:**
+
+```tsx
+// Em classes Tailwind
+className="bg-primary hover:bg-primary-hover text-accent"
+
+// Em props de libs (Recharts, SVG, etc.)
+fill="var(--color-chart-primary)"
+stroke="var(--color-accent-bright)"
+
+// Em objetos JS dinâmicos (inline style)
+style={{ color: "var(--color-success)" }}
+```
+
+**Proibido:**
+- `bg-[#359293]` ou qualquer hex arbitrário em classes Tailwind — usar o token semântico
+- Criar cor nova direto no componente sem registrar em `globals.css` + `tailwind.config.ts`
+- Duplicar hex que já existe como token — buscar o token correspondente
+
+Cores Tailwind padrão (gray, red, slate, white, black) podem ser usadas normalmente para UI neutra.
+
 ### Regras de projeto (evitar regressões)
 
 - **Toda URL de mídia** passa por `absUrl()` — nunca concatenar manualmente
@@ -138,3 +169,4 @@ src/app/
 - O campo de imagem de produto é `image` (string) e `images` (array); serviços usam `imagem` (string) e `images` (array) — os nomes diferem intencionalmente
 - `absUrl` conhece os prefixos de subpasta `products/`, `colaboradores/`, `logos/`, `news/`, `drones/` — ao adicionar novo módulo com uploads, adicionar o prefixo correspondente
 - `console.log` com debug/trace é proibido em produção — usar `console.warn`/`console.error` apenas para erros reais
+- **Toda cor de tema** usa design tokens — nunca hex hardcoded em classes Tailwind (ver seção acima)

@@ -379,7 +379,7 @@ export default function ProdutoContent({ produto }: Props) {
               ))}
             </div>
             <textarea
-              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-[#359293] focus:ring-2 focus:ring-[#359293]/20"
+              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 ring-0 transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               placeholder="Conte como foi sua experiência com este produto..."
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}

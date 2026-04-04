@@ -201,7 +201,7 @@ export default function ServiceCard({
                 onClick={() => setActiveImg(src)}
                 className={`flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
                   activeImg === src
-                    ? "border-[#2F7E7F] shadow-sm"
+                    ? "border-secondary shadow-sm"
                     : "border-transparent hover:border-gray-300"
                 }`}
                 aria-label={`Selecionar imagem ${i + 1}`}
@@ -226,7 +226,7 @@ export default function ServiceCard({
             href={`https://wa.me/${waDigits}`}
             target="_blank"
             rel="noreferrer"
-            className="mt-3 inline-flex w-fit items-center gap-2 rounded-full bg-[#2F7E7F]/5 px-3 py-1.5 text-xs font-medium text-[#2F7E7F] ring-1 ring-[#2F7E7F]/20 transition hover:bg-[#2F7E7F]/10"
+            className="mt-3 inline-flex w-fit items-center gap-2 rounded-full bg-secondary/5 px-3 py-1.5 text-xs font-medium text-secondary ring-1 ring-secondary/20 transition hover:bg-secondary/10"
           >
             <span className="text-base">📱</span>
             <span>WhatsApp: {waLabel}</span>

@@ -165,7 +165,7 @@ describe("CustomButton", () => {
 
     expect(button.className).toContain("extra-class");
     expect(button.className).toContain("w-full"); // size large
-    expect(button.className).toContain("bg-[#EC5B20]"); // secondary
+    expect(button.className).toContain("bg-accent"); // secondary
   });
 
   it("define type corretamente quando passado via props (controle)", () => {

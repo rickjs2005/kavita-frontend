@@ -202,7 +202,7 @@ export default function SiteHeroAdminPage() {
           <button
             disabled={saving}
             onClick={handleSave}
-            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#359293] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 hover:opacity-90 disabled:opacity-50"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Salvando..." : "Salvar alterações"}
           </button>
@@ -272,7 +272,7 @@ export default function SiteHeroAdminPage() {
                       <div className="mt-4 sm:mt-5 flex flex-col xs:flex-row gap-2 xs:items-center">
                         <a
                           href={config.button_href || "#"}
-                          className="inline-flex w-full xs:w-auto items-center justify-center rounded-xl border border-[#359293] bg-black/20 px-5 py-3 text-sm font-semibold text-white backdrop-blur hover:bg-[#359293]/25 transition"
+                          className="inline-flex w-full xs:w-auto items-center justify-center rounded-xl border border-primary bg-black/20 px-5 py-3 text-sm font-semibold text-white backdrop-blur hover:bg-primary/25 transition"
                         >
                           {config.button_label || "Saiba Mais"}
                         </a>
@@ -316,7 +316,7 @@ export default function SiteHeroAdminPage() {
                       onChange={(e) =>
                         setConfig((p) => ({ ...p, title: e.target.value }))
                       }
-                      className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-[#359293]/70 focus:ring-2 focus:ring-[#359293]/20"
+                      className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20"
                       placeholder="Ex: Tecnologia que transforma o campo"
                     />
                   </div>
@@ -336,7 +336,7 @@ export default function SiteHeroAdminPage() {
                         setConfig((p) => ({ ...p, subtitle: e.target.value }))
                       }
                       rows={3}
-                      className="w-full resize-none rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-[#359293]/70 focus:ring-2 focus:ring-[#359293]/20"
+                      className="w-full resize-none rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20"
                       placeholder="Ex: Os drones agrícolas mais avançados do mercado"
                     />
                   </div>
@@ -389,7 +389,7 @@ export default function SiteHeroAdminPage() {
                         </p>
                       </div>
 
-                      <span className="ml-3 shrink-0 rounded-lg bg-[#359293]/15 px-3 py-2 text-xs font-semibold text-white border border-[#359293]/30 group-hover:bg-[#359293]/25 transition">
+                      <span className="ml-3 shrink-0 rounded-lg bg-primary/15 px-3 py-2 text-xs font-semibold text-white border border-primary/30 group-hover:bg-primary/25 transition">
                         Escolher arquivo
                       </span>
 
@@ -449,7 +449,7 @@ export default function SiteHeroAdminPage() {
                         </p>
                       </div>
 
-                      <span className="ml-3 shrink-0 rounded-lg bg-[#359293]/15 px-3 py-2 text-xs font-semibold text-white border border-[#359293]/30 group-hover:bg-[#359293]/25 transition">
+                      <span className="ml-3 shrink-0 rounded-lg bg-primary/15 px-3 py-2 text-xs font-semibold text-white border border-primary/30 group-hover:bg-primary/25 transition">
                         Escolher arquivo
                       </span>
 
@@ -486,7 +486,7 @@ export default function SiteHeroAdminPage() {
                           button_label: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-[#359293]/70 focus:ring-2 focus:ring-[#359293]/20"
+                      className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20"
                       placeholder="Ex: Saiba Mais"
                     />
                   </div>
@@ -508,7 +508,7 @@ export default function SiteHeroAdminPage() {
                           button_href: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-[#359293]/70 focus:ring-2 focus:ring-[#359293]/20"
+                      className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20"
                       placeholder="/drones ou https://..."
                     />
                     <p className="text-xs text-white/50 mt-2">
@@ -522,7 +522,7 @@ export default function SiteHeroAdminPage() {
                 <button
                   disabled={saving}
                   onClick={handleSave}
-                  className="lg:hidden inline-flex items-center justify-center gap-2 rounded-xl bg-[#359293] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 hover:opacity-90 disabled:opacity-50 w-full"
+                  className="lg:hidden inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 hover:opacity-90 disabled:opacity-50 w-full"
                 >
                   {saving ? "Salvando..." : "Salvar alterações"}
                 </button>

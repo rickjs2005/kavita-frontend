@@ -59,7 +59,7 @@ function SucessoContent() {
 
       {pedidoId && (
         <p className="text-sm font-medium text-gray-700 mb-6">
-          Pedido <span className="text-[#359293]">#{pedidoId}</span>
+          Pedido <span className="text-primary">#{pedidoId}</span>
         </p>
       )}
 
@@ -67,7 +67,7 @@ function SucessoContent() {
         <button
           type="button"
           onClick={() => router.push(pedidoId ? `/pedidos/${pedidoId}` : "/pedidos")}
-          className="px-6 py-3 rounded-lg bg-[#359293] text-white font-semibold hover:bg-[#2b7778] transition-colors"
+          className="px-6 py-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors"
         >
           Ver meu pedido
         </button>

@@ -62,7 +62,7 @@ describe("LoadingButton", () => {
 
     const button = screen.getByRole("button");
 
-    expect(button.className).toContain("bg-[#EC5B20]");
+    expect(button.className).toContain("bg-accent");
     expect(button.className).toContain("text-white");
   });
 

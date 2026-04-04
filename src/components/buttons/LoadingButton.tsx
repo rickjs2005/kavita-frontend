@@ -27,13 +27,13 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
         "px-4 py-2 sm:px-5 sm:py-2.5",
         "rounded-xl font-semibold",
         "transition-colors duration-150",
-        "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EC5B20]",
+        "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent",
         "disabled:opacity-60 disabled:cursor-not-allowed",
 
         // cores / estados
         isLoading
           ? "bg-gray-400 cursor-wait"
-          : "bg-[#EC5B20] hover:bg-[#c94a16] text-white",
+          : "bg-accent hover:bg-accent-hover text-white",
 
         className,
       )}
