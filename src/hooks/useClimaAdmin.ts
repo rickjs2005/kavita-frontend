@@ -54,6 +54,15 @@ function isAbortError(e: any) {
   );
 }
 
+const CSRF_MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/** Reads csrf_token cookie (non-HttpOnly, set by GET /api/csrf-token). */
+function readCsrfCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
 function toUpperUF(v: string) {
   return (v || "").trim().toUpperCase();
 }
@@ -120,11 +129,21 @@ export function useClimaAdmin({
         (authOptions?.credentials as RequestCredentials | undefined) ??
         ("include" as RequestCredentials);
 
+      // Inject CSRF token for mutation methods (double-submit cookie pattern).
+      const method = (init?.method || "GET").toUpperCase();
+      let headers = mergeHeaders(authOptions.headers, init?.headers);
+      if (CSRF_MUTATION_METHODS.has(method)) {
+        const csrf = readCsrfCookie();
+        if (csrf) {
+          headers = { ...headers, "x-csrf-token": csrf };
+        }
+      }
+
       const res = await fetch(url, {
         ...authOptions,
         ...init,
         credentials,
-        headers: mergeHeaders(authOptions.headers, init?.headers),
+        headers,
         signal: localController.signal,
       });
 
