@@ -6,6 +6,7 @@ import { useClimaAdmin } from "@/hooks/useClimaAdmin";
 import CloseButton from "@/components/buttons/CloseButton";
 import ClimaForm from "../../kavita-news/clima/ClimaForm";
 import ClimaTable from "../../kavita-news/clima/ClimaTable";
+import ClimaSyncConfig from "../../kavita-news/clima/ClimaSyncConfig";
 
 export default function ClimaSection(props: {
   apiBase: string;
@@ -70,6 +71,8 @@ export default function ClimaSection(props: {
           </p>
         </div>
       </div>
+
+      <ClimaSyncConfig />
 
       <ClimaForm
         editMode={editMode}
