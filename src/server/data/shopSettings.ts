@@ -234,7 +234,10 @@ export async function fetchPublicShopSettings(): Promise<PublicShopSettings> {
 
     if (!res.ok) return fallback;
 
-    const raw = (await res.json()) as AnyObj;
+    const json = (await res.json()) as AnyObj;
+    // Unwrap envelope { ok: true, data: ... } from lib/response.js
+    const raw: AnyObj =
+      json?.ok === true && json?.data !== undefined ? json.data : json;
 
     const legacyFooter: AnyObj =
       raw?.footer && typeof raw.footer === "object" ? raw.footer : {};

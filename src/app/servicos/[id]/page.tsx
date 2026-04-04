@@ -22,7 +22,9 @@ async function fetchService(id: string): Promise<Service | null> {
       return null;
     }
 
-    const data = await res.json();
+    const raw = await res.json();
+    // Unwrap envelope { ok: true, data: ... } from lib/response.js
+    const data = raw?.ok === true && raw?.data !== undefined ? raw.data : raw;
 
     const normalizado: Service = {
       ...data,

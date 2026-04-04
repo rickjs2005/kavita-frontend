@@ -19,7 +19,10 @@ async function getProduto(id: string): Promise<Product | null> {
       next: { revalidate: 60 },
     });
     if (!res.ok) return null;
-    return (await res.json()) as Product;
+    const raw = await res.json();
+    // Unwrap envelope { ok: true, data: ... } from lib/response.js
+    const data = raw?.ok === true && raw?.data !== undefined ? raw.data : raw;
+    return data as Product;
   } catch {
     return null;
   }
@@ -47,7 +50,9 @@ async function getPromocaoProduto(
       next: { revalidate: 60 },
     });
     if (!res.ok) return null;
-    const data = await res.json();
+    const raw = await res.json();
+    // Unwrap envelope { ok: true, data: ... } from lib/response.js
+    const data = raw?.ok === true && raw?.data !== undefined ? raw.data : raw;
     return Array.isArray(data)
       ? ((data[0] as ProductPromotion) ?? null)
       : (data as ProductPromotion);
