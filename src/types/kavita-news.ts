@@ -129,11 +129,7 @@ export type CotacaoSlug =
   | "cafe-robusta"
   | "soja"
   | "milho"
-  | "boi-gordo"
-  | "boi-gordo-futuro"
-  | "milho-futuro"
-  | "soja-futuro"
-  | "cafe-arabica-futuro";
+  | "boi-gordo";
 
 export type CotacaoItem = {
   id: number;

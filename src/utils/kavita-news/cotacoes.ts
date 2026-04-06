@@ -5,10 +5,6 @@ export const ALLOWED_SLUGS = [
   "soja",
   "milho",
   "boi-gordo",
-  "boi-gordo-futuro",
-  "milho-futuro",
-  "soja-futuro",
-  "cafe-arabica-futuro",
 ] as const;
 
 export function formatDateTimeBR(v?: string | null) {

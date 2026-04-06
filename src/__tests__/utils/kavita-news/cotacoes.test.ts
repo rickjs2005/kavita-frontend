@@ -9,10 +9,18 @@ describe("utils/kavita-news/cotacoes", () => {
   describe("ALLOWED_SLUGS", () => {
     it("contém slugs esperados", () => {
       expect(ALLOWED_SLUGS).toContain("dolar");
+      expect(ALLOWED_SLUGS).toContain("cafe-arabica");
+      expect(ALLOWED_SLUGS).toContain("cafe-robusta");
       expect(ALLOWED_SLUGS).toContain("soja");
       expect(ALLOWED_SLUGS).toContain("milho");
       expect(ALLOWED_SLUGS).toContain("boi-gordo");
-      expect(ALLOWED_SLUGS).toContain("cafe-arabica-futuro");
+    });
+
+    it("não contém slugs fantasma sem provider", () => {
+      expect(ALLOWED_SLUGS).not.toContain("boi-gordo-futuro");
+      expect(ALLOWED_SLUGS).not.toContain("milho-futuro");
+      expect(ALLOWED_SLUGS).not.toContain("soja-futuro");
+      expect(ALLOWED_SLUGS).not.toContain("cafe-arabica-futuro");
     });
   });
 
