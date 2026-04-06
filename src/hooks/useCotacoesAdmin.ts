@@ -9,9 +9,12 @@ import type {
 } from "@/types/kavita-news";
 import { ALLOWED_SLUGS } from "@/utils/kavita-news/cotacoes";
 import apiClient from "@/lib/apiClient";
+import { ApiError } from "@/lib/errors";
 
 type Props = {
+  /** @deprecated No longer used — apiClient handles base URL. Kept for backward compat. */
   apiBase?: string;
+  /** @deprecated No longer used — apiClient handles auth. Kept for backward compat. */
   authOptions?: RequestInit;
   onUnauthorized?: () => void;
 };
@@ -25,9 +28,33 @@ function toNumString(v: any) {
   return String(v);
 }
 
-export function useCotacoesAdmin({
-  onUnauthorized,
-}: Props) {
+/**
+ * POST with raw response access — needed for sync endpoints where the
+ * provider result lives in `meta` (outside the unwrapped `data` block).
+ * Handles auth errors consistently with the rest of the hook.
+ */
+async function postRaw(
+  path: string,
+  onUnauthorized?: () => void,
+): Promise<{ ok: boolean; status: number; body: any }> {
+  const res = await apiClient.post<Response>(path, undefined, { raw: true });
+
+  let body: any = null;
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  if (ct.includes("json") || ct.includes("+json")) {
+    try { body = await res.json(); } catch { /* non-JSON */ }
+  }
+
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) onUnauthorized?.();
+    const msg = body?.message || `HTTP ${res.status}`;
+    throw new ApiError({ status: res.status, message: msg, code: body?.code });
+  }
+
+  return { ok: true, status: res.status, body };
+}
+
+export function useCotacoesAdmin({ onUnauthorized }: Props) {
   const [rows, setRows] = useState<CotacaoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -57,57 +84,40 @@ export function useCotacoesAdmin({
     ativo: true,
   });
 
-  /** Wrapper that handles 401/403 redirect and extracts data from envelope. */
-  const request = useCallback(
-    async <T = any>(path: string, init?: { method?: string; body?: any }): Promise<T> => {
-      try {
-        const method = init?.method ?? "GET";
-        switch (method) {
-          case "POST":
-            return await apiClient.post<T>(path, init?.body);
-          case "PUT":
-            return await apiClient.put<T>(path, init?.body);
-          case "DELETE":
-            return await apiClient.del<T>(path);
-          default:
-            return await apiClient.get<T>(path);
-        }
-      } catch (err: any) {
-        if (err?.status === 401 || err?.status === 403) {
-          onUnauthorized?.();
-        }
-        throw err;
-      }
-    },
-    [onUnauthorized],
-  );
+  // ─── Data loading ──────────────────────────────────────────────────────
 
   const load = useCallback(async () => {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const list = await request<CotacaoItem[]>("/api/admin/news/cotacoes");
+      const list = await apiClient.get<CotacaoItem[]>("/api/admin/news/cotacoes");
       setRows(Array.isArray(list) ? list : []);
 
-      // Also try to load meta for allowed slugs
       try {
-        const meta = await request<{ allowed_slugs?: string[] }>("/api/admin/news/cotacoes/meta");
+        const meta = await apiClient.get<{ allowed_slugs?: string[] }>(
+          "/api/admin/news/cotacoes/meta",
+        );
         if (Array.isArray(meta?.allowed_slugs) && meta.allowed_slugs.length > 0) {
           setAllowedSlugs(meta.allowed_slugs);
         }
       } catch {
-        // meta is non-critical, keep default slugs
+        // meta is non-critical
       }
     } catch (e: any) {
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+        onUnauthorized?.();
+      }
       setErrorMsg(e?.message || "Erro ao carregar cotações.");
     } finally {
       setLoading(false);
     }
-  }, [request]);
+  }, [onUnauthorized]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // ─── Derived state ─────────────────────────────────────────────────────
 
   const sorted = useMemo(() => {
     const list = Array.isArray(rows) ? [...rows] : [];
@@ -121,6 +131,8 @@ export function useCotacoesAdmin({
       );
     });
   }, [rows]);
+
+  // ─── Form state management ────────────────────────────────────────────
 
   const startCreate = useCallback(() => {
     setMode("create");
@@ -160,6 +172,8 @@ export function useCotacoesAdmin({
     startCreate();
   }, [startCreate]);
 
+  // ─── CRUD mutations ───────────────────────────────────────────────────
+
   const submit = useCallback(async () => {
     setSaving(true);
     setErrorMsg(null);
@@ -183,39 +197,39 @@ export function useCotacoesAdmin({
       if (!payload.type) throw new Error("Preencha o tipo.");
 
       if (mode === "edit" && editing?.id) {
-        await request(`/api/admin/news/cotacoes/${editing.id}`, {
-          method: "PUT",
-          body: payload,
-        });
+        await apiClient.put(`/api/admin/news/cotacoes/${editing.id}`, payload);
         toast.success("Cotação atualizada.");
       } else {
-        await request("/api/admin/news/cotacoes", {
-          method: "POST",
-          body: payload,
-        });
+        await apiClient.post("/api/admin/news/cotacoes", payload);
         toast.success("Cotação criada.");
       }
 
       await load();
       startCreate();
     } catch (e: any) {
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+        onUnauthorized?.();
+      }
       const msg = e?.message || "Erro ao salvar.";
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
       setSaving(false);
     }
-  }, [form, mode, editing?.id, request, load, startCreate]);
+  }, [form, mode, editing?.id, load, startCreate, onUnauthorized]);
 
   const remove = useCallback(
     async (id: number) => {
       setDeletingId(id);
       setErrorMsg(null);
       try {
-        await request(`/api/admin/news/cotacoes/${id}`, { method: "DELETE" });
+        await apiClient.del(`/api/admin/news/cotacoes/${id}`);
         toast.success("Cotação removida.");
         await load();
       } catch (e: any) {
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+          onUnauthorized?.();
+        }
         const msg = e?.message || "Erro ao remover.";
         setErrorMsg(msg);
         toast.error(msg);
@@ -223,43 +237,25 @@ export function useCotacoesAdmin({
         setDeletingId(null);
       }
     },
-    [request, load],
+    [load, onUnauthorized],
   );
 
+  // ─── Sync operations ──────────────────────────────────────────────────
+
   /**
-   * Sync individual — checks meta.provider.ok to distinguish
-   * "request succeeded" from "provider actually returned fresh data".
-   *
-   * The backend returns HTTP 200 in both cases. The provider result
-   * is in the `meta` block (outside `data`), so apiClient does NOT
-   * auto-unwrap it. We need the raw response to read meta.
+   * Sync individual — uses raw response to read meta.provider.ok and
+   * distinguish "HTTP success" from "provider actually returned data".
    */
   const sync = useCallback(
     async (id: number) => {
       setSyncingId(id);
       setErrorMsg(null);
       try {
-        // Use raw response to access both data and meta
-        const res = await apiClient.post<Response>(
+        const { body } = await postRaw(
           `/api/admin/news/cotacoes/${id}/sync`,
-          undefined,
-          { raw: true },
+          onUnauthorized,
         );
 
-        let body: any = null;
-        try {
-          body = await res.json();
-        } catch {
-          // non-JSON response
-        }
-
-        if (!res.ok) {
-          const msg = body?.message || `HTTP ${res.status}`;
-          if (res.status === 401 || res.status === 403) onUnauthorized?.();
-          throw new Error(msg);
-        }
-
-        // Check the provider result inside meta
         const providerOk = body?.meta?.provider?.ok === true;
         const providerMsg = body?.meta?.provider?.message;
 
@@ -283,32 +279,16 @@ export function useCotacoesAdmin({
   );
 
   /**
-   * Sync all — checks the summary returned by the backend
-   * to show accurate success/failure counts.
+   * Sync all — reads the summary to show accurate counts.
    */
   const syncAll = useCallback(async () => {
     setErrorMsg(null);
     try {
-      const res = await apiClient.post<Response>(
+      const { body } = await postRaw(
         "/api/admin/news/cotacoes/sync-all",
-        undefined,
-        { raw: true },
+        onUnauthorized,
       );
 
-      let body: any = null;
-      try {
-        body = await res.json();
-      } catch {
-        // non-JSON
-      }
-
-      if (!res.ok) {
-        const msg = body?.message || `HTTP ${res.status}`;
-        if (res.status === 401 || res.status === 403) onUnauthorized?.();
-        throw new Error(msg);
-      }
-
-      // The summary is in body.data (envelope: { ok, data: { total, ok, error, items } })
       const summary = body?.data;
       const okCount = summary?.ok ?? 0;
       const errCount = summary?.error ?? 0;
