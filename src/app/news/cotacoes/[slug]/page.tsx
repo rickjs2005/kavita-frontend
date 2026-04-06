@@ -1,10 +1,8 @@
 // src/app/news/cotacoes/[slug]/page.tsx
 import Link from "next/link";
-import { newsPublicApi, type PublicCotacao } from "@/lib/newsPublicApi";
+import type { PublicCotacao } from "@/lib/newsPublicApi";
+import { fetchPublicCotacaoBySlug } from "@/server/data/cotacoes";
 import { EmptyState } from "@/components/news/EmptyState";
-import { ApiError } from "@/lib/errors";
-
-export const revalidate = 300; // ISR: revalidate every 5 minutes
 
 function safeNum(v: any): number | null {
   if (v === null || v === undefined || v === "") return null;
@@ -73,14 +71,11 @@ type FetchResult =
 
 async function loadCotacao(slug: string): Promise<FetchResult> {
   try {
-    const item = await newsPublicApi.cotacaoBySlug(slug);
+    // fetchPublicCotacaoBySlug returns null for 404, throws on other errors
+    const item = await fetchPublicCotacaoBySlug(slug);
     if (!item) return { status: "not_found" };
     return { status: "ok", item };
   } catch (err: any) {
-    // Distinguish 404 from other errors
-    if (err instanceof ApiError && err.status === 404) {
-      return { status: "not_found" };
-    }
     const message =
       err?.message || "Não foi possível carregar a cotação. Tente novamente em alguns instantes.";
     return { status: "error", message };

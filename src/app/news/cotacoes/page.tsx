@@ -1,10 +1,9 @@
 // src/app/news/cotacoes/page.tsx
-import { newsPublicApi, type PublicCotacao } from "@/lib/newsPublicApi";
+import type { PublicCotacao } from "@/lib/newsPublicApi";
+import { fetchPublicCotacoes } from "@/server/data/cotacoes";
 import { SectionHeader } from "@/components/news/SectionHeader";
 import { EmptyState } from "@/components/news/EmptyState";
 import { CotacaoCard } from "@/components/news/CotacaoCard";
-
-export const revalidate = 300; // ISR: revalidate every 5 minutes
 
 type FetchResult =
   | { status: "ok"; items: PublicCotacao[] }
@@ -13,8 +12,8 @@ type FetchResult =
 
 async function loadCotacoes(): Promise<FetchResult> {
   try {
-    const items = await newsPublicApi.cotacoesList();
-    if (!Array.isArray(items) || items.length === 0) {
+    const items = await fetchPublicCotacoes();
+    if (items.length === 0) {
       return { status: "empty" };
     }
     return { status: "ok", items };
