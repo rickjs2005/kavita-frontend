@@ -52,6 +52,34 @@ export async function fetchPublicCotacoes(
   return Array.isArray(data) ? data : [];
 }
 
+export type CotacaoHistoryEntry = {
+  id: number;
+  price: number | string | null;
+  variation_day: number | string | null;
+  source: string | null;
+  observed_at: string | null;
+  created_at: string | null;
+};
+
+/**
+ * Fetch recent sync history for a cotação (public).
+ * Returns empty array on error.
+ */
+export async function fetchCotacaoHistory(
+  slug: string,
+  limit = 10,
+): Promise<CotacaoHistoryEntry[]> {
+  const url = buildUrl(
+    `/api/news/cotacoes/${encodeURIComponent(slug)}/history?limit=${limit}`,
+  );
+  try {
+    const data = await fetchJson<CotacaoHistoryEntry[]>(url);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Fetch a single cotação by slug for the public detail page.
  * Returns null if not found (404).

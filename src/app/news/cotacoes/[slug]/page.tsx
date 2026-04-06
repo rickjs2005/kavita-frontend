@@ -1,7 +1,11 @@
 // src/app/news/cotacoes/[slug]/page.tsx
 import Link from "next/link";
 import type { PublicCotacao } from "@/lib/newsPublicApi";
-import { fetchPublicCotacaoBySlug } from "@/server/data/cotacoes";
+import {
+  fetchPublicCotacaoBySlug,
+  fetchCotacaoHistory,
+  type CotacaoHistoryEntry,
+} from "@/server/data/cotacoes";
 import { EmptyState } from "@/components/news/EmptyState";
 import {
   safeNum,
@@ -70,7 +74,7 @@ const MARKET_CONTEXT: Record<string, { exchange: string; city: string; contract:
 // ─── Data loading ───────────────────────────────────────────────────────────
 
 type FetchResult =
-  | { status: "ok"; item: PublicCotacao }
+  | { status: "ok"; item: PublicCotacao; history: CotacaoHistoryEntry[] }
   | { status: "not_found" }
   | { status: "error"; message: string };
 
@@ -78,7 +82,11 @@ async function loadCotacao(slug: string): Promise<FetchResult> {
   try {
     const item = await fetchPublicCotacaoBySlug(slug);
     if (!item) return { status: "not_found" };
-    return { status: "ok", item };
+
+    // Fetch history in parallel (non-blocking — empty array on failure)
+    const history = await fetchCotacaoHistory(slug, 10);
+
+    return { status: "ok", item, history };
   } catch (err: any) {
     const message =
       err?.message || "Não foi possível carregar a cotação. Tente novamente em alguns instantes.";
@@ -130,7 +138,7 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
   }
 
   // ─── Derived data ───────────────────────────────────────────────────────
-  const { item } = result;
+  const { item, history } = result;
   const itemSlug = String(item.slug ?? slug);
   const emoji = getMarketEmoji(item);
   const source = simplifySource(itemSlug, item.source);
@@ -160,17 +168,20 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
   const updated = formatDatePtBR(item.last_update_at, "medium");
   const localUnit = priceNum !== null ? convertToLocalUnit(priceNum, itemSlug) : null;
 
-  // Calculate variation in monetary value (approximate)
+  // ─── History-based comparison (real data, not estimated) ────────────────
+  // history[0] = most recent sync; history[1] = previous sync
+  const prevEntry = history.length >= 2 ? history[1] : null;
+  const prevPriceReal = prevEntry ? safeNum(prevEntry.price) : null;
+  const prevPrice = prevPriceReal;
+
+  // Variation in monetary value from real history
   const varMonetary =
-    priceNum !== null && varNum !== null
-      ? Math.abs(priceNum - priceNum / (1 + varNum / 100))
+    priceNum !== null && prevPriceReal !== null
+      ? Math.abs(priceNum - prevPriceReal)
       : null;
 
-  // Previous price (derived from current + variation %)
-  const prevPrice =
-    priceNum !== null && varNum !== null && varNum !== 0
-      ? priceNum / (1 + varNum / 100)
-      : null;
+  // Recent history entries for the "Últimas atualizações" block
+  const recentEntries = history.slice(0, 7);
 
   const unitExpl = UNIT_EXPLANATIONS[itemSlug];
   const mktCtx = MARKET_CONTEXT[itemSlug];
@@ -423,20 +434,69 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
           {/* ═══════════════════════════════════════════════════════════════
               BLOCO 6 — EM BREVE (placeholder)
               ═══════════════════════════════════════════════════════════════ */}
-          <section
-            aria-label="Recursos futuros"
-            className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/30 p-6 md:p-8"
-          >
-            <div className="flex items-start gap-3">
-              <span className="text-xl text-zinc-300" aria-hidden>📊</span>
-              <div>
-                <p className="text-sm font-semibold text-zinc-500">Em breve</p>
-                <p className="mt-1 text-xs text-zinc-400 leading-relaxed">
-                  Histórico de preços dos últimos dias e referências por praça e cooperativa.
-                </p>
+          {recentEntries.length > 0 ? (
+            <section
+              aria-label="Últimas atualizações"
+              className="rounded-2xl border border-zinc-200 bg-white shadow-sm p-6 md:p-8"
+            >
+              <h2 className="text-base font-semibold text-zinc-900">
+                Últimas atualizações
+              </h2>
+              <p className="mt-1 text-xs text-zinc-400">
+                Histórico recente de sincronizações deste ativo.
+              </p>
+
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-100 text-left">
+                      <th className="pb-2 pr-4 font-medium text-zinc-500 text-xs">Data</th>
+                      <th className="pb-2 pr-4 font-medium text-zinc-500 text-xs text-right">Preço</th>
+                      <th className="pb-2 font-medium text-zinc-500 text-xs text-right">Var. (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-50">
+                    {recentEntries.map((entry, idx) => {
+                      const ep = safeNum(entry.price);
+                      const ev = safeNum(entry.variation_day);
+                      const eUp = ev !== null && ev > 0;
+                      const eDown = ev !== null && ev < 0;
+                      const eColor = eUp ? "text-emerald-700" : eDown ? "text-rose-700" : "text-zinc-500";
+
+                      return (
+                        <tr key={entry.id ?? idx} className="hover:bg-zinc-50/50">
+                          <td className="py-2.5 pr-4 text-zinc-600">
+                            {formatDatePtBR(entry.created_at ?? entry.observed_at)}
+                          </td>
+                          <td className="py-2.5 pr-4 text-right font-medium text-zinc-900">
+                            {ep !== null ? `R$ ${formatPrice(ep)}` : "—"}
+                          </td>
+                          <td className={`py-2.5 text-right font-medium ${eColor}`}>
+                            {ev !== null ? formatPct(ev) : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            </div>
-          </section>
+            </section>
+          ) : (
+            <section
+              aria-label="Histórico indisponível"
+              className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/30 p-6 md:p-8"
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-xl text-zinc-300" aria-hidden>📊</span>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-500">Histórico</p>
+                  <p className="mt-1 text-xs text-zinc-400 leading-relaxed">
+                    O histórico ficará disponível após as primeiras sincronizações deste ativo.
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Disclaimer */}
           <p className="text-xs text-zinc-400 text-center leading-relaxed max-w-xl mx-auto">
