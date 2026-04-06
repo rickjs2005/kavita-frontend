@@ -458,7 +458,7 @@ export default function FreteAdminPage() {
         </header>
 
         {/* FORM */}
-        <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
+        <section className="rounded-2xl bg-white p-4 text-gray-900 shadow-sm sm:p-6">
           <div className="border-b border-gray-100 pb-3">
             <h2 className="text-base font-semibold text-primary">
               {isEditing ? "Editar regra de frete" : "Criar regra de frete"}

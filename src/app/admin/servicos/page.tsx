@@ -193,7 +193,7 @@ export default function ServicosPage() {
         {/* FORMULÁRIO */}
         <section
           ref={formRef}
-          className="mb-6 rounded-2xl bg-white p-4 shadow sm:mb-8 sm:p-6 md:p-8"
+          className="mb-6 rounded-2xl bg-white p-4 text-gray-900 shadow sm:mb-8 sm:p-6 md:p-8"
         >
           <h2 className="mb-4 text-lg font-semibold text-gray-900 sm:text-xl">
             {servicoEditado

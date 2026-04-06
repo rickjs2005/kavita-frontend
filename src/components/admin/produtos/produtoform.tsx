@@ -9,6 +9,12 @@ import { isApiError } from "@/lib/errors";
 
 type Msg = { type: "success" | "error"; text: string };
 
+type Categoria = {
+  id: number;
+  name: string;
+  is_active: 0 | 1 | boolean;
+};
+
 type ProdutoEditado = {
   id: number;
   name: string;
@@ -48,6 +54,7 @@ export default function ProdutoForm({
   const [priceStr, setPriceStr] = useState("");
   const [quantityStr, setQuantityStr] = useState("");
   const [categoryId, setCategoryId] = useState<string | number>("");
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
 
   const [existingImgs, setExistingImgs] = useState<string[]>([]);
   const [removeExisting, setRemoveExisting] = useState<Set<string>>(new Set());
@@ -60,6 +67,20 @@ export default function ProdutoForm({
     useState<string>("");
 
   const [shippingPrazoDiasStr, setShippingPrazoDiasStr] = useState<string>("");
+
+  useEffect(() => {
+    apiClient
+      .get<Categoria[]>("/api/admin/categorias")
+      .then((res) => {
+        const ativas = (Array.isArray(res) ? res : []).filter(
+          (c) => c.is_active === 1 || c.is_active === true,
+        );
+        setCategorias(ativas);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar categorias:", err);
+      });
+  }, []);
 
   function toRel(abs: string) {
     if (!abs) return "";
@@ -290,7 +311,7 @@ export default function ProdutoForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full flex-col gap-5 rounded-2xl bg-white p-4 shadow-sm sm:p-6 md:p-8"
+      className="flex w-full flex-col gap-5 rounded-2xl bg-white p-4 text-gray-900 shadow-sm sm:p-6 md:p-8"
     >
       <div className="flex flex-col gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -323,7 +344,7 @@ export default function ProdutoForm({
               Nome do produto
             </label>
             <input
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-gray-400 focus:border-primary"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex.: Ração Premium 10kg"
@@ -335,11 +356,18 @@ export default function ProdutoForm({
               Categoria
             </label>
             <select
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
               value={String(categoryId)}
               onChange={(e) => setCategoryId(e.target.value)}
             >
-              <option value="">Selecione...</option>
+              <option value="" className="bg-white text-gray-400">
+                Selecione...
+              </option>
+              {categorias.map((cat) => (
+                <option key={cat.id} value={cat.id} className="bg-white text-gray-900">
+                  {cat.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -348,7 +376,7 @@ export default function ProdutoForm({
               Descrição
             </label>
             <textarea
-              className="min-h-[120px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+              className="min-h-[120px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-gray-400 focus:border-primary"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Detalhes do produto, recomendações de uso, etc."
@@ -363,7 +391,7 @@ export default function ProdutoForm({
                 Preço
               </label>
               <input
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-gray-400 focus:border-primary"
                 value={priceStr}
                 onChange={(e) => setPriceStr(e.target.value)}
                 placeholder="Ex.: 200,00"
@@ -375,7 +403,7 @@ export default function ProdutoForm({
                 Quantidade em estoque
               </label>
               <input
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-gray-400 focus:border-primary"
                 value={quantityStr}
                 onChange={(e) => setQuantityStr(e.target.value)}
                 placeholder="Ex.: 10"

@@ -497,7 +497,7 @@ export default function MarketingPromocoesPage() {
               return (
                 <article
                   key={promo.id}
-                  className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md"
+                  className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white text-gray-900 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <div className="relative w-full bg-gray-100/80 pb-[56.25%]">
                     <Image

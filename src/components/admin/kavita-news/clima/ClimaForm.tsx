@@ -437,7 +437,7 @@ export default function ClimaForm({
     "text-xs font-semibold uppercase tracking-wide text-slate-600";
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.08)] overflow-hidden">
+    <section className="rounded-2xl border border-slate-200 bg-white text-gray-900 shadow-[0_8px_30px_rgba(15,23,42,0.08)] overflow-hidden">
       <header className="px-5 py-4 border-b bg-gradient-to-r from-slate-50 to-white">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">

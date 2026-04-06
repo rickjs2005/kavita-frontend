@@ -276,7 +276,7 @@ export default function ServiceFormUnificado({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full max-w-4xl flex-col gap-5 rounded-2xl bg-white p-4 shadow-sm sm:p-6 md:p-8"
+      className="flex w-full max-w-4xl flex-col gap-5 rounded-2xl bg-white p-4 text-gray-900 shadow-sm sm:p-6 md:p-8"
     >
       {/* Cabeçalho */}
       <div className="flex flex-col gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">

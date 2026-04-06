@@ -231,7 +231,7 @@ export default function PostForm({
         aria-label="Fechar"
       />
 
-      <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-4xl rounded-t-2xl bg-white shadow-2xl sm:inset-y-10 sm:bottom-auto sm:rounded-2xl">
+      <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-4xl rounded-t-2xl bg-white text-gray-900 shadow-2xl sm:inset-y-10 sm:bottom-auto sm:rounded-2xl">
         <div className="flex items-center justify-between gap-3 border-b px-4 py-3 sm:px-6">
           <div>
             <div className="text-base font-semibold text-gray-900">
