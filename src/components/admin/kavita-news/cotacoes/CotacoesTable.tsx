@@ -244,9 +244,9 @@ export default function CotacoesTable({
                     </p>
                   </div>
                   <div className="rounded-xl bg-slate-50 p-2">
-                    <p className="text-slate-500">Variação</p>
+                    <p className="text-slate-500">Variação (%)</p>
                     <p className="font-medium text-slate-900">
-                      {fmtNum(r.variation_day, 4)}
+                      {fmtNum(r.variation_day, 2)}{r.variation_day != null && r.variation_day !== "" ? "%" : ""}
                     </p>
                   </div>
                   <div className="rounded-xl bg-slate-50 p-2 col-span-2">
@@ -309,7 +309,7 @@ export default function CotacoesTable({
                 Unidade
               </th>
               <th className="px-5 py-3 font-semibold text-slate-700">
-                Variação
+                Var. (%)
               </th>
               <th className="px-5 py-3 font-semibold text-slate-700">Fonte</th>
               <th className="px-5 py-3 font-semibold text-slate-700">
@@ -363,7 +363,7 @@ export default function CotacoesTable({
                       {r.unit ?? "—"}
                     </td>
                     <td className="px-5 py-3 text-slate-700">
-                      {fmtNum(r.variation_day, 4)}
+                      {fmtNum(r.variation_day, 2)}{r.variation_day != null && String(r.variation_day) !== "" ? "%" : ""}
                     </td>
                     <td
                       className="px-5 py-3 text-slate-700"

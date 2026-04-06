@@ -344,7 +344,7 @@ export default function CotacoesForm({
           </div>
 
           <div className="space-y-2">
-            <label className={labelBase}>Variação dia</label>
+            <label className={labelBase}>Variação dia (%)</label>
             <input
               value={form.variation_day}
               onChange={(e) => set("variation_day", e.target.value)}
