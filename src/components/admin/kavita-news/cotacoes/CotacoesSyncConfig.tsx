@@ -8,6 +8,7 @@ type SyncConfig = {
   cotacoes_sync_enabled: boolean;
   cotacoes_sync_cron: string;
   cotacoes_provider_enabled: boolean;
+  config_persistable: boolean;
   runtime: {
     enabled: boolean;
     cronExpr: string | null;
@@ -138,6 +139,7 @@ export default function CotacoesSyncConfig({ onSyncAll, syncingAll = false }: Pr
 
   const rt = config.runtime;
   const providerOk = config.cotacoes_provider_enabled;
+  const canPersist = config.config_persistable !== false;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
@@ -157,6 +159,15 @@ export default function CotacoesSyncConfig({ onSyncAll, syncingAll = false }: Pr
         </div>
       </div>
 
+      {/* Migration warning */}
+      {!canPersist && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          Migration pendente: a configuração de sync de cotações ainda não pode ser salva no banco.
+          Execute <code className="text-xs bg-white px-1 py-0.5 rounded border border-amber-300">npm run db:migrate</code> no backend para habilitar.
+          Enquanto isso, a automação é controlada por variáveis de ambiente.
+        </div>
+      )}
+
       {/* Provider warning */}
       {!providerOk && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
@@ -172,7 +183,8 @@ export default function CotacoesSyncConfig({ onSyncAll, syncingAll = false }: Pr
           <select
             value={enabled ? "auto" : "manual"}
             onChange={(e) => setEnabled(e.target.value === "auto")}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+            disabled={!canPersist}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           >
             <option value="manual">Manual</option>
             <option value="auto">Automático</option>
@@ -185,7 +197,7 @@ export default function CotacoesSyncConfig({ onSyncAll, syncingAll = false }: Pr
           <select
             value={cronExpr}
             onChange={(e) => setCronExpr(e.target.value)}
-            disabled={!enabled}
+            disabled={!enabled || !canPersist}
             className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
           >
             {CRON_PRESETS.map((p) => (
@@ -200,7 +212,7 @@ export default function CotacoesSyncConfig({ onSyncAll, syncingAll = false }: Pr
         <button
           type="button"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || !canPersist}
           className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50 transition"
         >
           {saving ? "Salvando..." : "Salvar configuração"}
