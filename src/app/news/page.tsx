@@ -1,13 +1,11 @@
 // src/app/news/page.tsx
-import { newsPublicApi } from "@/lib/newsPublicApi";
+import { fetchNewsOverview } from "@/server/data/newsOverview";
 import { EmptyState } from "@/components/news/EmptyState";
 import { ClimaCard } from "@/components/news/ClimaCard";
 import { CotacaoCard } from "@/components/news/CotacaoCard";
 import { PostCard } from "@/components/news/PostCard";
 import PromocoesHero from "@/components/products/DestaquesSection";
 import Link from "next/link";
-
-export const revalidate = 60; // Revalidate this page every 60 seconds
 
 function pickFeaturedPost(posts: any[]) {
   if (!posts?.length) return null;
@@ -85,30 +83,34 @@ function EditorialLink(props: {
 }
 
 export default async function NewsHomePage() {
-  let data = null as any;
+  const data = await fetchNewsOverview(6);
 
-  try {
-    data = await newsPublicApi.overview(6);
-  } catch {
-    data = null;
-  }
-
-  if (!data) {
+  // Only show full error state if ALL modules returned empty AND there were errors
+  // (meaning the backend is completely unreachable, not just "no data yet")
+  if (data.isEmpty && data.hasErrors) {
     return (
       <main className="min-h-[calc(100vh-120px)] bg-zinc-50">
         <div className="mx-auto w-full max-w-6xl px-4 md:px-6 py-10">
-          <EmptyState
-            title="Não foi possível carregar o Kavita News"
-            subtitle="Tente novamente em instantes. Caso persista, verifique sua conexão."
-          />
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 md:p-8">
+            <div className="flex flex-col items-center text-center gap-2">
+              <span aria-hidden className="text-2xl">
+                ⚠️
+              </span>
+              <p className="text-base font-semibold text-amber-900">
+                Erro ao carregar o Kavita News
+              </p>
+              <p className="max-w-md text-sm text-amber-700 leading-relaxed">
+                Não foi possível conectar ao servidor de dados. Tente novamente
+                em instantes.
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     );
   }
 
-  const posts = data.posts || [];
-  const clima = data.clima || [];
-  const cotacoes = data.cotacoes || [];
+  const { posts, clima, cotacoes } = data;
 
   const featured = pickFeaturedPost(posts);
   const morePosts = featured ? posts.slice(1, 6) : posts.slice(0, 6);
@@ -297,7 +299,7 @@ export default async function NewsHomePage() {
               </div>
             </div>
 
-            {/* Promoções (agora na coluna principal para não criar buraco no desktop) */}
+            {/* Promoções */}
             <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-sm">
               <div className="p-5 md:p-6 border-b border-zinc-100">
                 <SectionHeader
