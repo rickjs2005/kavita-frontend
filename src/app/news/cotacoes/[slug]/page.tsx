@@ -450,6 +450,7 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
                 {recentEntries.map((entry, idx) => {
                   const ep = safeNum(entry.price);
                   const ev = safeNum(entry.variation_day);
+                  const eLocal = ep !== null ? convertToLocalUnit(ep, itemSlug) : null;
                   const eUp = ev !== null && ev > 0;
                   const eDown = ev !== null && ev < 0;
                   const eColor = eUp ? "text-emerald-700" : eDown ? "text-rose-700" : "text-zinc-500";
@@ -463,9 +464,14 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
                     >
                       <div className="min-w-0">
                         <p className={`text-sm ${idx === 0 ? "font-semibold text-zinc-900" : "font-medium text-zinc-700"}`}>
-                          {ep !== null ? `R$ ${formatPrice(ep)}` : "—"}
+                          {ep !== null ? `R$ ${formatPrice(ep)} ${(item.unit ?? "").replace("R$/", "/")}` : "—"}
                         </p>
-                        <p className="text-xs text-zinc-400">{dateStr}</p>
+                        {eLocal && (
+                          <p className="text-xs text-zinc-500">
+                            ≈ R$ {formatPrice(eLocal.value)} /{eLocal.label}
+                          </p>
+                        )}
+                        <p className="text-[11px] text-zinc-400 mt-0.5">{dateStr}</p>
                       </div>
 
                       {ev !== null && (
