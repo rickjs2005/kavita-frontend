@@ -180,8 +180,8 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
       ? Math.abs(priceNum - prevPriceReal)
       : null;
 
-  // Recent history entries for the "Últimas atualizações" block
-  const recentEntries = history.slice(0, 7);
+  // Recent history entries — limit to 5 for clean UX
+  const recentEntries = history.slice(0, 5);
 
   const unitExpl = UNIT_EXPLANATIONS[itemSlug];
   const mktCtx = MARKET_CONTEXT[itemSlug];
@@ -436,50 +436,51 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
               ═══════════════════════════════════════════════════════════════ */}
           {recentEntries.length > 0 ? (
             <section
-              aria-label="Últimas atualizações"
+              aria-label="Leituras recentes"
               className="rounded-2xl border border-zinc-200 bg-white shadow-sm p-6 md:p-8"
             >
               <h2 className="text-base font-semibold text-zinc-900">
-                Últimas atualizações
+                Leituras recentes
               </h2>
               <p className="mt-1 text-xs text-zinc-400">
-                Histórico recente de sincronizações deste ativo.
+                Últimas atualizações de preço deste ativo, em R$.
               </p>
 
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-zinc-100 text-left">
-                      <th className="pb-2 pr-4 font-medium text-zinc-500 text-xs">Data</th>
-                      <th className="pb-2 pr-4 font-medium text-zinc-500 text-xs text-right">Preço</th>
-                      <th className="pb-2 font-medium text-zinc-500 text-xs text-right">Var. (%)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-50">
-                    {recentEntries.map((entry, idx) => {
-                      const ep = safeNum(entry.price);
-                      const ev = safeNum(entry.variation_day);
-                      const eUp = ev !== null && ev > 0;
-                      const eDown = ev !== null && ev < 0;
-                      const eColor = eUp ? "text-emerald-700" : eDown ? "text-rose-700" : "text-zinc-500";
+              <div className="mt-4 space-y-2">
+                {recentEntries.map((entry, idx) => {
+                  const ep = safeNum(entry.price);
+                  const ev = safeNum(entry.variation_day);
+                  const eUp = ev !== null && ev > 0;
+                  const eDown = ev !== null && ev < 0;
+                  const eColor = eUp ? "text-emerald-700" : eDown ? "text-rose-700" : "text-zinc-500";
+                  const eBg = idx === 0 ? "bg-zinc-50 border-zinc-200" : "bg-white border-zinc-100";
+                  const dateStr = formatDatePtBR(entry.created_at ?? entry.observed_at);
 
-                      return (
-                        <tr key={entry.id ?? idx} className="hover:bg-zinc-50/50">
-                          <td className="py-2.5 pr-4 text-zinc-600">
-                            {formatDatePtBR(entry.created_at ?? entry.observed_at)}
-                          </td>
-                          <td className="py-2.5 pr-4 text-right font-medium text-zinc-900">
-                            {ep !== null ? `R$ ${formatPrice(ep)}` : "—"}
-                          </td>
-                          <td className={`py-2.5 text-right font-medium ${eColor}`}>
-                            {ev !== null ? formatPct(ev) : "—"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                  return (
+                    <div
+                      key={entry.id ?? idx}
+                      className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 ${eBg}`}
+                    >
+                      <div className="min-w-0">
+                        <p className={`text-sm ${idx === 0 ? "font-semibold text-zinc-900" : "font-medium text-zinc-700"}`}>
+                          {ep !== null ? `R$ ${formatPrice(ep)}` : "—"}
+                        </p>
+                        <p className="text-xs text-zinc-400">{dateStr}</p>
+                      </div>
+
+                      {ev !== null && (
+                        <span className={`shrink-0 text-sm font-semibold ${eColor}`}>
+                          {formatPct(ev)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
+
+              <p className="mt-3 text-[11px] text-zinc-400 leading-relaxed">
+                Valores em reais (R$), referentes aos últimos 7 dias.
+              </p>
             </section>
           ) : (
             <section
@@ -489,9 +490,9 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
               <div className="flex items-start gap-3">
                 <span className="text-xl text-zinc-300" aria-hidden>📊</span>
                 <div>
-                  <p className="text-sm font-semibold text-zinc-500">Histórico</p>
+                  <p className="text-sm font-semibold text-zinc-500">Leituras recentes</p>
                   <p className="mt-1 text-xs text-zinc-400 leading-relaxed">
-                    O histórico ficará disponível após as primeiras sincronizações deste ativo.
+                    O histórico ficará disponível após as primeiras atualizações deste ativo.
                   </p>
                 </div>
               </div>
