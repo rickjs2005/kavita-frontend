@@ -116,16 +116,23 @@ export function CotacaoCard({ item }: { item: PublicCotacao }) {
         </div>
 
         <div className="shrink-0 text-right">
-          {/* Preço = elemento mais forte */}
           <p className="text-[11px] uppercase tracking-wide text-zinc-500">
             Preço
           </p>
-          <p className="mt-0.5 text-2xl font-bold tracking-tight text-zinc-900">
-            {formatPrice(item.price)}
-          </p>
-          <p className="mt-0.5 text-sm font-medium text-zinc-600">
-            {item.unit ?? ""}
-          </p>
+          {item.price != null && item.price !== "" ? (
+            <>
+              <p className="mt-0.5 text-2xl font-bold tracking-tight text-zinc-900">
+                {formatPrice(item.price)}
+              </p>
+              <p className="mt-0.5 text-sm font-medium text-zinc-600">
+                {item.unit ?? ""}
+              </p>
+            </>
+          ) : (
+            <p className="mt-0.5 text-sm font-medium text-zinc-400">
+              Aguardando
+            </p>
+          )}
         </div>
       </div>
 

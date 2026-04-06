@@ -1,7 +1,10 @@
 // src/app/news/cotacoes/[slug]/page.tsx
 import Link from "next/link";
-import { newsPublicApi } from "@/lib/newsPublicApi";
+import { newsPublicApi, type PublicCotacao } from "@/lib/newsPublicApi";
 import { EmptyState } from "@/components/news/EmptyState";
+import { ApiError } from "@/lib/errors";
+
+export const revalidate = 300; // ISR: revalidate every 5 minutes
 
 function safeNum(v: any): number | null {
   if (v === null || v === undefined || v === "") return null;
@@ -10,7 +13,7 @@ function safeNum(v: any): number | null {
 }
 
 function formatPrice(v: any) {
-  if (v === null || v === undefined || v === "") return "-";
+  if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
   if (Number.isNaN(n)) return String(v);
 
@@ -52,22 +55,72 @@ function getMarketEmoji(item: any): string {
   return "🏷";
 }
 
+function BackLink() {
+  return (
+    <Link
+      className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 rounded-md"
+      href="/news/cotacoes"
+    >
+      <span aria-hidden>←</span> Voltar para Cotações
+    </Link>
+  );
+}
+
+type FetchResult =
+  | { status: "ok"; item: PublicCotacao }
+  | { status: "not_found" }
+  | { status: "error"; message: string };
+
+async function loadCotacao(slug: string): Promise<FetchResult> {
+  try {
+    const item = await newsPublicApi.cotacaoBySlug(slug);
+    if (!item) return { status: "not_found" };
+    return { status: "ok", item };
+  } catch (err: any) {
+    // Distinguish 404 from other errors
+    if (err instanceof ApiError && err.status === 404) {
+      return { status: "not_found" };
+    }
+    const message =
+      err?.message || "Não foi possível carregar a cotação. Tente novamente em alguns instantes.";
+    return { status: "error", message };
+  }
+}
+
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
 export default async function CotacaoDetailPage({ params }: PageProps) {
   const { slug } = await params;
+  const result = await loadCotacao(slug);
 
-  let item: any = null;
-
-  try {
-    item = await newsPublicApi.cotacaoBySlug((await params).slug);
-  } catch {
-    item = null;
+  if (result.status === "error") {
+    return (
+      <main className="min-h-[calc(100vh-120px)] bg-gradient-to-b from-zinc-50 to-white">
+        <div className="mx-auto w-full max-w-3xl px-4 md:px-6 py-10">
+          <nav aria-label="Navegação" className="mb-6">
+            <BackLink />
+          </nav>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 md:p-8">
+            <div className="flex flex-col items-center text-center gap-2">
+              <span aria-hidden className="text-2xl">
+                ⚠️
+              </span>
+              <p className="text-base font-semibold text-amber-900">
+                Erro ao carregar cotação
+              </p>
+              <p className="max-w-md text-sm text-amber-700 leading-relaxed">
+                {result.message}
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
   }
 
-  if (!item) {
+  if (result.status === "not_found") {
     return (
       <main className="min-h-[calc(100vh-120px)] bg-gradient-to-b from-zinc-50 to-white">
         <div className="mx-auto w-full max-w-3xl px-4 md:px-6 py-10">
@@ -77,12 +130,7 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
               subtitle="Verifique o endereço ou volte para a lista de cotações do agro."
             />
             <div className="mt-6">
-              <Link
-                className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 rounded-md"
-                href="/news/cotacoes"
-              >
-                <span aria-hidden>←</span> Voltar para Cotações
-              </Link>
+              <BackLink />
             </div>
           </div>
         </div>
@@ -90,6 +138,7 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
     );
   }
 
+  const { item } = result;
   const emoji = getMarketEmoji(item);
 
   const varNum = safeNum(item.variation_day);
@@ -107,17 +156,14 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
   const variationEmoji = isUp ? "📈" : isDown ? "📉" : "";
 
   const updated = formatDatePtBR(item.last_update_at);
+  const priceStr = formatPrice(item.price);
+  const hasPendingPrice = priceStr === null;
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-gradient-to-b from-zinc-50 to-white">
       <div className="mx-auto w-full max-w-3xl px-4 md:px-6 py-10">
         <nav aria-label="Navegação" className="mb-6">
-          <Link
-            className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 rounded-md"
-            href="/news/cotacoes"
-          >
-            <span aria-hidden>←</span> Voltar para Cotações
-          </Link>
+          <BackLink />
         </nav>
 
         <article className="rounded-2xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
@@ -126,7 +172,6 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
               KAVITA NEWS • MERCADO
             </p>
 
-            {/* Exatamente 1 H1 */}
             <h1 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight text-zinc-900">
               {emoji} {item.name}
             </h1>
@@ -165,11 +210,17 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
               Resumo do dia
             </h2>
 
+            {hasPendingPrice && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                Preço ainda não disponível para este ativo. A atualização ocorre conforme a fonte oficial.
+              </div>
+            )}
+
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50 p-5">
                 <p className="text-sm text-zinc-600">Preço</p>
                 <p className="mt-1 text-3xl font-bold tracking-tight text-zinc-900">
-                  {formatPrice(item.price)}
+                  {priceStr ?? "Aguardando"}
                 </p>
                 <p className="mt-1 text-sm font-medium text-zinc-600">
                   {item.unit ?? ""}

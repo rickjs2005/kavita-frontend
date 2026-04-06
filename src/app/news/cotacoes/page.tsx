@@ -1,16 +1,32 @@
 // src/app/news/cotacoes/page.tsx
-import { newsPublicApi } from "@/lib/newsPublicApi";
+import { newsPublicApi, type PublicCotacao } from "@/lib/newsPublicApi";
 import { SectionHeader } from "@/components/news/SectionHeader";
 import { EmptyState } from "@/components/news/EmptyState";
 import { CotacaoCard } from "@/components/news/CotacaoCard";
 
-export default async function CotacoesListPage() {
-  let items: any[] = [];
+export const revalidate = 300; // ISR: revalidate every 5 minutes
+
+type FetchResult =
+  | { status: "ok"; items: PublicCotacao[] }
+  | { status: "empty" }
+  | { status: "error"; message: string };
+
+async function loadCotacoes(): Promise<FetchResult> {
   try {
-    items = await newsPublicApi.cotacoesList();
-  } catch {
-    items = [];
+    const items = await newsPublicApi.cotacoesList();
+    if (!Array.isArray(items) || items.length === 0) {
+      return { status: "empty" };
+    }
+    return { status: "ok", items };
+  } catch (err: any) {
+    const message =
+      err?.message || "Não foi possível carregar as cotações. Tente novamente em alguns instantes.";
+    return { status: "error", message };
   }
+}
+
+export default async function CotacoesListPage() {
+  const result = await loadCotacoes();
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-gradient-to-b from-zinc-50 to-white">
@@ -20,7 +36,6 @@ export default async function CotacoesListPage() {
             KAVITA NEWS • MERCADO
           </p>
 
-          {/* Exatamente 1 H1 */}
           <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight text-zinc-900">
             Cotações do Agro
           </h1>
@@ -45,7 +60,6 @@ export default async function CotacoesListPage() {
       </header>
 
       <div className="mx-auto w-full max-w-6xl px-4 md:px-6 py-8 md:py-10 space-y-6">
-        {/* SectionHeader (h2) – mantém o padrão do projeto */}
         <SectionHeader
           title="Ativos monitorados"
           subtitle="Selecione um ativo para ver detalhes do mercado"
@@ -53,7 +67,38 @@ export default async function CotacoesListPage() {
           actionLabel="Voltar"
         />
 
-        {items.length ? (
+        {result.status === "error" && (
+          <section
+            aria-label="Erro ao carregar cotações"
+            className="rounded-2xl border border-amber-200 bg-amber-50 p-6 md:p-8"
+          >
+            <div className="flex flex-col items-center text-center gap-2">
+              <span aria-hidden className="text-2xl">
+                ⚠️
+              </span>
+              <p className="text-base font-semibold text-amber-900">
+                Erro ao carregar cotações
+              </p>
+              <p className="max-w-md text-sm text-amber-700 leading-relaxed">
+                {result.message}
+              </p>
+            </div>
+          </section>
+        )}
+
+        {result.status === "empty" && (
+          <section
+            aria-label="Sem cotações"
+            className="rounded-2xl border border-zinc-200 bg-white p-6 md:p-8"
+          >
+            <EmptyState
+              title="Nenhuma cotação disponível no momento"
+              subtitle="Os dados são atualizados conforme as fontes oficiais. Volte em breve para acompanhar o mercado."
+            />
+          </section>
+        )}
+
+        {result.status === "ok" && (
           <>
             <section
               aria-label="Resumo do dia"
@@ -72,21 +117,11 @@ export default async function CotacoesListPage() {
               aria-label="Lista de cotações"
               className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5"
             >
-              {items.map((c) => (
+              {result.items.map((c) => (
                 <CotacaoCard key={c.id} item={c} />
               ))}
             </section>
           </>
-        ) : (
-          <section
-            aria-label="Sem cotações"
-            className="rounded-2xl border border-zinc-200 bg-white p-6 md:p-8"
-          >
-            <EmptyState
-              title="Nenhuma cotação disponível no momento"
-              subtitle="Os dados são atualizados conforme as fontes oficiais. Volte em breve para acompanhar o mercado."
-            />
-          </section>
         )}
       </div>
     </main>
