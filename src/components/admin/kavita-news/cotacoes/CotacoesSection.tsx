@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useCotacoesAdmin } from "@/hooks/useCotacoesAdmin";
 import CotacoesForm from "./CotacoesForm";
 import CotacoesTable from "./CotacoesTable";
+import CotacoesSyncConfig from "./CotacoesSyncConfig";
 
 export default function CotacoesSection(props: {
   apiBase?: string;
@@ -34,6 +35,11 @@ export default function CotacoesSection(props: {
 
   return (
     <div className="space-y-5">
+      <CotacoesSyncConfig
+        onSyncAll={handleSyncAll}
+        syncingAll={syncingAll}
+      />
+
       <CotacoesForm
         allowedSlugs={cot.allowedSlugs}
         mode={cot.mode}
