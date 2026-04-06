@@ -138,6 +138,9 @@ export type CotacaoItem = {
   type: string;
 
   price: number | null;
+  original_price?: number | null;
+  original_currency?: string | null;
+  exchange_rate?: number | null;
   unit: string | null;
   variation_day: number | null;
 
@@ -148,7 +151,6 @@ export type CotacaoItem = {
 
   ativo: 0 | 1;
 
-  // se seu backend já persiste isso:
   last_sync_status?: "ok" | "error" | null;
   last_sync_message?: string | null;
 };
