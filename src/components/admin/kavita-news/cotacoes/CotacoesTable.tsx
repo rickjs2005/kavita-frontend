@@ -111,6 +111,7 @@ export default function CotacoesTable({
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Buscar por nome, slug, tipo, fonte..."
+                aria-label="Buscar cotações"
                 className="w-full sm:w-[340px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               />
 

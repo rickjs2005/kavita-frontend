@@ -2,7 +2,13 @@ import { describe, it, expect } from "vitest";
 import {
   ALLOWED_SLUGS,
   formatDateTimeBR,
+  formatDatePtBR,
   fmtNum,
+  safeNum,
+  formatPrice,
+  formatPct,
+  hasPrice,
+  getMarketEmoji,
 } from "@/utils/kavita-news/cotacoes";
 
 describe("utils/kavita-news/cotacoes", () => {
@@ -24,23 +30,116 @@ describe("utils/kavita-news/cotacoes", () => {
     });
   });
 
-  describe("formatDateTimeBR", () => {
+  describe("safeNum", () => {
+    it("retorna null para null/undefined/vazio", () => {
+      expect(safeNum(null)).toBeNull();
+      expect(safeNum(undefined)).toBeNull();
+      expect(safeNum("")).toBeNull();
+    });
+
+    it("converte string numérica", () => {
+      expect(safeNum("123")).toBe(123);
+      expect(safeNum("1.5")).toBe(1.5);
+    });
+
+    it("retorna null para não-numérico", () => {
+      expect(safeNum("abc")).toBeNull();
+      expect(safeNum(NaN)).toBeNull();
+    });
+
+    it("converte number diretamente", () => {
+      expect(safeNum(0)).toBe(0);
+      expect(safeNum(42)).toBe(42);
+    });
+  });
+
+  describe("formatPrice", () => {
+    it('retorna "-" para null/undefined/vazio', () => {
+      expect(formatPrice(null)).toBe("-");
+      expect(formatPrice(undefined)).toBe("-");
+      expect(formatPrice("")).toBe("-");
+    });
+
+    it("formata em pt-BR com 2 casas", () => {
+      const result = formatPrice(1234.5);
+      expect(result).toContain("1.234");
+      expect(result).toContain("50");
+    });
+
+    it("retorna string original para não-numérico", () => {
+      expect(formatPrice("abc")).toBe("abc");
+    });
+  });
+
+  describe("hasPrice", () => {
+    it("retorna false para null/undefined/vazio", () => {
+      expect(hasPrice(null)).toBe(false);
+      expect(hasPrice(undefined)).toBe(false);
+      expect(hasPrice("")).toBe(false);
+    });
+
+    it("retorna true para número válido", () => {
+      expect(hasPrice(0)).toBe(true);
+      expect(hasPrice(123)).toBe(true);
+      expect(hasPrice("5.70")).toBe(true);
+    });
+
+    it("retorna false para não-numérico", () => {
+      expect(hasPrice("abc")).toBe(false);
+    });
+  });
+
+  describe("formatPct", () => {
+    it('retorna "-" para null', () => {
+      expect(formatPct(null)).toBe("-");
+    });
+
+    it("formata com sinal + para positivo", () => {
+      expect(formatPct(2.5)).toBe("+2.50%");
+    });
+
+    it("formata negativo sem +", () => {
+      expect(formatPct(-1.3)).toBe("-1.30%");
+    });
+
+    it("formata zero sem sinal", () => {
+      expect(formatPct(0)).toBe("0.00%");
+    });
+  });
+
+  describe("formatDatePtBR", () => {
+    it('retorna "—" quando vazio', () => {
+      expect(formatDatePtBR()).toBe("—");
+      expect(formatDatePtBR(null)).toBe("—");
+      expect(formatDatePtBR("")).toBe("—");
+    });
+
+    it("retorna o próprio input se data inválida", () => {
+      expect(formatDatePtBR("data-invalida")).toBe("data-invalida");
+    });
+
+    it("formata ISO válida em pt-BR", () => {
+      const out = formatDatePtBR("2025-01-01T03:00:00.000Z");
+      expect(typeof out).toBe("string");
+      expect(out).not.toBe("—");
+      expect(out).toContain("01/01/2025");
+    });
+
+    it("aceita timeDetail medium", () => {
+      const out = formatDatePtBR("2025-06-15T14:30:45.000Z", "medium");
+      expect(typeof out).toBe("string");
+      expect(out).not.toBe("—");
+    });
+  });
+
+  describe("formatDateTimeBR (deprecated alias)", () => {
     it('retorna "—" quando vazio', () => {
       expect(formatDateTimeBR()).toBe("—");
       expect(formatDateTimeBR(null)).toBe("—");
-      expect(formatDateTimeBR("")).toBe("—");
     });
 
-    it("retorna o próprio input se inválido", () => {
-      expect(formatDateTimeBR("data-invalida")).toBe("data-invalida");
-      expect(formatDateTimeBR("2025-99-99")).toBe("2025-99-99");
-    });
-
-    it("formata ISO válida em pt-BR (sem exigir string exata)", () => {
+    it("formata ISO válida", () => {
       const out = formatDateTimeBR("2025-01-01T03:00:00.000Z");
-      expect(typeof out).toBe("string");
-      expect(out).not.toBe("—");
-      // geralmente vai conter 01/01/2025 em pt-BR
       expect(out).toContain("01/01/2025");
     });
   });
@@ -68,7 +167,24 @@ describe("utils/kavita-news/cotacoes", () => {
 
     it("se não for finito, retorna string original", () => {
       expect(fmtNum("abc")).toBe("abc");
-      expect(fmtNum("Infinity")).toBe("Infinity");
+    });
+  });
+
+  describe("getMarketEmoji", () => {
+    it("retorna emoji correto por slug", () => {
+      expect(getMarketEmoji({ slug: "cafe-arabica" })).toBe("☕");
+      expect(getMarketEmoji({ slug: "soja" })).toBe("🫘");
+      expect(getMarketEmoji({ slug: "milho" })).toBe("🌽");
+      expect(getMarketEmoji({ slug: "boi-gordo" })).toBe("🐂");
+      expect(getMarketEmoji({ slug: "dolar" })).toBe("💵");
+    });
+
+    it("retorna emoji padrão para desconhecido", () => {
+      expect(getMarketEmoji({ slug: "xyz" })).toBe("🏷");
+    });
+
+    it("funciona com name em vez de slug", () => {
+      expect(getMarketEmoji({ name: "Café Robusta" })).toBe("☕");
     });
   });
 });

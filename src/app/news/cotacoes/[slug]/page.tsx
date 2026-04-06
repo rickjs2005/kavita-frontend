@@ -3,55 +3,14 @@ import Link from "next/link";
 import type { PublicCotacao } from "@/lib/newsPublicApi";
 import { fetchPublicCotacaoBySlug } from "@/server/data/cotacoes";
 import { EmptyState } from "@/components/news/EmptyState";
-
-function safeNum(v: any): number | null {
-  if (v === null || v === undefined || v === "") return null;
-  const n = Number(v);
-  return Number.isNaN(n) ? null : n;
-}
-
-function formatPrice(v: any) {
-  if (v === null || v === undefined || v === "") return null;
-  const n = Number(v);
-  if (Number.isNaN(n)) return String(v);
-
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(n);
-}
-
-function formatPct(v: number | null) {
-  if (v === null) return "-";
-  const sign = v > 0 ? "+" : "";
-  return `${sign}${v.toFixed(2)}%`;
-}
-
-function formatDatePtBR(value?: string | null) {
-  if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "medium",
-  }).format(d);
-}
-
-function getMarketEmoji(item: any): string {
-  const hay =
-    `${item?.slug ?? ""} ${item?.name ?? ""} ${item?.group_key ?? ""} ${item?.market ?? ""} ${item?.type ?? ""}`.toLowerCase();
-
-  if (hay.includes("cafe") || hay.includes("café")) return "☕";
-  if (hay.includes("milho")) return "🌽";
-  if (hay.includes("soja")) return "🫘";
-  if (hay.includes("boi") || hay.includes("arroba") || hay.includes("gordo"))
-    return "🐂";
-  if (hay.includes("dolar") || hay.includes("dólar") || hay.includes("usd"))
-    return "💵";
-
-  return "🏷";
-}
+import {
+  safeNum,
+  formatPrice,
+  formatPct,
+  formatDatePtBR,
+  getMarketEmoji,
+  hasPrice,
+} from "@/utils/kavita-news/cotacoes";
 
 function BackLink() {
   return (
@@ -150,9 +109,9 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
 
   const variationEmoji = isUp ? "📈" : isDown ? "📉" : "";
 
-  const updated = formatDatePtBR(item.last_update_at);
+  const updated = formatDatePtBR(item.last_update_at, "medium");
   const priceStr = formatPrice(item.price);
-  const hasPendingPrice = priceStr === null;
+  const hasPendingPrice = !hasPrice(item.price);
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-gradient-to-b from-zinc-50 to-white">
@@ -193,7 +152,7 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
 
               <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs text-zinc-600">
                 <span aria-hidden>⏱</span>
-                {updated
+                {updated && updated !== "—"
                   ? `Atualizado: ${updated}`
                   : "Atualização: indisponível"}
               </span>
@@ -215,7 +174,7 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
               <div className="rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50 p-5">
                 <p className="text-sm text-zinc-600">Preço</p>
                 <p className="mt-1 text-3xl font-bold tracking-tight text-zinc-900">
-                  {priceStr ?? "Aguardando"}
+                  {hasPendingPrice ? "Aguardando" : priceStr}
                 </p>
                 <p className="mt-1 text-sm font-medium text-zinc-600">
                   {item.unit ?? ""}
