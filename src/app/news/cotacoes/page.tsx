@@ -4,6 +4,7 @@ import { fetchPublicCotacoes } from "@/server/data/cotacoes";
 import { SectionHeader } from "@/components/news/SectionHeader";
 import { EmptyState } from "@/components/news/EmptyState";
 import { CotacaoCard } from "@/components/news/CotacaoCard";
+import { safeNum, describeTrend } from "@/utils/kavita-news/cotacoes";
 
 type FetchResult =
   | { status: "ok"; items: PublicCotacao[] }
@@ -24,6 +25,30 @@ async function loadCotacoes(): Promise<FetchResult> {
   }
 }
 
+/**
+ * Generates a one-line market summary from the cotações list.
+ * E.g. "Café em alta, grãos estáveis, dólar recuando"
+ */
+function buildMarketSummary(items: PublicCotacao[]): string {
+  const parts: string[] = [];
+
+  for (const item of items) {
+    const v = safeNum(item.variation_day);
+    if (v === null) continue;
+
+    const name = item.name ?? item.slug ?? "Ativo";
+    if (v > 1) parts.push(`${name} em alta`);
+    else if (v > 0.3) parts.push(`${name} com leve alta`);
+    else if (v >= -0.3) parts.push(`${name} estável`);
+    else if (v >= -1) parts.push(`${name} com leve queda`);
+    else parts.push(`${name} em queda`);
+  }
+
+  if (parts.length === 0) return "Dados de mercado em atualização.";
+  if (parts.length <= 3) return parts.join(", ") + ".";
+  return parts.slice(0, 3).join(", ") + ` e mais ${parts.length - 3}.`;
+}
+
 export default async function CotacoesListPage() {
   const result = await loadCotacoes();
 
@@ -40,19 +65,16 @@ export default async function CotacoesListPage() {
           </h1>
 
           <p className="mt-2 max-w-3xl text-sm md:text-base leading-relaxed text-zinc-600">
-            Quadro editorial de preços e variações do dia. Dados atualizados
-            conforme as fontes oficiais.
+            Preços de referência atualizados para quem vive o campo.
+            Valores convertidos em real a partir das principais bolsas internacionais.
           </p>
 
           <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
             <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1">
-              <span aria-hidden>⏱</span> Atualização contínua
+              <span aria-hidden>⏱</span> Dados atualizados ao longo do dia
             </span>
             <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1">
-              <span aria-hidden>🌍</span> Fonte e horário visíveis
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1">
-              Leitura rápida em 3–5s
+              <span aria-hidden>🌍</span> Fontes: BCB, ICE, CME
             </span>
           </div>
         </div>
@@ -61,7 +83,7 @@ export default async function CotacoesListPage() {
       <div className="mx-auto w-full max-w-6xl px-4 md:px-6 py-8 md:py-10 space-y-6">
         <SectionHeader
           title="Ativos monitorados"
-          subtitle="Selecione um ativo para ver detalhes do mercado"
+          subtitle="Selecione um ativo para ver detalhes e referência por saca"
           href="/news"
           actionLabel="Voltar"
         />
@@ -72,9 +94,7 @@ export default async function CotacoesListPage() {
             className="rounded-2xl border border-amber-200 bg-amber-50 p-6 md:p-8"
           >
             <div className="flex flex-col items-center text-center gap-2">
-              <span aria-hidden className="text-2xl">
-                ⚠️
-              </span>
+              <span aria-hidden className="text-2xl">⚠️</span>
               <p className="text-base font-semibold text-amber-900">
                 Erro ao carregar cotações
               </p>
@@ -99,19 +119,23 @@ export default async function CotacoesListPage() {
 
         {result.status === "ok" && (
           <>
+            {/* Market summary — one-line overview */}
             <section
-              aria-label="Resumo do dia"
+              aria-label="Resumo do mercado"
               className="rounded-2xl border border-zinc-200 bg-white p-5 md:p-6"
             >
               <h2 className="text-base font-semibold text-zinc-900">
-                Resumo do dia
+                Resumo do mercado hoje
               </h2>
-              <p className="mt-2 text-sm text-zinc-600 leading-relaxed">
-                A variação mostrada em cada card representa o movimento do dia.
-                Para detalhes, fonte e horário de atualização, abra o ativo.
+              <p className="mt-2 text-sm font-medium text-zinc-700 leading-relaxed">
+                {buildMarketSummary(result.items)}
+              </p>
+              <p className="mt-1 text-xs text-zinc-400">
+                Variação em relação ao fechamento anterior. Valores são referência — consulte sua cooperativa para preços locais.
               </p>
             </section>
 
+            {/* Cotação cards */}
             <section
               aria-label="Lista de cotações"
               className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5"
@@ -120,6 +144,12 @@ export default async function CotacoesListPage() {
                 <CotacaoCard key={c.id} item={c} />
               ))}
             </section>
+
+            {/* Disclaimer */}
+            <p className="text-xs text-zinc-400 text-center leading-relaxed max-w-2xl mx-auto">
+              Os valores exibidos são referências de mercado internacional convertidas para real (BRL).
+              O preço na sua região pode variar conforme cooperativa, qualidade do produto e condições locais.
+            </p>
           </>
         )}
       </div>

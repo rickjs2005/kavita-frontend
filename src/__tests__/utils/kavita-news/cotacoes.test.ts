@@ -9,6 +9,9 @@ import {
   formatPct,
   hasPrice,
   getMarketEmoji,
+  describeTrend,
+  convertToLocalUnit,
+  simplifySource,
 } from "@/utils/kavita-news/cotacoes";
 
 describe("utils/kavita-news/cotacoes", () => {
@@ -185,6 +188,89 @@ describe("utils/kavita-news/cotacoes", () => {
 
     it("funciona com name em vez de slug", () => {
       expect(getMarketEmoji({ name: "Café Robusta" })).toBe("☕");
+    });
+  });
+
+  describe("describeTrend", () => {
+    it("retorna frase para alta expressiva", () => {
+      expect(describeTrend(5)).toBe("Alta expressiva no dia");
+    });
+
+    it("retorna frase para alta moderada", () => {
+      expect(describeTrend(2)).toBe("Alta moderada no dia");
+    });
+
+    it("retorna frase para leve alta", () => {
+      expect(describeTrend(0.5)).toBe("Leve alta no dia");
+    });
+
+    it("retorna estável para variação próxima de zero", () => {
+      expect(describeTrend(0)).toBe("Estável no dia");
+      expect(describeTrend(0.1)).toBe("Estável no dia");
+      expect(describeTrend(-0.2)).toBe("Estável no dia");
+    });
+
+    it("retorna frase para queda", () => {
+      expect(describeTrend(-0.5)).toBe("Leve queda no dia");
+      expect(describeTrend(-2)).toBe("Queda moderada no dia");
+      expect(describeTrend(-5)).toBe("Queda expressiva no dia");
+    });
+
+    it("retorna mensagem para null", () => {
+      expect(describeTrend(null)).toBe("Sem variação disponível");
+    });
+  });
+
+  describe("convertToLocalUnit", () => {
+    it("converte café arábica R$/lb para R$/saca", () => {
+      const result = convertToLocalUnit(14.25, "cafe-arabica");
+      expect(result).not.toBeNull();
+      expect(result!.label).toBe("saca 60kg");
+      // 14.25 * 132.277 ≈ 1884.95
+      expect(result!.value).toBeGreaterThan(1800);
+      expect(result!.value).toBeLessThan(1950);
+    });
+
+    it("converte soja R$/bu para R$/saca", () => {
+      const result = convertToLocalUnit(59.85, "soja");
+      expect(result).not.toBeNull();
+      expect(result!.label).toBe("saca 60kg");
+      // 59.85 * 2.2046 ≈ 131.95
+      expect(result!.value).toBeGreaterThan(125);
+      expect(result!.value).toBeLessThan(140);
+    });
+
+    it("converte boi gordo R$/cwt para R$/@", () => {
+      const result = convertToLocalUnit(1083, "boi-gordo");
+      expect(result).not.toBeNull();
+      expect(result!.label).toBe("@");
+      // 1083 / 3.024 ≈ 358.13
+      expect(result!.value).toBeGreaterThan(350);
+      expect(result!.value).toBeLessThan(370);
+    });
+
+    it("retorna null para dolar (sem conversão local)", () => {
+      expect(convertToLocalUnit(5.70, "dolar")).toBeNull();
+    });
+
+    it("retorna null para slug desconhecido", () => {
+      expect(convertToLocalUnit(100, "xyz")).toBeNull();
+    });
+  });
+
+  describe("simplifySource", () => {
+    it("retorna fonte simplificada por slug", () => {
+      expect(simplifySource("cafe-arabica")).toBe("ICE/Nova York");
+      expect(simplifySource("soja")).toBe("CME/Chicago");
+      expect(simplifySource("dolar")).toBe("BCB");
+    });
+
+    it("retorna fonte raw como fallback", () => {
+      expect(simplifySource("xyz", "Stooq raw")).toBe("Stooq raw");
+    });
+
+    it("retorna - quando sem dados", () => {
+      expect(simplifySource(null, null)).toBe("-");
     });
   });
 });

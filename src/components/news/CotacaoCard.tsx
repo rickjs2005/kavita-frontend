@@ -8,15 +8,18 @@ import {
   formatDatePtBR,
   getMarketEmoji,
   hasPrice,
+  describeTrend,
+  convertToLocalUnit,
+  simplifySource,
 } from "@/utils/kavita-news/cotacoes";
 
 export function CotacaoCard({ item }: { item: PublicCotacao }) {
   const varNum = safeNum(item.variation_day);
   const varLabel = formatPct(varNum);
+  const trend = describeTrend(varNum);
 
   const isUp = varNum !== null && varNum > 0;
   const isDown = varNum !== null && varNum < 0;
-  const isFlat = varNum !== null && varNum === 0;
 
   const variationTone = isUp
     ? "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -24,84 +27,105 @@ export function CotacaoCard({ item }: { item: PublicCotacao }) {
       ? "border-rose-200 bg-rose-50 text-rose-700"
       : "border-zinc-200 bg-zinc-50 text-zinc-700";
 
+  // Stronger tone for large moves (>3%)
+  const strongTone =
+    varNum !== null && Math.abs(varNum) > 3
+      ? isUp
+        ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+        : "border-rose-300 bg-rose-100 text-rose-800"
+      : variationTone;
+
   const variationEmoji = isUp ? "📈" : isDown ? "📉" : "";
 
   const emoji = getMarketEmoji(item);
   const updated = formatDatePtBR(item.last_update_at);
+  const source = simplifySource(item.slug, item.source);
+
+  const priceNum = safeNum(item.price);
+  const localUnit =
+    priceNum !== null && item.slug
+      ? convertToLocalUnit(priceNum, item.slug)
+      : null;
 
   return (
     <Link
       href={`/news/cotacoes/${item.slug}`}
       className="
-        group block rounded-2xl border border-zinc-200 bg-white p-4 md:p-5
+        group block rounded-2xl border border-zinc-200 bg-white p-5 md:p-6
         shadow-sm transition-all
         hover:-translate-y-[1px] hover:shadow-md hover:border-zinc-300
         focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2
       "
       aria-label={`Ver detalhes da cotação: ${item.name}`}
     >
-      <div className="flex items-start justify-between gap-4">
+      {/* Row 1: Name + variation badge */}
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-base font-semibold text-zinc-900">
             {emoji} {item.name}
           </p>
-
-          <p className="mt-1 text-xs text-zinc-500">
-            {item.group_key ? item.group_key : "Mercado"} •{" "}
-            {item.type ?? "Tipo -"}
+          <p className="mt-0.5 text-xs text-zinc-400">
+            Referência internacional • {source}
           </p>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${variationTone}`}
-            >
-              <span className="sr-only">Variação do dia</span>
-              {variationEmoji ? (
-                <span aria-hidden>{variationEmoji}</span>
-              ) : null}
-              Dia: {varLabel}
-            </span>
-
-            <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-600">
-              <span aria-hidden>🌍</span>
-              {item.source ? `Fonte: ${item.source}` : "Fonte: -"}
-            </span>
-          </div>
         </div>
 
-        <div className="shrink-0 text-right">
-          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-            Preço
-          </p>
-          {hasPrice(item.price) ? (
-            <>
-              <p className="mt-0.5 text-2xl font-bold tracking-tight text-zinc-900">
-                {formatPrice(item.price)}
-              </p>
-              <p className="mt-0.5 text-sm font-medium text-zinc-600">
-                {item.unit ?? ""}
-              </p>
-            </>
-          ) : (
-            <p className="mt-0.5 text-sm font-medium text-zinc-400">
-              Aguardando
-            </p>
-          )}
-        </div>
+        {varNum !== null && (
+          <span
+            className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${strongTone}`}
+          >
+            {variationEmoji ? (
+              <span aria-hidden>{variationEmoji}</span>
+            ) : null}
+            {varLabel}
+          </span>
+        )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 text-xs text-zinc-500">
-        <span className="truncate">
+      {/* Row 2: Price block — the most important visual element */}
+      <div className="mt-4">
+        {hasPrice(item.price) ? (
+          <>
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-extrabold tracking-tight text-zinc-900">
+                {formatPrice(item.price)}
+              </p>
+              <p className="text-sm font-medium text-zinc-500">
+                {item.unit ?? ""}
+              </p>
+            </div>
+
+            {localUnit && (
+              <p className="mt-1 text-sm font-semibold text-zinc-600">
+                ≈ R$ {formatPrice(localUnit.value)}{" "}
+                <span className="font-normal text-zinc-400">
+                  /{localUnit.label}
+                </span>
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm font-medium text-zinc-400">
+            Preço ainda não disponível
+          </p>
+        )}
+      </div>
+
+      {/* Row 3: Trend phrase + timestamp */}
+      <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+        <span className="font-medium text-zinc-600">{trend}</span>
+
+        <span className="text-zinc-400 truncate">
           {updated && updated !== "—" ? (
-            <>
-              <span aria-hidden>⏱</span> Atualizado: {updated}
-            </>
+            <>Atualizado: {updated}</>
           ) : (
-            "Atualização: indisponível"
+            "Indisponível"
           )}
         </span>
+      </div>
 
-        <span className="inline-flex items-center gap-2 font-medium text-emerald-700">
+      {/* Row 4: Subtle "see more" indicator */}
+      <div className="mt-3 flex items-center justify-end">
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
           Ver detalhes
           <span
             className="transition-transform group-hover:translate-x-0.5"
@@ -111,12 +135,6 @@ export function CotacaoCard({ item }: { item: PublicCotacao }) {
           </span>
         </span>
       </div>
-
-      {isFlat ? (
-        <p className="mt-3 text-xs text-zinc-500">
-          Sem variação relevante no dia.
-        </p>
-      ) : null}
     </Link>
   );
 }
