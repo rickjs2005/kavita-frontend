@@ -6,13 +6,13 @@ import CotacoesForm from "./CotacoesForm";
 import CotacoesTable from "./CotacoesTable";
 
 export default function CotacoesSection(props: {
-  apiBase: string;
-  authOptions: RequestInit;
+  apiBase?: string;
+  authOptions?: RequestInit;
   onUnauthorized: () => void;
 }) {
-  const { apiBase, authOptions, onUnauthorized } = props;
+  const { onUnauthorized } = props;
 
-  const cot = useCotacoesAdmin({ apiBase, authOptions, onUnauthorized });
+  const cot = useCotacoesAdmin({ onUnauthorized });
   const [syncingAll, setSyncingAll] = useState(false);
 
   const handleReload = useMemo(

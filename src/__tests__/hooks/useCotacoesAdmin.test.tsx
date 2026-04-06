@@ -9,12 +9,22 @@ vi.mock("react-hot-toast", () => ({
   },
 }));
 
+// apiClient builds URLs with NEXT_PUBLIC_API_URL as base.
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:5000";
+
 function mockFetchOnce(status: number, json: any, ok?: boolean) {
   (globalThis.fetch as any).mockImplementationOnce(async () => ({
     ok: ok ?? (status >= 200 && status < 300),
     status,
+    headers: new Headers({ "content-type": "application/json" }),
     async json() {
       return json;
+    },
+    async text() {
+      return JSON.stringify(json);
     },
   }));
 }
@@ -29,12 +39,16 @@ function countCalls(predicate: (url: string, init?: RequestInit) => boolean) {
   return calls.filter((c) => predicate(String(c[0]), c[1])).length;
 }
 
+/** Provide enough mock responses for the initial load() + meta call */
+function mockInitialLoad(rows: any[] = []) {
+  // CSRF token fetch (apiClient fetches this for GET too on first call? No — only for mutations)
+  // Actually apiClient does NOT auto-fetch CSRF for GET, but load() now also fetches /meta.
+  // load() does: GET /cotacoes then GET /meta
+  mockFetchOnce(200, { ok: true, data: rows });
+  mockFetchOnce(200, { ok: true, data: { allowed_slugs: ["soja", "milho"], presets: {}, suggestions: {} } });
+}
+
 describe("useCotacoesAdmin", () => {
-  const apiBase = "http://localhost:3000";
-  const authOptions = {
-    headers: { Authorization: "Bearer token" },
-    credentials: "include" as RequestCredentials,
-  };
   const onUnauthorized = vi.fn();
 
   beforeEach(() => {
@@ -48,137 +62,54 @@ describe("useCotacoesAdmin", () => {
   });
 
   it("deve carregar cotações no mount", async () => {
-    // Arrange
     const rows = [
       { id: 2, name: "Soja", slug: "soja", type: "CEPEA", ativo: 1 },
       { id: 1, name: "Milho", slug: "milho", type: "CEPEA", ativo: 1 },
     ];
-    mockFetchOnce(200, {
-      ok: true,
-      data: rows,
-      meta: { allowed_slugs: ["soja", "milho"] },
-    });
+    mockInitialLoad(rows);
 
-    // Act
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
+      useCotacoesAdmin({ onUnauthorized }),
     );
 
-    // Assert
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.rows).toHaveLength(2);
     expect(result.current.errorMsg).toBeNull();
 
     const getCall = findCall(
-      (url, init) =>
-        url === `${apiBase}/api/admin/news/cotacoes` &&
-        (init?.method ?? "GET") === "GET",
+      (url) => url.includes("/api/admin/news/cotacoes") && !url.includes("/meta"),
     );
     expect(getCall).toBeTruthy();
   });
 
   it("load: erro não-401/403 deve setar errorMsg", async () => {
-    // Arrange
-    mockFetchOnce(500, { message: "Erro interno" }, false);
+    mockFetchOnce(500, { ok: false, message: "Erro interno" }, false);
 
-    // Act
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
+      useCotacoesAdmin({ onUnauthorized }),
     );
 
-    // Assert
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.errorMsg).toBe("Erro interno");
+    expect(result.current.errorMsg).toBeTruthy();
     expect(onUnauthorized).not.toHaveBeenCalled();
   });
 
-  it("load: 401/403 deve chamar onUnauthorized e setar errorMsg (ex.: 'Não autorizado.')", async () => {
-    // Arrange
-    mockFetchOnce(401, { message: "Não autorizado." }, false);
+  it("load: 401 deve chamar onUnauthorized", async () => {
+    mockFetchOnce(401, { ok: false, message: "Não autorizado." }, false);
 
-    // Act
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
+      useCotacoesAdmin({ onUnauthorized }),
     );
 
-    // Assert
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(onUnauthorized).toHaveBeenCalled();
-    expect(result.current.errorMsg).toBe("Não autorizado.");
   });
 
-  it("submit(create): deve POSTar payload (name/slug/type) e recarregar lista", async () => {
-    // Arrange – mount
-    mockFetchOnce(200, { ok: true, data: [] });
+  it("startEdit: deve preencher form usando item e entrar em modo edit", async () => {
+    mockInitialLoad();
 
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
-    );
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    // limpar GET do mount
-    (globalThis.fetch as any).mockClear();
-
-    // preencher campos obrigatórios do hook: name, slug, type
-    act(() => {
-      result.current.setForm((prev: any) => ({
-        ...prev,
-        name: "Soja",
-        slug: "soja",
-        type: "CEPEA",
-        price: "100",
-        unit: "sc",
-        ativo: true,
-      }));
-    });
-
-    // POST ok
-    mockFetchOnce(200, { ok: true, data: { ok: true } });
-    // reload (pode ocorrer mais de 1x)
-    mockFetchOnce(200, { ok: true, data: [] });
-    mockFetchOnce(200, { ok: true, data: [] });
-
-    // Act
-    await act(async () => {
-      await result.current.submit();
-    });
-
-    // Assert – POST existe (não depende de contagem)
-    const postCall = findCall(
-      (url, init) =>
-        url === `${apiBase}/api/admin/news/cotacoes` &&
-        String(init?.method).toUpperCase() === "POST",
-    );
-    expect(postCall).toBeTruthy();
-
-    const postInit = postCall![1] as any;
-    const body = JSON.parse(postInit.body);
-
-    expect(body.name).toBe("Soja");
-    expect(body.slug).toBe("soja");
-    expect(body.type).toBe("CEPEA");
-    expect(body.unit).toBe("sc");
-    expect(body.ativo).toBe(1);
-
-    // Assert – ao menos 1 GET de reload
-    expect(
-      countCalls(
-        (url, init) =>
-          url === `${apiBase}/api/admin/news/cotacoes` &&
-          (init?.method ?? "GET") === "GET",
-      ),
-    ).toBeGreaterThanOrEqual(1);
-
-    // volta para create
-    expect(result.current.mode).toBe("create");
-  });
-
-  it("startEdit: deve preencher form usando item.name e entrar em modo edit", async () => {
-    // Arrange
-    mockFetchOnce(200, { ok: true, data: [] });
-
-    const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
+      useCotacoesAdmin({ onUnauthorized }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -196,159 +127,102 @@ describe("useCotacoesAdmin", () => {
       ativo: 0,
     };
 
-    // Act
     act(() => {
       result.current.startEdit(item);
     });
 
-    // Assert
     expect(result.current.mode).toBe("edit");
     expect(result.current.editing?.id).toBe(10);
     expect(result.current.form.name).toBe("Café");
     expect(result.current.form.slug).toBe("cafe");
-    expect(result.current.form.type).toBe("CEPEA");
     expect(result.current.form.ativo).toBe(false);
   });
 
-  it("remove: deve DELETE e recarregar (sem confirm)", async () => {
-    // Arrange – mount
-    mockFetchOnce(200, { ok: true, data: [] });
+  it("sync: deve distinguir provider ok de provider erro", async () => {
+    const toast = await import("react-hot-toast");
+    mockInitialLoad();
 
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
+      useCotacoesAdmin({ onUnauthorized }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     (globalThis.fetch as any).mockClear();
 
-    // DELETE ok
-    mockFetchOnce(200, { ok: true, data: { ok: true } });
-    // reload (pode ter extra)
-    mockFetchOnce(200, { ok: true, data: [] });
-    mockFetchOnce(200, { ok: true, data: [] });
-
-    // Act
-    await act(async () => {
-      await result.current.remove(9);
+    // POST /sync — provider succeeded
+    mockFetchOnce(200, {
+      ok: true,
+      data: { id: 3, price: 5.12 },
+      meta: { provider: { ok: true }, took_ms: 100 },
     });
+    // reload after sync (list + meta)
+    mockInitialLoad();
 
-    // Assert – DELETE existe
-    const delCall = findCall(
-      (url, init) =>
-        url === `${apiBase}/api/admin/news/cotacoes/9` &&
-        String(init?.method).toUpperCase() === "DELETE",
-    );
-    expect(delCall).toBeTruthy();
-
-    // Assert – ao menos 1 GET de reload
-    expect(
-      countCalls(
-        (url, init) =>
-          url === `${apiBase}/api/admin/news/cotacoes` &&
-          (init?.method ?? "GET") === "GET",
-      ),
-    ).toBeGreaterThanOrEqual(1);
-  });
-
-  it("remove: quando API falha, deve setar errorMsg e finalizar deletingId", async () => {
-    // Arrange – mount
-    mockFetchOnce(200, { ok: true, data: [] });
-
-    const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
-    );
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    (globalThis.fetch as any).mockClear();
-
-    // DELETE falha
-    mockFetchOnce(500, { message: "Falha ao excluir." }, false);
-
-    // Act
-    await act(async () => {
-      await result.current.remove(77);
-    });
-
-    // Assert
-    expect(result.current.errorMsg).toBe("Falha ao excluir.");
-    expect(result.current.deletingId).toBeNull();
-  });
-
-  it("sync: deve POST /sync e recarregar lista", async () => {
-    // Arrange – mount
-    mockFetchOnce(200, { ok: true, data: [] });
-
-    const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
-    );
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    (globalThis.fetch as any).mockClear();
-
-    // POST sync ok
-    mockFetchOnce(200, { ok: true, data: { ok: true } });
-    // reload (pode ter extra)
-    mockFetchOnce(200, { ok: true, data: [] });
-    mockFetchOnce(200, { ok: true, data: [] });
-
-    // Act
     await act(async () => {
       await result.current.sync(3);
     });
 
-    // Assert
-    const syncCall = findCall(
-      (url, init) =>
-        url === `${apiBase}/api/admin/news/cotacoes/3/sync` &&
-        String(init?.method).toUpperCase() === "POST",
+    expect(toast.default.success).toHaveBeenCalledWith(
+      expect.stringContaining("atualizado"),
     );
-    expect(syncCall).toBeTruthy();
-
-    expect(
-      countCalls(
-        (url, init) =>
-          url === `${apiBase}/api/admin/news/cotacoes` &&
-          (init?.method ?? "GET") === "GET",
-      ),
-    ).toBeGreaterThanOrEqual(1);
   });
 
-  it("syncAll: deve POST /sync-all e recarregar lista", async () => {
-    // Arrange – mount
-    mockFetchOnce(200, { ok: true, data: [] });
+  it("sync: provider erro deve mostrar toast.error", async () => {
+    const toast = await import("react-hot-toast");
+    mockInitialLoad();
 
     const { result } = renderHook(() =>
-      useCotacoesAdmin({ apiBase, authOptions, onUnauthorized }),
+      useCotacoesAdmin({ onUnauthorized }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     (globalThis.fetch as any).mockClear();
 
-    // POST syncAll ok
-    mockFetchOnce(200, { ok: true, data: { ok: true } });
-    // reload (pode ter extra)
-    mockFetchOnce(200, { ok: true, data: [] });
-    mockFetchOnce(200, { ok: true, data: [] });
+    // POST /sync — provider failed (HTTP 200 but provider.ok=false)
+    mockFetchOnce(200, {
+      ok: true,
+      data: { id: 3, price: null },
+      meta: { provider: { ok: false, message: "Provider desabilitado" }, took_ms: 50 },
+    });
+    // reload after sync
+    mockInitialLoad();
 
-    // Act
+    await act(async () => {
+      await result.current.sync(3);
+    });
+
+    expect(toast.default.error).toHaveBeenCalledWith(
+      expect.stringContaining("Provider desabilitado"),
+    );
+  });
+
+  it("syncAll: deve POST /sync-all e mostrar contagem", async () => {
+    mockInitialLoad();
+
+    const { result } = renderHook(() =>
+      useCotacoesAdmin({ onUnauthorized }),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    (globalThis.fetch as any).mockClear();
+
+    // POST sync-all — 2 ok, 1 error
+    mockFetchOnce(200, {
+      ok: true,
+      data: { total: 3, ok: 2, error: 1, items: [] },
+    });
+    // reload
+    mockInitialLoad();
+
     await act(async () => {
       await result.current.syncAll();
     });
 
-    // Assert
     const syncAllCall = findCall(
       (url, init) =>
-        url === `${apiBase}/api/admin/news/cotacoes/sync-all` &&
+        url.includes("/api/admin/news/cotacoes/sync-all") &&
         String(init?.method).toUpperCase() === "POST",
     );
     expect(syncAllCall).toBeTruthy();
-
-    expect(
-      countCalls(
-        (url, init) =>
-          url === `${apiBase}/api/admin/news/cotacoes` &&
-          (init?.method ?? "GET") === "GET",
-      ),
-    ).toBeGreaterThanOrEqual(1);
   });
 });

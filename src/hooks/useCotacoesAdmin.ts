@@ -8,16 +8,13 @@ import type {
   CotacaoSlug,
 } from "@/types/kavita-news";
 import { ALLOWED_SLUGS } from "@/utils/kavita-news/cotacoes";
+import apiClient from "@/lib/apiClient";
 
 type Props = {
-  apiBase: string;
-  authOptions: RequestInit;
-  onUnauthorized: () => void;
+  apiBase?: string;
+  authOptions?: RequestInit;
+  onUnauthorized?: () => void;
 };
-
-function isUnauthorized(res: Response) {
-  return res.status === 401 || res.status === 403;
-}
 
 function toStr(v: any) {
   return v == null ? "" : String(v);
@@ -25,13 +22,10 @@ function toStr(v: any) {
 
 function toNumString(v: any) {
   if (v === null || v === undefined) return "";
-  const s = String(v);
-  return s;
+  return String(v);
 }
 
 export function useCotacoesAdmin({
-  apiBase,
-  authOptions,
   onUnauthorized,
 }: Props) {
   const [rows, setRows] = useState<CotacaoItem[]>([]);
@@ -63,54 +57,53 @@ export function useCotacoesAdmin({
     ativo: true,
   });
 
-  const fetchJson = useCallback(
-    async (path: string, init?: RequestInit) => {
-      const res = await fetch(`${apiBase}${path}`, {
-        ...authOptions,
-        ...(init || {}),
-        headers: {
-          "Content-Type": "application/json",
-          ...(init?.headers || {}),
-        },
-      });
-
-      if (isUnauthorized(res)) {
-        onUnauthorized();
-        throw new Error("Não autorizado.");
-      }
-
-      let data: any = null;
+  /** Wrapper that handles 401/403 redirect and extracts data from envelope. */
+  const request = useCallback(
+    async <T = any>(path: string, init?: { method?: string; body?: any }): Promise<T> => {
       try {
-        data = await res.json();
-      } catch {}
-
-      if (!res.ok) {
-        const msg = data?.message || data?.mensagem || `HTTP ${res.status}`;
-        throw new Error(msg);
+        const method = init?.method ?? "GET";
+        switch (method) {
+          case "POST":
+            return await apiClient.post<T>(path, init?.body);
+          case "PUT":
+            return await apiClient.put<T>(path, init?.body);
+          case "DELETE":
+            return await apiClient.del<T>(path);
+          default:
+            return await apiClient.get<T>(path);
+        }
+      } catch (err: any) {
+        if (err?.status === 401 || err?.status === 403) {
+          onUnauthorized?.();
+        }
+        throw err;
       }
-
-      return data;
     },
-    [apiBase, authOptions, onUnauthorized],
+    [onUnauthorized],
   );
 
   const load = useCallback(async () => {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const j = await fetchJson("/api/admin/news/cotacoes");
-      const list = (j?.data || j) as CotacaoItem[];
+      const list = await request<CotacaoItem[]>("/api/admin/news/cotacoes");
       setRows(Array.isArray(list) ? list : []);
 
-      const metaSlugs = j?.meta?.allowed_slugs;
-      if (Array.isArray(metaSlugs) && metaSlugs.length > 0)
-        setAllowedSlugs(metaSlugs);
+      // Also try to load meta for allowed slugs
+      try {
+        const meta = await request<{ allowed_slugs?: string[] }>("/api/admin/news/cotacoes/meta");
+        if (Array.isArray(meta?.allowed_slugs) && meta.allowed_slugs.length > 0) {
+          setAllowedSlugs(meta.allowed_slugs);
+        }
+      } catch {
+        // meta is non-critical, keep default slugs
+      }
     } catch (e: any) {
       setErrorMsg(e?.message || "Erro ao carregar cotações.");
     } finally {
       setLoading(false);
     }
-  }, [fetchJson]);
+  }, [request]);
 
   useEffect(() => {
     load();
@@ -118,7 +111,6 @@ export function useCotacoesAdmin({
 
   const sorted = useMemo(() => {
     const list = Array.isArray(rows) ? [...rows] : [];
-    // ativos primeiro, depois por type/name
     return list.sort((a, b) => {
       const aa = Number(a?.ativo ?? 1);
       const bb = Number(b?.ativo ?? 1);
@@ -191,15 +183,15 @@ export function useCotacoesAdmin({
       if (!payload.type) throw new Error("Preencha o tipo.");
 
       if (mode === "edit" && editing?.id) {
-        await fetchJson(`/api/admin/news/cotacoes/${editing.id}`, {
+        await request(`/api/admin/news/cotacoes/${editing.id}`, {
           method: "PUT",
-          body: JSON.stringify(payload),
+          body: payload,
         });
         toast.success("Cotação atualizada.");
       } else {
-        await fetchJson(`/api/admin/news/cotacoes`, {
+        await request("/api/admin/news/cotacoes", {
           method: "POST",
-          body: JSON.stringify(payload),
+          body: payload,
         });
         toast.success("Cotação criada.");
       }
@@ -213,14 +205,14 @@ export function useCotacoesAdmin({
     } finally {
       setSaving(false);
     }
-  }, [form, mode, editing?.id, fetchJson, load, startCreate]);
+  }, [form, mode, editing?.id, request, load, startCreate]);
 
   const remove = useCallback(
     async (id: number) => {
       setDeletingId(id);
       setErrorMsg(null);
       try {
-        await fetchJson(`/api/admin/news/cotacoes/${id}`, { method: "DELETE" });
+        await request(`/api/admin/news/cotacoes/${id}`, { method: "DELETE" });
         toast.success("Cotação removida.");
         await load();
       } catch (e: any) {
@@ -231,18 +223,53 @@ export function useCotacoesAdmin({
         setDeletingId(null);
       }
     },
-    [fetchJson, load],
+    [request, load],
   );
 
+  /**
+   * Sync individual — checks meta.provider.ok to distinguish
+   * "request succeeded" from "provider actually returned fresh data".
+   *
+   * The backend returns HTTP 200 in both cases. The provider result
+   * is in the `meta` block (outside `data`), so apiClient does NOT
+   * auto-unwrap it. We need the raw response to read meta.
+   */
   const sync = useCallback(
     async (id: number) => {
       setSyncingId(id);
       setErrorMsg(null);
       try {
-        await fetchJson(`/api/admin/news/cotacoes/${id}/sync`, {
-          method: "POST",
-        });
-        toast.success("Sync concluído.");
+        // Use raw response to access both data and meta
+        const res = await apiClient.post<Response>(
+          `/api/admin/news/cotacoes/${id}/sync`,
+          undefined,
+          { raw: true },
+        );
+
+        let body: any = null;
+        try {
+          body = await res.json();
+        } catch {
+          // non-JSON response
+        }
+
+        if (!res.ok) {
+          const msg = body?.message || `HTTP ${res.status}`;
+          if (res.status === 401 || res.status === 403) onUnauthorized?.();
+          throw new Error(msg);
+        }
+
+        // Check the provider result inside meta
+        const providerOk = body?.meta?.provider?.ok === true;
+        const providerMsg = body?.meta?.provider?.message;
+
+        if (providerOk) {
+          toast.success("Sync concluído — preço atualizado.");
+        } else {
+          const reason = providerMsg || "Provider não retornou dados.";
+          toast.error(`Sync falhou: ${reason}`);
+        }
+
         await load();
       } catch (e: any) {
         const msg = e?.message || "Erro no sync.";
@@ -252,21 +279,58 @@ export function useCotacoesAdmin({
         setSyncingId(null);
       }
     },
-    [fetchJson, load],
+    [load, onUnauthorized],
   );
 
+  /**
+   * Sync all — checks the summary returned by the backend
+   * to show accurate success/failure counts.
+   */
   const syncAll = useCallback(async () => {
     setErrorMsg(null);
     try {
-      await fetchJson(`/api/admin/news/cotacoes/sync-all`, { method: "POST" });
-      toast.success("Atualização em lote concluída.");
+      const res = await apiClient.post<Response>(
+        "/api/admin/news/cotacoes/sync-all",
+        undefined,
+        { raw: true },
+      );
+
+      let body: any = null;
+      try {
+        body = await res.json();
+      } catch {
+        // non-JSON
+      }
+
+      if (!res.ok) {
+        const msg = body?.message || `HTTP ${res.status}`;
+        if (res.status === 401 || res.status === 403) onUnauthorized?.();
+        throw new Error(msg);
+      }
+
+      // The summary is in body.data (envelope: { ok, data: { total, ok, error, items } })
+      const summary = body?.data;
+      const okCount = summary?.ok ?? 0;
+      const errCount = summary?.error ?? 0;
+      const total = summary?.total ?? 0;
+
+      if (total === 0) {
+        toast("Nenhuma cotação ativa para sincronizar.", { icon: "ℹ️" });
+      } else if (errCount === 0) {
+        toast.success(`Todas as ${okCount} cotações atualizadas.`);
+      } else if (okCount === 0) {
+        toast.error(`Nenhuma cotação atualizada. ${errCount} erro(s).`);
+      } else {
+        toast(`${okCount} atualizada(s), ${errCount} com erro.`, { icon: "⚠️" });
+      }
+
       await load();
     } catch (e: any) {
       const msg = e?.message || "Erro ao atualizar tudo.";
       setErrorMsg(msg);
       toast.error(msg);
     }
-  }, [fetchJson, load]);
+  }, [load, onUnauthorized]);
 
   return {
     rows,

@@ -6,25 +6,6 @@ import type { CotacaoFormState, CotacaoItem } from "@/types/kavita-news";
 import LoadingButton from "@/components/buttons/LoadingButton";
 import apiClient from "@/lib/apiClient";
 
-type MetaResponse = {
-  ok: boolean;
-  data?: {
-    allowed_slugs?: string[];
-    presets?: Record<
-      string,
-      Partial<
-        Pick<CotacaoFormState, "name" | "type" | "unit" | "market" | "source">
-      >
-    >;
-    suggestions?: {
-      markets?: string[];
-      sources?: string[];
-      units?: string[];
-      types?: string[];
-    };
-  };
-};
-
 type Props = {
   allowedSlugs: string[];
 
@@ -90,21 +71,22 @@ export default function CotacoesForm({
 
     (async () => {
       try {
-        const json = await apiClient.get<MetaResponse>(
-          "/api/admin/news/cotacoes/meta",
-        );
+        // apiClient unwraps the { ok, data } envelope — result IS the data payload.
+        const meta = await apiClient.get<{
+          allowed_slugs?: string[];
+          presets?: Record<string, any>;
+          suggestions?: { markets?: string[]; sources?: string[]; units?: string[]; types?: string[] };
+        }>("/api/admin/news/cotacoes/meta");
 
-        if (!mounted) return;
+        if (!mounted || !meta) return;
 
-        if (json?.ok && json?.data) {
-          setMetaPresets(json.data.presets || {});
-          setSuggestions({
-            markets: json.data.suggestions?.markets || [],
-            sources: json.data.suggestions?.sources || [],
-            units: json.data.suggestions?.units || [],
-            types: json.data.suggestions?.types || [],
-          });
-        }
+        setMetaPresets(meta.presets || {});
+        setSuggestions({
+          markets: meta.suggestions?.markets || [],
+          sources: meta.suggestions?.sources || [],
+          units: meta.suggestions?.units || [],
+          types: meta.suggestions?.types || [],
+        });
       } catch {
         // meta é "nice to have": não quebra form se falhar
       }
