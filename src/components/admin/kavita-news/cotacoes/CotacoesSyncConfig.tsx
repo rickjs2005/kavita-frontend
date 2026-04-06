@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import apiClient from "@/lib/apiClient";
+import { formatApiError } from "@/lib/formatApiError";
 
 type SyncConfig = {
   cotacoes_sync_enabled: boolean;
@@ -66,15 +67,23 @@ type Props = {
 export default function CotacoesSyncConfig({ onSyncAll, syncingAll = false }: Props) {
   const [config, setConfig] = useState<SyncConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  // Form state
+  const [enabled, setEnabled] = useState(false);
+  const [cronExpr, setCronExpr] = useState("0 */4 * * *");
 
   const load = useCallback(async () => {
     try {
       setLoading(true);
       const data = await apiClient.get<SyncConfig>("/api/admin/news/cotacoes/config");
       setConfig(data);
+      setEnabled(data.cotacoes_sync_enabled);
+      setCronExpr(data.cotacoes_sync_cron);
     } catch {
-      // endpoint may not exist yet
+      // config endpoint may not exist yet
     } finally {
       setLoading(false);
     }
@@ -82,16 +91,38 @@ export default function CotacoesSyncConfig({ onSyncAll, syncingAll = false }: Pr
 
   useEffect(() => { load(); }, [load]);
 
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const data = await apiClient.put<SyncConfig>("/api/admin/news/cotacoes/config", {
+        cotacoes_sync_enabled: enabled,
+        cotacoes_sync_cron: cronExpr,
+      });
+      setConfig(data);
+      setMessage({ type: "ok", text: enabled ? "Modo automático ativado." : "Modo manual ativado." });
+    } catch (err) {
+      const ui = formatApiError(err, "Erro ao salvar configuração.");
+      setMessage({ type: "err", text: ui.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSyncNow = async () => {
+    setSyncing(true);
     setMessage(null);
     try {
       if (onSyncAll) {
         await onSyncAll();
       }
       await load();
-      setMessage({ type: "ok", text: "Sync executado." });
-    } catch {
-      setMessage({ type: "err", text: "Erro ao executar sync." });
+      setMessage({ type: "ok", text: "Sync executado com sucesso." });
+    } catch (err) {
+      const ui = formatApiError(err, "Erro ao executar sync.");
+      setMessage({ type: "err", text: ui.message });
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -113,15 +144,15 @@ export default function CotacoesSyncConfig({ onSyncAll, syncingAll = false }: Pr
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">Sincronização de Cotações</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Configuração de Sync</h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Controlado por variáveis de ambiente no servidor.
+            Controle como as cotações são atualizadas.
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className={`h-2 w-2 rounded-full ${rt.enabled ? "bg-emerald-500" : "bg-slate-400"}`} />
+          <span className={`h-2 w-2 rounded-full ${enabled ? "bg-emerald-500" : "bg-slate-400"}`} />
           <span className="text-xs font-medium text-slate-700">
-            {rt.enabled ? "Automático" : "Manual"}
+            {enabled ? "Automático" : "Manual"}
           </span>
         </div>
       </div>
@@ -129,39 +160,58 @@ export default function CotacoesSyncConfig({ onSyncAll, syncingAll = false }: Pr
       {/* Provider warning */}
       {!providerOk && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          Provider desabilitado (COTACOES_PROVIDER_ENABLED != true). O sync não buscará dados externos.
+          Provider desabilitado (COTACOES_PROVIDER_ENABLED != true no .env). O sync não buscará dados externos.
         </div>
       )}
 
-      {/* Mode description */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-        {rt.enabled ? (
-          <>
-            Atualização automática ativa:{" "}
-            <span className="font-semibold">{rt.cronExpr ? cronLabel(rt.cronExpr) : "—"}</span>.
-            {" "}As cotações ativas são sincronizadas periodicamente com as fontes externas (BCB, Stooq).
-          </>
-        ) : (
-          <>
-            Modo manual ativo. As cotações só são atualizadas quando você clica em &quot;Atualizar&quot;.
-            Para ativar automação, defina{" "}
-            <code className="text-xs bg-white px-1 py-0.5 rounded border border-slate-200">
-              COTACOES_SYNC_ENABLED=true
-            </code>{" "}
-            no .env do backend.
-          </>
-        )}
+      {/* Controls */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Mode toggle */}
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1.5">Modo</label>
+          <select
+            value={enabled ? "auto" : "manual"}
+            onChange={(e) => setEnabled(e.target.value === "auto")}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+          >
+            <option value="manual">Manual</option>
+            <option value="auto">Automático</option>
+          </select>
+        </div>
+
+        {/* Frequency */}
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1.5">Frequência</label>
+          <select
+            value={cronExpr}
+            onChange={(e) => setCronExpr(e.target.value)}
+            disabled={!enabled}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+          >
+            {CRON_PRESETS.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Action */}
-      <div>
+      {/* Actions */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50 transition"
+        >
+          {saving ? "Salvando..." : "Salvar configuração"}
+        </button>
         <button
           type="button"
           onClick={handleSyncNow}
-          disabled={syncingAll || rt.running}
+          disabled={syncing || syncingAll || rt?.running}
           className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition"
         >
-          {syncingAll || rt.running ? "Sincronizando..." : "Executar sync agora"}
+          {syncing || syncingAll || rt?.running ? "Sincronizando..." : "Executar sync agora"}
         </button>
       </div>
 
