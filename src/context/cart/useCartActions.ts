@@ -34,12 +34,12 @@ export function useCartActions({
 }: Props) {
   const addToCart = (product: Product, qty = 1): AddResult => {
     const stockFromApi =
-      typeof (product as any).quantity === "number"
-        ? (product as any).quantity
-        : typeof (product as any).estoque === "number"
-          ? (product as any).estoque
-          : typeof (product as any).stock === "number"
-            ? (product as any).stock
+      typeof product.quantity === "number"
+        ? product.quantity
+        : typeof product.estoque === "number"
+          ? product.estoque
+          : typeof product.stock === "number"
+            ? product.stock
             : undefined;
 
     let result: AddResult = { ok: true };

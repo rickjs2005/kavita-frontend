@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import type { Product } from "@/types/product";
+import type { Product, ProductPromotion } from "@/types/product";
 import Gallery from "@/components/ui/Gallery";
 import ProductBuyBox from "@/components/products/ProductBuyBox";
 import ProductReviews from "./ProductReviews";
@@ -28,19 +28,6 @@ async function getProduto(id: string): Promise<Product | null> {
   }
 }
 
-type ProductPromotion = {
-  id: number;
-  product_id: number;
-  price?: number | string | null;
-  original_price?: number | string | null;
-  final_price?: number | string | null;
-  discount_percent?: number | string | null;
-  promo_price?: number | string | null;
-  start_at?: string | null;
-  end_at?: string | null;
-  ends_at?: string | null;
-  is_active?: number | boolean;
-};
 
 async function getPromocaoProduto(
   id: string,
@@ -76,10 +63,10 @@ export default async function Page({ params }: ProductPageProps) {
   if (!produto) return notFound();
 
   // ===== FRETE GRÁTIS =====
-  const shippingFree = Boolean((produto as any).shipping_free);
+  const shippingFree = Boolean(produto.shipping_free);
   const shippingFreeFromQty =
-    (produto as any).shipping_free_from_qty != null
-      ? Number((produto as any).shipping_free_from_qty)
+    produto.shipping_free_from_qty != null
+      ? Number(produto.shipping_free_from_qty)
       : null;
 
   // ===== PREÇO / DESCONTO =====
@@ -98,7 +85,7 @@ export default async function Page({ params }: ProductPageProps) {
 
   // ===== ESTOQUE =====
   const estoque = Number(
-    (produto as any).estoque ?? (produto as any).quantity ?? 0,
+    produto.estoque ?? produto.quantity ?? 0,
   );
   const disponivel = estoque > 0;
 

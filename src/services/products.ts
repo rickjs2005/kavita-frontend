@@ -1,6 +1,8 @@
 // src/services/products.ts
-import { apiRequest } from "@/lib/apiClient";
-import type { NormalizedProduct } from "@/types/product";
+// Canonical product service — single source of truth for product data access.
+import { apiRequest, apiClient } from "@/lib/apiClient";
+import { ENDPOINTS } from "@/services/api/endpoints";
+import type { Product, NormalizedProduct, ProductPromotion } from "@/types/product";
 
 // ---------------------------------------------------------------------------
 // Adapter: backend raw → NormalizedProduct
@@ -117,4 +119,28 @@ export async function getProductById(id: string | number): Promise<NormalizedPro
   if (!id && id !== 0) throw new Error("Product id is required");
   const raw = await apiRequest(`/api/products/${id}`, { cache: "no-store" });
   return normalizeProduct(raw);
+}
+
+/**
+ * Get the active promotion for a product, if any.
+ * Returns null if no promotion exists (404).
+ */
+export async function getProductPromotion(
+  id: number | string,
+): Promise<ProductPromotion | null> {
+  try {
+    return await apiClient.get<ProductPromotion>(ENDPOINTS.PRODUCTS.PROMOTIONS(id));
+  } catch {
+    return null;
+  }
+}
+
+type FavoritesApiResponse = Product[] | { data: Product[] };
+
+/**
+ * Get the list of favorites for the authenticated user.
+ */
+export async function getFavorites(): Promise<Product[]> {
+  const json = await apiClient.get<FavoritesApiResponse>(ENDPOINTS.FAVORITES.LIST);
+  return Array.isArray(json) ? json : (json.data ?? []);
 }

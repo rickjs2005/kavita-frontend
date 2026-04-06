@@ -2,17 +2,9 @@
 // SWR handles cache, deduplication and TTL natively — no manual _cache/_inflight needed.
 import useSWR from "swr";
 import apiClient from "@/lib/apiClient";
+import type { ProductPromotion } from "@/types/product";
 
-export type ProductPromotion = {
-  id: number;
-  product_id?: number;
-  title?: string | null;
-  original_price?: number | string | null;
-  final_price?: number | string | null;
-  discount_percent?: number | string | null;
-  promo_price?: number | string | null;
-  ends_at?: string | null;
-};
+export type { ProductPromotion };
 
 /** TTL de 5 minutos — promoções expiradas não ficam presas em cache. */
 const PROMO_TTL_MS = 5 * 60 * 1000;

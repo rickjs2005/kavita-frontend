@@ -70,8 +70,22 @@ export default function ProdutosPage() {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  async function toggleStatus(id: number, isActive: boolean) {
+    try {
+      await apiClient.patch(`/api/admin/produtos/${id}/status`, { is_active: isActive });
+      await carregarProdutos();
+    } catch (e: any) {
+      console.error("toggleStatus:", e);
+      if (e?.status === 401 || e?.status === 403) {
+        alert("Sessão expirada. Faça login novamente.");
+        return;
+      }
+      alert(e?.message || "Erro ao alterar status do produto.");
+    }
+  }
+
   async function removerProduto(id: number) {
-    if (!confirm("Tem certeza que deseja remover este produto?")) return;
+    if (!confirm("Tem certeza que deseja remover este produto permanentemente?")) return;
 
     try {
       await apiClient.del(`/api/admin/produtos/${id}`);
@@ -80,6 +94,15 @@ export default function ProdutosPage() {
       console.error("removerProduto:", e);
       if (e?.status === 401 || e?.status === 403) {
         alert("Sessão expirada. Faça login novamente.");
+        return;
+      }
+      if (e?.status === 409) {
+        const desativar = confirm(
+          "Este produto não pode ser excluído porque está em carrinhos ativos.\n\nDeseja desativá-lo em vez de excluir?"
+        );
+        if (desativar) {
+          await toggleStatus(id, false);
+        }
         return;
       }
       alert(e?.message || "Erro ao remover produto.");
@@ -168,6 +191,7 @@ export default function ProdutosPage() {
                   className="mt-0"
                   onEditar={handleEditarProduto}
                   onRemover={removerProduto}
+                  onToggleStatus={toggleStatus}
                 />
               ))}
             </div>

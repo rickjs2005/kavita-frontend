@@ -10,13 +10,15 @@ export type Product = {
   images?: ImageLike[] | null;
   quantity?: number | null;
   estoque?: number | null;
-  category_id?: string | null;
+  stock?: number | null;
+  category_id?: string | number | null;
   third_category?: string | null;
   destaque?: "mais_vendido" | "super_oferta" | "promocao" | null;
   rating_avg?: number | null;
   rating_count?: number | null;
   shipping_free?: number | boolean; // 1 | 0
   shipping_free_from_qty?: number | null; // ex: 5
+  is_active?: number | boolean;
 };
 
 /**
@@ -47,3 +49,19 @@ export interface ProductReview {
   comentario: string | null;
   created_at: string;
 }
+
+/** Promotion returned by the public API (GET /api/public/promocoes/:productId). */
+export type ProductPromotion = {
+  id: number;
+  product_id?: number;
+  title?: string | null;
+  price?: number | string | null;
+  original_price?: number | string | null;
+  final_price?: number | string | null;
+  discount_percent?: number | string | null;
+  promo_price?: number | string | null;
+  start_at?: string | null;
+  end_at?: string | null;
+  ends_at?: string | null;
+  is_active?: number | boolean;
+};

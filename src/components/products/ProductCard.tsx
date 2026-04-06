@@ -55,26 +55,22 @@ export default function ProductCard({
 
   // === Estoque ===
   const stock = resolveStockValue(
-    (product as any).quantity,
-    (product as any).estoque,
-    (product as any).stock,
+    product.quantity,
+    product.estoque,
+    product.stock,
   );
   const outOfStock = typeof stock === "number" ? stock <= 0 : false;
 
   // === Frete grátis (badge) ===
-  // Regra de negócio:
-  // shipping_free = 1 => produto tem frete grátis
-  // shipping_free_from_qty null => sempre grátis
-  // shipping_free_from_qty número => grátis a partir daquela quantidade
-  const shippingFree = Boolean((product as any).shipping_free);
+  const shippingFree = Boolean(product.shipping_free);
   const shippingFreeFromQty =
-    (product as any).shipping_free_from_qty != null
-      ? Number((product as any).shipping_free_from_qty)
+    product.shipping_free_from_qty != null
+      ? Number(product.shipping_free_from_qty)
       : null;
 
   // === Avaliação (⭐) ===
-  const ratingAvgRaw = (product as any).rating_avg;
-  const ratingCountRaw = (product as any).rating_count;
+  const ratingAvgRaw = product.rating_avg;
+  const ratingCountRaw = product.rating_count;
 
   const ratingAvg =
     ratingAvgRaw !== null && ratingAvgRaw !== undefined

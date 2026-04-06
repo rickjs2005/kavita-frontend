@@ -21,4 +21,5 @@ export interface Product {
   image?: ImageLike;
   quantity?: number | null; // alguns backends usam "quantity"
   estoque?: number | null; // outros usam "estoque"
+  stock?: number | null; // fallback
 }

@@ -2,7 +2,8 @@
 // Imported by useCheckoutState and section components.
 
 import type { SavedAddress } from "@/types/address";
-export type { SavedAddress };
+import type { ProductPromotion } from "@/types/product";
+export type { SavedAddress, ProductPromotion };
 
 /** Cart item format accepted by the checkout API payload (differs from CartContext's CartItem). */
 export interface CheckoutCartItem {
@@ -19,18 +20,6 @@ export interface CheckoutCartItem {
   quantidade?: number | string;
   qtd?: number | string;
 }
-
-/** Promotion returned by the public API. */
-export type ProductPromotion = {
-  id: number;
-  product_id?: number;
-  title?: string | null;
-  original_price?: number | string | null;
-  final_price?: number | string | null;
-  discount_percent?: number | string | null;
-  promo_price?: number | string | null;
-  ends_at?: string | null;
-};
 
 export type ShippingRuleApplied = "ZONE" | "CEP_RANGE" | "PRODUCT_FREE";
 

@@ -22,9 +22,9 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const [loading, setLoading] = useState(false);
 
   const stock = resolveStockValue(
-    (product as any).quantity,
-    (product as any).estoque,
-    (product as any).stock,
+    product.quantity,
+    product.estoque,
+    product.stock,
   );
   const hasStockFlag = typeof stock === "number";
   const isOut = hasStockFlag ? stock <= 0 : false;

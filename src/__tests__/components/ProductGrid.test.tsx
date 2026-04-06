@@ -95,8 +95,8 @@ describe("ProductGrid", () => {
     const link1 = screen.getByRole("link", { name: /milho premium/i });
     const link2 = screen.getByRole("link", { name: /ração bovina/i });
 
-    expect(link1).toHaveAttribute("href", "/produto/10");
-    expect(link2).toHaveAttribute("href", "/produto/11");
+    expect(link1).toHaveAttribute("href", "/produtos/10");
+    expect(link2).toHaveAttribute("href", "/produtos/11");
 
     expect(screen.getByAltText("Milho Premium")).toBeInTheDocument();
     expect(screen.getByAltText("Ração Bovina")).toBeInTheDocument();

@@ -12,12 +12,14 @@ export type Product = {
   category_id?: number | null;
   image?: string | null; // capa vinda do banco (ex.: "/uploads/abc.jpg")
   images?: string[]; // urls adicionais (ex.: ["/uploads/1.jpg", ...])
+  is_active?: number | boolean; // 1/0 ou true/false
 };
 
 type Props = {
   produto: Product;
   onEditar?: (p: Product) => void;
   onRemover?: (id: number) => Promise<void> | void;
+  onToggleStatus?: (id: number, isActive: boolean) => Promise<void> | void;
   confirmText?: string;
   readOnly?: boolean;
   /** Permite controlar margens no grid/página (ex.: "mt-6") */
@@ -38,11 +40,17 @@ export default function ProdutoCard({
   produto,
   onEditar,
   onRemover,
+  onToggleStatus,
   confirmText = "Tem certeza que deseja remover este produto?",
   readOnly = false,
   className = "",
 }: Props) {
   const [removing, setRemoving] = useState(false);
+  const [toggling, setToggling] = useState(false);
+
+  const isActive = produto.is_active === undefined || produto.is_active === null
+    ? true
+    : Boolean(Number(produto.is_active));
 
   const price = useMemo(() => Number(produto.price) || 0, [produto.price]);
   const qty = useMemo(() => Number(produto.quantity) || 0, [produto.quantity]);
@@ -70,7 +78,7 @@ export default function ProdutoCard({
 
   return (
     <article
-      className={`flex h-full flex-col overflow-hidden rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-md ${className}`}
+      className={`flex h-full flex-col overflow-hidden rounded-2xl bg-white/95 shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-md ${!isActive ? "opacity-60" : ""} ${className}`}
       aria-labelledby={`prod-${produto.id}-title`}
     >
       {/* Capa com ratio fixo */}
@@ -84,7 +92,12 @@ export default function ProdutoCard({
           }
           loading="lazy"
         />
-        {qty <= 0 && (
+        {!isActive && (
+          <span className="absolute left-2 top-2 rounded-full bg-slate-600 px-2 py-0.5 text-xs font-semibold text-white">
+            Inativo
+          </span>
+        )}
+        {isActive && qty <= 0 && (
           <span className="absolute left-2 top-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
             Sem estoque
           </span>
@@ -142,6 +155,24 @@ export default function ProdutoCard({
 
         {/* Ações */}
         <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+          {onToggleStatus && (
+            <button
+              type="button"
+              onClick={async () => {
+                setToggling(true);
+                try { await onToggleStatus(produto.id, !isActive); }
+                finally { setToggling(false); }
+              }}
+              disabled={readOnly || toggling}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
+                isActive
+                  ? "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                  : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+              }`}
+            >
+              {toggling ? "..." : isActive ? "Desativar" : "Ativar"}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onEditar?.(produto)}

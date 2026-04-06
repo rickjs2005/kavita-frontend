@@ -55,7 +55,7 @@ export function ProductGrid({ loading, products, empty }: Props) {
         return (
           <Link
             key={p.id}
-            href={`/produto/${p.id}`}
+            href={`/produtos/${p.id}`}
             className="group overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:shadow-md"
           >
             <div className="relative h-40 w-full bg-zinc-50">
