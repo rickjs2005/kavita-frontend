@@ -20,7 +20,7 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import type { HeroData } from "@/server/data/hero";
+import type { HeroData } from "@/types/hero";
 import HeroSection from "@/components/layout/HeroSection";
 
 // ---- Mocks -----------------------------------------------------------------

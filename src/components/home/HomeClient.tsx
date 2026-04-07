@@ -2,7 +2,7 @@
 "use client";
 
 import type { PublicCategory } from "@/server/data/categories";
-import type { HeroData } from "@/server/data/hero";
+import type { HeroData } from "@/types/hero";
 import type { PublicShopSettings } from "@/server/data/shopSettings";
 
 import HeroSection from "@/components/layout/HeroSection";

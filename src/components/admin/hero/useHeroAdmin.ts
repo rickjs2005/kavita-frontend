@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
-import type { HeroConfig } from "./types";
+import type { HeroData } from "@/types/hero";
 
 // ── Limites (alinhados com o backend) ───────────────────────────────────────
 export const LIMITS = {
@@ -19,9 +19,11 @@ export const LIMITS = {
 
 export type FieldErrors = Partial<Record<string, string>>;
 
-const DEFAULTS: HeroConfig = {
+const DEFAULTS: HeroData = {
   hero_video_url: "",
+  hero_video_path: "",
   hero_image_url: "",
+  hero_image_path: "",
   title: "",
   subtitle: "",
   button_label: "Saiba Mais",
@@ -29,7 +31,7 @@ const DEFAULTS: HeroConfig = {
 };
 
 function validateFields(
-  config: HeroConfig,
+  config: HeroData,
   videoFile: File | null,
   imageFile: File | null,
 ): FieldErrors {
@@ -82,7 +84,7 @@ export function useHeroAdmin() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [config, setConfig] = useState<HeroConfig>(DEFAULTS);
+  const [config, setConfig] = useState<HeroData>(DEFAULTS);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -124,12 +126,14 @@ export function useHeroAdmin() {
     async function load() {
       try {
         setLoading(true);
-        const data = await apiClient.get<Partial<HeroConfig>>(
+        const data = await apiClient.get<Partial<HeroData>>(
           "/api/admin/site-hero",
         );
         setConfig({
           hero_video_url: data.hero_video_url || "",
+          hero_video_path: data.hero_video_path || "",
           hero_image_url: data.hero_image_url || "",
+          hero_image_path: data.hero_image_path || "",
           title: data.title || "",
           subtitle: data.subtitle || "",
           button_label: data.button_label || "Saiba Mais",
@@ -173,11 +177,13 @@ export function useHeroAdmin() {
       setVideoFile(null);
       setImageFile(null);
 
-      const hero = payload?.hero as HeroConfig | undefined;
+      const hero = payload?.hero as HeroData | undefined;
       if (hero) {
         setConfig({
           hero_video_url: hero.hero_video_url || "",
+          hero_video_path: hero.hero_video_path || "",
           hero_image_url: hero.hero_image_url || "",
+          hero_image_path: hero.hero_image_path || "",
           title: hero.title || "",
           subtitle: hero.subtitle || "",
           button_label: hero.button_label || "Saiba Mais",
@@ -212,7 +218,7 @@ export function useHeroAdmin() {
     }
   }
 
-  function updateConfig(patch: Partial<HeroConfig>) {
+  function updateConfig(patch: Partial<HeroData>) {
     setConfig((prev) => ({ ...prev, ...patch }));
   }
 

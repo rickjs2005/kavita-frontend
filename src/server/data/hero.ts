@@ -1,16 +1,8 @@
 // src/server/data/hero.ts
 import "server-only";
 
-export type HeroData = {
-  hero_video_url: string;
-  hero_video_path: string;
-  hero_image_url: string;
-  hero_image_path: string;
-  title: string;
-  subtitle: string;
-  button_label: string;
-  button_href: string;
-};
+export type { HeroData } from "@/types/hero";
+import type { HeroData } from "@/types/hero";
 
 function defaultHeroData(): HeroData {
   return {

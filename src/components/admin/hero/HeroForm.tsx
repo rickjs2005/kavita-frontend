@@ -1,14 +1,14 @@
 // src/components/admin/hero/HeroForm.tsx
 "use client";
 
-import type { HeroConfig } from "./types";
+import type { HeroData } from "@/types/hero";
 import type { FieldErrors } from "./useHeroAdmin";
 import { LIMITS } from "./useHeroAdmin";
 import HeroMediaUpload from "./HeroMediaUpload";
 
 type Props = {
-  config: HeroConfig;
-  onConfigChange: (patch: Partial<HeroConfig>) => void;
+  config: HeroData;
+  onConfigChange: (patch: Partial<HeroData>) => void;
   videoFile: File | null;
   onVideoFileChange: (file: File | null) => void;
   imageFile: File | null;

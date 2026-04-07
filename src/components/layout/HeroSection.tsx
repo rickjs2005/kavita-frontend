@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { HeroData } from "@/server/data/hero";
+import type { HeroData } from "@/types/hero";
 import { absUrl } from "@/utils/absUrl";
 import { sanitizeUrl } from "@/lib/sanitizeHtml";
 
