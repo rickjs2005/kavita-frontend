@@ -110,6 +110,15 @@
   }
 }
 
+@keyframes progressBar {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
 /* Scroll-padding para compensar header fixo em anchor links */
 html {
   scroll-padding-top: 80px;

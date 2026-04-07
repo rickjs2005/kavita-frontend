@@ -7,7 +7,7 @@ import { absUrl } from "@/utils/absUrl";
 import { sanitizeUrl } from "@/lib/sanitizeHtml";
 
 const DEFAULT_IMG = "/images/drone/fallback-hero1.jpg";
-const AUTOPLAY_MS = 6000;
+const AUTOPLAY_MS = 5000;
 
 function normalizeHref(href?: string | null) {
   const v = String(href || "").trim();
@@ -30,7 +30,6 @@ function resolveMedia(slide: HeroSlide) {
   };
 }
 
-// Static fallback when no slides exist (migration should seed one, but just in case)
 const FALLBACK_SLIDE: HeroSlide = {
   id: 0,
   title: "Revolucione sua Gestão Agrícola",
@@ -105,7 +104,6 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
     informational: "bg-sky-500",
   };
 
-  // First visible slide gets h1 for SEO; subsequent slides get h2
   const Heading = isFirst ? "h1" : "h2";
 
   return (
@@ -169,6 +167,19 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
   );
 }
 
+// ── Progress Bar (auto-advance indicator) ───────────────────────────────────
+
+function ProgressBar({ active, duration }: { active: boolean; duration: number }) {
+  return (
+    <div className="h-0.5 w-full overflow-hidden rounded-full bg-white/20">
+      <div
+        className={`h-full bg-white/80 rounded-full ${active ? "animate-[progressBar_linear_forwards]" : "w-0"}`}
+        style={active ? { animationDuration: `${duration}ms` } : undefined}
+      />
+    </div>
+  );
+}
+
 // ── Main Carousel ───────────────────────────────────────────────────────────
 
 type Props = {
@@ -181,18 +192,24 @@ export default function HeroCarousel({ slides }: Props) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Key to restart progress bar animation on manual navigation
+  const [progressKey, setProgressKey] = useState(0);
   const total = effectiveSlides.length;
 
   const goTo = useCallback(
-    (idx: number) => setCurrent(((idx % total) + total) % total),
+    (idx: number) => {
+      setCurrent(((idx % total) + total) % total);
+      setProgressKey((k) => k + 1);
+    },
     [total],
   );
 
-  // Autoplay — pauses on hover AND touch
+  // Autoplay
   useEffect(() => {
     if (total <= 1 || paused) return;
     timerRef.current = setInterval(() => {
       setCurrent((prev) => (prev + 1) % total);
+      setProgressKey((k) => k + 1);
     }, AUTOPLAY_MS);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -211,6 +228,7 @@ export default function HeroCarousel({ slides }: Props) {
         flex items-center
       "
       aria-label="Carrossel de destaques"
+      aria-roledescription="carousel"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}
@@ -220,7 +238,7 @@ export default function HeroCarousel({ slides }: Props) {
         <SlideBackground slide={slide} />
       </div>
 
-      {/* Overlay — light top, very light middle (video shows through), stronger base (text area) */}
+      {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/65" />
 
       {/* Content */}
@@ -237,51 +255,62 @@ export default function HeroCarousel({ slides }: Props) {
             <SlideContent slide={slide} isFirst={current === 0} />
           </div>
 
-          {/* Navigation */}
+          {/* Navigation — always visible when multiple slides */}
           {total > 1 ? (
-            <div className="mt-8 flex items-center gap-4">
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => goTo(current - 1)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/80 hover:bg-white/10 backdrop-blur transition"
-                  aria-label="Slide anterior"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goTo(current + 1)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/80 hover:bg-white/10 backdrop-blur transition"
-                  aria-label="Próximo slide"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+            <div className="mt-8 space-y-3">
+              {/* Progress bar */}
+              <div className="max-w-xs" key={progressKey}>
+                <ProgressBar active={!paused} duration={AUTOPLAY_MS} />
               </div>
 
-              <div className="flex gap-2">
-                {effectiveSlides.map((s, i) => (
+              <div className="flex items-center gap-4">
+                {/* Arrows */}
+                <div className="flex gap-2">
                   <button
-                    key={s.id}
                     type="button"
-                    onClick={() => goTo(i)}
-                    className={`h-2.5 rounded-full transition-all ${
-                      i === current
-                        ? "w-7 bg-white"
-                        : "w-2.5 bg-white/40 hover:bg-white/60"
-                    }`}
-                    aria-label={`Ir para slide ${i + 1}`}
-                  />
-                ))}
-              </div>
+                    onClick={() => goTo(current - 1)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/80 hover:bg-white/10 backdrop-blur transition"
+                    aria-label="Slide anterior"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => goTo(current + 1)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/80 hover:bg-white/10 backdrop-blur transition"
+                    aria-label="Próximo slide"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
 
-              <span className="text-xs text-white/50 tabular-nums">
-                {current + 1}/{total}
-              </span>
+                {/* Dots */}
+                <div className="flex gap-2">
+                  {effectiveSlides.map((s, i) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => goTo(i)}
+                      className={`h-2.5 rounded-full transition-all ${
+                        i === current
+                          ? "w-7 bg-white"
+                          : "w-2.5 bg-white/40 hover:bg-white/60"
+                      }`}
+                      aria-label={`Ir para slide ${i + 1}`}
+                      aria-current={i === current ? "true" : undefined}
+                    />
+                  ))}
+                </div>
+
+                {/* Counter */}
+                <span className="text-xs text-white/50 tabular-nums">
+                  {current + 1} / {total}
+                </span>
+              </div>
             </div>
           ) : null}
         </div>
