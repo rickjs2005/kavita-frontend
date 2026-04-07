@@ -1,7 +1,7 @@
 // src/components/admin/hero/useHeroAdmin.ts
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
@@ -86,23 +86,30 @@ export function useHeroAdmin() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const videoPreview = useMemo(
-    () => (videoFile ? URL.createObjectURL(videoFile) : config.hero_video_url),
-    [videoFile, config.hero_video_url],
-  );
+  // Object URL management — create once per file, revoke the previous on change/unmount
+  const videoObjUrl = useRef<string | null>(null);
+  const imageObjUrl = useRef<string | null>(null);
 
-  const imagePreview = useMemo(
-    () => (imageFile ? URL.createObjectURL(imageFile) : config.hero_image_url),
-    [imageFile, config.hero_image_url],
-  );
-
-  // Cleanup object URLs when files change or unmount
   useEffect(() => {
+    if (videoObjUrl.current) URL.revokeObjectURL(videoObjUrl.current);
+    videoObjUrl.current = videoFile ? URL.createObjectURL(videoFile) : null;
     return () => {
-      if (videoFile) URL.revokeObjectURL(URL.createObjectURL(videoFile));
-      if (imageFile) URL.revokeObjectURL(URL.createObjectURL(imageFile));
+      if (videoObjUrl.current) URL.revokeObjectURL(videoObjUrl.current);
+      videoObjUrl.current = null;
     };
-  }, [videoFile, imageFile]);
+  }, [videoFile]);
+
+  useEffect(() => {
+    if (imageObjUrl.current) URL.revokeObjectURL(imageObjUrl.current);
+    imageObjUrl.current = imageFile ? URL.createObjectURL(imageFile) : null;
+    return () => {
+      if (imageObjUrl.current) URL.revokeObjectURL(imageObjUrl.current);
+      imageObjUrl.current = null;
+    };
+  }, [imageFile]);
+
+  const videoPreview = videoObjUrl.current || config.hero_video_url;
+  const imagePreview = imageObjUrl.current || config.hero_image_url;
 
   // Live validation
   const errors = useMemo(
