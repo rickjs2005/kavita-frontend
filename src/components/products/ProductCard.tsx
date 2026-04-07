@@ -198,9 +198,9 @@ export default function ProductCard({
           )}
 
           {shippingFree && !outOfStock && (
-            <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+            <span className="max-w-[90%] truncate rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
               {shippingFreeFromQty
-                ? `Frete grátis a partir de ${shippingFreeFromQty} un.`
+                ? `Frete grátis ${shippingFreeFromQty}+ un.`
                 : "Frete grátis"}
             </span>
           )}

@@ -94,7 +94,7 @@ function ResetPasswordContent() {
       {/* camada escura por cima da imagem */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
-      <section className="relative z-10 w-full max-w-md rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md shadow-xl text-center text-white p-8">
+      <section className="relative z-10 w-full max-w-md mx-4 sm:mx-auto rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md shadow-xl text-center text-white p-5 sm:p-8">
         <div className="absolute left-4 top-4">
           <CloseButton className="text-white/70 hover:text-white" />
         </div>

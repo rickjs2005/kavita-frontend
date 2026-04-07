@@ -80,7 +80,7 @@ const Form = () => {
                   name="assunto"
                   value={formData.assunto}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
+                  className="w-full border border-gray-300 px-4 py-2.5 min-h-[44px] rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="Informe o assunto"
                   required
                 />
@@ -97,7 +97,7 @@ const Form = () => {
                   name="nome"
                   value={formData.nome}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
+                  className="w-full border border-gray-300 px-4 py-2.5 min-h-[44px] rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="Seu nome completo"
                   required
                 />
@@ -114,7 +114,7 @@ const Form = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
+                  className="w-full border border-gray-300 px-4 py-2.5 min-h-[44px] rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="Seu email"
                   required
                 />
@@ -131,7 +131,7 @@ const Form = () => {
                   name="telefone"
                   value={formData.telefone}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
+                  className="w-full border border-gray-300 px-4 py-2.5 min-h-[44px] rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="(XX) XXXXX-XXXX"
                   required
                 />
@@ -148,7 +148,7 @@ const Form = () => {
                   name="estado"
                   value={formData.estado}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
+                  className="w-full border border-gray-300 px-4 py-2.5 min-h-[44px] rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="Ex: Minas Gerais"
                   required
                 />
@@ -165,7 +165,7 @@ const Form = () => {
                   name="cidade"
                   value={formData.cidade}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
+                  className="w-full border border-gray-300 px-4 py-2.5 min-h-[44px] rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="Sua cidade"
                   required
                 />
@@ -182,7 +182,7 @@ const Form = () => {
                   name="corrego"
                   value={formData.corrego}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
+                  className="w-full border border-gray-300 px-4 py-2.5 min-h-[44px] rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="Informe o córrego"
                 />
               </div>
@@ -198,7 +198,7 @@ const Form = () => {
                 name="mensagem"
                 value={formData.mensagem}
                 onChange={handleChange}
-                className="w-full border px-4 py-2 rounded-md focus:outline-none focus:ring-primary"
+                className="w-full border border-gray-300 px-4 py-2.5 min-h-[44px] rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 placeholder="Digite sua mensagem"
                 rows={4}
                 required
@@ -208,7 +208,7 @@ const Form = () => {
             {/* Botão de envio */}
             <button
               type="submit"
-              className="bg-accent text-white px-6 py-2 rounded-md hover:bg-accent-hover transition"
+              className="w-full sm:w-auto bg-accent text-white px-6 py-3 min-h-[48px] rounded-lg font-semibold text-sm hover:bg-accent-hover transition"
             >
               Enviar
             </button>

@@ -32,29 +32,29 @@ export default function Gallery({
   return (
     <div className={`w-full flex flex-col items-center gap-4 ${className}`}>
       {/* principal */}
-      <div className="w-full bg-gray-50 rounded shadow flex items-center justify-center">
+      <div className="w-full bg-gray-50 rounded-xl shadow flex items-center justify-center overflow-hidden">
         <Image
           src={active}
           alt={alt}
           width={800}
           height={800}
           priority
-          className="rounded object-contain max-h-[420px] w-full"
+          className="rounded-xl object-contain max-h-[320px] sm:max-h-[420px] w-full"
           onError={() => setActive(PLACEHOLDER)}
         />
       </div>
 
       {/* thumbs */}
       {safeImages.length > 1 && (
-        <div className="flex gap-3 overflow-x-auto justify-center w-full">
+        <div className="flex gap-2 sm:gap-3 overflow-x-auto justify-start sm:justify-center w-full pb-1 scrollbar-hide">
           {safeImages.map((src, i) => (
             <button
               key={`${src}-${i}`}
               onClick={() => setActive(src)}
               aria-label={`Ver imagem ${i + 1}`}
-              className={`rounded border-2 overflow-hidden transition ${
+              className={`shrink-0 rounded-lg border-2 overflow-hidden transition ${
                 active === src
-                  ? "border-secondary"
+                  ? "border-secondary ring-1 ring-secondary/30"
                   : "border-transparent hover:border-gray-300"
               }`}
               style={{ width: thumbSize + 4, height: thumbSize + 4 }}
@@ -64,7 +64,7 @@ export default function Gallery({
                 alt={`thumb-${i + 1}`}
                 width={thumbSize}
                 height={thumbSize}
-                className="rounded object-cover"
+                className="rounded-lg object-cover"
                 onError={(e) =>
                   ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
                 }

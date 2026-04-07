@@ -22,7 +22,7 @@ function normalizePrice(price: unknown): number {
 
 
 const quantityButtonClasses =
-  "min-w-[36px] h-9 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-semibold transition hover:bg-gray-100 disabled:opacity-50";
+  "min-w-[44px] h-11 sm:min-w-[36px] sm:h-9 rounded-lg border border-gray-300 bg-white text-gray-700 text-base sm:text-sm font-semibold transition hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50";
 
 /**
  * Estrutura normalizada de promoção dentro do carrinho.

@@ -14,17 +14,17 @@ const AtendimentoPage = () => {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
 
   return (
-    <main className="min-h-screen bg-gray-100 py-10">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-primary">
+    <main className="min-h-screen bg-gray-100 py-6 sm:py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 sm:mb-10">
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary">
             Aqui tem tudo sobre a Kavita! 🌿
           </h1>
-          <p className="text-xl text-gray-600">Líder em preço e qualidade</p>
+          <p className="text-base sm:text-xl text-gray-600 mt-1">Líder em preço e qualidade</p>
         </div>
 
         {!selectedTopic && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
             {topics.map((topic: Topic) => (
               <button
                 key={topic.title}

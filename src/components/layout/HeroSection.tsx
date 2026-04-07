@@ -106,7 +106,7 @@ export default function HeroSection() {
     <section
       className="
         relative w-full overflow-hidden
-        min-h-[72vh] sm:min-h-[88vh] lg:min-h-[92vh]
+        min-h-[56vh] sm:min-h-[72vh] md:min-h-[88vh] lg:min-h-[92vh]
         flex items-center
       "
       aria-label="Hero do site"

@@ -81,3 +81,81 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Animação de slide para menus mobile */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Scroll-padding para compensar header fixo em anchor links */
+html {
+  scroll-padding-top: 80px;
+  scroll-behavior: smooth;
+}
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 140px;
+  }
+}
+
+/* Respeita preferência de movimento reduzido do sistema */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Touch targets mínimos de 44px para acessibilidade mobile (WCAG 2.5.5) */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a,
+  select,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Exceções: badges, tags e ícones inline não precisam de 44px */
+  span[class*="rounded-full"][class*="text-[10px]"],
+  span[class*="rounded-full"][class*="text-[11px]"] {
+    min-height: unset;
+    min-width: unset;
+  }
+}
+
+/* Safe area para dispositivos com notch */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

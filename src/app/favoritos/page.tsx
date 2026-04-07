@@ -102,7 +102,7 @@ export default function FavoritosPage() {
       )}
 
       {!loading && !error && favoritos.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {favoritos.map((product) => (
             <ProductCard
               key={product.id}

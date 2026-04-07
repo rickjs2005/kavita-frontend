@@ -310,7 +310,8 @@ export default function Header({ categories, shop }: HeaderProps) {
           id="mobile-menu"
           role="dialog"
           aria-modal="true"
-          className="fixed z-50 top-0 left-0 h-full w-80 max-w-[80vw] bg-white shadow-2xl p-5 flex flex-col gap-4 overflow-y-auto"
+          className="fixed z-50 top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl p-5 flex flex-col gap-4 overflow-y-auto animate-[slideInLeft_0.25s_ease-out]"
+          style={{ willChange: "transform" }}
         >
           <div className="flex items-center justify-between">
             <span className="text-lg font-semibold text-header">Menu</span>
@@ -428,8 +429,8 @@ export default function Header({ categories, shop }: HeaderProps) {
       {/* carrinho lateral */}
       <CartCar isCartOpen={isCartOpen} closeCart={() => setIsCartOpen(false)} />
 
-      {/* espaçador do header fixo */}
-      <div aria-hidden className="h-[96px] md:h-[134px]" />
+      {/* espaçador do header fixo — 76px topbar + 0 nav (mobile) | 88px topbar + 44px nav (desktop) + 2px border */}
+      <div aria-hidden className="h-[78px] sm:h-[78px] md:h-[134px]" />
     </>
   );
 }

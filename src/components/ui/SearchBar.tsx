@@ -224,7 +224,7 @@ export default function SearchBar() {
       </form>
 
       {open && (
-        <ul className="absolute w-full mt-1 z-20 max-h-64 overflow-y-auto border border-gray-200 bg-white rounded-md shadow">
+        <ul className="absolute left-0 right-0 mt-1 z-20 max-h-[60vh] sm:max-h-64 overflow-y-auto border border-gray-200 bg-white rounded-md shadow-lg">
           {loading ? (
             <li className="px-4 py-2 text-sm text-gray-500 italic">
               Carregando...

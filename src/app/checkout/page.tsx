@@ -109,7 +109,8 @@ export default function CheckoutPage() {
             />
           </div>
 
-          {/* Right column — order summary */}
+          {/* Right column — order summary (sticky on desktop) */}
+          <div className="lg:sticky lg:top-6">
           <OrderSummarySection
             normalizedCartItems={state.normalizedCartItems}
             promotions={state.promotions}
@@ -133,6 +134,7 @@ export default function CheckoutPage() {
             canFinalizeCheckout={state.canFinalizeCheckout}
             handleSubmit={state.handleSubmit}
           />
+          </div>
         </div>
       </div>
     </div>

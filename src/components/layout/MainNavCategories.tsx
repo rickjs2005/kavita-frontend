@@ -17,7 +17,7 @@ export default function MainNavCategories({ categories }: Props) {
   if (!categories || categories.length === 0) return null;
 
   return (
-    <nav className="flex flex-wrap items-center justify-start gap-x-6 gap-y-2 md:gap-x-8 md:gap-y-3">
+    <nav className="flex items-center gap-x-5 md:gap-x-7 overflow-x-auto scrollbar-hide whitespace-nowrap">
       {categories.map((cat) => (
         <Link
           key={cat.id}

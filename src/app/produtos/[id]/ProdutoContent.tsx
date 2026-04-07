@@ -76,9 +76,9 @@ export default function ProdutoContent({ produto }: Props) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 md:py-12 space-y-10">
+    <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8 md:py-12 space-y-8 sm:space-y-10">
       {/* ===== BLOCO PRINCIPAL: GALERIA + INFO + COMPRA ===== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
         {/* Galeria (lado esquerdo) */}
         <div className="md:sticky md:top-24 h-fit">
           <Gallery images={images} alt={produto.name} />
@@ -87,7 +87,7 @@ export default function ProdutoContent({ produto }: Props) {
         {/* Conteúdo + caixa de compra (lado direito) */}
         <div className="flex flex-col gap-6">
           <header className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
               {produto.name}
             </h1>
 

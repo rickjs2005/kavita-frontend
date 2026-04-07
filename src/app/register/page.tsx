@@ -171,11 +171,11 @@ export default function RegisterPage() {
         }}
       />
 
-      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-10">
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-8 sm:py-10">
         <div className="w-full max-w-xl">
           <div className="relative backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
             {/* Botão voltar/fechar */}
-            <div className="absolute top-4 left-4 z-20">
+            <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20">
               <CloseButton
                 className="
                     text-teal-dark
@@ -191,8 +191,8 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="px-8 pt-10 text-center">
-              <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
+            <div className="px-5 sm:px-8 pt-8 sm:pt-10 text-center">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
                 Cadastro
               </h1>
               <p className="mt-2 text-white/80 text-sm">
@@ -202,7 +202,7 @@ export default function RegisterPage() {
 
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="p-8 grid grid-cols-1 gap-5"
+              className="p-5 sm:p-8 grid grid-cols-1 gap-5"
             >
               {/* Mensagem do servidor (aria-live para acessibilidade) */}
               {serverMsg && (

@@ -254,6 +254,16 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
   };
 
   return (
+    <>
+      {/* Backdrop */}
+      {isCartOpen && (
+        <button
+          type="button"
+          aria-label="Fechar carrinho"
+          className="fixed inset-0 z-[65] bg-black/40 backdrop-blur-[2px] animate-[fadeIn_0.2s_ease-out]"
+          onClick={closeCart}
+        />
+      )}
     <div
       className={`fixed inset-y-0 right-0 left-0 sm:left-auto bg-white shadow-xl z-[70] flex flex-col
                   transition-transform duration-300
@@ -294,7 +304,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
 
       {/* Footer */}
       {!isEmpty && (
-        <footer className="sticky bottom-0 z-10 border-t bg-white px-4 sm:px-5 py-3">
+        <footer className="sticky bottom-0 z-10 border-t bg-white px-4 sm:px-5 py-3 safe-bottom">
           {warnings.length > 0 && (
             <div role="alert" className="mb-2 text-xs text-orange-600 space-y-1">
               {warnings.map((w, idx) => (
@@ -373,6 +383,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
         </footer>
       )}
     </div>
+    </>
   );
 };
 

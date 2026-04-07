@@ -24,7 +24,7 @@ type Props = {
 export function ProductGrid({ loading, products, empty }: Props) {
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 12 }).map((_, i) => (
           <div
             key={i}
@@ -45,7 +45,7 @@ export function ProductGrid({ loading, products, empty }: Props) {
   if (!products || products.length === 0) return <>{empty}</>;
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+    <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
       {products.map((p) => {
         const hasDiscount =
           p.original_price != null &&

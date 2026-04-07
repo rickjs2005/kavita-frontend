@@ -39,8 +39,8 @@ export default function ProductsPageClient() {
   }, [error, loading, products]);
 
   return (
-    <div className="relative px-4 md:px-6 lg:px-8 py-6">
-      <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="relative mx-auto max-w-7xl px-4 md:px-6 lg:px-8 py-6">
+      <section className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
         {content}
       </section>
 

@@ -61,9 +61,9 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-black/50" aria-hidden />
 
       {/* Card */}
-      <div className="relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl bg-white/10 border border-white/20">
-        <div className="px-8 pt-8 text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
+      <div className="relative w-full max-w-md mx-4 sm:mx-auto rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl bg-white/10 border border-white/20">
+        <div className="px-5 sm:px-8 pt-6 sm:pt-8 text-center">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
             Login
           </h1>
           <p className="mt-2 text-white/80 text-sm">
@@ -71,7 +71,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-8 grid gap-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="p-5 sm:p-8 grid gap-5">
           {/* Aviso de erro do servidor */}
           {serverMsg && (
             <div

@@ -96,8 +96,8 @@ export default function PedidosClientePage() {
   return (
     <main className="max-w-5xl mx-auto px-4 py-10">
       {/* Cabeçalho */}
-      <div className="flex items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold">Painel de pedidos</h1>
+      <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+        <h1 className="text-xl sm:text-2xl font-bold">Painel de pedidos</h1>
 
         <button
           type="button"

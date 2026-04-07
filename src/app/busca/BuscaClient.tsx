@@ -417,7 +417,7 @@ export default function BuscaClient() {
 
             <div className="mt-3">
               {loadingProducts ? (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {Array.from({ length: Math.min(12, params.limit) }).map(
                     (_, i) => (
                       <div
@@ -444,7 +444,7 @@ export default function BuscaClient() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {list.map((p) => {
                     const allImgsRaw = [
                       p.image ?? null,
