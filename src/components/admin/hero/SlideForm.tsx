@@ -7,6 +7,7 @@ import apiClient from "@/lib/apiClient";
 import { absUrl } from "@/utils/absUrl";
 import type { HeroSlide } from "@/types/heroSlide";
 import HeroMediaUpload from "./HeroMediaUpload";
+import HeroSlidePreview from "./HeroSlidePreview";
 import { LIMITS } from "./constants";
 
 const SLIDE_TYPES = [
@@ -212,10 +213,15 @@ export default function SlideForm({ slideId }: Props) {
   const previewImage = imageObjUrl.current || (existingImage ? absUrl(existingImage) : "");
   const previewVideo = videoObjUrl.current || (existingVideo ? absUrl(existingVideo) : "");
 
-  const typeColors: Record<string, string> = {
-    promotional: "bg-amber-500",
-    institutional: "bg-primary",
-    informational: "bg-sky-500",
+  const previewSlide = {
+    title: form.title,
+    subtitle: form.subtitle,
+    badge_text: form.badge_text,
+    slide_type: form.slide_type,
+    button_label: form.button_label,
+    button_secondary_label: form.button_secondary_label,
+    videoSrc: previewVideo,
+    imageSrc: previewImage,
   };
 
   return (
@@ -251,50 +257,7 @@ export default function SlideForm({ slideId }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
           {/* Preview */}
           <div className="lg:col-span-3 order-1">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 sm:p-4">
-              <p className="font-semibold mb-3">Preview</p>
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40">
-                <div className="aspect-[16/9] w-full">
-                  {previewVideo ? (
-                    <video className="absolute inset-0 h-full w-full object-cover" src={previewVideo} autoPlay loop muted playsInline />
-                  ) : previewImage ? (
-                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${previewImage}')` }} />
-                  ) : (
-                    <div className="absolute inset-0 grid place-items-center text-white/50">
-                      <p className="text-sm">Envie uma imagem ou vídeo</p>
-                    </div>
-                  )}
-                  {/* Matches public carousel overlay (from-black/40 via-black/20 to-black/65 top-to-bottom = bottom-to-top here) */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-black/40" />
-                  <div className="relative z-10 flex h-full items-end p-4 sm:p-6">
-                    <div className="max-w-xl">
-                      {form.badge_text ? (
-                        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[10px] text-white/90 backdrop-blur">
-                          <span className={`h-1.5 w-1.5 rounded-full ${typeColors[form.slide_type] || "bg-primary"}`} />
-                          {form.badge_text}
-                        </div>
-                      ) : null}
-                      <h2 className="text-lg sm:text-2xl font-bold leading-tight">
-                        {form.title.trim() || "Seu título aqui"}
-                      </h2>
-                      {form.subtitle.trim() ? (
-                        <p className="mt-1 text-sm text-white/80">{form.subtitle}</p>
-                      ) : null}
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <span className="inline-flex rounded-lg border border-primary bg-black/20 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-                          {form.button_label || "Saiba Mais"}
-                        </span>
-                        {form.button_secondary_label ? (
-                          <span className="inline-flex rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur">
-                            {form.button_secondary_label}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <HeroSlidePreview slide={previewSlide} />
           </div>
 
           {/* Form */}
