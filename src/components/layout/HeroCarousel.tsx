@@ -81,35 +81,36 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
     <>
       {/* Badge */}
       {slide.badge_text ? (
-        <div className={`mb-3 sm:mb-6 inline-flex items-center gap-2 rounded-lg border bg-black/30 px-3 py-1 backdrop-blur-md text-[11px] sm:text-[13px] font-semibold tracking-wider sm:tracking-widest uppercase ${typeAccent[slide.slide_type] || "border-primary/40 text-primary"}`}>
+        <div className={`mb-4 sm:mb-6 inline-flex items-center gap-1.5 rounded-md border bg-black/25 px-2.5 py-1 backdrop-blur-md text-[10px] sm:text-[13px] font-bold tracking-widest uppercase ${typeAccent[slide.slide_type] || "border-primary/40 text-primary"}`}>
+          <span className="h-1 w-1 rounded-full bg-current opacity-70" />
           {slide.badge_text}
         </div>
       ) : null}
 
-      {/* Title */}
-      <Heading className="text-[2rem] sm:text-[clamp(2rem,6vw,4.5rem)] font-black leading-[0.95] tracking-tight text-white [text-shadow:0_1px_16px_rgba(0,0,0,0.6)]">
+      {/* Title — 2.25rem (36px) on mobile for strong hero presence */}
+      <Heading className="text-[2.25rem] sm:text-[clamp(2rem,6vw,4.5rem)] font-black leading-[0.92] tracking-tight text-white [text-shadow:0_1px_12px_rgba(0,0,0,0.7)]">
         {titleText}
       </Heading>
 
-      {/* Divider — desktop only */}
-      <div className="hidden sm:block mt-6 h-1 w-20 rounded-full bg-primary" />
+      {/* Divider — small on mobile, larger on desktop */}
+      <div className="mt-3 h-[3px] w-10 rounded-full bg-primary sm:mt-6 sm:h-1 sm:w-20" />
 
       {/* Subtitle */}
       {subtitleText ? (
-        <p className="mt-2.5 sm:mt-5 max-w-xl text-[0.875rem] sm:text-[clamp(0.95rem,1.5vw,1.25rem)] leading-relaxed text-white/75 sm:text-white/80">
+        <p className="mt-2.5 sm:mt-5 max-w-xl text-[0.875rem] sm:text-[clamp(0.95rem,1.5vw,1.25rem)] leading-snug sm:leading-relaxed text-white/80 sm:text-white/80">
           {subtitleText}
         </p>
       ) : null}
 
       {/* CTAs */}
-      <div className="mt-5 sm:mt-10 flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center">
+      <div className="mt-6 sm:mt-10 flex flex-col gap-2.5 sm:gap-3 sm:flex-row sm:items-center">
         <Link
           href={href}
           className="
             group inline-flex w-full items-center justify-center gap-2
-            rounded-xl bg-primary px-5 py-3 sm:px-7 sm:py-3.5
+            rounded-xl bg-primary px-5 py-3.5 sm:px-7 sm:py-3.5
             text-[14px] sm:text-[15px] font-bold text-white
-            shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_4px_20px_rgba(53,146,147,0.35)]
+            shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_4px_24px_rgba(53,146,147,0.4)]
             active:scale-[0.97]
             hover:brightness-110 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_6px_28px_rgba(53,146,147,0.5)]
             transition-all duration-200
@@ -129,10 +130,11 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
             className="
               inline-flex w-full items-center justify-center
               rounded-xl px-5 py-2.5 sm:px-7 sm:py-3.5
-              text-[13px] sm:text-[15px] font-medium text-white/65 sm:font-semibold sm:text-white/85
-              border border-white/10 sm:border-white/20
-              bg-white/[0.04] sm:bg-white/[0.07]
-              active:bg-white/[0.12]
+              text-[13px] sm:text-[15px] font-semibold text-white/70 sm:font-semibold sm:text-white/85
+              border-0 sm:border sm:border-white/20
+              bg-transparent sm:bg-white/[0.07]
+              underline decoration-white/25 underline-offset-4 sm:no-underline
+              active:text-white
               hover:text-white hover:bg-white/[0.1]
               backdrop-blur-sm
               transition-all duration-200
@@ -224,7 +226,7 @@ export default function HeroCarousel({ slides }: Props) {
                   key={i}
                   type="button"
                   onClick={() => goTo(i)}
-                  className="group relative h-[3px] sm:h-1 flex-1 max-w-[80px] sm:max-w-[120px] overflow-hidden rounded-full bg-white/20"
+                  className="group relative h-1 sm:h-1 flex-1 max-w-[72px] sm:max-w-[120px] overflow-hidden rounded-full bg-white/20"
                   aria-label={`Slide ${i + 1}`}
                   aria-current={i === current ? "true" : undefined}
                 >
