@@ -87,17 +87,17 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
         </div>
       ) : null}
 
-      {/* Title — 2.25rem (36px) on mobile for strong hero presence */}
-      <Heading className="text-[2.25rem] sm:text-[clamp(2rem,6vw,4.5rem)] font-black leading-[0.92] tracking-tight text-white [text-shadow:0_1px_12px_rgba(0,0,0,0.7)]">
+      {/* Title */}
+      <Heading className="text-[2.25rem] sm:text-[clamp(2rem,6vw,4.5rem)] font-black leading-[0.92] -tracking-[0.01em] sm:tracking-tight text-white [text-shadow:0_1px_12px_rgba(0,0,0,0.7)]">
         {titleText}
       </Heading>
 
-      {/* Divider — small on mobile, larger on desktop */}
-      <div className="mt-3 h-[3px] w-10 rounded-full bg-primary sm:mt-6 sm:h-1 sm:w-20" />
+      {/* Divider */}
+      <div className="mt-3.5 h-[3px] w-10 rounded-full bg-primary sm:mt-6 sm:h-1 sm:w-20" />
 
       {/* Subtitle */}
       {subtitleText ? (
-        <p className="mt-2.5 sm:mt-5 max-w-xl text-[0.875rem] sm:text-[clamp(0.95rem,1.5vw,1.25rem)] leading-snug sm:leading-relaxed text-white/80 sm:text-white/80">
+        <p className="mt-3 sm:mt-5 max-w-xl text-[0.9rem] sm:text-[clamp(0.95rem,1.5vw,1.25rem)] leading-snug sm:leading-relaxed text-white/85 sm:text-white/80">
           {subtitleText}
         </p>
       ) : null}
@@ -130,10 +130,10 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
             className="
               inline-flex w-full items-center justify-center
               rounded-xl px-5 py-2.5 sm:px-7 sm:py-3.5
-              text-[13px] sm:text-[15px] font-semibold text-white/70 sm:font-semibold sm:text-white/85
+              text-[13px] sm:text-[15px] font-semibold text-white/75 sm:font-semibold sm:text-white/85
               border-0 sm:border sm:border-white/20
               bg-transparent sm:bg-white/[0.07]
-              underline decoration-white/25 underline-offset-4 sm:no-underline
+              underline decoration-white/30 underline-offset-4 sm:no-underline
               active:text-white
               hover:text-white hover:bg-white/[0.1]
               backdrop-blur-sm
@@ -255,7 +255,7 @@ export default function HeroCarousel({ slides }: Props) {
               <button
                 type="button"
                 onClick={() => goTo(current - 1)}
-                className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/20 bg-white/[0.08] text-white/70 active:bg-white/25 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
+                className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/25 bg-white/[0.08] text-white/70 active:bg-white/25 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
                 aria-label="Slide anterior"
               >
                 <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -265,7 +265,7 @@ export default function HeroCarousel({ slides }: Props) {
               <button
                 type="button"
                 onClick={() => goTo(current + 1)}
-                className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/20 bg-white/[0.08] text-white/70 active:bg-white/25 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
+                className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/25 bg-white/[0.08] text-white/70 active:bg-white/25 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
                 aria-label="Próximo slide"
               >
                 <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
