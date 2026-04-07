@@ -16,6 +16,8 @@ export default function SiteHeroAdminPage() {
     setImageFile,
     videoPreview,
     imagePreview,
+    errors,
+    hasErrors,
     handleSave,
     handleBack,
   } = useHeroAdmin();
@@ -63,7 +65,7 @@ export default function SiteHeroAdminPage() {
           </div>
 
           <button
-            disabled={saving}
+            disabled={saving || hasErrors}
             onClick={handleSave}
             className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 hover:opacity-90 disabled:opacity-50"
           >
@@ -92,6 +94,8 @@ export default function SiteHeroAdminPage() {
               onVideoFileChange={setVideoFile}
               imageFile={imageFile}
               onImageFileChange={setImageFile}
+              errors={errors}
+              hasErrors={hasErrors}
               saving={saving}
               onSave={handleSave}
             />

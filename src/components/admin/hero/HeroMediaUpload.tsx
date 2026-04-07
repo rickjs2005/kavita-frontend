@@ -1,12 +1,20 @@
 // src/components/admin/hero/HeroMediaUpload.tsx
 "use client";
 
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 type Props = {
   id: string;
   label: string;
   hint: string;
   accept: string;
+  maxBytes: number;
   file: File | null;
+  error?: string;
   onFileChange: (file: File | null) => void;
 };
 
@@ -15,19 +23,31 @@ export default function HeroMediaUpload({
   label,
   hint,
   accept,
+  maxBytes,
   file,
+  error,
   onFileChange,
 }: Props) {
+  const maxLabel = formatSize(maxBytes);
+
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3 sm:p-4">
+    <div
+      className={`rounded-2xl border p-3 sm:p-4 ${
+        error
+          ? "border-red-500/50 bg-red-500/5"
+          : "border-white/10 bg-black/20"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <label htmlFor={id} className="block text-sm font-medium text-white/90">
             {label}
           </label>
-          <p className="text-xs text-white/55 mt-1">{hint}</p>
+          <p className="text-xs text-white/55 mt-1">
+            {hint} Máx. {maxLabel}.
+          </p>
         </div>
-        {file ? (
+        {file && !error ? (
           <span className="shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70">
             Selecionado
           </span>
@@ -37,16 +57,18 @@ export default function HeroMediaUpload({
       <div className="mt-3">
         <label
           htmlFor={id}
-          className="group relative flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-4 hover:bg-white/[0.05] transition"
+          className={`group relative flex cursor-pointer items-center justify-between rounded-xl border border-dashed px-4 py-4 transition ${
+            error
+              ? "border-red-500/30 bg-red-500/5 hover:bg-red-500/10"
+              : "border-white/15 bg-white/[0.03] hover:bg-white/[0.05]"
+          }`}
         >
           <div className="min-w-0">
             <p className="text-sm text-white/80">
               {file ? file.name : "Clique para enviar o arquivo"}
             </p>
             <p className="text-xs text-white/50 truncate">
-              {file
-                ? `${Math.max(1, Math.round(file.size / 1024 / 1024))} MB`
-                : accept}
+              {file ? formatSize(file.size) : accept}
             </p>
           </div>
 
@@ -64,6 +86,10 @@ export default function HeroMediaUpload({
           />
         </label>
       </div>
+
+      {error ? (
+        <p className="mt-2 text-xs text-red-400">{error}</p>
+      ) : null}
     </div>
   );
 }

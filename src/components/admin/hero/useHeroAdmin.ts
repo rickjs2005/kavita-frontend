@@ -1,11 +1,23 @@
 // src/components/admin/hero/useHeroAdmin.ts
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import type { HeroConfig } from "./types";
+
+// ── Limites (alinhados com o backend) ───────────────────────────────────────
+export const LIMITS = {
+  title: 255,
+  subtitle: 500,
+  button_label: 80,
+  button_href: 255,
+  videoMaxBytes: 50 * 1024 * 1024, // 50 MB
+  imageMaxBytes: 5 * 1024 * 1024,  // 5 MB
+} as const;
+
+export type FieldErrors = Partial<Record<string, string>>;
 
 const DEFAULTS: HeroConfig = {
   hero_video_url: "",
@@ -15,6 +27,55 @@ const DEFAULTS: HeroConfig = {
   button_label: "Saiba Mais",
   button_href: "/drones",
 };
+
+function validateFields(
+  config: HeroConfig,
+  videoFile: File | null,
+  imageFile: File | null,
+): FieldErrors {
+  const errors: FieldErrors = {};
+
+  if ((config.title || "").length > LIMITS.title) {
+    errors.title = `Máximo ${LIMITS.title} caracteres.`;
+  }
+  if ((config.subtitle || "").length > LIMITS.subtitle) {
+    errors.subtitle = `Máximo ${LIMITS.subtitle} caracteres.`;
+  }
+  if ((config.button_label || "").length > LIMITS.button_label) {
+    errors.button_label = `Máximo ${LIMITS.button_label} caracteres.`;
+  }
+  if ((config.button_href || "").length > LIMITS.button_href) {
+    errors.button_href = `Máximo ${LIMITS.button_href} caracteres.`;
+  }
+
+  const href = (config.button_href || "").trim();
+  if (
+    href &&
+    !href.startsWith("/") &&
+    !href.startsWith("http://") &&
+    !href.startsWith("https://")
+  ) {
+    errors.button_href = 'Deve começar com "/" ou "http(s)://".';
+  }
+
+  if (videoFile) {
+    if (!videoFile.type.startsWith("video/")) {
+      errors.video = "Arquivo precisa ser um vídeo.";
+    } else if (videoFile.size > LIMITS.videoMaxBytes) {
+      errors.video = `Vídeo muito grande (máx. ${LIMITS.videoMaxBytes / 1024 / 1024} MB).`;
+    }
+  }
+
+  if (imageFile) {
+    if (!imageFile.type.startsWith("image/")) {
+      errors.image = "Arquivo precisa ser uma imagem.";
+    } else if (imageFile.size > LIMITS.imageMaxBytes) {
+      errors.image = `Imagem muito grande (máx. ${LIMITS.imageMaxBytes / 1024 / 1024} MB).`;
+    }
+  }
+
+  return errors;
+}
 
 export function useHeroAdmin() {
   const router = useRouter();
@@ -42,6 +103,14 @@ export function useHeroAdmin() {
       if (imageFile) URL.revokeObjectURL(URL.createObjectURL(imageFile));
     };
   }, [videoFile, imageFile]);
+
+  // Live validation
+  const errors = useMemo(
+    () => validateFields(config, videoFile, imageFile),
+    [config, videoFile, imageFile],
+  );
+
+  const hasErrors = Object.keys(errors).length > 0;
 
   // Load current hero config
   useEffect(() => {
@@ -73,7 +142,12 @@ export function useHeroAdmin() {
     load();
   }, [router]);
 
-  async function handleSave() {
+  const handleSave = useCallback(async () => {
+    if (hasErrors) {
+      toast.error("Corrija os erros antes de salvar.");
+      return;
+    }
+
     try {
       setSaving(true);
       const fd = new FormData();
@@ -113,7 +187,7 @@ export function useHeroAdmin() {
     } finally {
       setSaving(false);
     }
-  }
+  }, [hasErrors, config, videoFile, imageFile, router]);
 
   function handleBack() {
     try {
@@ -146,6 +220,8 @@ export function useHeroAdmin() {
     setImageFile,
     videoPreview,
     imagePreview,
+    errors,
+    hasErrors,
     handleSave,
     handleBack,
   };
