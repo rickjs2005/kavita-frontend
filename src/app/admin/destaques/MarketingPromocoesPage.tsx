@@ -8,6 +8,7 @@ import DeleteButton from "@/components/buttons/DeleteButton";
 import SearchInputProdutos from "@/components/products/SearchInput";
 import CloseButton from "@/components/buttons/CloseButton";
 import apiClient from "@/lib/apiClient";
+import { handleAdminError } from "@/lib/adminErrorHandler";
 import { absUrl } from "@/utils/absUrl";
 
 type Promocao = {
@@ -98,9 +99,7 @@ export default function MarketingPromocoesPage() {
       );
     } catch (e: any) {
       console.error(e);
-      const msg = e?.message || "Falha ao carregar promoções.";
-      setErr(msg);
-      toast.error(msg);
+      handleAdminError(e, { setError: setErr, fallbackMessage: "Falha ao carregar promoções." });
     } finally {
       setLoading(false);
     }
@@ -227,11 +226,7 @@ export default function MarketingPromocoesPage() {
       limparFormulario();
     } catch (error: any) {
       console.error(error);
-      if (error?.status === 401 || error?.status === 403) {
-        toast.error("Sessão expirada. Faça login novamente no admin.");
-        return;
-      }
-      toast.error(error?.message || "Erro ao salvar promoção.");
+      handleAdminError(error, { fallbackMessage: "Erro ao salvar promoção." });
     } finally {
       setSaving(false);
     }
@@ -245,11 +240,7 @@ export default function MarketingPromocoesPage() {
       await buscarPromocoes();
     } catch (e: any) {
       console.error(e);
-      if (e?.status === 401 || e?.status === 403) {
-        toast.error("Sessão expirada. Faça login novamente no admin.");
-        return;
-      }
-      toast.error(e?.message || "Erro ao remover promoção.");
+      handleAdminError(e, { fallbackMessage: "Erro ao remover promoção." });
     }
   }
 
