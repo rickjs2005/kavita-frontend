@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 const TABS = [
   { label: "Marketing & Promoções", href: "/admin/destaques",           exact: true },
-  { label: "Banners Hero",          href: "/admin/destaques/site-hero" },
+  { label: "Carrossel Hero",         href: "/admin/destaques/site-hero" },
 ];
 
 export default function DestaquesLayout({ children }: { children: ReactNode }) {

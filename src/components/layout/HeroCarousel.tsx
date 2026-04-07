@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { HeroSlide } from "@/types/heroSlide";
-import type { HeroData } from "@/types/hero";
 import { absUrl } from "@/utils/absUrl";
 import { sanitizeUrl } from "@/lib/sanitizeHtml";
 
@@ -31,30 +30,28 @@ function resolveMedia(slide: HeroSlide) {
   };
 }
 
-// Convert legacy HeroData to a slide for fallback
-function heroDataToSlide(data: HeroData): HeroSlide {
-  return {
-    id: 0,
-    title: data.title,
-    subtitle: data.subtitle,
-    badge_text: "Tecnologia para o campo",
-    slide_type: "institutional",
-    hero_video_url: data.hero_video_url,
-    hero_video_path: data.hero_video_path,
-    hero_image_url: data.hero_image_url,
-    hero_image_path: data.hero_image_path,
-    button_label: data.button_label,
-    button_href: data.button_href,
-    button_secondary_label: "Falar com um especialista",
-    button_secondary_href: "/contatos",
-    sort_order: 0,
-    is_active: 1,
-    starts_at: null,
-    ends_at: null,
-    created_at: "",
-    updated_at: "",
-  };
-}
+// Static fallback when no slides exist (migration should seed one, but just in case)
+const FALLBACK_SLIDE: HeroSlide = {
+  id: 0,
+  title: "Revolucione sua Gestão Agrícola",
+  subtitle: "Conheça a tecnologia que otimiza o monitoramento e a eficiência no campo.",
+  badge_text: "Tecnologia para o campo",
+  slide_type: "institutional",
+  hero_video_url: null,
+  hero_video_path: null,
+  hero_image_url: null,
+  hero_image_path: null,
+  button_label: "Saiba Mais",
+  button_href: "/drones",
+  button_secondary_label: "Falar com um especialista",
+  button_secondary_href: "/contatos",
+  sort_order: 0,
+  is_active: 1,
+  starts_at: null,
+  ends_at: null,
+  created_at: "",
+  updated_at: "",
+};
 
 // ── Slide Background ────────────────────────────────────────────────────────
 
@@ -62,7 +59,6 @@ function SlideBackground({ slide }: { slide: HeroSlide }) {
   const [videoError, setVideoError] = useState(false);
   const { videoSrc, imageSrc } = resolveMedia(slide);
 
-  // Reset video error when slide changes
   useEffect(() => setVideoError(false), [slide.id]);
 
   if (videoSrc && !videoError) {
@@ -91,9 +87,8 @@ function SlideBackground({ slide }: { slide: HeroSlide }) {
 
 // ── Slide Content ───────────────────────────────────────────────────────────
 
-function SlideContent({ slide }: { slide: HeroSlide }) {
-  const titleText =
-    String(slide.title || "").trim() || "Revolucione sua Gestão Agrícola";
+function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }) {
+  const titleText = String(slide.title || "").trim() || "Revolucione sua Gestão Agrícola";
   const subtitleText = String(slide.subtitle || "").trim();
   const href = normalizeHref(slide.button_href);
   const secondaryHref = slide.button_secondary_href
@@ -106,6 +101,9 @@ function SlideContent({ slide }: { slide: HeroSlide }) {
     informational: "bg-sky-500",
   };
 
+  // First visible slide gets h1 for SEO; subsequent slides get h2
+  const Heading = isFirst ? "h1" : "h2";
+
   return (
     <div className="max-w-3xl">
       {slide.badge_text ? (
@@ -115,7 +113,7 @@ function SlideContent({ slide }: { slide: HeroSlide }) {
         </div>
       ) : null}
 
-      <h2
+      <Heading
         className="
           font-extrabold tracking-tight text-white
           text-[clamp(1.75rem,4.8vw,4.2rem)]
@@ -123,7 +121,7 @@ function SlideContent({ slide }: { slide: HeroSlide }) {
         "
       >
         {titleText}
-      </h2>
+      </Heading>
 
       {subtitleText ? (
         <p className="mt-4 text-[clamp(0.95rem,1.6vw,1.35rem)] leading-relaxed text-white/85">
@@ -171,17 +169,10 @@ function SlideContent({ slide }: { slide: HeroSlide }) {
 
 type Props = {
   slides: HeroSlide[];
-  legacyHero?: HeroData;
 };
 
-export default function HeroCarousel({ slides, legacyHero }: Props) {
-  // Fallback: if no slides, use legacy hero data
-  const effectiveSlides =
-    slides.length > 0
-      ? slides
-      : legacyHero
-        ? [heroDataToSlide(legacyHero)]
-        : [];
+export default function HeroCarousel({ slides }: Props) {
+  const effectiveSlides = slides.length > 0 ? slides : [FALLBACK_SLIDE];
 
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -193,7 +184,7 @@ export default function HeroCarousel({ slides, legacyHero }: Props) {
     [total],
   );
 
-  // Autoplay
+  // Autoplay — pauses on hover AND touch
   useEffect(() => {
     if (total <= 1 || paused) return;
     timerRef.current = setInterval(() => {
@@ -204,9 +195,7 @@ export default function HeroCarousel({ slides, legacyHero }: Props) {
     };
   }, [total, paused]);
 
-  if (effectiveSlides.length === 0) {
-    return null;
-  }
+  if (effectiveSlides.length === 0) return null;
 
   const slide = effectiveSlides[current];
 
@@ -220,8 +209,9 @@ export default function HeroCarousel({ slides, legacyHero }: Props) {
       aria-label="Carrossel de destaques"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      onTouchStart={() => setPaused(true)}
+      onTouchEnd={() => setPaused(false)}
     >
-      {/* Background — keyed by slide id for transition */}
       <div key={slide.id} className="absolute inset-0 animate-[fadeIn_0.6s_ease-out]">
         <SlideBackground slide={slide} />
       </div>
@@ -242,18 +232,17 @@ export default function HeroCarousel({ slides, legacyHero }: Props) {
       >
         <div className="mx-auto w-full max-w-6xl">
           <div key={slide.id} className="animate-[fadeIn_0.5s_ease-out]">
-            <SlideContent slide={slide} />
+            <SlideContent slide={slide} isFirst={current === 0} />
           </div>
 
           {/* Navigation */}
           {total > 1 ? (
             <div className="mt-8 flex items-center gap-4">
-              {/* Arrows */}
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => goTo(current - 1)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/80 hover:bg-white/10 backdrop-blur transition"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/80 hover:bg-white/10 backdrop-blur transition"
                   aria-label="Slide anterior"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -263,7 +252,7 @@ export default function HeroCarousel({ slides, legacyHero }: Props) {
                 <button
                   type="button"
                   onClick={() => goTo(current + 1)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/80 hover:bg-white/10 backdrop-blur transition"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/80 hover:bg-white/10 backdrop-blur transition"
                   aria-label="Próximo slide"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -272,24 +261,22 @@ export default function HeroCarousel({ slides, legacyHero }: Props) {
                 </button>
               </div>
 
-              {/* Dots */}
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 {effectiveSlides.map((s, i) => (
                   <button
                     key={s.id}
                     type="button"
                     onClick={() => goTo(i)}
-                    className={`h-2 rounded-full transition-all ${
+                    className={`h-2.5 rounded-full transition-all ${
                       i === current
-                        ? "w-6 bg-white"
-                        : "w-2 bg-white/40 hover:bg-white/60"
+                        ? "w-7 bg-white"
+                        : "w-2.5 bg-white/40 hover:bg-white/60"
                     }`}
                     aria-label={`Ir para slide ${i + 1}`}
                   />
                 ))}
               </div>
 
-              {/* Counter */}
               <span className="text-xs text-white/50 tabular-nums">
                 {current + 1}/{total}
               </span>

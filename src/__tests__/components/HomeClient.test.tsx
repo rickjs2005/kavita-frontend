@@ -90,24 +90,13 @@ const defaultShop: PublicShopSettings = {
   footer_tagline: "",
 };
 
-const defaultHero = {
-  hero_video_url: "",
-  hero_video_path: "",
-  hero_image_url: "",
-  hero_image_path: "",
-  title: "",
-  subtitle: "",
-  button_label: "Saiba Mais",
-  button_href: "/drones",
-};
-
 describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("positivo: renderiza estrutura base e mostra mensagem quando categories.length === 0", () => {
-    render(<HomeClient categories={[]} shop={defaultShop} hero={defaultHero} heroSlides={[]} />);
+    render(<HomeClient categories={[]} shop={defaultShop} heroSlides={[]} />);
 
     // Componentes base
     expect(screen.getByTestId("HeroSection")).toBeInTheDocument();
@@ -131,7 +120,7 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
       { id: 2, name: "pets", slug: "pets" },
     ];
 
-    render(<HomeClient categories={categories} shop={defaultShop} hero={defaultHero} heroSlides={[]} />);
+    render(<HomeClient categories={categories} shop={defaultShop} heroSlides={[]} />);
 
     // Não deve mostrar mensagem de vazio
     expect(
@@ -179,7 +168,7 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
       footer_tagline: "Nova tagline vinda do backend",
     };
 
-    render(<HomeClient categories={[]} shop={shop} hero={defaultHero} heroSlides={[]} />);
+    render(<HomeClient categories={[]} shop={shop} heroSlides={[]} />);
 
     expect(screen.getByTestId("Footer.store_name")).toHaveTextContent(
       "Kavita X",
@@ -211,7 +200,7 @@ describe("HomeClient (src/components/home/HomeClient.tsx)", () => {
   it("positivo: quando env não existe, HomeClient ainda renderiza sem fetch", () => {
     delete process.env.NEXT_PUBLIC_API_URL;
 
-    render(<HomeClient categories={[]} shop={defaultShop} hero={defaultHero} heroSlides={[]} />);
+    render(<HomeClient categories={[]} shop={defaultShop} heroSlides={[]} />);
 
     // Componente estático - deve renderizar sem precisar de fetch
     expect(screen.getByTestId("Footer")).toBeInTheDocument();

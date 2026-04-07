@@ -2,7 +2,6 @@
 "use client";
 
 import type { PublicCategory } from "@/server/data/categories";
-import type { HeroData } from "@/types/hero";
 import type { HeroSlide } from "@/types/heroSlide";
 import type { PublicShopSettings } from "@/server/data/shopSettings";
 
@@ -16,26 +15,21 @@ import Footer from "@/components/layout/Footer";
 type Props = {
   categories: PublicCategory[];
   shop: PublicShopSettings;
-  hero: HeroData;
   heroSlides: HeroSlide[];
 };
 
-export default function HomeClient({ categories, shop, hero, heroSlides }: Props) {
-
+export default function HomeClient({ categories, shop, heroSlides }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      {/* HERO CAROUSEL */}
-      <HeroCarousel slides={heroSlides} legacyHero={hero} />
+      <HeroCarousel slides={heroSlides} />
 
       <section className="mx-auto w-full max-w-7xl flex-1 px-4 pb-10 pt-6 sm:pt-8">
-        {/* DESTAQUES */}
         <section className="mb-6">
           <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <DestaquesSection />
           </div>
         </section>
 
-        {/* CATÁLOGO */}
         <section className="space-y-6">
           <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -65,14 +59,10 @@ export default function HomeClient({ categories, shop, hero, heroSlides }: Props
                     <h3 className="text-base font-semibold text-slate-900 sm:text-lg capitalize">
                       {name}
                     </h3>
-                    <a
-                      href={`/categorias/${slug}`}
-                      className="text-xs font-medium text-emerald-700 hover:text-emerald-500"
-                    >
+                    <a href={`/categorias/${slug}`} className="text-xs font-medium text-emerald-700 hover:text-emerald-500">
                       Ver todos
                     </a>
                   </div>
-
                   <div className="rounded-2xl border border-slate-200 bg-white p-3">
                     <ProdutosPorCategoria categoria={slug} limit={12} />
                   </div>
@@ -82,7 +72,6 @@ export default function HomeClient({ categories, shop, hero, heroSlides }: Props
           )}
         </section>
 
-        {/* SERVIÇOS */}
         <section className="mt-10 space-y-4">
           <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -96,14 +85,10 @@ export default function HomeClient({ categories, shop, hero, heroSlides }: Props
                 Veterinários, agrônomos, mecânicos e outros prestadores.
               </p>
             </div>
-            <a
-              href="/servicos"
-              className="mt-2 inline-flex items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-400 sm:mt-0"
-            >
+            <a href="/servicos" className="mt-2 inline-flex items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-400 sm:mt-0">
               Ver todos os serviços
             </a>
           </header>
-
           <div className="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4">
             <ServicosSection />
           </div>
