@@ -81,36 +81,36 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
     <>
       {/* Badge */}
       {slide.badge_text ? (
-        <div className={`mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-lg border bg-black/30 px-3 py-1 backdrop-blur-md text-[12px] sm:text-[13px] font-semibold tracking-wider sm:tracking-widest uppercase ${typeAccent[slide.slide_type] || "border-primary/40 text-primary"}`}>
+        <div className={`mb-3 sm:mb-6 inline-flex items-center gap-2 rounded-lg border bg-black/30 px-3 py-1 backdrop-blur-md text-[11px] sm:text-[13px] font-semibold tracking-wider sm:tracking-widest uppercase ${typeAccent[slide.slide_type] || "border-primary/40 text-primary"}`}>
           {slide.badge_text}
         </div>
       ) : null}
 
-      {/* Title — larger base size for mobile impact */}
-      <Heading className="text-[1.75rem] sm:text-[clamp(2rem,6vw,4.5rem)] font-black leading-[0.95] tracking-tight text-white [text-shadow:0_2px_20px_rgba(0,0,0,0.5)]">
+      {/* Title */}
+      <Heading className="text-[2rem] sm:text-[clamp(2rem,6vw,4.5rem)] font-black leading-[0.95] tracking-tight text-white [text-shadow:0_1px_16px_rgba(0,0,0,0.6)]">
         {titleText}
       </Heading>
 
-      {/* Divider — hidden on mobile, shown on sm+ */}
+      {/* Divider — desktop only */}
       <div className="hidden sm:block mt-6 h-1 w-20 rounded-full bg-primary" />
 
       {/* Subtitle */}
       {subtitleText ? (
-        <p className="mt-3 sm:mt-5 max-w-xl text-[0.9rem] sm:text-[clamp(0.95rem,1.5vw,1.25rem)] leading-relaxed text-white/80">
+        <p className="mt-2.5 sm:mt-5 max-w-xl text-[0.875rem] sm:text-[clamp(0.95rem,1.5vw,1.25rem)] leading-relaxed text-white/75 sm:text-white/80">
           {subtitleText}
         </p>
       ) : null}
 
       {/* CTAs */}
-      <div className="mt-6 sm:mt-10 flex flex-col gap-2.5 sm:gap-3 sm:flex-row sm:items-center">
+      <div className="mt-5 sm:mt-10 flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center">
         <Link
           href={href}
           className="
             group inline-flex w-full items-center justify-center gap-2
-            rounded-xl bg-primary px-6 py-3 sm:px-7 sm:py-3.5
+            rounded-xl bg-primary px-5 py-3 sm:px-7 sm:py-3.5
             text-[14px] sm:text-[15px] font-bold text-white
             shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_4px_20px_rgba(53,146,147,0.35)]
-            active:scale-[0.98]
+            active:scale-[0.97]
             hover:brightness-110 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_6px_28px_rgba(53,146,147,0.5)]
             transition-all duration-200
             sm:w-auto
@@ -128,10 +128,11 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
             href={secondaryHref}
             className="
               inline-flex w-full items-center justify-center
-              rounded-xl px-6 py-2.5 sm:px-7 sm:py-3.5
-              text-[13px] sm:text-[15px] font-medium sm:font-semibold text-white/70 sm:text-white/85
-              border border-white/15 sm:border-white/20
-              bg-transparent sm:bg-white/[0.07]
+              rounded-xl px-5 py-2.5 sm:px-7 sm:py-3.5
+              text-[13px] sm:text-[15px] font-medium text-white/65 sm:font-semibold sm:text-white/85
+              border border-white/10 sm:border-white/20
+              bg-white/[0.04] sm:bg-white/[0.07]
+              active:bg-white/[0.12]
               hover:text-white hover:bg-white/[0.1]
               backdrop-blur-sm
               transition-all duration-200
@@ -180,7 +181,7 @@ export default function HeroCarousel({ slides }: Props) {
     <section
       className="
         relative w-full overflow-hidden flex flex-col
-        min-h-[50vh] sm:min-h-[80vh] lg:min-h-[92vh]
+        min-h-[52vh] sm:min-h-[80vh] lg:min-h-[92vh]
       "
       aria-label="Carrossel de destaques"
       aria-roledescription="carousel"
@@ -195,14 +196,14 @@ export default function HeroCarousel({ slides }: Props) {
       </div>
 
       {/* ── Overlay ── */}
-      {/* Mobile: stronger overall gradient (full-width text needs uniform contrast) */}
-      {/* Desktop: directional gradient (text on left, media on right) */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 via-50% to-black/30 sm:from-black/80 sm:via-black/30 sm:via-55% sm:to-black/20" />
+      {/* Mobile: lighter overall, concentrated at bottom behind text */}
+      {/* Desktop: directional (left darker for text, right shows media) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 via-45% to-black/15 sm:from-black/80 sm:via-black/30 sm:via-55% sm:to-black/20" />
       <div className="absolute inset-0 hidden sm:block bg-gradient-to-r from-black/40 via-transparent via-50% to-transparent" />
       <div className="absolute inset-0 [background:radial-gradient(ellipse_70%_40%_at_50%_0%,rgba(53,146,147,0.08),transparent_70%)]" />
 
       {/* ── Content ── */}
-      <div className="relative z-10 flex flex-1 flex-col justify-end sm:justify-center px-4 sm:px-8 lg:px-14 pb-0 sm:pb-0">
+      <div className="relative z-10 flex flex-1 flex-col justify-end sm:justify-center px-4 sm:px-8 lg:px-14 pb-4 sm:pb-0">
         <div className="mx-auto w-full max-w-7xl">
           <div className="max-w-2xl lg:max-w-3xl" key={slide.id}>
             <div className="animate-[fadeIn_0.5s_ease-out]">
@@ -214,7 +215,7 @@ export default function HeroCarousel({ slides }: Props) {
 
       {/* ── Navigation ── */}
       {total > 1 ? (
-        <div className="relative z-10 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 sm:px-8 sm:pb-8 lg:px-14">
+        <div className="relative z-10 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-8 sm:pb-8 sm:pt-0 lg:px-14">
           <div className="mx-auto flex w-full max-w-7xl items-center gap-3 sm:gap-5">
             {/* Progress bars */}
             <div className="flex flex-1 items-center gap-1 sm:gap-1.5" key={progressKey}>
@@ -223,7 +224,7 @@ export default function HeroCarousel({ slides }: Props) {
                   key={i}
                   type="button"
                   onClick={() => goTo(i)}
-                  className="group relative h-[3px] sm:h-1 flex-1 max-w-[100px] sm:max-w-[120px] overflow-hidden rounded-full bg-white/15"
+                  className="group relative h-[3px] sm:h-1 flex-1 max-w-[80px] sm:max-w-[120px] overflow-hidden rounded-full bg-white/20"
                   aria-label={`Slide ${i + 1}`}
                   aria-current={i === current ? "true" : undefined}
                 >
@@ -232,7 +233,7 @@ export default function HeroCarousel({ slides }: Props) {
                       i === current
                         ? `absolute inset-y-0 left-0 rounded-full bg-primary ${!paused ? "animate-[progressBar_linear_forwards]" : "w-full"}`
                         : i < current
-                          ? "absolute inset-0 rounded-full bg-white/40"
+                          ? "absolute inset-0 rounded-full bg-white/50"
                           : ""
                     }
                     style={i === current && !paused ? { animationDuration: `${AUTOPLAY_MS}ms` } : undefined}
@@ -252,20 +253,20 @@ export default function HeroCarousel({ slides }: Props) {
               <button
                 type="button"
                 onClick={() => goTo(current - 1)}
-                className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-white/60 active:bg-white/20 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
+                className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/20 bg-white/[0.08] text-white/70 active:bg-white/25 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
                 aria-label="Slide anterior"
               >
-                <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <button
                 type="button"
                 onClick={() => goTo(current + 1)}
-                className="inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-white/60 active:bg-white/20 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
+                className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/20 bg-white/[0.08] text-white/70 active:bg-white/25 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
                 aria-label="Próximo slide"
               >
-                <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
