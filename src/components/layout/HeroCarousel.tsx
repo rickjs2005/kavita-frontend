@@ -70,17 +70,21 @@ function SlideBackground({ slide }: { slide: HeroSlide }) {
         loop
         muted
         playsInline
-        preload="metadata"
+        preload="auto"
         poster={imageSrc}
+        disablePictureInPicture
         onError={() => setVideoError(true)}
       />
     );
   }
 
   return (
-    <div
-      className="absolute inset-0 bg-cover bg-center"
-      style={{ backgroundImage: `url('${sanitizeUrl(imageSrc) || DEFAULT_IMG}')` }}
+    <img
+      className="absolute inset-0 h-full w-full object-cover"
+      src={sanitizeUrl(imageSrc) || DEFAULT_IMG}
+      alt=""
+      loading="eager"
+      decoding="async"
     />
   );
 }
@@ -216,8 +220,8 @@ export default function HeroCarousel({ slides }: Props) {
         <SlideBackground slide={slide} />
       </div>
 
-      {/* Overlay — single layer, lighter to keep video visible */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/35 to-black/60" />
+      {/* Overlay — light top, very light middle (video shows through), stronger base (text area) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/65" />
 
       {/* Content */}
       <div

@@ -264,7 +264,8 @@ export default function SlideForm({ slideId }: Props) {
                       <p className="text-sm">Envie uma imagem ou vídeo</p>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent" />
+                  {/* Matches public carousel overlay (from-black/40 via-black/20 to-black/65 top-to-bottom = bottom-to-top here) */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-black/40" />
                   <div className="relative z-10 flex h-full items-end p-4 sm:p-6">
                     <div className="max-w-xl">
                       {form.badge_text ? (
