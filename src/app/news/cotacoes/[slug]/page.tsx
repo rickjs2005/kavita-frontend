@@ -18,6 +18,7 @@ import {
   convertToLocalUnit,
   simplifySource,
 } from "@/utils/kavita-news/cotacoes";
+import { MercadoCafeCTA } from "@/components/mercado-do-cafe/MercadoCafeCTA";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -504,6 +505,14 @@ export default async function CotacaoDetailPage({ params }: PageProps) {
               </div>
             </section>
           )}
+
+          {/* CTA Mercado do Café */}
+          <MercadoCafeCTA
+            title="Está acompanhando a cotação?"
+            description="Conheça corretoras de café que atuam na Zona da Mata e negocie com confiança."
+            href="/mercado-do-cafe/corretoras"
+            buttonLabel="Encontrar Corretoras"
+          />
 
           {/* Disclaimer */}
           <p className="text-xs text-zinc-400 text-center leading-relaxed max-w-xl mx-auto">

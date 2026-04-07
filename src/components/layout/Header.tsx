@@ -65,6 +65,7 @@ const EXCLUDED_ROUTES = [
   "/admin/frete",
   "/admin/drones",
   "/admin/destaques/site-hero",
+  "/admin/mercado-do-cafe",
 ] as const;
 
 function isActiveCategory(c: PublicCategory) {
@@ -240,6 +241,19 @@ export default function Header({ categories, shop }: HeaderProps) {
                 Kavita News
               </Link>
 
+              {/* Mercado do Café (desktop) */}
+              <Link
+                href="/mercado-do-cafe"
+                className={`hidden md:inline-flex items-center text-sm font-semibold tracking-wide rounded-full px-4 py-1.5 border transition-all
+                  ${
+                    pathname.startsWith("/mercado-do-cafe")
+                      ? "border-white text-white bg-white/10"
+                      : "border-white/25 text-white/95 hover:border-white hover:text-white"
+                  }`}
+              >
+                ☕ Mercado do Café
+              </Link>
+
               {/* atendimento desktop */}
               <Link
                 href="/contato"
@@ -368,6 +382,15 @@ export default function Header({ categories, shop }: HeaderProps) {
                   href="/news"
                 >
                   Kavita News
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  className="block rounded-xl px-3.5 py-2.5 text-sm font-semibold text-header hover:bg-gray-100"
+                  href="/mercado-do-cafe"
+                >
+                  ☕ Mercado do Café
                 </Link>
               </li>
 

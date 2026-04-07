@@ -28,7 +28,8 @@ export function absUrl(raw?: string | null): string {
     src.startsWith("news/") ||
     src.startsWith("drones/") ||
     src.startsWith("hero/") ||
-    src.startsWith("services/")
+    src.startsWith("services/") ||
+    src.startsWith("corretoras/")
   ) {
     return `${API_BASE}/uploads/${src}`;
   }

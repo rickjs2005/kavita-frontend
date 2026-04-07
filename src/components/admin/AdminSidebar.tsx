@@ -78,6 +78,12 @@ const navItems: NavItem[] = [
     permission: "news_view",
   },
   {
+    label: "Mercado do Café",
+    href: "/admin/mercado-do-cafe",
+    icon: "☕",
+    permission: "mercado_cafe_manage",
+  },
+  {
     label: "kavita-drones",
     href: "/admin/drones",
     icon: "🚁",

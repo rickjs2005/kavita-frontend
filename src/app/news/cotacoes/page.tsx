@@ -5,6 +5,7 @@ import { SectionHeader } from "@/components/news/SectionHeader";
 import { EmptyState } from "@/components/news/EmptyState";
 import { CotacaoCard } from "@/components/news/CotacaoCard";
 import { safeNum, describeTrend } from "@/utils/kavita-news/cotacoes";
+import { MercadoCafeCTA } from "@/components/mercado-do-cafe/MercadoCafeCTA";
 
 type FetchResult =
   | { status: "ok"; items: PublicCotacao[] }
@@ -134,6 +135,9 @@ export default async function CotacoesListPage() {
                 Variação em relação ao fechamento anterior. Valores são referência — consulte sua cooperativa para preços locais.
               </p>
             </section>
+
+            {/* CTA Mercado do Café */}
+            <MercadoCafeCTA />
 
             {/* Cotação cards */}
             <section
