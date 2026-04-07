@@ -4,6 +4,8 @@ Frontend da plataforma **Kavita**, um sistema de e-commerce para o setor agropec
 
 Construído com **Next.js 15 (App Router)**, **React 19**, **TypeScript** e **Tailwind CSS**. Consome uma API REST Node.js/Express hospedada em repositório separado ([`kavita-backend`](../kavita-backend)).
 
+> **Documentação completa do projeto:** consulte [`docs/`](../docs/) na raiz do repositório para guias de onboarding, arquitetura, deploy, troubleshooting e fluxos críticos.
+
 ---
 
 ## Sumário
