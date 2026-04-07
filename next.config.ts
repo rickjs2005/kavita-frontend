@@ -100,6 +100,7 @@ const nextConfig: NextConfig = {
       scriptSrc,
       "style-src 'self' 'unsafe-inline'", // ver nota acima sobre unsafe-inline em style-src
       `img-src 'self' data: blob: ${apiHosts}`,
+      `media-src 'self' blob: ${apiHosts}`,
       "font-src 'self' data:",
       `connect-src 'self' ${apiHosts}`,
       "frame-ancestors 'none'",
@@ -121,6 +122,7 @@ const nextConfig: NextConfig = {
       scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       `img-src 'self' data: blob: ${apiHosts}`,
+      `media-src 'self' blob: ${apiHosts}`,
       "font-src 'self' data:",
       `connect-src 'self' ${apiHosts}`,
       "frame-ancestors 'self'",
