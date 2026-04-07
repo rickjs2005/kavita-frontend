@@ -6,6 +6,7 @@ import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
 import Header from "../components/layout/Header";
 import AuthExpiredHandler from "@/components/auth/AuthExpiredHandler";
+import ConditionalHeader from "@/components/layout/ConditionalHeader";
 
 import { fetchPublicCategories } from "@/server/data/categories";
 import { fetchPublicShopSettings } from "@/server/data/shopSettings";
@@ -46,9 +47,13 @@ export default async function RootLayout({
       <body className="min-h-screen bg-white text-gray-900 antialiased">
         <AuthProvider>
           <CartProvider>
-            <Header categories={categories} shop={shop} />
+            <ConditionalHeader>
+              <Header categories={categories} shop={shop} />
+            </ConditionalHeader>
             <main id="conteudo">{children}</main>
-            <AuthExpiredHandler />
+            <ConditionalHeader>
+              <AuthExpiredHandler />
+            </ConditionalHeader>
             <Toaster position="top-right" />
           </CartProvider>
         </AuthProvider>

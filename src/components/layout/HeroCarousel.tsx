@@ -216,10 +216,8 @@ export default function HeroCarousel({ slides }: Props) {
         <SlideBackground slide={slide} />
       </div>
 
-      {/* Overlays */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black/75" />
-      <div className="absolute inset-0 [background:radial-gradient(60%_60%_at_50%_40%,rgba(53,146,147,0.25),transparent_60%)]" />
-      <div className="absolute inset-0 shadow-[inset_0_-120px_160px_rgba(0,0,0,0.65)]" />
+      {/* Overlay — single layer, lighter to keep video visible */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/35 to-black/60" />
 
       {/* Content */}
       <div

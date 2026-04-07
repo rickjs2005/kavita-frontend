@@ -264,7 +264,7 @@ export default function SlideForm({ slideId }: Props) {
                       <p className="text-sm">Envie uma imagem ou vídeo</p>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent" />
                   <div className="relative z-10 flex h-full items-end p-4 sm:p-6">
                     <div className="max-w-xl">
                       {form.badge_text ? (
