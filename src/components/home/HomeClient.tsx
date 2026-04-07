@@ -2,6 +2,7 @@
 "use client";
 
 import type { PublicCategory } from "@/server/data/categories";
+import type { HeroData } from "@/server/data/hero";
 import type { PublicShopSettings } from "@/server/data/shopSettings";
 
 import HeroSection from "@/components/layout/HeroSection";
@@ -14,14 +15,15 @@ import Footer from "@/components/layout/Footer";
 type Props = {
   categories: PublicCategory[];
   shop: PublicShopSettings;
+  hero: HeroData;
 };
 
-export default function HomeClient({ categories, shop }: Props) {
+export default function HomeClient({ categories, shop, hero }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
       {/* HERO */}
-      <HeroSection />
+      <HeroSection data={hero} />
 
       {/* ⛔ NÃO usar <main> aqui */}
       <section className="mx-auto w-full max-w-7xl flex-1 px-4 pb-10 pt-6 sm:pt-8">

@@ -1,105 +1,49 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import type { HeroData } from "@/server/data/hero";
 import { absUrl } from "@/utils/absUrl";
-import apiClient from "@/lib/apiClient";
 import { sanitizeUrl } from "@/lib/sanitizeHtml";
-
-type HeroConfig = {
-  hero_video_url?: string;
-  hero_video_path?: string;
-
-  hero_image_url?: string;
-  hero_image_path?: string;
-
-  // ✅ NOVO (opcional)
-  title?: string;
-  subtitle?: string;
-
-  button_label?: string;
-  button_href?: string;
-};
 
 const DEFAULT_IMG = "/images/drone/fallback-hero1.jpg";
 
 function normalizeHref(href?: string | null) {
   const v = String(href || "").trim();
   if (!v) return "/drones";
-  // Normaliza primeiro (garante que paths sem barra inicial ficam relativos)
   const normalized =
     v.startsWith("/") || v.startsWith("http://") || v.startsWith("https://")
       ? v
       : `/${v}`;
-  // Bloqueia javascript:, data:, vbscript: e URLs malformadas
   return sanitizeUrl(normalized) || "/drones";
 }
 
-export default function HeroSection() {
+type Props = {
+  data: HeroData;
+};
+
+export default function HeroSection({ data }: Props) {
   const [videoError, setVideoError] = useState(false);
 
-  const [cfg, setCfg] = useState<HeroConfig>({
-    hero_video_url: "",
-    hero_image_url: DEFAULT_IMG,
-
-    // ✅ NOVO (defaults vazios, mas o render tem fallback)
-    title: "",
-    subtitle: "",
-
-    button_label: "Saiba Mais",
-    button_href: "/drones",
-  });
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = (await apiClient.get("/api/public/site-hero")) as Partial<HeroConfig>;
-
-        setCfg((p) => ({
-          ...p,
-          hero_video_url: data.hero_video_url ?? p.hero_video_url,
-          hero_video_path: data.hero_video_path ?? p.hero_video_path,
-          hero_image_url: data.hero_image_url ?? p.hero_image_url,
-          hero_image_path: data.hero_image_path ?? p.hero_image_path,
-
-          // ✅ NOVO
-          title: data.title ?? p.title,
-          subtitle: data.subtitle ?? p.subtitle,
-
-          button_label: data.button_label ?? p.button_label,
-          button_href: data.button_href ?? p.button_href,
-        }));
-
-        setVideoError(false);
-      } catch {
-        // mantém defaults
-      }
-    }
-    load();
-  }, []);
-
   const videoSrc = useMemo(() => {
-    const raw = cfg.hero_video_url || cfg.hero_video_path || "";
-    // Return empty string (not a placeholder) so !videoSrc correctly signals "no video"
+    const raw = data.hero_video_url || data.hero_video_path || "";
     if (!raw) return "";
     return absUrl(raw);
-  }, [cfg.hero_video_url, cfg.hero_video_path]);
+  }, [data.hero_video_url, data.hero_video_path]);
 
   const heroImg = useMemo(() => {
-    const raw = cfg.hero_image_url || cfg.hero_image_path || DEFAULT_IMG;
-    // Assets estáticos em /public/images/ não passam por absUrl (não são do backend)
+    const raw = data.hero_image_url || data.hero_image_path || DEFAULT_IMG;
     if (raw.startsWith("/images/")) return raw;
     return absUrl(raw);
-  }, [cfg.hero_image_url, cfg.hero_image_path]);
+  }, [data.hero_image_url, data.hero_image_path]);
 
-  const href = normalizeHref(cfg.button_href);
+  const href = normalizeHref(data.button_href);
 
-  // ✅ fallback para manter o copy atual se title/subtitle vierem vazios
   const titleText =
-    String(cfg.title || "").trim() || "Revolucione sua Gestão Agrícola";
+    String(data.title || "").trim() || "Revolucione sua Gestão Agrícola";
 
   const subtitleText =
-    String(cfg.subtitle || "").trim() ||
+    String(data.subtitle || "").trim() ||
     "Conheça a tecnologia que otimiza o monitoramento e a eficiência no campo, com mais controle, mais precisão e decisões melhores.";
 
   return (
@@ -111,7 +55,7 @@ export default function HeroSection() {
       "
       aria-label="Hero do site"
     >
-      {/* Background: vídeo ou imagem */}
+      {/* Background: video ou imagem */}
       {!!videoSrc && !videoError ? (
         <video
           className="absolute inset-0 h-full w-full object-cover"
@@ -136,7 +80,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 [background:radial-gradient(60%_60%_at_50%_40%,rgba(53,146,147,0.25),transparent_60%)]" />
       <div className="absolute inset-0 shadow-[inset_0_-120px_160px_rgba(0,0,0,0.65)]" />
 
-      {/* Conteúdo */}
+      {/* Conteudo */}
       <div
         className="
           relative z-10 w-full
@@ -147,7 +91,7 @@ export default function HeroSection() {
       >
         <div className="mx-auto w-full max-w-6xl">
           <div className="max-w-3xl">
-            {/* Badge opcional (não depende de backend) */}
+            {/* Badge */}
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/90 backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-primary" />
               Tecnologia para o campo
@@ -160,14 +104,7 @@ export default function HeroSection() {
                 leading-[1.05]
               "
             >
-              {titleText.includes("Gestão Agrícola") ? (
-                <>
-                  Revolucione sua{" "}
-                  <span className="text-white/95">Gestão Agrícola</span>
-                </>
-              ) : (
-                titleText
-              )}
+              {titleText}
             </h1>
 
             <p className="mt-4 text-[clamp(1rem,1.6vw,1.35rem)] leading-relaxed text-white/85">
@@ -187,10 +124,9 @@ export default function HeroSection() {
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black/40
                 "
               >
-                {cfg.button_label || "Saiba Mais"}
+                {data.button_label || "Saiba Mais"}
               </Link>
 
-              {/* CTA secundário opcional (mantém UX melhor no desktop) */}
               <Link
                 href="/contatos"
                 className="
@@ -207,7 +143,7 @@ export default function HeroSection() {
               </Link>
             </div>
 
-            {/* Micro-infos (responsivo) */}
+            {/* Micro-infos */}
             <div className="mt-8 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-3">
               {[
                 "Alta performance",
