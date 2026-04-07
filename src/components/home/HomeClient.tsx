@@ -3,9 +3,10 @@
 
 import type { PublicCategory } from "@/server/data/categories";
 import type { HeroData } from "@/types/hero";
+import type { HeroSlide } from "@/types/heroSlide";
 import type { PublicShopSettings } from "@/server/data/shopSettings";
 
-import HeroSection from "@/components/layout/HeroSection";
+import HeroCarousel from "@/components/layout/HeroCarousel";
 import DestaquesSection from "@/components/products/DestaquesSection";
 import ServicosSection from "@/components/layout/ServicosSection";
 import ProdutosPorCategoria from "@/components/products/ProdutosPorCategoria";
@@ -16,16 +17,16 @@ type Props = {
   categories: PublicCategory[];
   shop: PublicShopSettings;
   hero: HeroData;
+  heroSlides: HeroSlide[];
 };
 
-export default function HomeClient({ categories, shop, hero }: Props) {
+export default function HomeClient({ categories, shop, hero, heroSlides }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      {/* HERO */}
-      <HeroSection data={hero} />
+      {/* HERO CAROUSEL */}
+      <HeroCarousel slides={heroSlides} legacyHero={hero} />
 
-      {/* ⛔ NÃO usar <main> aqui */}
       <section className="mx-auto w-full max-w-7xl flex-1 px-4 pb-10 pt-6 sm:pt-8">
         {/* DESTAQUES */}
         <section className="mb-6">
