@@ -284,12 +284,7 @@ Detalhes completos em [component-patterns.md](./component-patterns.md#padrão-de
 
 ### Proibido
 
-| Padrão | Motivo |
-|--------|--------|
-| `fetch()` direto em Client Component | Sem CSRF, sem credentials, sem error handling |
-| Axios | Completamente removido do projeto |
-| `process.env.NEXT_PUBLIC_API_URL` inline | Usar `API_BASE` de `@/utils/absUrl` |
-| Importar `server/data/` em Client Component | Marcados com `server-only` — erro de build |
+Nunca use `fetch()` direto em Client Components, Axios, ou `process.env` inline. Para a lista completa de proibições e motivos, veja [Regras de projeto](./maintenance-guide.md#regras-de-projeto).
 
 ---
 

@@ -208,12 +208,7 @@ Componente/Hook
        └─ Retorna dados ou lança ApiError
 ```
 
-### Regras absolutas
-
-- **Nunca** use `fetch()` direto em componentes — sempre `apiClient`
-- **Nunca** use Axios — foi completamente removido
-- **Nunca** use `process.env.NEXT_PUBLIC_API_URL` inline — importe `API_BASE` de `@/utils/absUrl`
-- **Nunca** construa URLs de upload manualmente — use `absUrl()`
+> Todo request HTTP em Client Components passa pelo `apiClient`. Nunca use `fetch()` direto, Axios ou `process.env` inline. Veja [Regras de projeto](./maintenance-guide.md#regras-de-projeto) para a lista completa.
 
 ---
 
@@ -367,16 +362,15 @@ Estas são limitações e inconsistências reais do projeto. Não são bugs — 
 
 ## Erros comuns de quem está começando
 
-| Erro | Correção |
-|------|----------|
-| Usar `fetch()` direto | Sempre use `apiClient` |
-| Importar `server/data/` em Client Component | Esses módulos são `server-only` — use hooks |
-| Misturar `useAuth()` e `useAdminAuth()` | São independentes — use o correto para o contexto |
-| Usar hex hardcoded no Tailwind (`bg-[#359293]`) | Use o design token: `bg-primary` |
-| Construir URL de imagem manualmente | Use `absUrl(campo)` |
-| Usar `process.env.NEXT_PUBLIC_API_URL` inline | Importe `API_BASE` de `@/utils/absUrl` |
-| Mutar `process.env` em testes | Use `vi.stubEnv()` |
-| Adicionar `console.log` para debug | Proibido em produção — use `console.warn`/`console.error` para erros reais |
+Os erros mais frequentes para quem chega no projeto:
+
+- Usar `fetch()` direto em vez de `apiClient`
+- Importar `server/data/` em Client Component (são `server-only`)
+- Misturar `useAuth()` e `useAdminAuth()` (são independentes)
+- Usar hex hardcoded em Tailwind em vez de design tokens
+- Construir URL de imagem manualmente em vez de `absUrl()`
+
+Para a lista completa de regras e o checklist de review, veja [Regras de projeto](./maintenance-guide.md#regras-de-projeto) e [Checklist de review](./maintenance-guide.md#checklist-de-review).
 
 ---
 

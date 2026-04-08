@@ -438,13 +438,7 @@ tailwind.config.ts      → Mapeia CSS var para classe (primary: "var(--color-pr
 Componentes             → Usam classes Tailwind (bg-primary, text-accent)
 ```
 
-Para detalhes completos do sistema de cores, consulte [COLORS.md](../COLORS.md).
-
-### Regras
-
-- Nunca use hex direto em classes Tailwind: `bg-[#359293]` → use `bg-primary`
-- Para adicionar uma cor nova: `globals.css` → `tailwind.config.ts` → usar
-- Cores Tailwind padrão (gray, white, black) podem ser usadas para UI neutra
+Para detalhes completos (catálogo, regras de uso, como adicionar cores), consulte [COLORS.md](../COLORS.md).
 
 ---
 
