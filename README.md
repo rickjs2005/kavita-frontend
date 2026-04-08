@@ -32,6 +32,7 @@ Novo no projeto? Comece pelo [guia de onboarding](docs/onboarding.md).
 | [Padrões de Componentes](docs/component-patterns.md) | Criar componentes, hooks, formulários |
 | [Fluxos Críticos](docs/critical-flows.md) | Entender auth, checkout, pedidos, CRUD admin |
 | [Manutenção](docs/maintenance-guide.md) | Adicionar features, módulos, regras do projeto |
+| [Testes](docs/testing-guide.md) | Como escrever testes para componentes, hooks, utilitários |
 | [Troubleshooting](docs/troubleshooting.md) | Resolver problemas de dev, testes, build |
 | [Cores / Design Tokens](COLORS.md) | Adicionar ou usar cores do tema |
 | [Segurança](FRONTEND_SECURITY_ALIGNMENT.md) | Auditoria, schemas Zod, CSP, contratos |

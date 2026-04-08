@@ -657,7 +657,7 @@ Antes de submeter qualquer PR, verifique:
 
 ### Testes
 - [ ] Testes existentes continuam passando (`npm run test:run`)
-- [ ] Novos componentes/hooks têm testes
+- [ ] Novos componentes/hooks têm testes (veja [testing-guide.md](./testing-guide.md))
 - [ ] Mocks usam `default` export do apiClient
 
 ---

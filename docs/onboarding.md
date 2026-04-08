@@ -353,6 +353,7 @@ Após completar o onboarding, leia nesta ordem:
 | 3 | [Padrões de Componentes](./component-patterns.md) | Como criar componentes, hooks e formulários |
 | 4 | [Fluxos Críticos](./critical-flows.md) | Como auth, checkout e pedidos funcionam por dentro |
 | 5 | [Guia de Manutenção](./maintenance-guide.md) | Como adicionar features + regras + checklist de PR |
-| 6 | [Troubleshooting](./troubleshooting.md) | Quando algo der errado |
-| 7 | [COLORS.md](../COLORS.md) | Quando precisar mexer em cores |
-| 8 | [Segurança](../FRONTEND_SECURITY_ALIGNMENT.md) | Quando mexer em auth, checkout ou uploads |
+| 6 | [Testes](./testing-guide.md) | Como escrever testes para componentes, hooks, utilitários |
+| 7 | [Troubleshooting](./troubleshooting.md) | Quando algo der errado |
+| 8 | [COLORS.md](../COLORS.md) | Quando precisar mexer em cores |
+| 9 | [Segurança](../FRONTEND_SECURITY_ALIGNMENT.md) | Quando mexer em auth, checkout ou uploads |
