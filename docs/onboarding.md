@@ -1,39 +1,40 @@
 # Onboarding — Frontend Kavita
 
-Guia prático para um novo desenvolvedor começar a contribuir no frontend da Kavita.
+Guia prático para um novo desenvolvedor começar a contribuir no frontend. Siga na ordem — cada seção prepara para a próxima.
 
 ---
 
 ## Sumário
 
-- [Pré-requisitos](#pré-requisitos)
 - [Setup local](#setup-local)
-- [Entendendo o projeto em 5 minutos](#entendendo-o-projeto-em-5-minutos)
+- [Verificação do ambiente](#verificação-do-ambiente)
+- [Entendendo o projeto](#entendendo-o-projeto)
 - [Estrutura de pastas](#estrutura-de-pastas)
-- [Fluxo de um request HTTP](#fluxo-de-um-request-http)
-- [Padrão RSC + Client Component](#padrão-rsc--client-component)
-- [Autenticação](#autenticação)
-- [Testes](#testes)
+- [Como o frontend se comunica com o backend](#como-o-frontend-se-comunica-com-o-backend)
+- [Autenticação — o que você precisa saber](#autenticação--o-que-você-precisa-saber)
+- [Dados mínimos para desenvolvimento](#dados-mínimos-para-desenvolvimento)
+- [O que você vai encontrar (e não é bug)](#o-que-você-vai-encontrar-e-não-é-bug)
+- [Seus primeiros 3 dias](#seus-primeiros-3-dias)
 - [Onde encontrar o quê](#onde-encontrar-o-quê)
-- [Primeiras tarefas recomendadas](#primeiras-tarefas-recomendadas)
 - [Erros comuns de quem está começando](#erros-comuns-de-quem-está-começando)
-
----
-
-## Pré-requisitos
-
-| Ferramenta | Versão mínima | Observação |
-|------------|---------------|------------|
-| Node.js | 20+ | `node -v` para verificar |
-| npm | 10+ | Vem com o Node.js |
-| Git | 2.x | Qualquer versão recente |
-| Backend | — | `kavita-backend` rodando em `localhost:5000` |
-
-Conhecimento esperado: React, TypeScript, Tailwind CSS. Familiaridade com Next.js App Router é desejável mas não obrigatória.
+- [Ordem de leitura dos docs](#ordem-de-leitura-dos-docs)
 
 ---
 
 ## Setup local
+
+### Pré-requisitos
+
+| Ferramenta | Versão mínima | Como verificar |
+|------------|---------------|----------------|
+| Node.js | 20+ | `node -v` |
+| npm | 10+ | `npm -v` |
+| Git | 2.x | `git --version` |
+| Backend | — | `kavita-backend` rodando em `localhost:5000` |
+
+Conhecimento esperado: React, TypeScript, Tailwind CSS. Next.js App Router é desejável mas não obrigatório.
+
+### Passo a passo
 
 ```bash
 # 1. Clone e instale
@@ -43,8 +44,7 @@ npm install
 
 # 2. Configure variáveis de ambiente
 cp .env.example .env.local
-# Edite .env.local — os defaults de desenvolvimento já funcionam se o backend
-# estiver rodando em localhost:5000
+# Os defaults funcionam para desenvolvimento local com backend em localhost:5000
 
 # 3. Inicie o backend (em outro terminal)
 cd ../kavita-backend
@@ -56,48 +56,54 @@ npm run dev
 # → http://localhost:3000
 ```
 
-### Verificação rápida
+---
 
-Após `npm run dev`:
-1. Acesse `http://localhost:3000` — deve mostrar a home com categorias e hero
-2. Acesse `http://localhost:3000/admin/login` — deve mostrar a tela de login admin
-3. Execute `npm run test:run` — veja a seção abaixo sobre estado atual dos testes
+## Verificação do ambiente
 
-### Estado atual dos testes
+Após `npm run dev`, valide cada item antes de seguir:
 
-Ao rodar `npm run test:run` pela primeira vez, você verá que **~1470 testes passam**, mas **~46 falham em 8 arquivos**. Isso é um problema conhecido — não significa que você quebrou algo.
+| Verificação | Como testar | Esperado |
+|-------------|-------------|----------|
+| Home carrega | Acesse `http://localhost:3000` | Hero carousel + categorias visíveis |
+| Catálogo funciona | Clique em "Produtos" | Lista de produtos com cards |
+| Admin acessível | Acesse `http://localhost:3000/admin/login` | Tela de login admin |
+| Imagens carregam | Veja se os cards de produto têm foto | Imagens do backend em `localhost:5000/uploads/` |
+| Testes rodam | `npm run test:run` | ~1470 passam. **~46 falham** — é esperado (veja abaixo) |
 
-**Causa:** Alguns arquivos de teste usam mocks com a exportação nomeada legada `apiRequest` em vez do `default` export atual do `apiClient`. Os testes que falham estão em:
-- `apiClient.csrf.test.ts` — mocks de CSRF desatualizados
-- `newsPublicApi.test.ts` — mock de API pública
-- `useCotacoesAdmin.test.tsx` — mock de admin hook
-- `products.test.ts` (services) — mock de service layer
-- Alguns testes de componentes (`DeleteButton`, `ProductCard`, `ProdutoForm`)
+### Sobre os testes falhando
 
-**O que fazer:** Ignore essas falhas durante o onboarding. Elas não afetam o funcionamento da aplicação. A correção envolve atualizar os mocks para usar `default` export (veja [troubleshooting.md](./troubleshooting.md#testes-falhando-por-mock-de-apiclient)).
+Ao rodar `npm run test:run` pela primeira vez, **~46 testes falham em 8 arquivos**. Isso é um problema conhecido — não significa que você quebrou algo.
+
+**Causa:** Alguns mocks usam a exportação nomeada legada `apiRequest` em vez do `default` export atual do `apiClient`.
+
+**Arquivos afetados:** `apiClient.csrf.test.ts`, `newsPublicApi.test.ts`, `useCotacoesAdmin.test.tsx`, `products.test.ts` (services), `DeleteButton.test.tsx`, `ProductCard.test.tsx`, `ProdutoForm.test.tsx`.
+
+**O que fazer:** Ignore durante o onboarding. Detalhes da correção em [troubleshooting.md](./troubleshooting.md#testes-falhando-conhecidos-mocks-desatualizados).
 
 ---
 
-## Entendendo o projeto em 5 minutos
+## Entendendo o projeto
 
 Kavita é uma plataforma de e-commerce agrícola com duas áreas:
 
 - **Área pública** (`/`): loja com produtos, serviços, drones, Kavita News, checkout com MercadoPago
 - **Painel admin** (`/admin`): gestão completa de conteúdo, pedidos, clientes, relatórios
 
-O frontend é um Next.js 15 App Router que consome uma API REST Express em repositório separado. A comunicação acontece via `apiClient` (nunca `fetch()` direto). Autenticação é por cookies HttpOnly — o frontend não armazena tokens.
+O frontend é um Next.js 15 (App Router) que consome uma API REST Express em repositório separado (`kavita-backend`). Autenticação é por cookies HttpOnly — o frontend não armazena tokens.
 
 ### Conceitos-chave
 
-| Conceito | O que é | Onde vive |
-|----------|---------|-----------|
-| `apiClient` | Cliente HTTP único do projeto | `src/lib/apiClient.ts` |
-| `absUrl()` | Normaliza URLs de imagens/uploads | `src/utils/absUrl.ts` |
-| `AuthContext` | Estado de autenticação da loja | `src/context/AuthContext.tsx` |
-| `AdminAuthContext` | Estado de autenticação do admin | `src/context/AdminAuthContext.tsx` |
-| `CartContext` | Estado do carrinho de compras | `src/context/CartContext.tsx` |
-| Server Data | Fetchers server-side (RSC) | `src/server/data/*.ts` |
-| Schemas Zod | Validação de respostas da API | `src/lib/schemas/api.ts` |
+Estes são os pilares do projeto. Entender esses 7 itens desbloqueia o resto:
+
+| Conceito | O que é | Arquivo |
+|----------|---------|---------|
+| `apiClient` | Cliente HTTP único — CSRF, credentials, timeout, error handling | `src/lib/apiClient.ts` |
+| `absUrl()` | Normaliza URLs de imagens/uploads para URL absoluta | `src/utils/absUrl.ts` |
+| `AuthContext` | Autenticação da loja (cookie HttpOnly, Zod validation) | `src/context/AuthContext.tsx` |
+| `AdminAuthContext` | Autenticação do admin (permissões do servidor, nunca localStorage) | `src/context/AdminAuthContext.tsx` |
+| `CartContext` | Carrinho (composto por 5 sub-hooks em `context/cart/`) | `src/context/CartContext.tsx` |
+| Server Data | Fetchers server-side para dados públicos (RSC) | `src/server/data/*.ts` |
+| Schemas Zod | Validação de respostas da API em fluxos críticos | `src/lib/schemas/api.ts` |
 
 ---
 
@@ -108,196 +114,197 @@ src/
 ├── app/                    # Rotas Next.js (App Router)
 │   ├── page.tsx            # Home (RSC → HomeClient)
 │   ├── layout.tsx          # Root layout (providers, header, footer)
-│   ├── globals.css         # CSS global + design tokens
+│   ├── globals.css         # CSS global + design tokens (cores)
 │   ├── produtos/           # Catálogo de produtos
 │   ├── servicos/           # Catálogo de serviços
-│   ├── drones/             # Drones agrícolas
 │   ├── checkout/           # Fluxo de checkout (multi-step)
-│   ├── news/               # Kavita News (posts, clima, cotações)
-│   ├── mercado-do-cafe/    # Mercado do Café (corretoras)
-│   ├── login/              # Autenticação do usuário
 │   ├── admin/              # Painel administrativo (layout próprio)
 │   │   ├── layout.tsx      # Auth guard + sidebar
 │   │   ├── produtos/       # CRUD de produtos
 │   │   ├── pedidos/        # Gestão de pedidos
-│   │   └── ...             # demais módulos admin
+│   │   └── ...
 │   └── ...
 │
-├── components/             # Componentes React
-│   ├── admin/              # Exclusivos do painel admin
-│   ├── products/           # Cards, grid, listagem de produtos
-│   ├── drones/             # Seções da landing de drones
-│   ├── news/               # Cards de notícias, clima, cotações
+├── components/             # Componentes React (por domínio)
+│   ├── admin/              # Exclusivos do painel (sidebar, forms, tables)
+│   ├── products/           # Cards, grid, listagem
 │   ├── checkout/           # Formulários do checkout
-│   ├── home/               # HomeClient
 │   ├── layout/             # Header, Footer, HeroCarousel
 │   ├── ui/                 # Compartilhados: LoadingState, ErrorState, EmptyState
 │   └── ...
 │
 ├── context/                # React Contexts
-│   ├── AuthContext.tsx      # Auth de usuários (cookie HttpOnly)
-│   ├── AdminAuthContext.tsx # Auth de admins (cookie HttpOnly)
-│   └── CartContext.tsx      # Carrinho (composto por 4 sub-hooks)
-│       └── cart/            # useCartActions, useCartSync, useCartPersistence, useCartCalculations
+│   ├── AuthContext.tsx      # Auth de usuários
+│   ├── AdminAuthContext.tsx # Auth de admins
+│   └── CartContext.tsx      # Carrinho (orquestrador)
+│       └── cart/            # Sub-hooks: actions, sync, persistence, calculations, utils
 │
 ├── hooks/                  # Custom hooks
-│   ├── useFetchProducts.ts # Busca de produtos (SWR)
-│   ├── useFetchServicos.ts # Busca de serviços (SWR)
 │   ├── useAdminResource.ts # CRUD genérico para admin (SWR)
+│   ├── useFetchProducts.ts # Busca de produtos (SWR)
 │   ├── useCheckoutForm.ts  # Estado do formulário de checkout
-│   ├── useCep.ts           # Consulta de CEP
 │   └── ...
 │
 ├── lib/                    # Infraestrutura
-│   ├── apiClient.ts        # Cliente HTTP (fetch + CSRF + timeout)
-│   ├── errors.ts           # ApiError class + isApiError()
-│   ├── schemas/api.ts      # Schemas Zod para responses da API
-│   ├── sanitizeHtml.ts     # Sanitização de conteúdo
+│   ├── apiClient.ts        # Cliente HTTP (401 linhas, bem comentado)
+│   ├── errors.ts           # ApiError + isApiError()
+│   ├── schemas/api.ts      # Schemas Zod (12 schemas)
 │   └── ...
 │
 ├── server/data/            # Server-only data fetchers (RSC)
-│   ├── categories.ts       # Categorias públicas
-│   ├── shopSettings.ts     # Configurações da loja
-│   ├── heroSlides.ts       # Slides do hero
-│   └── ...
-│
-├── services/api/           # Definições de endpoints e wrappers
-│   ├── endpoints.ts        # Constantes de URL
-│   └── services/           # auth.ts, products.ts, addresses.ts, users.ts
-│
-├── types/                  # Tipos TypeScript do domínio
-│   ├── product.ts, service.ts, auth.ts, admin.ts, ...
-│
-└── utils/                  # Funções auxiliares
-    ├── absUrl.ts           # URLs de imagem
-    ├── formatters.ts       # Formatação de texto/números
-    ├── pricing.ts          # Cálculos de preço
-    └── ...
+├── services/               # Endpoints, wrappers, lógica de negócio
+├── types/                  # Tipos do domínio (15 arquivos)
+└── utils/                  # Funções auxiliares (absUrl, formatters, pricing)
 ```
 
 ### Regra de ouro
 
-| Camada | Responsabilidade | Quem importa |
-|--------|-----------------|--------------|
-| `server/data/` | Buscar dados no servidor (RSC) | Apenas páginas `page.tsx` server-side |
+| Camada | Responsabilidade | Importado por |
+|--------|-----------------|---------------|
+| `server/data/` | Buscar dados no servidor (RSC) | Apenas `page.tsx` server-side |
 | `hooks/` | Buscar dados no cliente (SWR) | Client Components |
 | `context/` | Estado global (auth, carrinho) | Client Components |
 | `lib/` | Infraestrutura (HTTP, erros, schemas) | Qualquer camada |
-| `components/` | UI pura ou com lógica de apresentação | Páginas e outros componentes |
-| `services/api/` | Definição de endpoints e chamadas | Hooks e componentes |
-| `utils/` | Funções puras (formatação, cálculos) | Qualquer camada |
+| `components/` | UI e lógica de apresentação | Páginas e componentes |
+| `services/` | Endpoints e lógica de negócio | Hooks e componentes |
+| `utils/` | Funções puras | Qualquer camada |
 | `types/` | Tipos de domínio | Qualquer camada |
 
 ---
 
-## Fluxo de um request HTTP
+## Como o frontend se comunica com o backend
 
-Todo request HTTP do frontend segue este caminho:
+Todo request HTTP em Client Components passa pelo `apiClient`:
 
 ```
 Componente/Hook
   └─ apiClient.get("/api/public/produtos")
-       ├─ Resolve URL absoluta (API_BASE + path)
+       ├─ Resolve URL absoluta
        ├─ Injeta credentials (include para /api, omit para /uploads)
-       ├─ Se mutation (POST/PUT/PATCH/DELETE): injeta CSRF token
+       ├─ Se mutation: injeta CSRF token automaticamente
        ├─ Aplica timeout (15s padrão)
-       ├─ Faz fetch()
        ├─ Se 401: dispara evento global "auth:expired"
        ├─ Parse defensivo (JSON → texto → null)
        ├─ Unwrap envelope { ok: true, data: ... }
        └─ Retorna dados ou lança ApiError
 ```
 
-> Todo request HTTP em Client Components passa pelo `apiClient`. Nunca use `fetch()` direto, Axios ou `process.env` inline. Veja [Regras de projeto](./maintenance-guide.md#regras-de-projeto) para a lista completa.
+Para dados públicos renderizados no servidor (home, detalhe de produto, news), usam-se os fetchers em `src/server/data/` que fazem `fetch()` direto — isso é correto para RSC.
+
+> Para regras de quando usar qual padrão, veja [Data Fetching](./data-fetching.md). Para a lista completa de proibições, veja [Regras de projeto](./maintenance-guide.md#regras-de-projeto).
 
 ---
 
-## Padrão RSC + Client Component
-
-O padrão ideal (usado na home e em detalhe de produto):
-
-```tsx
-// src/app/page.tsx — Server Component (async)
-import HomeClient from "@/components/home/HomeClient";
-import { fetchPublicCategories } from "@/server/data/categories";
-
-export default async function HomePage() {
-  const categories = await fetchPublicCategories();  // fetch no servidor
-  return <HomeClient categories={categories} />;      // repassa para client
-}
-```
-
-```tsx
-// src/components/home/HomeClient.tsx — Client Component
-"use client";
-export default function HomeClient({ categories }: Props) {
-  // Lógica interativa aqui (state, effects, event handlers)
-}
-```
-
-**Realidade atual:** Algumas páginas como `/produtos` e `/servicos` usam o page.tsx apenas como wrapper vazio que renderiza um Client Component, e toda a busca acontece no cliente. Esse padrão funciona mas não aproveita os benefícios de RSC (streaming, SEO, menos JavaScript no cliente).
-
----
-
-## Autenticação
+## Autenticação — o que você precisa saber
 
 Existem **dois sistemas de autenticação completamente independentes**:
 
-| | Usuários da loja | Administradores |
+| | Loja | Admin |
 |---|---|---|
 | **Context** | `AuthContext` | `AdminAuthContext` |
 | **Hook** | `useAuth()` | `useAdminAuth()` |
-| **Cookie** | Cookie HttpOnly padrão | `adminToken` (HttpOnly) |
-| **Verificação** | `GET /api/users/me` | `GET /api/admin/me` |
+| **Cookie** | HttpOnly padrão | `adminToken` (HttpOnly) |
 | **Login** | `POST /api/login` | `POST /api/admin/login` |
-| **Validação** | Zod `AuthUserSchema` | Zod `AdminUserSchema` |
 
 **Nunca** misture `useAuth()` em contexto admin ou `useAdminAuth()` em contexto de loja.
 
-O middleware Edge (`middleware.ts`) protege todas as rotas `/admin/*` verificando a presença do cookie `adminToken`. A validação real (assinatura JWT, expiração, permissões) é feita pelo backend.
+O middleware Edge (`middleware.ts` na raiz) protege todas as rotas `/admin/*` verificando presença do cookie. A validação real (JWT, permissões) é no backend.
+
+Para detalhes completos dos fluxos de login, veja [Fluxos Críticos](./critical-flows.md#login-do-usuário).
 
 ---
 
-## Testes
+## Dados mínimos para desenvolvimento
 
-```bash
-npm run test:run          # Execução única
-npm run test              # Modo watch
-npm run test:coverage     # Com cobertura
+Para navegar pela loja e testar o admin, o banco precisa ter alguns dados. Verifique com a equipe ou com o setup do backend:
 
-# Arquivo específico
-npx vitest run src/__tests__/components/Header.test.tsx
-```
+| O que é necessário | Por quê | Como verificar |
+|--------------------|---------|----------------|
+| Pelo menos 1 categoria ativa | Home mostra categorias na navegação | Home exibe menu de categorias |
+| Pelo menos 2-3 produtos | Catálogo e cards precisam de dados | `/produtos` mostra cards |
+| 1 usuário admin com role `master` | Acesso completo ao painel admin | Login em `/admin/login` funciona |
+| 1 usuário de loja | Testar login, carrinho, checkout | Login em `/login` funciona |
+| Hero slide ativo (opcional) | Carousel da home | Home mostra banner |
 
-### Convenções
+Se o banco estiver vazio:
+- A home vai carregar mas sem categorias nem hero (é esperado — fallback para arrays vazios)
+- O admin vai funcionar mas sem dados para listar
+- O checkout precisa de pelo menos 1 produto no carrinho para testar
 
-- Estrutura de `src/__tests__/` espelha `src/`
-- Mocks: `vi.mock()` (sempre estáticos, hoistados)
-- Variáveis de ambiente: `vi.stubEnv()` (nunca `process.env` direto)
-- `server-only`: mapeado para mock em `src/__tests__/mocks/server-only.ts`
-- Coverage exclui `src/app/**` (páginas RSC testadas via integração)
+> O backend pode ter um script de seed. Verifique `kavita-backend/` por scripts de `seed` ou `setup`.
 
-### Padrão de teste de componente
+---
 
-```tsx
-import { render, screen } from "@testing-library/react";
-import { vi, describe, it, expect } from "vitest";
-import MeuComponente from "@/components/MeuComponente";
+## O que você vai encontrar (e não é bug)
 
-vi.mock("@/lib/apiClient", () => ({
-  default: {
-    get: vi.fn(),
-    post: vi.fn(),
-  },
-}));
+Estas são limitações e inconsistências reais do projeto. São coisas que você precisa saber para não perder tempo:
 
-describe("MeuComponente", () => {
-  it("renderiza corretamente", () => {
-    render(<MeuComponente prop="valor" />);
-    expect(screen.getByText("Texto esperado")).toBeInTheDocument();
-  });
-});
-```
+| O que você vai ver | O que é | O que fazer |
+|--------------------|---------|-------------|
+| ~46 testes falhando | Mocks desatualizados (`apiRequest` legado) | Ignorar no onboarding. Veja [troubleshooting](./troubleshooting.md#testes-falhando-conhecidos-mocks-desatualizados) |
+| `alert()` no admin | Padrão legado em pedidos, produtos, serviços, equipe | Código novo deve usar `toast` |
+| Arquivos de 500-758 linhas | `pedidos/page.tsx` (758), `useCheckoutState.ts` (674), `produtoform.tsx` (530) | Funcionam. Candidatos a refatoração futura |
+| `produtoform.tsx` em lowercase | Violação de naming. Restante do projeto usa PascalCase | Não renomear (impacto em imports) |
+| Nenhum `error.tsx` | Sem error boundaries. Crash de componente = tela branca | Limitação conhecida |
+| Nenhum `not-found.tsx` | 404 mostra página padrão do Next.js | Limitação conhecida |
+| Apenas 2 `loading.tsx` | Só `produtos/[id]` e `news/cotacoes` têm skeleton | Demais rotas não têm loading state |
+| `as any` em vários arquivos | Principalmente hooks admin e checkout | Priorize tipar ao trabalhar nesses arquivos |
+| Páginas RSC como wrapper vazio | `/produtos`, `/servicos` delegam tudo para Client Component | Funciona, mas não aproveita RSC. Padrão correto em `/` e `/produtos/[id]` |
+
+---
+
+## Seus primeiros 3 dias
+
+### Dia 1 — Conhecer o ambiente
+
+**Objetivo:** navegar pela aplicação e confirmar que tudo funciona.
+
+1. Siga o [setup local](#setup-local) e a [verificação do ambiente](#verificação-do-ambiente)
+2. Navegue pela loja pública:
+   - Home → clique em uma categoria → veja um produto → adicione ao carrinho
+   - Abra o checkout (precisa estar logado)
+3. Navegue pelo admin:
+   - Login em `/admin/login`
+   - Dashboard → Produtos → abra o formulário de edição de um produto
+   - Pedidos → veja a lista e os status
+4. Rode `npm run test:run` — confirme que ~1470 passam (~46 falham — é esperado)
+
+**Ao final do dia 1:** Você conhece as duas áreas da aplicação e sabe que o ambiente está funcional.
+
+### Dia 2 — Entender a infraestrutura
+
+**Objetivo:** ler os 3 arquivos mais importantes do projeto.
+
+5. **Leia `src/lib/apiClient.ts`** — 401 linhas, mas bem comentado. É o padrão HTTP de todo o projeto. Entenda: CSRF, credentials, 401 handling, envelope unwrap.
+
+6. **Leia `src/context/AuthContext.tsx`** — 181 linhas. Entenda: como login funciona, Zod validation de responses, email nunca como fallback.
+
+7. **Leia `src/hooks/useAdminResource.ts`** — 256 linhas. Entenda: CRUD genérico com SWR, auth handling (401→redirect), response unwrapping. Este hook é usado pela maioria das páginas admin.
+
+**Ao final do dia 2:** Você entende como o frontend busca dados, autentica e gerencia CRUD.
+
+### Dia 3 — Primeira contribuição
+
+**Objetivo:** fazer uma alteração real, testar e entender o fluxo de contribuição.
+
+**Tarefa guiada (escolha uma):**
+
+**Opção A — Componente + teste:**
+1. Abra `src/components/ui/EmptyState.tsx` e leia o componente (98 linhas, 3 variants)
+2. Abra `src/__tests__/components/EmptyState.test.tsx` e leia os testes existentes
+3. Adicione uma prop `icon` opcional ao EmptyState (aceita um componente React, ex: ícone Lucide)
+4. Quando `icon` for passado, renderize antes da mensagem
+5. Escreva um teste que verifica: se `icon` não é passado, o ícone padrão aparece; se `icon` é passado, o custom icon aparece
+6. Rode `npx vitest run src/__tests__/components/EmptyState.test.tsx` para validar
+
+**Opção B — Utilitário + teste:**
+1. Abra `src/lib/formatApiError.ts` e leia o utilitário
+2. Abra `src/__tests__/lib/formatApiError.test.ts` e leia os testes
+3. Altere a mensagem padrão para erro de rede (quando não é ApiError) para algo mais descritivo
+4. Atualize o teste correspondente
+5. Rode `npx vitest run src/__tests__/lib/formatApiError.test.ts` para validar
+
+**Ao final do dia 3:** Você fez uma alteração, escreveu/atualizou um teste e entende o fluxo de desenvolvimento.
 
 ---
 
@@ -321,45 +328,6 @@ describe("MeuComponente", () => {
 
 ---
 
-## Primeiras tarefas recomendadas
-
-Para se familiarizar com o projeto, faça nesta ordem:
-
-### Dia 1 — Entender o ambiente
-
-1. **Navegue pela loja** — home, produtos, detalhe de produto, carrinho, checkout
-2. **Navegue pelo admin** — login com credencial de teste, dashboard, produtos, pedidos
-3. **Rode os testes** (`npm run test:run`) — ~1470 passam, ~46 falham (veja [estado dos testes](#estado-atual-dos-testes))
-
-### Dia 2 — Entender a infraestrutura
-
-4. **Leia `src/lib/apiClient.ts`** — entenda o padrão HTTP do projeto (401 linhas, mas bem comentado)
-5. **Leia `src/context/AuthContext.tsx`** — entenda o fluxo de auth com Zod validation
-6. **Leia `src/hooks/useAdminResource.ts`** — entenda o padrão CRUD genérico com SWR
-
-### Dia 3 — Primeira contribuição guiada
-
-7. **Tarefa prática:** Abra `src/components/ui/EmptyState.tsx`, leia o componente. Depois abra `src/__tests__/components/EmptyState.test.tsx` e leia os testes. Agora adicione uma prop `icon` opcional (ex: um ícone Lucide) e escreva um teste para ela. Isso exercita: ler componente, entender testes, criar PR simples.
-
-8. **Alternativa:** Se preferir algo mais backend-aware, tente alterar o texto de uma mensagem de erro em `src/lib/formatApiError.ts` e veja o teste correspondente.
-
----
-
-## Pegadinhas que você vai encontrar
-
-Estas são limitações e inconsistências reais do projeto. Não são bugs — são coisas que você precisa saber:
-
-| O que você vai ver | Explicação |
-|--------------------|------------|
-| ~46 testes falhando | Mocks desatualizados, não bugs reais. Veja [troubleshooting](./troubleshooting.md#testes-falhando-conhecidos-mocks-desatualizados). |
-| `alert()` no admin (pedidos, produtos, serviços, equipe) | Padrão legado. Código novo deve usar `toast`. |
-| Arquivos de 500-758 linhas no admin | `pedidos/page.tsx` (758), `useCheckoutState.ts` (674), `produtoform.tsx` (530). São candidatos a refatoração futura, mas funcionam. |
-| `produtoform.tsx` e `produtocard.tsx` em lowercase | Violação de naming convention. Restante do projeto usa PascalCase. |
-| Nenhum `error.tsx` nem `not-found.tsx` | Ausência de error boundaries. Se um componente crashar, a página fica branca. |
-| `as any` em vários arquivos | Principalmente em hooks admin e checkout. Priorize tipar corretamente ao trabalhar nesses arquivos. |
-
----
-
 ## Erros comuns de quem está começando
 
 Os erros mais frequentes para quem chega no projeto:
@@ -374,13 +342,17 @@ Para a lista completa de regras e o checklist de review, veja [Regras de projeto
 
 ---
 
-## Próximos passos
+## Ordem de leitura dos docs
 
-Após completar o onboarding, leia:
+Após completar o onboarding, leia nesta ordem:
 
-- [Arquitetura Frontend](./frontend-architecture.md) — visão detalhada das camadas
-- [Padrões de Componentes](./component-patterns.md) — como criar componentes e hooks
-- [Data Fetching](./data-fetching.md) — quando usar RSC vs client fetch
-- [Fluxos Críticos](./critical-flows.md) — como funcionam auth, checkout, pedidos
-- [Guia de Manutenção](./maintenance-guide.md) — como adicionar features e módulos
-- [Troubleshooting](./troubleshooting.md) — problemas comuns e soluções
+| Ordem | Documento | Por quê |
+|-------|-----------|---------|
+| 1 | [Arquitetura Frontend](./frontend-architecture.md) | Entender as camadas e limitações do projeto |
+| 2 | [Data Fetching](./data-fetching.md) | Saber quando usar RSC, SWR ou apiClient direto |
+| 3 | [Padrões de Componentes](./component-patterns.md) | Como criar componentes, hooks e formulários |
+| 4 | [Fluxos Críticos](./critical-flows.md) | Como auth, checkout e pedidos funcionam por dentro |
+| 5 | [Guia de Manutenção](./maintenance-guide.md) | Como adicionar features + regras + checklist de PR |
+| 6 | [Troubleshooting](./troubleshooting.md) | Quando algo der errado |
+| 7 | [COLORS.md](../COLORS.md) | Quando precisar mexer em cores |
+| 8 | [Segurança](../FRONTEND_SECURITY_ALIGNMENT.md) | Quando mexer em auth, checkout ou uploads |
