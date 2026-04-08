@@ -180,6 +180,36 @@ import { absUrl } from "@/utils/absUrl";
 
 ## Testes
 
+### Testes falhando conhecidos (mocks desatualizados)
+
+**Sintoma:** Ao rodar `npm run test:run` pela primeira vez, ~46 testes falham em 8 arquivos.
+
+**Causa:** O `apiClient` foi refatorado para usar default export, mas alguns testes ainda fazem mock da exportação nomeada legada `apiRequest`.
+
+**Arquivos afetados:**
+- `src/__tests__/lib/apiClient.csrf.test.ts` — 3 falhas
+- `src/__tests__/lib/newsPublicApi.test.ts` — 2 falhas
+- `src/__tests__/hooks/useCotacoesAdmin.test.tsx` — 2 falhas
+- `src/__tests__/services/api/services/products.test.ts` — falhas por `apiRequest`
+- `src/__tests__/components/DeleteButton.test.tsx` — 1 falha
+- `src/__tests__/components/ProductCard.test.tsx` — 1 falha
+- `src/__tests__/components/admin/ProdutoForm.test.tsx` — 1 falha
+
+**Impacto:** Apenas testes. A aplicação funciona normalmente. Ignore durante onboarding.
+
+**Correção:** Atualizar cada mock para usar o default export:
+```typescript
+// ANTES (legado — causa falha)
+vi.mock("@/lib/apiClient", () => ({ apiRequest: vi.fn() }));
+
+// DEPOIS (correto)
+vi.mock("@/lib/apiClient", () => ({
+  default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+}));
+```
+
+---
+
 ### Testes falhando por mock de apiClient
 
 **Erro típico:**
@@ -303,6 +333,20 @@ className={color === "green" ? "bg-green-500" : "bg-red-500"}
 ---
 
 ## Admin
+
+### `alert()` aparece em vez de toast no admin
+
+**Causa:** Código legado. Algumas páginas admin usam `alert()` nativo em vez de `react-hot-toast`.
+
+**Arquivos afetados:**
+- `src/app/admin/pedidos/page.tsx` (7 ocorrências)
+- `src/app/admin/produtos/page.tsx` (4 ocorrências)
+- `src/app/admin/servicos/page.tsx` (2 ocorrências)
+- `src/app/admin/equipe/page.tsx` (2 ocorrências)
+
+**Solução:** Ao trabalhar nesses arquivos, substitua `alert(msg)` por `toast.error(msg)` ou `toast.success(msg)`. Não é urgente mas melhora a UX.
+
+---
 
 ### Sidebar não mostra todos os links
 

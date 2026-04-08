@@ -61,7 +61,20 @@ npm run dev
 Após `npm run dev`:
 1. Acesse `http://localhost:3000` — deve mostrar a home com categorias e hero
 2. Acesse `http://localhost:3000/admin/login` — deve mostrar a tela de login admin
-3. Execute `npm run test:run` — os testes devem rodar (espere ~1400+ passando)
+3. Execute `npm run test:run` — veja a seção abaixo sobre estado atual dos testes
+
+### Estado atual dos testes
+
+Ao rodar `npm run test:run` pela primeira vez, você verá que **~1470 testes passam**, mas **~46 falham em 8 arquivos**. Isso é um problema conhecido — não significa que você quebrou algo.
+
+**Causa:** Alguns arquivos de teste usam mocks com a exportação nomeada legada `apiRequest` em vez do `default` export atual do `apiClient`. Os testes que falham estão em:
+- `apiClient.csrf.test.ts` — mocks de CSRF desatualizados
+- `newsPublicApi.test.ts` — mock de API pública
+- `useCotacoesAdmin.test.tsx` — mock de admin hook
+- `products.test.ts` (services) — mock de service layer
+- Alguns testes de componentes (`DeleteButton`, `ProductCard`, `ProdutoForm`)
+
+**O que fazer:** Ignore essas falhas durante o onboarding. Elas não afetam o funcionamento da aplicação. A correção envolve atualizar os mocks para usar `default` export (veja [troubleshooting.md](./troubleshooting.md#testes-falhando-por-mock-de-apiclient)).
 
 ---
 
@@ -317,14 +330,38 @@ describe("MeuComponente", () => {
 
 Para se familiarizar com o projeto, faça nesta ordem:
 
-1. **Rode os testes** (`npm run test:run`) — entenda o que está coberto
-2. **Navegue pela loja** — home, produtos, detalhe, carrinho
-3. **Navegue pelo admin** — login, dashboard, produtos, pedidos
-4. **Leia `src/lib/apiClient.ts`** — entenda o padrão HTTP do projeto
-5. **Leia `src/context/AuthContext.tsx`** — entenda o fluxo de auth
-6. **Leia um hook completo** (ex: `useAdminResource.ts`) — entenda o padrão SWR
-7. **Faça uma alteração visual pequena** — mude um texto, veja o hot reload
-8. **Escreva um teste simples** — para um utilitário em `src/utils/`
+### Dia 1 — Entender o ambiente
+
+1. **Navegue pela loja** — home, produtos, detalhe de produto, carrinho, checkout
+2. **Navegue pelo admin** — login com credencial de teste, dashboard, produtos, pedidos
+3. **Rode os testes** (`npm run test:run`) — ~1470 passam, ~46 falham (veja [estado dos testes](#estado-atual-dos-testes))
+
+### Dia 2 — Entender a infraestrutura
+
+4. **Leia `src/lib/apiClient.ts`** — entenda o padrão HTTP do projeto (401 linhas, mas bem comentado)
+5. **Leia `src/context/AuthContext.tsx`** — entenda o fluxo de auth com Zod validation
+6. **Leia `src/hooks/useAdminResource.ts`** — entenda o padrão CRUD genérico com SWR
+
+### Dia 3 — Primeira contribuição guiada
+
+7. **Tarefa prática:** Abra `src/components/ui/EmptyState.tsx`, leia o componente. Depois abra `src/__tests__/components/EmptyState.test.tsx` e leia os testes. Agora adicione uma prop `icon` opcional (ex: um ícone Lucide) e escreva um teste para ela. Isso exercita: ler componente, entender testes, criar PR simples.
+
+8. **Alternativa:** Se preferir algo mais backend-aware, tente alterar o texto de uma mensagem de erro em `src/lib/formatApiError.ts` e veja o teste correspondente.
+
+---
+
+## Pegadinhas que você vai encontrar
+
+Estas são limitações e inconsistências reais do projeto. Não são bugs — são coisas que você precisa saber:
+
+| O que você vai ver | Explicação |
+|--------------------|------------|
+| ~46 testes falhando | Mocks desatualizados, não bugs reais. Veja [troubleshooting](./troubleshooting.md#testes-falhando-conhecidos-mocks-desatualizados). |
+| `alert()` no admin (pedidos, produtos, serviços, equipe) | Padrão legado. Código novo deve usar `toast`. |
+| Arquivos de 500-758 linhas no admin | `pedidos/page.tsx` (758), `useCheckoutState.ts` (674), `produtoform.tsx` (530). São candidatos a refatoração futura, mas funcionam. |
+| `produtoform.tsx` e `produtocard.tsx` em lowercase | Violação de naming convention. Restante do projeto usa PascalCase. |
+| Nenhum `error.tsx` nem `not-found.tsx` | Ausência de error boundaries. Se um componente crashar, a página fica branca. |
+| `as any` em vários arquivos | Principalmente em hooks admin e checkout. Priorize tipar corretamente ao trabalhar nesses arquivos. |
 
 ---
 

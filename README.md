@@ -319,6 +319,8 @@ npx vitest run src/__tests__/components/Header.test.tsx  # Arquivo específico
 
 **Cobertura:** ~77% statements / ~69% branches / ~71% functions
 
+> **Nota:** ~46 testes em 8 arquivos falham por mocks desatualizados (usam export nomeado legado do apiClient). A aplicação funciona normalmente. Detalhes em [docs/troubleshooting.md](docs/troubleshooting.md#testes-falhando-conhecidos-mocks-desatualizados).
+
 ---
 
 ## Status do projeto
