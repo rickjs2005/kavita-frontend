@@ -13,6 +13,11 @@ Problemas comuns encontrados durante desenvolvimento e como resolvê-los.
 - [Testes](#testes)
 - [Build e deploy](#build-e-deploy)
 - [Estilos e design tokens](#estilos-e-design-tokens)
+- [CORS e rede](#cors-e-rede)
+- [Client vs Server Components](#client-vs-server-components)
+- [Performance e re-renders](#performance-e-re-renders)
+- [Diferenças entre dev e produção](#diferenças-entre-dev-e-produção)
+- [Middleware Edge](#middleware-edge)
 - [Admin](#admin)
 
 ---
@@ -329,6 +334,185 @@ className={`bg-${color}-500`}
 // CORRETO — classes completas
 className={color === "green" ? "bg-green-500" : "bg-red-500"}
 ```
+
+---
+
+## CORS e rede
+
+### Erro de CORS no browser (blocked by CORS policy)
+
+**Sintoma:** Console mostra `Access to fetch at 'http://localhost:5000/...' from origin 'http://localhost:3000' has been blocked by CORS policy`.
+
+**Causa:** O backend não está configurado para aceitar requests do frontend, ou está offline.
+
+**Diagnóstico:**
+1. Verifique se o backend está rodando (`http://localhost:5000` responde?)
+2. Verifique se o backend tem CORS habilitado para `http://localhost:3000`
+3. Verifique se `.env.local` aponta para a URL correta do backend
+
+**Solução:**
+- Se o backend está offline: inicie-o
+- Se está rodando mas CORS falha: verifique a configuração de CORS no Express (`kavita-backend`). A origin `http://localhost:3000` precisa estar na whitelist
+- Se funciona no browser mas falha em outro contexto: verifique se não há proxy ou firewall bloqueando
+
+### Request funciona no browser mas falha no servidor (RSC)
+
+**Sintoma:** Página RSC (Server Component) não consegue buscar dados, mas a mesma URL funciona no browser.
+
+**Causa:** RSC roda no servidor Node.js — não tem cookies do browser nem a mesma rede. Se o backend aceita requests apenas de `localhost` mas o server do Next.js resolve como `127.0.0.1` (ou vice-versa), o CORS pode falhar.
+
+**Diagnóstico:**
+1. Verifique o log do terminal Next.js — procure erros de fetch
+2. Verifique se `NEXT_PUBLIC_API_URL` usa `localhost` ou `127.0.0.1` — tente trocar
+3. Server data fetchers (`src/server/data/`) não enviam cookies — se o endpoint requer auth, o fetch vai falhar
+
+**Solução:** Server data fetchers devem acessar apenas endpoints públicos (`/api/public/*`). Se o endpoint requer autenticação, o fetch precisa ser no cliente via `apiClient`.
+
+---
+
+## Client vs Server Components
+
+### Componente não renderiza / hooks não funcionam
+
+**Sintoma:** `useEffect`, `useState`, `useContext` dão erro: `Error: useState/useEffect is not a function` ou `React Context is not available`.
+
+**Causa:** O componente está sendo tratado como Server Component (padrão no App Router) mas usa hooks de cliente.
+
+**Solução:** Adicione `"use client"` na primeira linha do arquivo:
+```tsx
+"use client";  // ← obrigatório se o componente usa hooks, state ou event handlers
+
+import { useState } from "react";
+// ...
+```
+
+### Import de `server/data/` em Client Component
+
+**Sintoma:** Erro de build: `This module can only be used from a Server Component` ou similar.
+
+**Causa:** Um Client Component (`"use client"`) está importando um módulo de `src/server/data/` que usa `import "server-only"`.
+
+**Diagnóstico:** Leia a stack trace do erro — ela mostra qual import está errado.
+
+**Solução:** Server data fetchers só podem ser importados em Server Components (`page.tsx` sem `"use client"`). Para buscar os mesmos dados no cliente, use um hook com `apiClient`:
+```tsx
+// ERRADO — Client Component importando server-only
+"use client";
+import { fetchPublicCategories } from "@/server/data/categories"; // ← vai quebrar
+
+// CORRETO — use apiClient no cliente
+"use client";
+import apiClient from "@/lib/apiClient";
+const categories = await apiClient.get("/api/public/categorias");
+```
+
+### Página RSC mostrando dados desatualizados
+
+**Sintoma:** Dados alterados no admin não aparecem na página pública.
+
+**Causa:** A página usa `revalidate` (ISR) e está servindo a versão cacheada.
+
+**Diagnóstico:** Verifique o `export const revalidate = X` no `page.tsx`. Se é 300 (5 minutos), os dados podem levar até 5 minutos para atualizar.
+
+**Solução:** Aguarde o tempo de revalidate. Em desenvolvimento, `npm run dev` não cacheia — o problema aparece mais em `npm run build && npm start`.
+
+---
+
+## Performance e re-renders
+
+### Componente re-renderiza excessivamente
+
+**Sintoma:** A UI trava ou fica lenta. React DevTools Profiler mostra muitos re-renders.
+
+**Causas comuns no projeto:**
+1. **Objeto criado inline como prop:** `<Child style={{ color: "red" }} />` cria novo objeto a cada render
+2. **Callback sem useCallback:** `<Child onClick={() => doSomething()} />` cria nova função a cada render
+3. **Context muito amplo:** Componentes que usam `useCart()` re-renderizam a cada mudança no carrinho, mesmo se só precisam de `cartCount`
+
+**Diagnóstico:**
+1. Abra React DevTools → Profiler → clique "Record" → interaja → pare
+2. Veja quais componentes re-renderizam e com que frequência
+3. "Why did this render?" mostra qual prop/state mudou
+
+**Soluções comuns:**
+```tsx
+// ANTES — novo objeto a cada render
+<Child config={{ sort: "name", order: "asc" }} />
+
+// DEPOIS — useMemo para estabilizar
+const config = useMemo(() => ({ sort: "name", order: "asc" }), []);
+<Child config={config} />
+```
+
+### ProductCard faz request individual por promoção (N+1)
+
+**Sintoma:** Na listagem de produtos, cada `ProductCard` chama `useProductPromotion(id)` separadamente — N cards = N requests.
+
+**Causa:** Design atual do hook `useProductPromotion` busca uma promoção por produto. O SWR faz dedup por key mas não batch.
+
+**Mitigação atual:** O hook tem `dedupingInterval: 5min` — segunda visita não refaz o request. Em listas pequenas (<20 itens) o impacto é aceitável.
+
+**Onde investigar:** `src/hooks/useProductPromotion.ts` e `src/components/products/ProductCard.tsx`.
+
+---
+
+## Diferenças entre dev e produção
+
+### Algo funciona em dev mas quebra no build
+
+**Sintoma:** `npm run dev` funciona, `npm run build` falha.
+
+**Causas comuns:**
+1. **Tipo incorreto que o TypeScript não checou em dev:** O build roda `tsc` com checagem completa
+2. **`process.env` acessado em contexto errado:** Em dev, variáveis podem vazar entre server/client; em build, a separação é estrita
+3. **Import dinâmico que não resolve:** `dynamic()` com path variável pode falhar no build
+
+**Diagnóstico:** Leia a mensagem de erro do build. Em 90% dos casos é type error ou import inválido.
+
+### CSP bloqueia recurso em produção mas não em dev
+
+**Sintoma:** Script, imagem ou estilo carrega em `npm run dev` mas é bloqueado em produção. Console mostra `Refused to load... because it violates... Content-Security-Policy`.
+
+**Causa:** A CSP em dev inclui `'unsafe-eval'` (necessário para hot reload do Next.js). Em produção, `'unsafe-eval'` é removido. Também: `upgrade-insecure-requests` é adicionado em produção — bloqueia recursos HTTP em página HTTPS.
+
+**Onde verificar:** `next.config.ts` — a variável `isDev` controla as diferenças:
+- Dev: inclui `'unsafe-eval'` em `script-src`
+- Produção: remove `'unsafe-eval'`, adiciona `upgrade-insecure-requests` e HSTS
+
+**Solução:** Se o recurso é legítimo, adicione a origin na diretiva CSP correspondente em `next.config.ts`. Se é um script de terceiro, adicione em `script-src`. Se é uma imagem, adicione em `img-src`.
+
+### HSTS ativo em produção
+
+**Sintoma:** Após acessar o site em produção com HTTPS, o browser recusa acessar via HTTP (mesmo em localhost depois).
+
+**Causa:** O header `Strict-Transport-Security: max-age=31536000; includeSubDomains` é enviado apenas em produção. Uma vez que o browser recebe, ele força HTTPS por 1 ano.
+
+**Solução:** Isso é comportamento esperado em produção. Se precisar acessar localhost depois, limpe o HSTS do browser: `chrome://net-internals/#hsts` → Delete domain.
+
+---
+
+## Middleware Edge
+
+### Middleware rejeita request válida para /admin
+
+**Sintoma:** Console do Next.js mostra `[middleware] Acesso rejeitado sem token: /admin/...` mesmo com sessão válida.
+
+**Causa:** O middleware Edge (`middleware.ts`) verifica apenas a **presença** do cookie `adminToken`. Se o cookie não está sendo enviado para o Next.js (path errado, SameSite restritivo), o middleware rejeita.
+
+**Diagnóstico:**
+1. DevTools → Application → Cookies → verifique se `adminToken` existe
+2. Verifique o `path` do cookie — deve ser `/` (não `/api`)
+3. Verifique `SameSite` — deve ser `Lax` ou `Strict` (não `None` sem Secure)
+
+**Solução:** O cookie é setado pelo backend. Verifique a configuração de cookies no Express — `path: "/"` é obrigatório para o middleware do Next.js conseguir ler.
+
+### Middleware não verifica JWT
+
+**Sintoma:** Preocupação de que o middleware Edge não valida a assinatura do token.
+
+**Explicação:** Isso é intencional e documentado. O Edge Runtime do Next.js não suporta as APIs de crypto do Node.js necessárias para verificar JWT. O middleware faz apenas verificação de presença — a validação real (assinatura, expiração, permissões) acontece no backend Express (`verifyAdmin` middleware).
+
+**Onde verificar:** `middleware.ts` (raiz) — o comentário no código explica essa decisão.
 
 ---
 
