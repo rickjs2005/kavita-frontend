@@ -17,6 +17,8 @@ Documentação dos fluxos mais importantes do frontend: como funcionam, quais ar
 - [CRUD admin (padrão geral)](#crud-admin-padrão-geral)
 - [Upload de imagens (admin)](#upload-de-imagens-admin)
 - [Hero section / banners](#hero-section--banners)
+- [Favoritos](#favoritos)
+- [Endereços do usuário](#endereços-do-usuário)
 
 ---
 
@@ -456,3 +458,155 @@ const handleFile = async (file: File) => {
    - fetchPublicHeroSlides() busca slides ativos
    - HeroCarousel renderiza na home
 ```
+
+---
+
+## Favoritos
+
+### Objetivo
+
+Permitir que usuários logados marquem produtos como favoritos e visualizem a lista em `/favoritos`.
+
+### Arquivos envolvidos
+
+- `src/app/favoritos/page.tsx` — Página de listagem (Client Component, 118 linhas)
+- `src/components/products/ProductCard.tsx` — Botão de toggle no card de produto
+- `src/services/api/endpoints.ts` — `ENDPOINTS.FAVORITES.LIST` e `ENDPOINTS.FAVORITES.TOGGLE(id)`
+
+### Fluxo — toggle no ProductCard
+
+```
+1. Usuário clica no ícone de coração no ProductCard
+2. Verificação: se não logado → redirect para /login
+3. Optimistic update: setIsFavorite(!current)
+4. Se estava favoritado:
+   - DELETE /api/favorites/{productId}
+5. Se não estava:
+   - POST /api/favorites { productId }
+6. Se a API falha: reverte o state para o valor anterior (rollback)
+```
+
+### Fluxo — página /favoritos
+
+```
+1. Verificação de auth:
+   - Se authLoading: aguarda
+   - Se não logado: mostra CTA de login (não faz fetch)
+2. GET /api/favorites → lista de produtos favoritados
+   - Aceita resposta como array direto ou envelope { data: [...] }
+3. Renderiza ProductCard para cada favorito (com initialIsFavorite=true)
+4. Se 401: mostra mensagem "Faça login novamente"
+5. Se erro genérico: mostra mensagem "Erro ao carregar seus favoritos"
+6. Se lista vazia: mostra empty state com CTA "Começar a comprar"
+```
+
+### Estados tratados
+
+| Estado | O que mostra |
+|--------|-------------|
+| Auth carregando | Nada (aguarda) |
+| Não logado | CTA de login |
+| Carregando favoritos | Texto "Carregando favoritos..." |
+| Erro de API | Mensagem de erro em vermelho |
+| Lista vazia | Empty state com link para a loja |
+| Com favoritos | Grid responsivo de ProductCards |
+
+### Cuidados ao mexer
+
+- O toggle usa **optimistic update** — o state muda antes da API responder. Se a API falhar, o state é revertido. Não quebre esse padrão.
+- O `ProductCard` recebe `initialIsFavorite` como prop — na página de favoritos, é sempre `true`.
+- A verificação de auth no toggle usa `window.location` para redirect (não `router.push`) — funciona mas não é o padrão ideal. Cuidado ao refatorar.
+- A response do endpoint aceita dois formatos (`[...]` e `{ data: [...] }`) — isso é intencional para compatibilidade com o backend.
+
+---
+
+## Endereços do usuário
+
+### Objetivo
+
+Permitir que o usuário gerencie endereços de entrega (criar, editar, excluir) usados no checkout.
+
+### Arquivos envolvidos
+
+- `src/hooks/useUserAddresses.ts` — Hook CRUD com SWR (95 linhas)
+- `src/app/meus-dados/enderecos/page.tsx` — Listagem de endereços
+- `src/app/meus-dados/enderecos/novo/page.tsx` — Formulário de criação
+- `src/app/meus-dados/enderecos/[id]/page.tsx` — Formulário de edição
+- `src/components/checkout/AddressForm.tsx` — Formulário compartilhado (usado no checkout e em meus-dados)
+- `src/types/address.ts` — Tipos `UserAddress` e `UserAddressPayload`
+- `src/services/api/endpoints.ts` — `ENDPOINTS.USERS.ADDRESSES` e `ENDPOINTS.USERS.ADDRESS(id)`
+
+### Fluxo — listar endereços
+
+```
+1. useUserAddresses() → SWR faz GET /api/users/addresses
+2. Se loading: mostra skeleton (2 placeholders com animate-pulse)
+3. Se lista vazia: mostra empty state "Nenhum endereço cadastrado"
+4. Se tem endereços: renderiza cards com:
+   - Apelido (ou "Endereço" como fallback)
+   - Badge "Padrão" se is_default=true
+   - Rua, número, bairro, cidade/estado, CEP
+   - Ponto de referência e telefone (se existirem)
+   - Botões: Editar (link) e Excluir (ação direta)
+```
+
+### Fluxo — criar endereço
+
+```
+1. Usuário clica "+ Novo endereço" → navega para /meus-dados/enderecos/novo
+2. Preenche AddressForm (CEP, rua, número, bairro, cidade, estado, etc.)
+3. Submit: useUserAddresses().createAddress(payload)
+   - POST /api/users/addresses
+   - Optimistic update: adiciona ao array local via mutate
+   - Toast: "Endereço salvo com sucesso!"
+4. Redirect para listagem
+```
+
+### Fluxo — editar endereço
+
+```
+1. Usuário clica "Editar" → navega para /meus-dados/enderecos/{id}
+2. AddressForm pré-populado com dados do endereço
+3. Submit: useUserAddresses().updateAddress(id, payload)
+   - PUT /api/users/addresses/{id}
+   - Optimistic update: substitui item no array via mutate
+   - Toast: "Endereço atualizado com sucesso!"
+4. Redirect para listagem
+```
+
+### Fluxo — excluir endereço
+
+```
+1. Usuário clica "Excluir" na listagem
+2. useUserAddresses().deleteAddress(id)
+   - DELETE /api/users/addresses/{id}
+   - Optimistic update: filtra item do array via mutate
+   - Toast: "Endereço excluído com sucesso."
+3. Se erro: toast de erro + throw (para caller tratar)
+```
+
+### Estados tratados
+
+| Estado | O que mostra |
+|--------|-------------|
+| Carregando | Skeleton (2 cards placeholder) |
+| Lista vazia | Empty state dashed border |
+| Com endereços | Cards com dados + botões Editar/Excluir |
+| Erro de fetch | Toast de erro (via SWR onError) |
+| Erro de mutation | Toast de erro + throw para caller |
+
+### Integração com checkout
+
+Os endereços gerenciados aqui são os mesmos usados no checkout (`useCheckoutState.ts`):
+- Checkout carrega endereços salvos via `GET /api/users/addresses`
+- Seleciona o endereço padrão (`is_default`) ou o primeiro da lista
+- Restaura último endereço usado via sessionStorage
+
+Se o usuário altera endereços em `/meus-dados`, o checkout refletirá na próxima abertura (os dados vêm do backend, não de cache local).
+
+### Cuidados ao mexer
+
+- O hook `useUserAddresses` usa **optimistic update** (segundo parâmetro `false` no `mutate`) — a UI atualiza antes da confirmação do backend. Se a API falha, o SWR fará revalidação automática.
+- Todas as mutations fazem `throw err` após o toast de erro — isso permite que o caller (página) também reaja ao erro (ex: manter formulário aberto).
+- O `AddressForm` é compartilhado entre checkout e meus-dados — alterações nele afetam os dois contextos.
+- Os endpoints usam constantes centralizadas (`ENDPOINTS.USERS.ADDRESSES`) — não hardcode URLs.
