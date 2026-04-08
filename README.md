@@ -6,22 +6,6 @@ Construído com **Next.js 15 (App Router)**, **React 19**, **TypeScript** e **Ta
 
 ---
 
-## Documentação
-
-| Documento | Descrição |
-|-----------|-----------|
-| [Onboarding](docs/onboarding.md) | Guia para novos desenvolvedores — setup, estrutura, primeiros passos |
-| [Arquitetura Frontend](docs/frontend-architecture.md) | Camadas, decisões técnicas, responsabilidades |
-| [Data Fetching](docs/data-fetching.md) | Quando usar RSC, hooks SWR, apiClient direto |
-| [Padrões de Componentes](docs/component-patterns.md) | Como criar componentes, hooks, formulários |
-| [Fluxos Críticos](docs/critical-flows.md) | Auth, checkout, pedidos, CRUD admin, upload |
-| [Guia de Manutenção](docs/maintenance-guide.md) | Como adicionar features, módulos, campos |
-| [Troubleshooting](docs/troubleshooting.md) | Problemas comuns e soluções |
-| [Sistema de Cores](COLORS.md) | Design tokens, catálogo, regras de uso |
-| [Segurança Frontend](FRONTEND_SECURITY_ALIGNMENT.md) | Auditoria, schemas Zod, CSP, contratos com backend |
-
----
-
 ## Quick start
 
 ```bash
@@ -34,23 +18,23 @@ npm run dev                    # → http://localhost:3000
 
 **Pré-requisitos:** Node.js 20+, npm 10+, backend rodando em `localhost:5000`.
 
-Para o guia completo de setup, veja [docs/onboarding.md](docs/onboarding.md).
+Novo no projeto? Comece pelo [guia de onboarding](docs/onboarding.md).
 
 ---
 
-## Sumário
+## Documentação
 
-- [Funcionalidades](#funcionalidades)
-- [Tecnologias](#tecnologias)
-- [Estrutura do projeto](#estrutura-do-projeto)
-- [Rotas da aplicação](#rotas-da-aplicação)
-- [Variáveis de ambiente](#variáveis-de-ambiente)
-- [Scripts disponíveis](#scripts-disponíveis)
-- [Arquitetura e padrões](#arquitetura-e-padrões)
-- [Autenticação](#autenticação)
-- [Segurança](#segurança)
-- [Testes](#testes)
-- [Status do projeto](#status-do-projeto)
+| Documento | Quando usar |
+|-----------|-------------|
+| [Onboarding](docs/onboarding.md) | Primeiro dia — setup, estrutura, primeiras tarefas |
+| [Arquitetura](docs/frontend-architecture.md) | Entender camadas, decisões técnicas, limitações |
+| [Data Fetching](docs/data-fetching.md) | Decidir entre RSC, SWR, apiClient direto |
+| [Padrões de Componentes](docs/component-patterns.md) | Criar componentes, hooks, formulários |
+| [Fluxos Críticos](docs/critical-flows.md) | Entender auth, checkout, pedidos, CRUD admin |
+| [Manutenção](docs/maintenance-guide.md) | Adicionar features, módulos, regras do projeto |
+| [Troubleshooting](docs/troubleshooting.md) | Resolver problemas de dev, testes, build |
+| [Cores / Design Tokens](COLORS.md) | Adicionar ou usar cores do tema |
+| [Segurança](FRONTEND_SECURITY_ALIGNMENT.md) | Auditoria, schemas Zod, CSP, contratos |
 
 ---
 
@@ -59,43 +43,22 @@ Para o guia completo de setup, veja [docs/onboarding.md](docs/onboarding.md).
 ### Área pública
 
 - Catálogo de produtos com busca, filtros e navegação por categoria
-- Listagem e detalhes de serviços especializados (contato via WhatsApp integrado)
-- Catálogo de drones com especificações técnicas, galeria e representantes
-- Mercado do Café com listagem de corretoras e cadastro
-- Carrinho de compras com persistência (usuário autenticado e anônimo)
-- Checkout com seleção de endereço, aplicação de cupom, cálculo de frete e integração com MercadoPago
-- Conta do usuário: perfil, endereços, histórico de pedidos, favoritos
-- **Kavita News**: notícias, informações climáticas, cotações agrícolas
-- Busca global, página de contato e área de vagas
+- Serviços especializados com contato via WhatsApp
+- Drones agrícolas com specs, galeria e representantes
+- Mercado do Café com corretoras e cadastro
+- Carrinho com persistência + checkout com MercadoPago
+- Conta do usuário: perfil, endereços, pedidos, favoritos
+- **Kavita News**: notícias, clima, cotações agrícolas
+- Busca global, contato e vagas
 
 ### Painel administrativo (`/admin`)
 
-- Dashboard com KPIs e gráficos de vendas
-- Gestão de produtos, serviços e drones (CRUD completo com upload de imagens)
-- Gestão de pedidos e clientes
-- Gestão de cupons e frete
-- Gerenciamento de conteúdo (posts, dados de clima, cotações)
-- Mercado do Café: corretoras e solicitações
-- Relatórios: vendas, produtos, serviços, estoque, clientes
-- Configurações da loja, categorias e usuários administrativos
-- Destaques e hero section com preview desktop/mobile
-- Logs de auditoria de ações administrativas
-
----
-
-## Tecnologias
-
-| Categoria | Tecnologias |
-|-----------|-------------|
-| Framework | Next.js 15 (App Router, RSC + Client Components) |
-| UI | React 19, Tailwind CSS 3, Lucide React, Framer Motion |
-| Formulários | React Hook Form 7, Zod 4 |
-| HTTP | Fetch API nativo (via `apiClient` interno — Axios removido) |
-| Dados/Cache | SWR 2 |
-| Gráficos | Recharts 3 |
-| Testes | Vitest 4, jsdom, @testing-library/react |
-| Lint | ESLint 9 (flat config), TypeScript ESLint |
-| Linguagem | TypeScript 5 |
+- Dashboard com KPIs e gráficos
+- CRUD de produtos, serviços, drones com upload de imagens
+- Gestão de pedidos, clientes, cupons e frete
+- Conteúdo: posts, clima, cotações, corretoras
+- Relatórios, configurações, equipe, logs de auditoria
+- Hero section com preview desktop/mobile
 
 ---
 
@@ -103,98 +66,42 @@ Para o guia completo de setup, veja [docs/onboarding.md](docs/onboarding.md).
 
 ```
 src/
-├── app/                    # Rotas Next.js (App Router)
+├── app/                    # Rotas (App Router)
 │   ├── (root)/             # Páginas públicas
 │   └── admin/              # Painel administrativo
-├── components/             # Componentes React (por domínio)
-│   ├── admin/              # Exclusivos do painel admin
-│   ├── products/           # Cards e listagens de produtos
-│   ├── ui/                 # Compartilhados (LoadingState, ErrorState, etc.)
-│   └── ...
-├── context/                # React Contexts (Auth, AdminAuth, Cart)
-├── hooks/                  # Custom hooks (SWR, formulários, CEP)
-├── lib/                    # Infraestrutura (apiClient, erros, schemas Zod)
+├── components/             # Componentes por domínio (admin/, products/, ui/, ...)
+├── context/                # Auth, AdminAuth, Cart
+├── hooks/                  # SWR hooks, formulários, CEP
+├── lib/                    # apiClient, erros, schemas Zod
 ├── server/data/            # Server-only data fetchers (RSC)
-├── services/api/           # Constantes de endpoints e wrappers
-├── types/                  # Tipos TypeScript do domínio
-└── utils/                  # Funções auxiliares (absUrl, formatters, pricing)
+├── services/               # Endpoints, wrappers, lógica de negócio
+├── types/                  # Tipos do domínio
+└── utils/                  # absUrl, formatters, pricing
 ```
 
-Para detalhes de cada camada, veja [docs/frontend-architecture.md](docs/frontend-architecture.md).
-
----
-
-## Rotas da aplicação
-
-### Públicas
-
-| Rota | Descrição |
-|------|-----------|
-| `/` | Home |
-| `/produtos`, `/produtos/[id]` | Catálogo de produtos |
-| `/servicos`, `/servicos/[id]` | Catálogo de serviços |
-| `/drones`, `/drones/[id]` | Catálogo de drones |
-| `/categorias/[category]` | Produtos por categoria |
-| `/mercado-do-cafe/**` | Mercado do Café (corretoras, cadastro) |
-| `/checkout` | Carrinho e checkout |
-| `/pedidos`, `/pedidos/[id]` | Histórico de pedidos |
-| `/meus-dados/**` | Perfil, endereços |
-| `/favoritos` | Lista de favoritos |
-| `/news/**` | Kavita News (artigos, clima, cotações) |
-| `/busca` | Busca global |
-| `/login`, `/register` | Autenticação de usuários |
-| `/contato`, `/trabalhe-conosco` | Contato e vagas |
-
-### Administrativas (`/admin/**`)
-
-| Rota | Descrição |
-|------|-----------|
-| `/admin` | Dashboard |
-| `/admin/produtos` | Gestão de produtos |
-| `/admin/servicos` | Gestão de serviços |
-| `/admin/drones` | Gestão de drones |
-| `/admin/pedidos` | Gestão de pedidos |
-| `/admin/clientes` | Gestão de clientes |
-| `/admin/cupons` | Cupons de desconto |
-| `/admin/frete` | Configuração de frete |
-| `/admin/equipe` | Usuários administrativos |
-| `/admin/logs` | Logs de auditoria |
-| `/admin/kavita-news` | Gestão de conteúdo |
-| `/admin/mercado-do-cafe` | Corretoras e solicitações |
-| `/admin/configuracoes` | Categorias e configurações |
-| `/admin/relatorios` | Relatórios (vendas, estoque, clientes) |
-| `/admin/destaques` | Destaques e hero section |
+Detalhes de cada camada em [docs/frontend-architecture.md](docs/frontend-architecture.md).
 
 ---
 
 ## Variáveis de ambiente
 
-Copie `.env.example` para `.env.local` e ajuste os valores:
+Copie `.env.example` para `.env.local`:
 
 ```env
-# URL base do backend Express
-NEXT_PUBLIC_API_URL=http://localhost:5000
-
-# Prefixo das rotas da API
-NEXT_PUBLIC_API_BASE=/api
-
-# URL base do frontend
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-
-# Integrações de terceiros
-NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=   # Chave pública do MercadoPago
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=      # Google Maps (representantes)
-NEXT_PUBLIC_WEATHER_API_KEY=          # API de clima (Kavita News)
-
-# Ambiente
-NEXT_PUBLIC_APP_ENV=development       # development | production
+NEXT_PUBLIC_API_URL=http://localhost:5000     # Backend Express
+NEXT_PUBLIC_API_BASE=/api                     # Prefixo das rotas
+NEXT_PUBLIC_SITE_URL=http://localhost:3000    # Frontend
+NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=           # MercadoPago
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=             # Google Maps
+NEXT_PUBLIC_WEATHER_API_KEY=                 # API de clima
+NEXT_PUBLIC_APP_ENV=development              # development | production
 ```
 
-> Todas as variáveis com prefixo `NEXT_PUBLIC_` ficam expostas ao cliente. Nunca adicione segredos com esse prefixo.
+> Variáveis `NEXT_PUBLIC_*` ficam expostas ao cliente. Nunca adicione segredos com esse prefixo.
 
 ---
 
-## Scripts disponíveis
+## Scripts
 
 ```bash
 npm run dev           # Desenvolvimento (localhost:3000)
@@ -203,150 +110,90 @@ npm run start         # Servidor de produção
 npm run lint          # ESLint (flat config)
 npm run lint:fix      # ESLint com autofix
 npm run test          # Vitest em modo watch
-npm run test:run      # Vitest — execução única
-npm run test:coverage # Vitest com cobertura (v8)
+npm run test:run      # Execução única
+npm run test:coverage # Cobertura (v8)
 ```
 
-> O script de lint usa `set ESLINT_USE_FLAT_CONFIG=true&&` explicitamente por compatibilidade com Windows. Não altere essa linha.
+> O script de lint usa `set ESLINT_USE_FLAT_CONFIG=true&&` por compatibilidade com Windows. Não altere.
 
 ---
 
-## Arquitetura e padrões
+## Tecnologias
 
-### RSC + Client Components
-
-Páginas públicas seguem o padrão de busca no servidor com repasse para o cliente:
-
-```
-src/app/page.tsx (RSC, async)
-  └─ fetchPublicCategories() → src/server/data/categories.ts
-  └─ passa props para HomeClient (Client Component)
-```
-
-Os fetchers em `src/server/data/` são marcados com `server-only` e nunca devem ser importados em Client Components.
-
-Para detalhes completos sobre data fetching, veja [docs/data-fetching.md](docs/data-fetching.md).
-
-### HTTP client
-
-Todo request HTTP usa `apiClient` de `@/lib/apiClient`:
-
-```ts
-import apiClient from "@/lib/apiClient";
-
-apiClient.get("/api/public/produtos")
-apiClient.post("/api/admin/produtos", payload)
-```
-
-O cliente gerencia automaticamente:
-- `credentials: "include"` para rotas `/api`, `"omit"` para `/uploads`
-- Token CSRF (`x-csrf-token`) injetado em POST/PUT/PATCH/DELETE
-- Timeout padrão de 15s
-- Erros padronizados como `ApiError` (importar de `@/lib/errors`)
-
-Não use `fetch()` diretamente em componentes. O uso de Axios é proibido e foi completamente removido.
-
-### URLs de imagem
-
-Use sempre `absUrl()` de `@/utils/absUrl`:
-
-```ts
-import { absUrl } from "@/utils/absUrl";
-
-absUrl(produto.image) // → "http://localhost:5000/uploads/products/arquivo.jpg"
-```
-
-Nunca construa URLs de upload concatenando strings manualmente.
-
-### Validação de respostas da API
-
-Respostas críticas são validadas com Zod (schemas em `src/lib/schemas/api.ts`):
-
-```ts
-import { strictParse, AuthUserSchema } from "@/lib/schemas/api";
-
-const user = strictParse(AuthUserSchema, response);
-```
-
----
-
-## Autenticação
-
-Dois contextos independentes:
-
-| | Usuários da loja | Administradores |
-|---|---|---|
-| **Context** | `AuthContext` | `AdminAuthContext` |
-| **Hook** | `useAuth()` | `useAdminAuth()` |
-| **Cookie** | Cookie HttpOnly | `adminToken` (HttpOnly) |
-| **Validação** | Zod `AuthUserSchema` | Zod `AdminUserSchema` |
-
-> As duas autenticações são completamente independentes. Nunca misture `useAuth()` em contexto admin ou `useAdminAuth()` em contexto de loja.
-
-Para detalhes, veja [docs/critical-flows.md](docs/critical-flows.md#login-do-usuário).
-
----
-
-## Segurança
-
-| Proteção | Implementação |
-|----------|---------------|
-| **CSRF** | Token automático via apiClient (cache 10min, dedup) |
-| **CSP** | Headers separados para admin (restrito) e público |
-| **XSS** | Zero `dangerouslySetInnerHTML`, `sanitizeUrl()` em redirects |
-| **Auth** | Cookies HttpOnly, validação Zod de responses |
-| **Headers** | X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS |
-
-Para detalhes completos, veja [FRONTEND_SECURITY_ALIGNMENT.md](FRONTEND_SECURITY_ALIGNMENT.md).
+| Categoria | Stack |
+|-----------|-------|
+| Framework | Next.js 15 (App Router, RSC + Client Components) |
+| UI | React 19, Tailwind CSS 3, Lucide React, Framer Motion |
+| Formulários | React Hook Form 7, Zod 4 |
+| HTTP | Fetch API nativo via `apiClient` (Axios removido) |
+| Cache | SWR 2 |
+| Gráficos | Recharts 3 |
+| Testes | Vitest 4, jsdom, @testing-library/react |
+| Lint | ESLint 9 (flat config), TypeScript ESLint |
+| Linguagem | TypeScript 5 |
 
 ---
 
 ## Testes
 
-**Framework:** Vitest + jsdom + @testing-library/react
-
-```bash
-npm run test:run                                     # Execução única
-npm run test:coverage                                # Com cobertura
-npx vitest run src/__tests__/components/Header.test.tsx  # Arquivo específico
-```
-
-**Convenções:**
-- Estrutura de `src/__tests__/` espelha `src/`
-- Mocks via `vi.mock()` (sempre estáticos, hoistados)
-- Variáveis de ambiente via `vi.stubEnv()` (nunca `process.env` direto)
-- Coverage exclui `src/app/**` (páginas RSC testadas via integração)
-
 **Cobertura:** ~77% statements / ~69% branches / ~71% functions
 
-> **Nota:** ~46 testes em 8 arquivos falham por mocks desatualizados (usam export nomeado legado do apiClient). A aplicação funciona normalmente. Detalhes em [docs/troubleshooting.md](docs/troubleshooting.md#testes-falhando-conhecidos-mocks-desatualizados).
+> ~46 testes em 8 arquivos falham por mocks desatualizados. A aplicação funciona normalmente. Detalhes em [troubleshooting](docs/troubleshooting.md#testes-falhando-conhecidos-mocks-desatualizados).
+
+---
+
+## Rotas
+
+### Públicas
+
+| Rota | Descrição |
+|------|-----------|
+| `/` | Home |
+| `/produtos`, `/produtos/[id]` | Catálogo de produtos |
+| `/servicos`, `/servicos/[id]` | Serviços |
+| `/drones`, `/drones/[id]` | Drones |
+| `/categorias/[category]` | Produtos por categoria |
+| `/mercado-do-cafe/**` | Mercado do Café |
+| `/checkout` | Checkout |
+| `/pedidos`, `/pedidos/[id]` | Pedidos do usuário |
+| `/meus-dados/**` | Perfil e endereços |
+| `/favoritos` | Favoritos |
+| `/news/**` | Kavita News |
+| `/busca` | Busca global |
+| `/login`, `/register` | Autenticação |
+| `/contato`, `/trabalhe-conosco` | Contato e vagas |
+
+### Admin (`/admin/**`)
+
+| Rota | Descrição |
+|------|-----------|
+| `/admin` | Dashboard |
+| `/admin/produtos` | Produtos |
+| `/admin/servicos` | Serviços |
+| `/admin/drones` | Drones |
+| `/admin/pedidos` | Pedidos |
+| `/admin/clientes` | Clientes |
+| `/admin/cupons` | Cupons |
+| `/admin/frete` | Frete |
+| `/admin/equipe` | Equipe |
+| `/admin/logs` | Logs |
+| `/admin/kavita-news` | Conteúdo |
+| `/admin/mercado-do-cafe` | Corretoras |
+| `/admin/configuracoes` | Configurações |
+| `/admin/relatorios` | Relatórios |
+| `/admin/destaques` | Hero section |
 
 ---
 
 ## Status do projeto
 
-O projeto está em desenvolvimento ativo. A estrutura principal está implementada — loja pública, painel administrativo, autenticação, checkout e Kavita News. As próximas frentes de trabalho incluem:
+Em desenvolvimento ativo. Estrutura principal implementada. Próximas frentes:
 
-- Aumentar cobertura de testes nas áreas de formulários admin e contextos
-- Consolidar integração com MercadoPago (webhook e confirmação)
-- Melhorias de acessibilidade nos formulários
-- Otimizações de performance (lazy loading, prefetch seletivo)
+- Cobertura de testes em formulários admin e contextos
+- Integração MercadoPago (webhook e confirmação)
+- Melhorias de acessibilidade
+- Otimizações de performance
 - Internacionalização (i18n) — atualmente pt-BR only
-
----
-
-## Regras de projeto
-
-| Regra | Motivo |
-|-------|--------|
-| Toda URL de mídia passa por `absUrl()` | Trata todos os formatos, evita URLs quebradas |
-| Todo request HTTP usa `apiClient` | Credentials, CSRF, timeout, erros automáticos |
-| `API_BASE` importado de `@/utils/absUrl` | Evita divergência entre contextos |
-| `server/data/` é server-only | Previne import em Client Components |
-| Design tokens para cores | Consistência visual centralizada |
-| Sem `console.log` de debug | Proibido em produção |
-| Sem Axios | Removido — `apiClient` é o padrão único |
-| Nomes de campos de imagem | Produtos: `image`/`images`. Serviços: `imagem`/`images`. Intencional. |
 
 ---
 
