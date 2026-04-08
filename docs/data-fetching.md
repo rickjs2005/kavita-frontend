@@ -101,6 +101,23 @@ export default async function HomePage() {
 | `fetchPublicCorretoras()` | `/api/public/corretoras` | 120s |
 | `fetchNewsOverview()` | `/api/public/news/*` (parallel) | 120s |
 
+### Onde este padrão é usado de verdade
+
+Nem todas as páginas públicas usam server data fetchers. Na prática:
+
+| Página | Usa RSC com server fetch? | Como busca dados |
+|--------|--------------------------|------------------|
+| `/` (home) | **Sim** | `fetchPublicCategories`, `fetchPublicShopSettings`, `fetchPublicHeroSlides` em parallel |
+| `/produtos/[id]` | **Sim** | Fetch direto do produto + promoção no servidor (exemplar) |
+| `/news/**` | **Sim** | `fetchNewsOverview`, `fetchPublicCotacoes` |
+| `/mercado-do-cafe/**` | **Sim** | `fetchPublicCorretoras` |
+| `/produtos` | **Não** | page.tsx é wrapper vazio → `ProductsPageClient` faz tudo client-side |
+| `/servicos` | **Não** | page.tsx é `"use client"` inteiro (369 linhas) |
+| `/drones` | **Não** | page.tsx é wrapper → `DronesClient` faz tudo client-side |
+| `/checkout` | **Não** | Depende de auth/carrinho, deve ser client |
+
+As páginas que usam wrapper vazio funcionam, mas não aproveitam streaming, SEO ou redução de JS. `produtos/[id]` é o exemplo de como migrar uma listagem para RSC.
+
 ---
 
 ## Padrão 2: Client Hook com SWR

@@ -100,13 +100,15 @@ src/components/
 │   └── ProductBuyBox.tsx
 ├── admin/
 │   └── produtos/       # Componentes admin de produto
-│       ├── ProdutoCard.tsx
-│       └── ProdutoForm.tsx
+│       ├── produtocard.tsx   ← naming legado (lowercase)
+│       └── produtoform.tsx   ← naming legado (lowercase)
 └── ui/                 # Componentes genéricos reutilizáveis
     ├── LoadingState.tsx
     ├── ErrorState.tsx
     └── EmptyState.tsx
 ```
+
+> **Nota:** `produtocard.tsx` e `produtoform.tsx` são os únicos arquivos que violam a convenção PascalCase. Código novo deve seguir PascalCase.
 
 ---
 
@@ -288,9 +290,9 @@ const { items, loading, saving, error, create, update, remove, refetch } =
 
 ## Formulários
 
-### Padrão atual
+### Padrão atual (maioria do admin)
 
-A maioria dos formulários usa `useState` para campos e validação manual:
+A maioria dos formulários no admin (produtos, serviços, equipe, configurações) usa `useState` para campos e validação manual. Este é o padrão predominante no código existente:
 
 ```typescript
 const [form, setForm] = useState({ nome: "", preco: 0 });
@@ -310,7 +312,9 @@ const handleSubmit = async () => {
 };
 ```
 
-### Com React Hook Form + Zod (formulários mais complexos)
+### Direção futura: React Hook Form + Zod (formulários complexos)
+
+React Hook Form com Zod é usado nos formulários de autenticação (login, registro, forgot/reset password). Para código novo em formulários complexos, prefira este padrão:
 
 ```typescript
 import { useForm } from "react-hook-form";
@@ -397,10 +401,12 @@ toast.error("Erro ao salvar produto");
 toast.error("Sessão expirada. Faça login novamente.", { duration: 5500 });
 ```
 
-### Regra
+### Regra para código novo
 
 - **Área pública e admin**: Use `toast` para feedback de ações
-- **Nunca** use `alert()` ou `window.alert()` (bloqueia a thread)
+- **Nunca** use `alert()` ou `window.alert()` em código novo (bloqueia a thread)
+
+> **Realidade atual:** Algumas páginas admin legadas (`admin/pedidos`, `admin/produtos`, `admin/servicos`, `admin/equipe`) ainda usam `alert()` para feedback de erros (~15 ocorrências). Ao trabalhar nesses arquivos, substitua `alert()` por `toast.error()` / `toast.success()` oportunamente.
 
 ---
 

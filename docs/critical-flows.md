@@ -299,6 +299,14 @@ Validação de itens (do backend):
 - Restauração de último endereço via sessionStorage
 - Cupom invalidado ao mudar quantidade ou promoção
 
+### Cuidados ao mexer no checkout
+
+O `useCheckoutState.ts` tem 674 linhas e é a parte mais complexa do frontend. Antes de alterar:
+- Entenda que ele usa cancel tokens (flag `aborted`) para evitar race conditions — não remova essas flags
+- Há ~14 `as any` type casts — eles existem por conta de tipos variantes do backend (campo `id`/`productId`/`product_id`)
+- A validação de URL de pagamento (`sanitizeUrl` + `isMercadoPagoUrl`) é uma proteção de segurança — não simplifique
+- Sessão expirando durante checkout perde o formulário (sem recovery de estado — limitação conhecida)
+
 ---
 
 ## Gestão de pedidos (admin)
@@ -324,8 +332,16 @@ Validação de itens (do backend):
 2. atualizandoId = pedido.id (loading visual)
 3. PUT /api/admin/pedidos/{id}/entrega { status_entrega: novoStatus }
 4. Se sucesso: refetch da lista
-5. Se erro: alert com mensagem
+5. Se erro: alert() com mensagem (legado — deveria ser toast)
 ```
+
+### Cuidados ao mexer em pedidos
+
+O `admin/pedidos/page.tsx` tem 758 linhas em um único arquivo — UI, lógica de negócio, API calls e estado. É o maior arquivo do projeto. Ao alterar:
+- Usa `alert()` em vez de `toast` (7 ocorrências) — padrão legado
+- Clipboard API tem fallback para browsers sem suporte
+- Normalização de telefone adiciona +55 se necessário
+- Layout é responsivo (tabela desktop + cards mobile) — teste ambos
 
 ---
 

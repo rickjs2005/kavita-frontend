@@ -44,11 +44,12 @@ export interface Parceiro {
 ```typescript
 // src/server/data/parceiros.ts
 import "server-only";
-import { API_BASE } from "@/utils/absUrl";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export async function fetchPublicParceiros(): Promise<Parceiro[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/public/parceiros`, {
+    const res = await fetch(`${API}/api/public/parceiros`, {
       cache: "no-store",
     });
     if (!res.ok) return [];
@@ -59,6 +60,8 @@ export async function fetchPublicParceiros(): Promise<Parceiro[]> {
   }
 }
 ```
+
+> **Nota:** Server data fetchers usam `process.env.NEXT_PUBLIC_API_URL` diretamente (não `API_BASE` de `@/utils/absUrl`). Isso é intencional — `absUrl` é um utilitário client-side para normalizar URLs de imagem, não para construir URLs de API em contexto de servidor. A regra "nunca use `process.env` inline" se aplica apenas a Client Components.
 
 #### 3. Criar a página (RSC)
 

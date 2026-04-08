@@ -80,7 +80,9 @@ Cada diretório em `src/app/` corresponde a uma rota. O App Router do Next.js ma
 - `page.tsx` → página renderizada na rota
 - `layout.tsx` → layout que envolve páginas filhas
 - `loading.tsx` → skeleton exibido durante carregamento (Suspense)
-- `error.tsx` → fallback de erro (error boundary)
+- `error.tsx` → fallback de erro (error boundary) — **não existe atualmente no projeto**
+
+> **Limitação conhecida:** O projeto não tem nenhum `error.tsx` nem `not-found.tsx`. Se um componente lançar exceção não capturada, a página mostra tela branca. Existem apenas 2 `loading.tsx` (em `produtos/[id]` e `news/cotacoes`).
 
 ### 2. Server Data Fetchers (`src/server/data/`)
 
@@ -174,7 +176,8 @@ components/
 
 - `src/types/` — Tipos de domínio (Product, Service, Auth, Admin, etc.)
 - `src/utils/` — Funções puras (formatadores, cálculos de preço, absUrl)
-- `src/services/api/` — Constantes de endpoint e wrappers de API
+- `src/services/api/` — Constantes de endpoint (`endpoints.ts`) e wrappers por domínio (`services/auth.ts`, `services/products.ts`, `services/addresses.ts`, `services/users.ts`)
+- `src/services/` (raiz) — Service layer com lógica de negócio: `products.ts` (normalização), `services.ts` (normalização de serviços), `shippingQuote.ts` (cotação de frete com Zod validation)
 
 ---
 
@@ -493,4 +496,9 @@ Para detalhes completos, consulte [FRONTEND_SECURITY_ALIGNMENT.md](../FRONTEND_S
 | Sem error boundaries globais | Crash de componente mostra tela branca | Necessita `error.tsx` nas rotas |
 | Poucos `loading.tsx` | Maioria das rotas sem skeleton loader | Apenas 2 atualmente |
 | Schemas Zod parcialmente usados | Hooks de fetch público não validam respostas | Infraestrutura existe, uso parcial |
+| `as any` espalhado (~200 ocorrências em código de produção) | Type safety minada em hooks admin e checkout | Reduzir progressivamente ao trabalhar nesses arquivos |
+| `alert()` no admin (15 ocorrências) | UX inconsistente — pedidos, produtos, serviços, equipe usam `alert()` em vez de `toast` | Padrão legado, código novo deve usar `toast` |
+| Arquivos grandes sem decomposição | `pedidos/page.tsx` (758 linhas), `useCheckoutState.ts` (674), `produtoform.tsx` (530) | Funcionais, candidatos a refatoração futura |
+| Naming inconsistente | `produtocard.tsx` e `produtoform.tsx` em lowercase vs PascalCase do restante | Legado, não renomeado por impacto em imports |
 | i18n ausente | Toda a UI em pt-BR hardcoded | Decisão futura |
+| Testes com mocks desatualizados | ~46 testes falham por usar export nomeado legado do apiClient | Corrigir mocks para usar `default` export |
