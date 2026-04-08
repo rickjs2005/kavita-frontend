@@ -8,6 +8,9 @@ Como adicionar features, módulos e manter o projeto ao longo do tempo.
 
 - [Adicionar nova página pública](#adicionar-nova-página-pública)
 - [Adicionar novo módulo admin (CRUD)](#adicionar-novo-módulo-admin-crud)
+- [Adicionar error boundary (error.tsx)](#adicionar-error-boundary-errortsx)
+- [Adicionar loading skeleton (loading.tsx)](#adicionar-loading-skeleton-loadingtsx)
+- [Adicionar página 404 (not-found.tsx)](#adicionar-página-404-not-foundtsx)
 - [Adicionar novo campo em formulário existente](#adicionar-novo-campo-em-formulário-existente)
 - [Adicionar novo módulo com upload de imagens](#adicionar-novo-módulo-com-upload-de-imagens)
 - [Adicionar nova cor / design token](#adicionar-nova-cor--design-token)
@@ -205,6 +208,250 @@ const KNOWN_PREFIXES = ["products/", "colaboradores/", "logos/", ..., "parceiros
 - [ ] Link na sidebar com permissão correta
 - [ ] Se tem upload: prefixo em `absUrl.ts`
 - [ ] Testes em `src/__tests__/`
+
+---
+
+## Adicionar error boundary (error.tsx)
+
+O projeto atualmente **não tem nenhum `error.tsx`**. Se um componente lançar exceção não capturada, a página mostra tela branca. Adicionar error boundaries é uma melhoria de robustez importante.
+
+### Como funciona no App Router
+
+- `error.tsx` em uma pasta de rota cria um [Error Boundary](https://nextjs.org/docs/app/building-your-application/routing/error-handling) para aquela rota e suas filhas
+- Deve ser Client Component (`"use client"`)
+- Recebe `error` e `reset` como props
+- Não captura erros em `layout.tsx` da mesma pasta (só em `page.tsx` e filhas)
+
+### Onde posicionar
+
+| Arquivo | Escopo | Prioridade |
+|---------|--------|------------|
+| `src/app/error.tsx` | Toda a aplicação (fallback global) | Alta — criar primeiro |
+| `src/app/admin/error.tsx` | Todo o painel admin | Média |
+| `src/app/checkout/error.tsx` | Fluxo de checkout | Média |
+
+### Template — error.tsx global
+
+```tsx
+// src/app/error.tsx
+"use client";
+
+import { useEffect } from "react";
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[error.tsx]", error);
+  }, [error]);
+
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      <h2 className="text-xl font-semibold text-gray-900">
+        Algo deu errado
+      </h2>
+      <p className="mt-2 text-gray-600">
+        Ocorreu um erro inesperado. Tente novamente.
+      </p>
+      <button
+        onClick={reset}
+        className="mt-6 rounded-lg bg-primary px-6 py-2 text-white hover:bg-primary-hover"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  );
+}
+```
+
+### Template — error.tsx para admin
+
+```tsx
+// src/app/admin/error.tsx
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export default function AdminError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  const router = useRouter();
+
+  useEffect(() => {
+    console.error("[admin error.tsx]", error);
+  }, [error]);
+
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      <h2 className="text-xl font-semibold text-gray-900">
+        Erro no painel
+      </h2>
+      <p className="mt-2 text-gray-600">
+        Algo deu errado. Tente novamente ou volte ao dashboard.
+      </p>
+      <div className="mt-6 flex gap-3">
+        <button
+          onClick={reset}
+          className="rounded-lg bg-primary px-6 py-2 text-white hover:bg-primary-hover"
+        >
+          Tentar novamente
+        </button>
+        <button
+          onClick={() => router.push("/admin")}
+          className="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 hover:bg-gray-50"
+        >
+          Voltar ao dashboard
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Como validar
+
+1. Crie o arquivo `error.tsx` na pasta desejada
+2. Para testar, adicione temporariamente `throw new Error("teste")` dentro de um `page.tsx` filho
+3. Acesse a rota — a UI de erro deve aparecer em vez de tela branca
+4. Clique "Tentar novamente" — deve re-renderizar o componente
+5. Remova o `throw` de teste
+
+---
+
+## Adicionar loading skeleton (loading.tsx)
+
+O projeto tem apenas 2 `loading.tsx` (`produtos/[id]` e `news/cotacoes`). Adicionar skeletons melhora a percepção de velocidade.
+
+### Como funciona no App Router
+
+- `loading.tsx` em uma pasta de rota é exibido automaticamente enquanto o `page.tsx` resolve (via Suspense)
+- É um Server Component por padrão (não precisa de `"use client"`)
+- Substitui o conteúdo da página enquanto os dados carregam
+
+### Onde é mais útil adicionar
+
+| Rota | Por quê |
+|------|---------|
+| `src/app/produtos/loading.tsx` | Listagem de produtos — busca no cliente (SWR) |
+| `src/app/admin/produtos/loading.tsx` | CRUD admin carrega via SWR |
+| `src/app/admin/pedidos/loading.tsx` | Listagem pesada de pedidos |
+| `src/app/news/loading.tsx` | Agregação de múltiplas APIs |
+
+### Template — loading.tsx para listagem com grid
+
+```tsx
+// src/app/produtos/loading.tsx
+export default function ProdutosLoading() {
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="h-8 w-48 rounded bg-gray-200 animate-pulse mb-6" />
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="rounded-lg bg-gray-100 animate-pulse">
+            <div className="aspect-square rounded-t-lg bg-gray-200" />
+            <div className="p-4 space-y-2">
+              <div className="h-4 w-3/4 rounded bg-gray-200" />
+              <div className="h-4 w-1/2 rounded bg-gray-200" />
+              <div className="h-8 w-full rounded bg-gray-200 mt-3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### Template — loading.tsx para admin
+
+```tsx
+// src/app/admin/pedidos/loading.tsx
+export default function AdminPedidosLoading() {
+  return (
+    <div className="px-4 py-8 sm:px-6 lg:px-8 animate-pulse">
+      <div className="h-7 w-32 rounded bg-gray-200 mb-6" />
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-20 rounded-lg bg-gray-100" />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### Referência — como o projeto já faz
+
+Veja os skeletons existentes para referência de estilo:
+- `src/app/produtos/[id]/loading.tsx` — skeleton de detalhe de produto (grid 2 colunas)
+- `src/app/news/cotacoes/loading.tsx` — skeleton com sub-componente `SkeletonCard`
+
+### Dica
+
+Use `animate-pulse` para a animação. Use `bg-gray-200` para blocos primários e `bg-gray-100` para secundários. Mantenha o layout do skeleton próximo ao layout real para evitar layout shift.
+
+---
+
+## Adicionar página 404 (not-found.tsx)
+
+O projeto atualmente **não tem nenhum `not-found.tsx`**. Rotas inválidas mostram a página 404 padrão do Next.js sem branding.
+
+### Como funciona no App Router
+
+- `not-found.tsx` em `src/app/` cria uma página 404 global customizada
+- Pode também ser colocado em rotas específicas para 404 contextual
+- É ativado automaticamente quando `notFound()` é chamado em um Server Component, ou quando nenhuma rota corresponde
+
+### Template — not-found.tsx global
+
+```tsx
+// src/app/not-found.tsx
+import Link from "next/link";
+
+export default function NotFound() {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      <h1 className="text-6xl font-bold text-primary">404</h1>
+      <h2 className="mt-4 text-xl font-semibold text-gray-900">
+        Página não encontrada
+      </h2>
+      <p className="mt-2 text-gray-600">
+        A página que você procura não existe ou foi movida.
+      </p>
+      <div className="mt-6 flex gap-3">
+        <Link
+          href="/"
+          className="rounded-lg bg-primary px-6 py-2 text-white hover:bg-primary-hover"
+        >
+          Voltar para a home
+        </Link>
+        <Link
+          href="/produtos"
+          className="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 hover:bg-gray-50"
+        >
+          Ver produtos
+        </Link>
+      </div>
+    </div>
+  );
+}
+```
+
+### Como validar
+
+1. Crie `src/app/not-found.tsx`
+2. Acesse uma rota que não existe (ex: `http://localhost:3000/pagina-inexistente`)
+3. A página 404 customizada deve aparecer com os links de navegação
+4. Verifique que o Header e Footer do layout global continuam visíveis
 
 ---
 
