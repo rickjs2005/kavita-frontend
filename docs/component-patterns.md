@@ -15,6 +15,8 @@ Como criar componentes, hooks e módulos seguindo os padrões do projeto.
 - [Formulários](#formulários)
 - [Loading, error e empty states](#loading-error-e-empty-states)
 - [Notificações (toast)](#notificações-toast)
+- [Responsividade](#responsividade)
+- [Composição de componentes](#composição-de-componentes)
 - [Acessibilidade](#acessibilidade)
 
 ---
@@ -407,6 +409,150 @@ toast.error("Sessão expirada. Faça login novamente.", { duration: 5500 });
 - **Nunca** use `alert()` ou `window.alert()` em código novo (bloqueia a thread)
 
 > **Realidade atual:** Algumas páginas admin legadas (`admin/pedidos`, `admin/produtos`, `admin/servicos`, `admin/equipe`) ainda usam `alert()` para feedback de erros (~15 ocorrências). Ao trabalhar nesses arquivos, substitua `alert()` por `toast.error()` / `toast.success()` oportunamente.
+
+---
+
+## Responsividade
+
+### Abordagem: mobile-first
+
+O projeto usa **mobile-first** com Tailwind CSS. Estilos base são para mobile; breakpoints adicionam regras para telas maiores.
+
+### Breakpoints (Tailwind padrão, sem customização)
+
+| Prefixo | Largura mínima | Uso típico |
+|---------|---------------|------------|
+| (nenhum) | 0px | Mobile (base) |
+| `sm:` | 640px | Mobile grande / tablet pequeno |
+| `md:` | 768px | Tablet |
+| `lg:` | 1024px | Desktop |
+| `xl:` | 1280px | Desktop grande |
+| `2xl:` | 1536px | Widescreen |
+
+### Padrões reais do projeto
+
+**Grids responsivos** — o padrão mais comum. Base 1 coluna, escala com breakpoints:
+
+```tsx
+// Catálogo de produtos (público)
+<div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+
+// Admin — listagem de cards
+<div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
+
+// KPIs e métricas
+<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+```
+
+**Tabela desktop / cards mobile** — usado no admin para dados tabulares:
+
+```tsx
+{/* Cards no mobile */}
+<div className="md:hidden p-4 space-y-3">
+  {items.map(item => <ItemCard key={item.id} item={item} />)}
+</div>
+
+{/* Tabela no desktop */}
+<div className="hidden md:block overflow-auto">
+  <table>...</table>
+</div>
+```
+
+Exemplos reais: `admin/pedidos/page.tsx`, `ClimaTable.tsx`, `CotacoesTable.tsx`.
+
+**Layout flex responsivo** — colunas empilham no mobile, ficam lado a lado no desktop:
+
+```tsx
+<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+```
+
+**Sidebar + conteúdo** — sidebar fixa no desktop, drawer/modal no mobile:
+
+```tsx
+{/* Sidebar escondida no mobile */}
+<aside className="hidden lg:block lg:sticky lg:top-24">
+
+{/* Botão que abre menu no mobile */}
+<button className="md:hidden">Menu</button>
+```
+
+Exemplos reais: `admin/layout.tsx` (sidebar admin), `BuscaClient.tsx` (filtros de busca).
+
+**Header** — menu hamburger no mobile, navegação completa no desktop:
+
+```tsx
+{/* Botão hamburger (só mobile) */}
+<button className="md:hidden mr-1 rounded-xl p-2">
+
+{/* Navegação desktop */}
+<nav className="hidden md:flex items-center gap-4">
+```
+
+### Ao criar componentes novos
+
+1. Comece pelo mobile (sem prefixo de breakpoint)
+2. Adicione `sm:`, `md:`, `lg:` conforme necessário
+3. Use `grid-cols-1` como base para grids
+4. Para conteúdo tabular: considere tabela `hidden md:block` + cards `md:hidden`
+5. Teste em viewport de 375px (mobile) e 1280px (desktop) no mínimo
+
+---
+
+## Composição de componentes
+
+O projeto organiza componentes compostos de duas formas:
+
+### Composição por props (páginas públicas)
+
+A home é o exemplo principal. O `HomeClient` recebe dados via props e compõe seções:
+
+```
+HomeClient (orquestrador)
+  ├── HeroCarousel         ← src/components/layout/
+  ├── DestaquesSection     ← src/components/products/
+  ├── ProdutosPorCategoria ← src/components/products/
+  ├── ServicosSection      ← src/components/layout/
+  ├── TrustBar             ← src/components/layout/
+  └── Footer               ← src/components/layout/
+```
+
+Cada seção é um componente independente que recebe seus dados por props. Não fazem fetch próprio.
+
+### Composição por context (carrinho)
+
+O `CartContext` divide responsabilidades entre 5 sub-hooks:
+
+```
+CartContext.tsx (orquestrador — 96 linhas)
+  ├── cartUtils.ts           ← funções puras (parse, clamp, localStorage)
+  ├── useCartPersistence.ts  ← debounced save no localStorage
+  ├── useCartSync.ts         ← sincronização com backend API
+  ├── useCartCalculations.ts ← subtotal, descontos, totais (useMemo)
+  └── useCartActions.ts      ← addItem, removeItem, updateQty, clear
+```
+
+Este é um bom exemplo de como decompor um context complexo sem criar prop drilling.
+
+### Composição por layout (Header)
+
+O `Header` compõe vários subcomponentes internos e importados:
+
+```
+Header.tsx (460 linhas)
+  ├── CartCar              ← src/components/cart/ (carrinho flutuante)
+  ├── UserMenu             ← src/components/ui/ (dropdown do usuário)
+  ├── MainNavCategories    ← src/components/layout/ (navegação por categorias)
+  ├── SearchBar            ← src/components/ui/ (dynamic import, SSR false)
+  └── ConditionalHeader    ← src/components/layout/ (decide se mostra header)
+```
+
+### Quando decompor
+
+- Quando um componente passa de ~300 linhas e tem responsabilidades distintas
+- Quando uma seção pode ser testada independentemente
+- Quando a mesma UI aparece em contextos diferentes (ex: `EmptyState`)
+
+> **Realidade atual:** Alguns componentes grandes (~500-758 linhas) não foram decompostos. São candidatos a refatoração futura mas funcionam como estão. Veja [limitações conhecidas](./frontend-architecture.md#limitações-conhecidas).
 
 ---
 
