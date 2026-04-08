@@ -210,7 +210,7 @@ Existem **dois sistemas de autenticação completamente independentes**:
 
 O middleware Edge (`middleware.ts` na raiz) protege todas as rotas `/admin/*` verificando presença do cookie. A validação real (JWT, permissões) é no backend.
 
-Para detalhes completos dos fluxos de login, veja [Fluxos Críticos](./critical-flows.md#login-do-usuário).
+Veja [Fluxos Críticos](./critical-flows.md#login-do-usuário) para detalhes dos fluxos de login.
 
 ---
 

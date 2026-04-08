@@ -82,7 +82,7 @@ Cada diretório em `src/app/` corresponde a uma rota. O App Router do Next.js ma
 - `loading.tsx` → skeleton exibido durante carregamento (Suspense)
 - `error.tsx` → fallback de erro (error boundary) — **não existe atualmente no projeto**
 
-> **Limitação conhecida:** O projeto não tem nenhum `error.tsx` nem `not-found.tsx`. Se um componente lançar exceção não capturada, a página mostra tela branca. Existem apenas 2 `loading.tsx` (em `produtos/[id]` e `news/cotacoes`).
+> **Realidade atual:** O projeto não tem nenhum `error.tsx` nem `not-found.tsx`. Se um componente lançar exceção não capturada, a página mostra tela branca. Existem apenas 2 `loading.tsx` (em `produtos/[id]` e `news/cotacoes`). Veja [maintenance-guide.md](./maintenance-guide.md#adicionar-error-boundary-errortsx) para templates.
 
 ### 2. Server Data Fetchers (`src/server/data/`)
 
@@ -438,7 +438,7 @@ tailwind.config.ts      → Mapeia CSS var para classe (primary: "var(--color-pr
 Componentes             → Usam classes Tailwind (bg-primary, text-accent)
 ```
 
-Para detalhes completos (catálogo, regras de uso, como adicionar cores), consulte [COLORS.md](../COLORS.md).
+Veja [COLORS.md](../COLORS.md) para catálogo completo, regras de uso e como adicionar cores.
 
 ---
 
@@ -455,7 +455,7 @@ Para detalhes completos (catálogo, regras de uso, como adicionar cores), consul
 | **Redirect** | `safeInternalRedirect()` previne open redirect |
 | **Upload** | Schema validation na response |
 
-Para detalhes completos, consulte [FRONTEND_SECURITY_ALIGNMENT.md](../FRONTEND_SECURITY_ALIGNMENT.md).
+Veja [FRONTEND_SECURITY_ALIGNMENT.md](../FRONTEND_SECURITY_ALIGNMENT.md) para auditoria completa, schemas e contratos com o backend.
 
 ---
 

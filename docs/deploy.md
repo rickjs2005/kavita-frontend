@@ -182,7 +182,7 @@ Se não configuradas, usam defaults de localhost (útil para staging local).
 | Error overlay | Ativo (Next.js dev overlay) | Desativado |
 | Source maps | Disponíveis | Não expostas ao cliente |
 
-Para detalhes de CSP e headers, veja `next.config.ts` (linhas 60-184).
+Veja `next.config.ts` (linhas 60-184) para detalhes de CSP e headers.
 
 ---
 

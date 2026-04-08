@@ -264,7 +264,7 @@ const { items, loading, saving, error, create, update, remove, refetch } =
 - **Toasts** de sucesso/erro
 - **refetch** automático após mutations
 
-Detalhes completos em [component-patterns.md](./component-patterns.md#padrão-de-hook-admin-useadminresource).
+Veja [component-patterns.md](./component-patterns.md#padrão-de-hook-admin-useadminresource) para detalhes da API do hook.
 
 ---
 

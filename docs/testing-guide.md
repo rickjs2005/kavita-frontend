@@ -95,7 +95,7 @@ vi.mock("@/lib/apiClient", () => ({
 }));
 ```
 
-> **Sempre** use `default` com métodos nomeados. O erro mais comum do projeto (~46 testes falhando) é usar a exportação nomeada legada `apiRequest`.
+> **Cuidado:** Sempre use `default` com métodos nomeados. O erro mais comum do projeto (~46 testes falhando) é usar a exportação nomeada legada `apiRequest`.
 
 ### next/navigation
 
@@ -211,7 +211,7 @@ it("usa API_URL da env", () => {
 // vi.stubEnv é limpo automaticamente pelo vitest (restoreMocks: true)
 ```
 
-> **Nunca** use `process.env.X = "valor"` direto. Use `vi.stubEnv()`.
+> **Cuidado:** Nunca use `process.env.X = "valor"` direto. Use `vi.stubEnv()`.
 
 ---
 
