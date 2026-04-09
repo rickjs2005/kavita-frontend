@@ -3,7 +3,7 @@ import DronesClient from "./DronesClient";
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="min-h-svh bg-dark-900" />}>
+    <Suspense fallback={<div className="min-h-screen bg-dark-900" />}>
       <DronesClient />
     </Suspense>
   );

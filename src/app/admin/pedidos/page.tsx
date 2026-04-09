@@ -264,7 +264,7 @@ export default function PedidosAdminPage() {
 
   if (loading) {
     return (
-      <main className="min-h-svh w-full px-4 py-8 sm:px-6 lg:px-8">
+      <main className="min-h-screen w-full px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
             Pedidos
@@ -279,7 +279,7 @@ export default function PedidosAdminPage() {
 
   if (erro) {
     return (
-      <main className="min-h-svh w-full px-4 py-8 sm:px-6 lg:px-8">
+      <main className="min-h-screen w-full px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
             Pedidos
@@ -293,7 +293,7 @@ export default function PedidosAdminPage() {
   }
 
   return (
-    <main className="min-h-svh w-full px-4 py-6 sm:px-6 lg:px-8">
+    <main className="min-h-screen w-full px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
         {/* botão voltar só no mobile */}
         <div className="sm:hidden">

@@ -61,13 +61,14 @@ const nextConfig: NextConfig = {
   async headers() {
     const isDev = process.env.NODE_ENV === "development";
 
-    // Hosts do backend permitidos. Em produção, apenas o host derivado de NEXT_PUBLIC_API_URL.
-    // Em dev, inclui localhost e IPs locais para facilitar desenvolvimento.
-    const apiHosts = isDev
-      ? "http://localhost:5000 http://127.0.0.1:5000 http://172.20.10.9:5000"
-      : (envPattern
-          ? `${envPattern.protocol}://${envPattern.hostname}${envPattern.port ? `:${envPattern.port}` : ""}`
-          : "");
+    // Hosts do backend permitidos.
+    // Em dev: usa "*" para connect-src e img-src — necessário para testes via IP
+    // local na rede (ex: celular acessando http://192.168.x.x:3000).
+    // Em produção: apenas o host derivado de NEXT_PUBLIC_API_URL (restritivo).
+    const envApiHost = envPattern
+      ? `${envPattern.protocol}://${envPattern.hostname}${envPattern.port ? `:${envPattern.port}` : ""}`
+      : "";
+    const apiHosts = isDev ? "*" : envApiHost;
 
     // ---------------------------------------------------------------------------
     // Por que 'unsafe-inline' ainda é necessário:

@@ -610,14 +610,14 @@ export default function DronesPublicPage() {
 
   if (loading && !landing) {
     return (
-      <div className="min-h-svh bg-dark-900 flex items-center justify-center">
+      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
         <div className="h-10 w-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-svh bg-dark-900 text-slate-100">
+    <div className="min-h-screen bg-dark-900 text-slate-100">
       <div className="sticky top-0 z-40 bg-black/60 backdrop-blur border-b border-white/10">
         <div className="max-w-6xl mx-auto px-5 py-3 flex gap-3 items-center">
           <span className="text-xs font-semibold text-slate-300 shrink-0">

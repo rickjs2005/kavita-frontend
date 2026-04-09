@@ -1,5 +1,5 @@
 // src/app/layout.tsx
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "../context/AuthContext";
@@ -10,6 +10,13 @@ import ConditionalHeader from "@/components/layout/ConditionalHeader";
 
 import { fetchPublicCategories } from "@/server/data/categories";
 import { fetchPublicShopSettings } from "@/server/data/shopSettings";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   try {

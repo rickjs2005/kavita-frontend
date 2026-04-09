@@ -396,7 +396,7 @@ export default function AdminCarrinhosAbandonadosPage() {
 
   if (loading) {
     return (
-      <main className="min-h-svh w-full px-4 py-6 sm:px-6 lg:px-8">
+      <main className="min-h-screen w-full px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-7xl space-y-4">
           <div className="sm:hidden">
             <button
@@ -432,7 +432,7 @@ export default function AdminCarrinhosAbandonadosPage() {
 
   if (erro) {
     return (
-      <main className="min-h-svh w-full px-4 py-6 sm:px-6 lg:px-8">
+      <main className="min-h-screen w-full px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-7xl space-y-4">
           <div className="sm:hidden">
             <button
@@ -480,7 +480,7 @@ export default function AdminCarrinhosAbandonadosPage() {
   }
 
   return (
-    <main className="min-h-svh w-full px-4 py-6 sm:px-6 lg:px-8">
+    <main className="min-h-screen w-full px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-7xl space-y-6">
         {/* Back (mobile) */}
         <div className="sm:hidden">

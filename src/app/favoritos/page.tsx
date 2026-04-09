@@ -58,7 +58,7 @@ export default function FavoritosPage() {
 
   if (!user) {
     return (
-      <main className="min-h-svh max-w-5xl mx-auto px-4 py-8">
+      <main className="min-h-screen max-w-5xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-semibold mb-4">Meus Favoritos</h1>
         <p className="text-gray-700 mb-4">
           Você precisa estar logado para ver seus favoritos.
@@ -74,7 +74,7 @@ export default function FavoritosPage() {
   }
 
   return (
-    <main className="min-h-svh max-w-6xl mx-auto px-4 py-8">
+    <main className="min-h-screen max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between gap-2 mb-6 flex-wrap">
         <h1 className="text-2xl font-semibold">Meus Favoritos</h1>
 

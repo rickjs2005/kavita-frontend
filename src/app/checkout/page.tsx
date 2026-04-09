@@ -17,7 +17,7 @@ export default function CheckoutPage() {
   // -------------------------------------------------------------------------
   if (!state.isLoggedIn) {
     return (
-      <div className="min-h-[100dvh] bg-gradient-to-b from-surface-gradient-start via-white to-white">
+      <div className="min-h-screen bg-gradient-to-b from-surface-gradient-start via-white to-white">
         <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10 sm:px-6">
           <div className="flex items-center justify-between">
             <CloseButton className="text-2xl sm:text-3xl text-gray-600 hover:text-accent" />
@@ -59,7 +59,7 @@ export default function CheckoutPage() {
   // Checkout (logged in)
   // -------------------------------------------------------------------------
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-b from-surface-gradient-start via-white to-white">
+    <div className="min-h-screen bg-gradient-to-b from-surface-gradient-start via-white to-white">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
         {/* Header */}
         <div className="flex items-center justify-between gap-3">

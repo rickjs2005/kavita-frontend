@@ -442,14 +442,14 @@ export default function DroneModelPage() {
 
   if (loading && !landing) {
     return (
-      <div className="min-h-svh bg-dark-900 flex items-center justify-center">
+      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
         <div className="h-10 w-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-svh bg-dark-900 text-slate-100">
+    <div className="min-h-screen bg-dark-900 text-slate-100">
       <style>{`
         html { scroll-behavior: smooth; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
