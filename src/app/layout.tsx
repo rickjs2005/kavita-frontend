@@ -8,6 +8,7 @@ import Header from "../components/layout/Header";
 import AuthExpiredHandler from "@/components/auth/AuthExpiredHandler";
 import ConditionalHeader from "@/components/layout/ConditionalHeader";
 import WhatsAppFloatingButton from "@/components/ui/WhatsAppFloatingButton";
+import ChatAssistant from "@/components/ui/ChatAssistant";
 
 import { fetchPublicCategories } from "@/server/data/categories";
 import { fetchPublicShopSettings } from "@/server/data/shopSettings";
@@ -66,6 +67,14 @@ export default async function RootLayout({
               <WhatsAppFloatingButton
                 phone={shop?.contact_whatsapp}
                 url={shop?.social_whatsapp_url}
+              />
+              <ChatAssistant
+                whatsappUrl={
+                  shop?.social_whatsapp_url ||
+                  (shop?.contact_whatsapp
+                    ? `https://wa.me/${shop.contact_whatsapp.replace(/\D/g, "").replace(/^(?!55)/, "55")}`
+                    : undefined)
+                }
               />
             </ConditionalHeader>
             <Toaster position="top-right" />
