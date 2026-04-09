@@ -118,7 +118,7 @@ export default function Header({ categories, shop }: HeaderProps) {
       <>
         <header className="fixed top-0 left-0 w-full z-50 bg-header">
           <div className="w-full border-b border-white/10">
-            <div className="max-w-6xl mx-auto h-16 flex items-center justify-between px-4 md:px-6">
+            <div className="max-w-6xl mx-auto h-[68px] flex items-center justify-between px-4 md:px-6">
               {/* Voltar */}
               <button
                 onClick={() => router.back()}
@@ -146,11 +146,11 @@ export default function Header({ categories, shop }: HeaderProps) {
                 <Image
                   src={logoSrc}
                   alt={logoAlt}
-                  width={320}
-                  height={90}
+                  width={380}
+                  height={100}
                   priority
-                  className={`w-auto h-11 sm:h-12 ${isDronePage ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" : ""}`}
-                  sizes="(max-width: 640px) 180px, 220px"
+                  className={`w-auto h-[46px] sm:h-[52px] ${isDronePage ? "drop-shadow-[0_1px_12px_rgba(255,255,255,0.4)] brightness-110" : ""}`}
+                  sizes="(max-width: 640px) 200px, 240px"
                 />
               </Link>
 
@@ -170,7 +170,7 @@ export default function Header({ categories, shop }: HeaderProps) {
         </header>
 
         <CartCar isCartOpen={isCartOpen} closeCart={() => setIsCartOpen(false)} />
-        <div aria-hidden className="h-16" />
+        <div aria-hidden className="h-[68px]" />
       </>
     );
   }
@@ -191,7 +191,7 @@ export default function Header({ categories, shop }: HeaderProps) {
       <header className="fixed top-0 left-0 w-full z-50 bg-header">
         {/* ── TOP BAR ── */}
         <div className="w-full border-b border-white/[0.06]">
-          <div className="max-w-7xl mx-auto h-16 md:h-20 flex items-center px-4 md:px-6 lg:px-8 gap-2 md:gap-5 lg:gap-8">
+          <div className="max-w-7xl mx-auto h-[76px] md:h-24 flex items-center px-4 md:px-6 lg:px-8 gap-2 md:gap-6 lg:gap-8">
             {/* Menu mobile + Logo formam bloco esquerdo no mobile */}
             <button
               aria-label="Abrir menu"
@@ -210,25 +210,25 @@ export default function Header({ categories, shop }: HeaderProps) {
               </svg>
             </button>
 
-            {/* Logo — âncora visual principal */}
-            <Link href="/" className="flex items-center shrink-0">
+            {/* Logo — âncora visual principal, ocupa espaço fixo */}
+            <Link href="/" className="flex items-center shrink-0 min-w-[140px] sm:min-w-[200px] md:min-w-[280px]">
               <Image
                 src={logoSrc}
                 alt={logoAlt}
-                width={400}
-                height={110}
+                width={480}
+                height={130}
                 priority
-                className={`w-auto h-11 sm:h-[52px] md:h-16 ${isDronePage ? "drop-shadow-[0_0_12px_rgba(255,255,255,0.35)]" : ""}`}
-                sizes="(max-width: 640px) 180px, (max-width: 1024px) 240px, 320px"
+                className={`w-auto h-[50px] sm:h-[60px] md:h-[76px] ${isDronePage ? "drop-shadow-[0_1px_16px_rgba(255,255,255,0.45)] brightness-110" : ""}`}
+                sizes="(max-width: 640px) 200px, (max-width: 1024px) 280px, 380px"
               />
             </Link>
 
-            {/* Search (desktop/tablet) — cresce progressivamente */}
+            {/* Search (desktop/tablet) — subordinado ao logo */}
             <div
               className="hidden sm:flex flex-1 justify-center min-w-0 mx-2 md:mx-4"
               suppressHydrationWarning
             >
-              <div className="w-full max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg">
+              <div className="w-full max-w-[260px] md:max-w-[340px] lg:max-w-[420px] xl:max-w-[480px]">
                 <SearchBar />
               </div>
             </div>
@@ -313,10 +313,10 @@ export default function Header({ categories, shop }: HeaderProps) {
               <Image
                 src={logoSrc}
                 alt={logoAlt}
-                width={240}
-                height={66}
-                className="w-auto h-10"
-                sizes="180px"
+                width={280}
+                height={76}
+                className="w-auto h-11"
+                sizes="200px"
               />
             </Link>
             <button
@@ -429,8 +429,8 @@ export default function Header({ categories, shop }: HeaderProps) {
         aria-hidden
         className={
           showCategories && publicActiveCategories.length > 0
-            ? "h-16 md:h-[116px]"   /* 80px topbar + 36px nav */
-            : "h-16 md:h-20"         /* só topbar */
+            ? "h-[76px] md:h-[132px]" /* 96px topbar + 36px nav */
+            : "h-[76px] md:h-24"       /* só topbar */
         }
       />
     </>
