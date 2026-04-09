@@ -126,7 +126,7 @@ html {
 }
 @media (min-width: 768px) {
   html {
-    scroll-padding-top: 100px;
+    scroll-padding-top: 104px;
   }
 }
 

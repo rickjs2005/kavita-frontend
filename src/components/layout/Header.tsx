@@ -146,11 +146,11 @@ export default function Header({ categories, shop }: HeaderProps) {
                 <Image
                   src={logoSrc}
                   alt={logoAlt}
-                  width={200}
-                  height={60}
+                  width={240}
+                  height={70}
                   priority
-                  className="w-auto h-8"
-                  sizes="120px"
+                  className={`w-auto h-9 sm:h-10 ${isDronePage ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" : ""}`}
+                  sizes="(max-width: 640px) 140px, 180px"
                 />
               </Link>
 
@@ -191,7 +191,7 @@ export default function Header({ categories, shop }: HeaderProps) {
       <header className="fixed top-0 left-0 w-full z-50 bg-header">
         {/* ── TOP BAR ── */}
         <div className="w-full border-b border-white/[0.06]">
-          <div className="max-w-7xl mx-auto h-14 md:h-[60px] flex items-center px-4 md:px-6 lg:px-8 gap-3 md:gap-5 lg:gap-8">
+          <div className="max-w-7xl mx-auto h-14 md:h-16 flex items-center px-4 md:px-6 lg:px-8 gap-3 md:gap-5 lg:gap-8">
             {/* Menu mobile */}
             <button
               aria-label="Abrir menu"
@@ -215,11 +215,11 @@ export default function Header({ categories, shop }: HeaderProps) {
               <Image
                 src={logoSrc}
                 alt={logoAlt}
-                width={280}
-                height={80}
+                width={320}
+                height={90}
                 priority
-                className="w-auto h-8 sm:h-9 md:h-10"
-                sizes="(max-width: 640px) 120px, (max-width: 1024px) 160px, 200px"
+                className={`w-auto h-9 sm:h-11 md:h-12 ${isDronePage ? "drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" : ""}`}
+                sizes="(max-width: 640px) 140px, (max-width: 1024px) 200px, 260px"
               />
             </Link>
 
@@ -228,7 +228,7 @@ export default function Header({ categories, shop }: HeaderProps) {
               className="hidden sm:flex flex-1 justify-center min-w-0"
               suppressHydrationWarning
             >
-              <div className="w-full max-w-lg">
+              <div className="w-full max-w-md lg:max-w-lg">
                 <SearchBar />
               </div>
             </div>
@@ -313,10 +313,10 @@ export default function Header({ categories, shop }: HeaderProps) {
               <Image
                 src={logoSrc}
                 alt={logoAlt}
-                width={140}
-                height={40}
-                className="w-auto h-7"
-                sizes="120px"
+                width={180}
+                height={50}
+                className="w-auto h-8"
+                sizes="140px"
               />
             </Link>
             <button
@@ -422,8 +422,8 @@ export default function Header({ categories, shop }: HeaderProps) {
         aria-hidden
         className={
           showCategories && publicActiveCategories.length > 0
-            ? "h-14 md:h-[96px]"    /* 60px topbar + 36px nav */
-            : "h-14 md:h-[60px]"     /* só topbar */
+            ? "h-14 md:h-[100px]"   /* 64px topbar + 36px nav */
+            : "h-14 md:h-16"         /* só topbar */
         }
       />
     </>
