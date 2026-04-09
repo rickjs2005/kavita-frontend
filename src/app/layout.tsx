@@ -7,6 +7,7 @@ import { CartProvider } from "../context/CartContext";
 import Header from "../components/layout/Header";
 import AuthExpiredHandler from "@/components/auth/AuthExpiredHandler";
 import ConditionalHeader from "@/components/layout/ConditionalHeader";
+import WhatsAppFloatingButton from "@/components/ui/WhatsAppFloatingButton";
 
 import { fetchPublicCategories } from "@/server/data/categories";
 import { fetchPublicShopSettings } from "@/server/data/shopSettings";
@@ -60,6 +61,12 @@ export default async function RootLayout({
             <main id="conteudo">{children}</main>
             <ConditionalHeader>
               <AuthExpiredHandler />
+            </ConditionalHeader>
+            <ConditionalHeader>
+              <WhatsAppFloatingButton
+                phone={shop?.contact_whatsapp}
+                url={shop?.social_whatsapp_url}
+              />
             </ConditionalHeader>
             <Toaster position="top-right" />
           </CartProvider>
