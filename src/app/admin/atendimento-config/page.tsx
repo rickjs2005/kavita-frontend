@@ -66,8 +66,8 @@ const TABS: { key: Tab; label: string }[] = [
 /* ── Helpers ────────────────────────────────────────────────────── */
 
 const inputCls =
-  "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
-const labelCls = "mb-1 block text-sm font-medium text-gray-700";
+  "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-white/[0.08]";
+const labelCls = "mb-1 block text-sm font-medium text-slate-300";
 const sectionCls = "space-y-5";
 
 function Toggle({
@@ -88,7 +88,7 @@ function Toggle({
         onClick={() => onChange(!checked)}
         className={[
           "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors",
-          checked ? "bg-primary" : "bg-gray-200",
+          checked ? "bg-primary" : "bg-slate-600",
         ].join(" ")}
       >
         <span
@@ -98,7 +98,7 @@ function Toggle({
           ].join(" ")}
         />
       </button>
-      <span className="text-sm text-gray-700">{label}</span>
+      <span className="text-sm text-slate-300">{label}</span>
     </label>
   );
 }
@@ -191,7 +191,7 @@ export default function AtendimentoConfigPage() {
           <h1 className="text-xl font-bold text-teal-light sm:text-2xl">
             Central de Atendimento
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-slate-400">
             Configure o conteudo exibido na pagina de atendimento
           </p>
         </div>
@@ -206,7 +206,7 @@ export default function AtendimentoConfigPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-1 rounded-xl bg-gray-100 p-1">
+      <div className="flex flex-wrap gap-1 rounded-xl bg-white/5 p-1">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -215,8 +215,8 @@ export default function AtendimentoConfigPage() {
             className={[
               "rounded-lg px-4 py-2 text-sm font-medium transition",
               tab === t.key
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700",
+                ? "bg-white/10 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200",
             ].join(" ")}
           >
             {t.label}
@@ -275,7 +275,7 @@ export default function AtendimentoConfigPage() {
       {/* ── TAB: CANAIS ───────────────────────────────────────── */}
       {tab === "canais" && (
         <div className={sectionCls}>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-400">
             O WhatsApp e e-mail sao configurados em Configuracoes &gt; Contato. Aqui voce controla visibilidade e textos dos botoes.
           </p>
           <div>
@@ -317,7 +317,7 @@ export default function AtendimentoConfigPage() {
                     ],
                   });
                 }}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:border-gray-300"
+                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-400 hover:border-white/20 hover:text-slate-200"
               >
                 + Adicionar topico
               </button>
@@ -325,9 +325,9 @@ export default function AtendimentoConfigPage() {
 
             <div className="space-y-3">
               {(config.faq_topics ?? []).map((topic, idx) => (
-                <div key={idx} className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-3">
+                <div key={idx} className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
                   <div className="flex items-start gap-3">
-                    <span className="mt-2 shrink-0 text-xs text-gray-400 w-5 text-right">
+                    <span className="mt-2 shrink-0 text-xs text-slate-500 w-5 text-right">
                       {idx + 1}.
                     </span>
                     <div className="flex-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -431,7 +431,7 @@ export default function AtendimentoConfigPage() {
                     trust_items: [...items, { label: "", desc: "", icon: "", color: "" }],
                   });
                 }}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:border-gray-300"
+                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-400 hover:border-white/20 hover:text-slate-200"
               >
                 + Adicionar item
               </button>
@@ -439,8 +439,8 @@ export default function AtendimentoConfigPage() {
 
             <div className="space-y-3">
               {(config.trust_items ?? []).map((item, idx) => (
-                <div key={idx} className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
-                  <span className="mt-2 shrink-0 text-xs text-gray-400 w-5 text-right">
+                <div key={idx} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <span className="mt-2 shrink-0 text-xs text-slate-500 w-5 text-right">
                     {idx + 1}.
                   </span>
                   <div className="flex-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -485,16 +485,16 @@ export default function AtendimentoConfigPage() {
       {/* ── TAB: GERAL ────────────────────────────────────────── */}
       {tab === "geral" && (
         <div className={sectionCls}>
-          <p className="text-xs text-gray-400 uppercase font-semibold tracking-wide">
+          <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide">
             Visibilidade de secoes
           </p>
-          <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
+          <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
             <Toggle label="Exibir secao de FAQ / atalhos de ajuda" checked={config.show_faq} onChange={(v) => update({ show_faq: v })} />
             <Toggle label="Exibir formulario de contato" checked={config.show_form} onChange={(v) => update({ show_form: v })} />
             <Toggle label="Exibir bloco de confianca" checked={config.show_trust} onChange={(v) => update({ show_trust: v })} />
           </div>
 
-          <p className="text-xs text-gray-400 uppercase font-semibold tracking-wide pt-2">
+          <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide pt-2">
             Formulario
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
