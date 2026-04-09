@@ -6,15 +6,22 @@ import { usePathname } from "next/navigation";
 export type HeaderVariant = "ecommerce" | "modules" | "minimal" | "hidden";
 
 /**
- * Minimal header — foco total no conteúdo (formulários, checkout, auth).
- * Padrão: prefixo exato ou startsWith para sub-rotas.
+ * Rotas sem header nenhum — foco total no conteúdo.
+ * Inclui auth, checkout (e sub-rotas) e admin.
  */
-const MINIMAL_ROUTES = [
+const HIDDEN_PREFIXES = [
+  "/admin",
   "/checkout",
   "/login",
   "/register",
   "/forgot-password",
   "/reset-password",
+] as const;
+
+/**
+ * Minimal header — apenas logo + voltar (formulários de conversão).
+ */
+const MINIMAL_ROUTES = [
   "/mercado-do-cafe/corretoras/cadastro",
 ] as const;
 
@@ -29,21 +36,16 @@ const MODULE_PREFIXES = [
   "/trabalhe-conosco",
 ] as const;
 
-/**
- * Rotas que escondem o header completamente (admin já tratado pelo ConditionalHeader).
- */
-const HIDDEN_PREFIXES = ["/admin"] as const;
-
 export function useHeaderVariant(): HeaderVariant {
   const pathname = usePathname();
 
   return useMemo(() => {
-    // Admin routes — hidden (also handled by ConditionalHeader)
+    // Hidden — sem header (auth, checkout, admin)
     for (const prefix of HIDDEN_PREFIXES) {
-      if (pathname.startsWith(prefix)) return "hidden";
+      if (pathname === prefix || pathname.startsWith(prefix + "/")) return "hidden";
     }
 
-    // Minimal — formulários e fluxos de conversão
+    // Minimal — header compacto (formulários de conversão)
     for (const route of MINIMAL_ROUTES) {
       if (pathname === route || pathname.startsWith(route + "/")) return "minimal";
     }
