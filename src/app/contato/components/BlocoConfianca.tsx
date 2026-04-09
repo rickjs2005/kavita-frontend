@@ -7,8 +7,8 @@ import {
   HiOutlineMapPin,
   HiOutlineCheckBadge,
   HiOutlineBolt,
-  HiOutlineChatBubbleLeftRight,
 } from "react-icons/hi2";
+import type { SupportConfig } from "@/server/data/supportConfig";
 
 type Metrics = {
   total_mensagens: number;
@@ -21,19 +21,39 @@ type Props = {
   email?: string;
   whatsappUrl?: string;
   metrics?: Metrics;
+  config?: SupportConfig | null;
 };
 
-export default function BlocoConfianca({ whatsapp, email, whatsappUrl, metrics }: Props) {
+const DEFAULT_TRUST = [
+  { label: "Resposta rapida", desc: "Ate 24h uteis", icon: "bolt", color: "text-amber-500 bg-amber-50" },
+  { label: "Horario comercial", desc: "Seg a sex, 8h-18h", icon: "clock", color: "text-primary bg-primary/10" },
+  { label: "Equipe qualificada", desc: "Suporte especializado", icon: "badge", color: "text-blue-600 bg-blue-50" },
+  { label: "Empresa real", desc: "Perdoes - MG", icon: "pin", color: "text-purple bg-purple/10" },
+];
+
+const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
+  bolt: HiOutlineBolt,
+  clock: HiOutlineClock,
+  badge: HiOutlineCheckBadge,
+  pin: HiOutlineMapPin,
+};
+
+export default function BlocoConfianca({ whatsapp, email, whatsappUrl, metrics, config }: Props) {
+  const trustTitle = config?.trust_title ?? "Por que confiar no atendimento Kavita";
+  const trustSubtitle = config?.trust_subtitle ?? "Somos uma empresa real com equipe dedicada ao seu atendimento";
+  const trustItems = config?.trust_items && config.trust_items.length > 0
+    ? config.trust_items
+    : DEFAULT_TRUST;
   return (
     <section className="border-t border-gray-100 bg-white py-14 sm:py-20">
       <div className="mx-auto max-w-5xl px-4">
         {/* Header */}
         <div className="mb-10 text-center sm:mb-12">
           <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-            Por que confiar no atendimento Kavita
+            {trustTitle}
           </h2>
           <p className="mx-auto mt-2 max-w-lg text-gray-500">
-            Somos uma empresa real com equipe dedicada ao seu atendimento
+            {trustSubtitle}
           </p>
         </div>
 
@@ -84,42 +104,21 @@ export default function BlocoConfianca({ whatsapp, email, whatsappUrl, metrics }
 
         {/* Trust grid */}
         <div className="mb-12 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {[
-            {
-              icon: HiOutlineBolt,
-              label: "Resposta rapida",
-              desc: metrics?.tempo_medio
+          {trustItems.map((item, idx) => {
+            const Icon = ICON_COMPONENTS[item.icon] || HiOutlineCheckBadge;
+            const color = item.color || "text-primary bg-primary/10";
+            // Enrich first item with real metrics if available
+            const desc =
+              idx === 0 && metrics?.tempo_medio
                 ? `Media de ${metrics.tempo_medio}`
-                : "Ate 24h uteis",
-              color: "text-amber-500 bg-amber-50",
-            },
-            {
-              icon: HiOutlineClock,
-              label: "Horario comercial",
-              desc: "Seg a sex, 8h-18h",
-              color: "text-primary bg-primary/10",
-            },
-            {
-              icon: HiOutlineCheckBadge,
-              label: "Equipe qualificada",
-              desc: "Suporte especializado",
-              color: "text-blue-600 bg-blue-50",
-            },
-            {
-              icon: HiOutlineMapPin,
-              label: "Empresa real",
-              desc: "Perdoes - MG",
-              color: "text-purple bg-purple/10",
-            },
-          ].map((item) => {
-            const Icon = item.icon;
+                : item.desc;
             return (
               <div
-                key={item.label}
+                key={item.label || idx}
                 className="flex flex-col items-center gap-2.5 rounded-2xl border border-gray-100 p-4 text-center sm:p-5"
               >
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.color}`}
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${color}`}
                 >
                   <Icon className="h-5 w-5" />
                 </div>
@@ -127,7 +126,7 @@ export default function BlocoConfianca({ whatsapp, email, whatsappUrl, metrics }
                   <p className="text-sm font-semibold text-gray-800">
                     {item.label}
                   </p>
-                  <p className="mt-0.5 text-xs text-gray-500">{item.desc}</p>
+                  <p className="mt-0.5 text-xs text-gray-500">{desc}</p>
                 </div>
               </div>
             );

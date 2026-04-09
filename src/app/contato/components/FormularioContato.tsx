@@ -10,6 +10,7 @@ import {
 import apiClient from "@/lib/apiClient";
 import { isApiError } from "@/lib/errors";
 import { trackContatoEvent } from "../trackContatoEvent";
+import type { SupportConfig } from "@/server/data/supportConfig";
 
 type FormState = "idle" | "sending" | "success" | "error";
 type FieldErrors = Record<string, string>;
@@ -33,7 +34,9 @@ const ASSUNTOS = [
   "Outro assunto",
 ];
 
-export default function FormularioContato() {
+type FormProps = { config?: SupportConfig | null };
+
+export default function FormularioContato({ config }: FormProps) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -113,12 +116,12 @@ export default function FormularioContato() {
             </div>
 
             <h3 className="text-2xl font-bold text-gray-900">
-              Mensagem recebida!
+              {config?.form_success_title ?? "Mensagem recebida!"}
             </h3>
 
             <p className="mx-auto mt-3 max-w-sm text-gray-500 leading-relaxed">
-              Nossa equipe ja foi notificada e voce recebera uma resposta no
-              e-mail informado em ate <strong className="text-gray-700">24 horas uteis</strong>.
+              {config?.form_success_message ??
+                "Nossa equipe ja foi notificada e voce recebera uma resposta no e-mail informado em ate 24 horas uteis."}
             </p>
 
             <div className="mx-auto mt-6 flex items-center justify-center gap-2 rounded-xl bg-gray-50 px-4 py-2.5 text-sm text-gray-500">
@@ -154,10 +157,10 @@ export default function FormularioContato() {
           {/* Left column — context */}
           <div className="lg:col-span-2">
             <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-              Fale com a equipe Kavita
+              {config?.form_title ?? "Fale com a equipe Kavita"}
             </h2>
             <p className="mt-3 text-gray-500 leading-relaxed">
-              Descreva sua duvida ou solicitacao e retornaremos o mais rapido possivel.
+              {config?.form_subtitle ?? "Descreva sua duvida ou solicitacao e retornaremos o mais rapido possivel."}
               Quanto mais detalhes, mais agil sera a resposta.
             </p>
 

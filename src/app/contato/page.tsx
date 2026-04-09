@@ -1,4 +1,6 @@
 import { fetchPublicShopSettings } from "@/server/data/shopSettings";
+import { fetchSupportConfig } from "@/server/data/supportConfig";
+import type { SupportConfig } from "@/server/data/supportConfig";
 import HeroAtendimento from "./components/HeroAtendimento";
 import AtalhoAjuda from "./components/AtalhoAjuda";
 import FormularioContato from "./components/FormularioContato";
@@ -35,10 +37,13 @@ async function fetchMetrics(): Promise<Metrics> {
 }
 
 export default async function AtendimentoPage() {
-  const [shop, metrics] = await Promise.all([
+  const [shop, metrics, supportConfig] = await Promise.all([
     fetchPublicShopSettings(),
     fetchMetrics(),
+    fetchSupportConfig(),
   ]);
+
+  const cfg = supportConfig as SupportConfig | null;
 
   const whatsapp =
     shop?.contact_whatsapp || shop?.footer?.contact_whatsapp || "";
@@ -50,15 +55,18 @@ export default async function AtendimentoPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <HeroAtendimento whatsappUrl={whatsappUrl || undefined} />
-      <AtalhoAjuda />
-      <FormularioContato />
-      <BlocoConfianca
-        whatsapp={whatsapp || undefined}
-        email={email || undefined}
-        whatsappUrl={whatsappUrl || undefined}
-        metrics={metrics}
-      />
+      <HeroAtendimento whatsappUrl={whatsappUrl || undefined} config={cfg} />
+      {cfg?.show_faq !== false && <AtalhoAjuda config={cfg} />}
+      {cfg?.show_form !== false && <FormularioContato config={cfg} />}
+      {cfg?.show_trust !== false && (
+        <BlocoConfianca
+          whatsapp={whatsapp || undefined}
+          email={email || undefined}
+          whatsappUrl={whatsappUrl || undefined}
+          metrics={metrics}
+          config={cfg}
+        />
+      )}
     </main>
   );
 }

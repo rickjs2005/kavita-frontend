@@ -12,6 +12,7 @@ import ChatAssistant from "@/components/ui/ChatAssistant";
 
 import { fetchPublicCategories } from "@/server/data/categories";
 import { fetchPublicShopSettings } from "@/server/data/shopSettings";
+import { fetchSupportConfig } from "@/server/data/supportConfig";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -46,10 +47,20 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [categories, shop] = await Promise.all([
+  const [categories, shop, supportCfg] = await Promise.all([
     fetchPublicCategories(),
     fetchPublicShopSettings(),
+    fetchSupportConfig(),
   ]);
+
+  const showWhatsApp = supportCfg?.show_whatsapp_widget !== false;
+  const showChatbot = supportCfg?.show_chatbot !== false;
+
+  const whatsappUrl =
+    shop?.social_whatsapp_url ||
+    (shop?.contact_whatsapp
+      ? `https://wa.me/${shop.contact_whatsapp.replace(/\D/g, "").replace(/^(?!55)/, "55")}`
+      : undefined);
 
   return (
     <html lang="pt-BR">
@@ -64,18 +75,15 @@ export default async function RootLayout({
               <AuthExpiredHandler />
             </ConditionalHeader>
             <ConditionalHeader>
-              <WhatsAppFloatingButton
-                phone={shop?.contact_whatsapp}
-                url={shop?.social_whatsapp_url}
-              />
-              <ChatAssistant
-                whatsappUrl={
-                  shop?.social_whatsapp_url ||
-                  (shop?.contact_whatsapp
-                    ? `https://wa.me/${shop.contact_whatsapp.replace(/\D/g, "").replace(/^(?!55)/, "55")}`
-                    : undefined)
-                }
-              />
+              {showWhatsApp && (
+                <WhatsAppFloatingButton
+                  phone={shop?.contact_whatsapp}
+                  url={shop?.social_whatsapp_url}
+                />
+              )}
+              {showChatbot && (
+                <ChatAssistant whatsappUrl={whatsappUrl} />
+              )}
             </ConditionalHeader>
             <Toaster position="top-right" />
           </CartProvider>

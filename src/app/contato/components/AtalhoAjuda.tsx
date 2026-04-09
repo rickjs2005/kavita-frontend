@@ -16,8 +16,9 @@ import {
   HiOutlineShoppingBag,
   HiOutlineMagnifyingGlass,
 } from "react-icons/hi2";
-import topics from "@/data/topics";
+import staticTopics from "@/data/topics";
 import { trackContatoEvent } from "../trackContatoEvent";
+import type { SupportConfig } from "@/server/data/supportConfig";
 
 type TopicItem = {
   title: string;
@@ -82,15 +83,32 @@ function topicMatches(topic: TopicItem, query: string): boolean {
 
 /* ── Sorted topics ──────────────────────────────────────────────── */
 
-const sortedTopics = [...(topics as TopicItem[])].sort(
+const defaultSorted = [...(staticTopics as TopicItem[])].sort(
   (a, b) => getMeta(a.title).priority - getMeta(b.title).priority
 );
 
 const TOP_COUNT = 4;
 
+type AtalhoProps = { config?: SupportConfig | null };
+
 /* ── Component ──────────────────────────────────────────────────── */
 
-export default function AtalhoAjuda() {
+export default function AtalhoAjuda({ config }: AtalhoProps) {
+  const faqTitle = config?.faq_title ?? "Duvidas frequentes";
+  const faqSubtitle =
+    config?.faq_subtitle ?? "Encontre respostas rapidas para os assuntos mais procurados";
+
+  // Use DB topics if configured, otherwise static fallback
+  const faqTopicsJson = JSON.stringify(config?.faq_topics ?? null);
+  const sortedTopics = useMemo(() => {
+    const dbTopics = JSON.parse(faqTopicsJson) as TopicItem[] | null;
+    if (dbTopics && dbTopics.length > 0) {
+      return dbTopics
+        .filter((t: any) => t.active !== false)
+        .sort((a: any, b: any) => (a.priority ?? 99) - (b.priority ?? 99));
+    }
+    return defaultSorted;
+  }, [faqTopicsJson]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState("");
@@ -101,10 +119,19 @@ export default function AtalhoAjuda() {
   const filteredTopics = useMemo(() => {
     if (!isSearching) return sortedTopics;
     return sortedTopics.filter((t) => topicMatches(t, search));
-  }, [search, isSearching]);
+  }, [search, isSearching, sortedTopics]);
 
-  const highlighted = isSearching ? [] : filteredTopics.slice(0, TOP_COUNT);
-  const remaining = isSearching ? filteredTopics : filteredTopics.slice(TOP_COUNT);
+  const hasDbHighlights = sortedTopics.some((t: any) => t.highlighted);
+  const highlighted = isSearching
+    ? []
+    : hasDbHighlights
+      ? filteredTopics.filter((t: any) => t.highlighted)
+      : filteredTopics.slice(0, TOP_COUNT);
+  const remaining = isSearching
+    ? filteredTopics
+    : hasDbHighlights
+      ? filteredTopics.filter((t: any) => !t.highlighted)
+      : filteredTopics.slice(TOP_COUNT);
   const visibleRemaining = isSearching || showAll ? remaining : [];
 
   function toggleTopic(title: string) {
@@ -134,10 +161,10 @@ export default function AtalhoAjuda() {
       {/* Section header */}
       <div className="mb-10 text-center sm:mb-12">
         <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-          Duvidas frequentes
+          {faqTitle}
         </h2>
         <p className="mx-auto mt-2 max-w-lg text-gray-500 sm:text-lg">
-          Encontre respostas rapidas para os assuntos mais procurados
+          {faqSubtitle}
         </p>
       </div>
 

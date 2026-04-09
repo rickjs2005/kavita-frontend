@@ -96,6 +96,12 @@ const navItems: NavItem[] = [
     icon: "✉️",
     permission: "contato_mensagens_view",
   },
+  {
+    label: "Config. Atendimento",
+    href: "/admin/atendimento-config",
+    icon: "💬",
+    permission: "settings_manage",
+  },
   // Relatórios
   {
     label: "Relatórios",
