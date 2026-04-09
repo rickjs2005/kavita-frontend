@@ -13,8 +13,32 @@ function toWaMe(phone: string) {
   return d ? `https://wa.me/${d.startsWith("55") ? d : `55${d}`}` : "";
 }
 
+type Metrics = {
+  total_mensagens: number;
+  taxa_resposta: number;
+  tempo_medio: string | null;
+} | null;
+
+async function fetchMetrics(): Promise<Metrics> {
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  try {
+    const res = await fetch(`${base}/api/public/contato/metrics`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const data = json?.ok === true ? json.data : json;
+    return data || null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function AtendimentoPage() {
-  const shop = await fetchPublicShopSettings();
+  const [shop, metrics] = await Promise.all([
+    fetchPublicShopSettings(),
+    fetchMetrics(),
+  ]);
 
   const whatsapp =
     shop?.contact_whatsapp || shop?.footer?.contact_whatsapp || "";
@@ -33,6 +57,7 @@ export default async function AtendimentoPage() {
         whatsapp={whatsapp || undefined}
         email={email || undefined}
         whatsappUrl={whatsappUrl || undefined}
+        metrics={metrics}
       />
     </main>
   );

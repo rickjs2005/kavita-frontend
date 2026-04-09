@@ -7,15 +7,23 @@ import {
   HiOutlineMapPin,
   HiOutlineCheckBadge,
   HiOutlineBolt,
+  HiOutlineChatBubbleLeftRight,
 } from "react-icons/hi2";
+
+type Metrics = {
+  total_mensagens: number;
+  taxa_resposta: number;
+  tempo_medio: string | null;
+} | null;
 
 type Props = {
   whatsapp?: string;
   email?: string;
   whatsappUrl?: string;
+  metrics?: Metrics;
 };
 
-export default function BlocoConfianca({ whatsapp, email, whatsappUrl }: Props) {
+export default function BlocoConfianca({ whatsapp, email, whatsappUrl, metrics }: Props) {
   return (
     <section className="border-t border-gray-100 bg-white py-14 sm:py-20">
       <div className="mx-auto max-w-5xl px-4">
@@ -29,13 +37,60 @@ export default function BlocoConfianca({ whatsapp, email, whatsappUrl }: Props) 
           </p>
         </div>
 
+        {/* Real metrics — only shown when there's enough data */}
+        {metrics && (
+          <div className="mb-12 mx-auto max-w-3xl">
+            <div className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.03] to-transparent p-6 sm:p-8">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 text-center">
+                {/* Response rate */}
+                <div>
+                  <p className="text-3xl font-extrabold text-primary sm:text-4xl">
+                    {metrics.taxa_resposta}%
+                  </p>
+                  <p className="mt-1 text-sm text-gray-600">
+                    das mensagens respondidas
+                  </p>
+                </div>
+
+                {/* Response time */}
+                {metrics.tempo_medio && (
+                  <div>
+                    <p className="text-3xl font-extrabold text-primary sm:text-4xl">
+                      {metrics.tempo_medio}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      tempo medio de resposta
+                    </p>
+                  </div>
+                )}
+
+                {/* Total messages */}
+                <div>
+                  <p className="text-3xl font-extrabold text-primary sm:text-4xl">
+                    {metrics.total_mensagens}+
+                  </p>
+                  <p className="mt-1 text-sm text-gray-600">
+                    atendimentos realizados
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-5 text-center text-xs text-gray-400">
+                Dados reais calculados a partir dos nossos atendimentos
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Trust grid */}
         <div className="mb-12 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
             {
               icon: HiOutlineBolt,
               label: "Resposta rapida",
-              desc: "Ate 24h uteis",
+              desc: metrics?.tempo_medio
+                ? `Media de ${metrics.tempo_medio}`
+                : "Ate 24h uteis",
               color: "text-amber-500 bg-amber-50",
             },
             {
