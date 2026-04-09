@@ -210,8 +210,8 @@ export default function Header({ categories, shop }: HeaderProps) {
               </svg>
             </button>
 
-            {/* Logo — âncora visual principal, ocupa espaço fixo */}
-            <Link href="/" className="flex items-center shrink-0 min-w-[140px] sm:min-w-[200px] md:min-w-[280px]">
+            {/* Logo — centralizado no mobile, âncora esquerda no desktop */}
+            <Link href="/" className="flex items-center justify-center flex-1 md:flex-none md:justify-start shrink-0 min-w-0 sm:min-w-[200px] md:min-w-[280px]">
               <Image
                 src={logoSrc}
                 alt={logoAlt}
