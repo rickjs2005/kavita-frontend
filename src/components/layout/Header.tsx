@@ -118,7 +118,7 @@ export default function Header({ categories, shop }: HeaderProps) {
       <>
         <header className="fixed top-0 left-0 w-full z-50 bg-header">
           <div className="w-full border-b border-white/10">
-            <div className="max-w-6xl mx-auto h-[60px] flex items-center justify-between px-4 md:px-6">
+            <div className="max-w-6xl mx-auto h-16 flex items-center justify-between px-4 md:px-6">
               {/* Voltar */}
               <button
                 onClick={() => router.back()}
@@ -146,11 +146,11 @@ export default function Header({ categories, shop }: HeaderProps) {
                 <Image
                   src={logoSrc}
                   alt={logoAlt}
-                  width={280}
-                  height={80}
+                  width={320}
+                  height={90}
                   priority
-                  className={`w-auto h-10 sm:h-11 ${isDronePage ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" : ""}`}
-                  sizes="(max-width: 640px) 160px, 200px"
+                  className={`w-auto h-11 sm:h-12 ${isDronePage ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" : ""}`}
+                  sizes="(max-width: 640px) 180px, 220px"
                 />
               </Link>
 
@@ -170,7 +170,7 @@ export default function Header({ categories, shop }: HeaderProps) {
         </header>
 
         <CartCar isCartOpen={isCartOpen} closeCart={() => setIsCartOpen(false)} />
-        <div aria-hidden className="h-[60px]" />
+        <div aria-hidden className="h-16" />
       </>
     );
   }
@@ -191,16 +191,16 @@ export default function Header({ categories, shop }: HeaderProps) {
       <header className="fixed top-0 left-0 w-full z-50 bg-header">
         {/* ── TOP BAR ── */}
         <div className="w-full border-b border-white/[0.06]">
-          <div className="max-w-7xl mx-auto h-[60px] md:h-[72px] flex items-center px-4 md:px-6 lg:px-8 gap-3 md:gap-5 lg:gap-8">
+          <div className="max-w-7xl mx-auto h-16 md:h-20 flex items-center px-4 md:px-6 lg:px-8 gap-2 md:gap-5 lg:gap-8">
             {/* Menu mobile + Logo formam bloco esquerdo no mobile */}
             <button
               aria-label="Abrir menu"
               aria-controls="mobile-menu"
               aria-expanded={isMenuOpen}
-              className="md:hidden shrink-0 rounded-lg p-1.5 -ml-1 text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+              className="md:hidden shrink-0 rounded-lg p-1.5 -ml-1.5 text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
               onClick={() => setIsMenuOpen(true)}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M3 6h18M3 12h18M3 18h18"
                   stroke="currentColor"
@@ -210,33 +210,33 @@ export default function Header({ categories, shop }: HeaderProps) {
               </svg>
             </button>
 
-            {/* Logo */}
+            {/* Logo — âncora visual principal */}
             <Link href="/" className="flex items-center shrink-0">
               <Image
                 src={logoSrc}
                 alt={logoAlt}
-                width={360}
-                height={100}
+                width={400}
+                height={110}
                 priority
-                className={`w-auto h-10 sm:h-12 md:h-[56px] ${isDronePage ? "drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" : ""}`}
-                sizes="(max-width: 640px) 160px, (max-width: 1024px) 220px, 280px"
+                className={`w-auto h-11 sm:h-[52px] md:h-16 ${isDronePage ? "drop-shadow-[0_0_12px_rgba(255,255,255,0.35)]" : ""}`}
+                sizes="(max-width: 640px) 180px, (max-width: 1024px) 240px, 320px"
               />
             </Link>
 
-            {/* Search (desktop/tablet) */}
+            {/* Search (desktop/tablet) — cresce progressivamente */}
             <div
-              className="hidden sm:flex flex-1 justify-center min-w-0"
+              className="hidden sm:flex flex-1 justify-center min-w-0 mx-2 md:mx-4"
               suppressHydrationWarning
             >
-              <div className="w-full max-w-md lg:max-w-lg">
+              <div className="w-full max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg">
                 <SearchBar />
               </div>
             </div>
 
             {/* Navegação direita */}
-            <div className="flex items-center gap-2 md:gap-3 lg:gap-5 ml-auto shrink-0">
-              {/* Módulos — desktop only */}
-              <nav className="hidden md:flex items-center gap-1 lg:gap-2" aria-label="Módulos">
+            <div className="flex items-center gap-1.5 md:gap-2.5 lg:gap-4 ml-auto shrink-0">
+              {/* Módulos — desktop only, peso visual reduzido */}
+              <nav className="hidden md:flex items-center gap-0.5 lg:gap-1" aria-label="Módulos">
                 <ModuleLink
                   href="/news"
                   label="News"
@@ -313,10 +313,10 @@ export default function Header({ categories, shop }: HeaderProps) {
               <Image
                 src={logoSrc}
                 alt={logoAlt}
-                width={200}
-                height={56}
-                className="w-auto h-9"
-                sizes="160px"
+                width={240}
+                height={66}
+                className="w-auto h-10"
+                sizes="180px"
               />
             </Link>
             <button
@@ -367,11 +367,18 @@ export default function Header({ categories, shop }: HeaderProps) {
                 icon="☕"
                 onClick={() => setIsMenuOpen(false)}
               />
-              <MobileMenuLink
+              <Link
                 href="/drones"
-                label="Kavita Drone"
+                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold text-accent-bright hover:bg-orange-50 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
-              />
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+                Kavita Drone
+              </Link>
             </MobileMenuSection>
 
             {/* ── Seção: Minha Conta ── */}
@@ -422,8 +429,8 @@ export default function Header({ categories, shop }: HeaderProps) {
         aria-hidden
         className={
           showCategories && publicActiveCategories.length > 0
-            ? "h-[60px] md:h-[108px]" /* 72px topbar + 36px nav */
-            : "h-[60px] md:h-[72px]"   /* só topbar */
+            ? "h-16 md:h-[116px]"   /* 80px topbar + 36px nav */
+            : "h-16 md:h-20"         /* só topbar */
         }
       />
     </>
@@ -448,10 +455,10 @@ function ModuleLink({
   return (
     <Link
       href={href}
-      className={`text-[13px] font-medium px-3 py-1.5 rounded-full transition-colors whitespace-nowrap ${
+      className={`text-xs font-medium px-2.5 py-1.5 rounded-full transition-colors whitespace-nowrap ${
         active
           ? "bg-white/15 text-white"
-          : "text-white/65 hover:text-white hover:bg-white/10"
+          : "text-white/55 hover:text-white/90 hover:bg-white/10"
       }`}
     >
       {icon && <span className="mr-1">{icon}</span>}

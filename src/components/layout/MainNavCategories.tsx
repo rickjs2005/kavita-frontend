@@ -61,12 +61,17 @@ export default function MainNavCategories({ categories }: Props) {
 
       <Link
         href="/drones"
-        className={`text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition-all border ${
+        className={`inline-flex items-center gap-1.5 text-[13px] font-bold px-4 py-1.5 rounded-full transition-all border ${
           pathname.startsWith("/drones")
-            ? "border-accent-bright/60 bg-accent-bright/15 text-accent-bright"
-            : "border-accent-bright/30 text-accent-bright/90 hover:border-accent-bright/60 hover:bg-accent-bright/10 hover:text-accent-bright"
+            ? "border-accent-bright/70 bg-accent-bright/20 text-accent-bright shadow-[0_0_10px_rgba(255,122,0,0.2)]"
+            : "border-accent-bright/40 text-accent-bright hover:border-accent-bright/70 hover:bg-accent-bright/15 hover:text-accent-bright hover:shadow-[0_0_8px_rgba(255,122,0,0.15)]"
         }`}
       >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-80">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          <path d="M2 17l10 5 10-5" />
+          <path d="M2 12l10 5 10-5" />
+        </svg>
         Kavita Drone
       </Link>
     </nav>

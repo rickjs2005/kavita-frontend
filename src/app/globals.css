@@ -121,12 +121,12 @@
 
 /* Scroll-padding para compensar header fixo em anchor links */
 html {
-  scroll-padding-top: 64px;
+  scroll-padding-top: 68px;
   scroll-behavior: smooth;
 }
 @media (min-width: 768px) {
   html {
-    scroll-padding-top: 112px;
+    scroll-padding-top: 120px;
   }
 }
 
