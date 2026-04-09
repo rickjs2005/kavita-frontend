@@ -34,8 +34,12 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   }, [isLogin, loadSession]);
 
   // Escuta evento global disparado pelo apiClient quando qualquer request retorna 401.
+  // Só redireciona se já havia sessão ativa (adminUser existia) — significa que a sessão
+  // expirou. Se adminUser é null, o 401 veio do loadSession inicial (admin não logado)
+  // e o redirect é tratado pelo useEffect abaixo.
   useEffect(() => {
     if (isLogin) return;
+    if (!adminUser) return;
 
     function handleAuthExpired() {
       router.replace(fromUrl);
@@ -43,7 +47,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
 
     window.addEventListener("auth:expired", handleAuthExpired);
     return () => window.removeEventListener("auth:expired", handleAuthExpired);
-  }, [isLogin, fromUrl, router]);
+  }, [isLogin, adminUser, fromUrl, router]);
 
   // Sem sessão: redirect via effect (não durante render)
   useEffect(() => {
