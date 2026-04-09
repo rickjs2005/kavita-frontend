@@ -4,17 +4,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useHeaderVariant } from "@/hooks/useHeaderVariant";
 
 import CartCar from "@/components/cart/CartCar";
 import UserMenu from "@/components/ui/UserMenu";
 import MainNavCategories from "@/components/layout/MainNavCategories";
 
-import type { PublicShopSettings } from "@/server/data/shopSettings"; // mantém seu tipo atual
+import type { PublicShopSettings } from "@/server/data/shopSettings";
 import { absUrl } from "@/utils/absUrl";
 
 const SearchBar = dynamic(() => import("@/components/ui/SearchBar"), {
@@ -29,44 +30,9 @@ export type PublicCategory = {
 };
 
 type HeaderProps = {
-  categories?: PublicCategory[]; // pode vir undefined em alguns SSR/ISR
+  categories?: PublicCategory[];
   shop?: PublicShopSettings;
 };
-
-// rotas em que o header some
-const EXCLUDED_ROUTES = [
-  "/checkout",
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/admin",
-  "/admin/login",
-  "/admin/produtos",
-  "/admin/destaques",
-  "/admin/pedidos",
-  "/admin/servicos",
-  "/admin/servicos/pendentes",
-  "/admin/clientes",
-  "/admin/carrinhos",
-  "/admin/configuracoes",
-  "/admin/cupons",
-  "/admin/relatorios",
-  "/admin/relatorios/vendas",
-  "/admin/relatorios/servicos",
-  "/admin/relatorios/clientes",
-  "/admin/relatorios/estoque",
-  "/admin/relatorios/produtos",
-  "/admin/configuracoes/usuarios",
-  "/admin/logs",
-  "/admin/equipe",
-  "/admin/configuracoes/categorias",
-  "/admin/kavita-news",
-  "/admin/frete",
-  "/admin/drones",
-  "/admin/destaques/site-hero",
-  "/admin/mercado-do-cafe",
-] as const;
 
 function isActiveCategory(c: PublicCategory) {
   if (typeof c.is_active === "undefined") return true;
@@ -74,10 +40,11 @@ function isActiveCategory(c: PublicCategory) {
 }
 
 export default function Header({ categories, shop }: HeaderProps) {
-  // Hooks SEMPRE no topo (nada de return antes deles)
   const pathname = usePathname();
+  const router = useRouter();
   const { cartItems } = useCart();
   const { user, logout } = useAuth();
+  const variant = useHeaderVariant();
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -85,7 +52,6 @@ export default function Header({ categories, shop }: HeaderProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isDronePage = pathname.startsWith("/drones");
-  const isNewsPage = pathname.startsWith("/news");
 
   const logoSrc = isDronePage
     ? "/kavita-drone.png"
@@ -95,25 +61,15 @@ export default function Header({ categories, shop }: HeaderProps) {
 
   const logoAlt = shop?.store_name?.trim() ? shop.store_name : "Kavita";
 
-  // Normaliza categories (evita crash/hydration estranho)
   const safeCategories = useMemo<PublicCategory[]>(
     () => (Array.isArray(categories) ? categories : []),
     [categories],
   );
 
-  // Apenas categorias públicas ativas (fonte única)
   const publicActiveCategories = useMemo<PublicCategory[]>(
     () => safeCategories.filter(isActiveCategory),
     [safeCategories],
   );
-
-  const hideHeader = useMemo(() => {
-    const isExcluded = EXCLUDED_ROUTES.includes(
-      pathname as (typeof EXCLUDED_ROUTES)[number],
-    );
-    const isAdminClientSubRoute = pathname.startsWith("/admin/clientes/");
-    return isExcluded || isAdminClientSubRoute;
-  }, [pathname]);
 
   const isAuthenticated = !!user;
   const cartCount = cartItems.length;
@@ -154,17 +110,77 @@ export default function Header({ categories, shop }: HeaderProps) {
     };
   }, [isMenuOpen]);
 
-  // Agora sim: return condicional (APÓS todos hooks)
-  if (hideHeader) return null;
+  if (variant === "hidden") return null;
 
-  // cores fixas
-  const topBarBg = "bg-header";
-  const navBg = "bg-nav";
-  const brandColor = "text-white";
+  // ─── MINIMAL HEADER (checkout, cadastro, auth) ───
+  if (variant === "minimal") {
+    return (
+      <>
+        <header className="fixed top-0 left-0 w-full z-50 bg-header">
+          <div className="w-full border-b border-white/10">
+            <div className="max-w-6xl mx-auto h-14 flex items-center justify-between px-4 md:px-6">
+              {/* Voltar */}
+              <button
+                onClick={() => router.back()}
+                className="flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm"
+                aria-label="Voltar"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M19 12H5" />
+                  <path d="M12 19l-7-7 7-7" />
+                </svg>
+                <span className="hidden sm:inline">Voltar</span>
+              </button>
 
+              {/* Logo centralizada */}
+              <Link href="/" className="absolute left-1/2 -translate-x-1/2">
+                <Image
+                  src={logoSrc}
+                  alt={logoAlt}
+                  width={200}
+                  height={60}
+                  priority
+                  className="w-auto h-8"
+                  sizes="120px"
+                />
+              </Link>
+
+              {/* Carrinho (discreto) */}
+              <div className="relative">
+                <button
+                  aria-label="Abrir carrinho"
+                  className="p-1.5 rounded-full text-white/60 hover:text-accent transition-colors"
+                  onClick={() => setIsCartOpen(true)}
+                >
+                  <CartIcon size={20} />
+                </button>
+                {!!cartCount && <CartBadge count={cartCount} />}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <CartCar isCartOpen={isCartOpen} closeCart={() => setIsCartOpen(false)} />
+        <div aria-hidden className="h-14" />
+      </>
+    );
+  }
+
+  const showCategories = variant === "ecommerce";
+
+  // ─── ECOMMERCE & MODULES HEADER ───
   return (
     <>
-      {/* acessibilidade */}
+      {/* Acessibilidade */}
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 z-[60] bg-white text-header px-3 py-1 rounded"
@@ -172,28 +188,19 @@ export default function Header({ categories, shop }: HeaderProps) {
         Pular para o conteúdo
       </a>
 
-      {/* HEADER FIXO */}
-      <header
-        className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300 ${topBarBg}`}
-      >
-        {/* TOP BAR */}
-        <div className="w-full border-b border-black/10">
-          <div className="max-w-6xl mx-auto h-[76px] md:h-[88px] flex items-center justify-between px-4 md:px-6 gap-3 md:gap-6">
-            {/* menu mobile */}
+      <header className="fixed top-0 left-0 w-full z-50 bg-header">
+        {/* ── TOP BAR ── */}
+        <div className="w-full border-b border-white/[0.06]">
+          <div className="max-w-7xl mx-auto h-14 md:h-[60px] flex items-center px-4 md:px-6 lg:px-8 gap-3 md:gap-5 lg:gap-8">
+            {/* Menu mobile */}
             <button
               aria-label="Abrir menu"
               aria-controls="mobile-menu"
               aria-expanded={isMenuOpen}
-              className="md:hidden mr-1 rounded-xl p-2 hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="md:hidden shrink-0 rounded-lg p-1.5 text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
               onClick={() => setIsMenuOpen(true)}
             >
-              <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                fill="none"
-                className={brandColor}
-              >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M3 6h18M3 12h18M3 18h18"
                   stroke="currentColor"
@@ -203,257 +210,319 @@ export default function Header({ categories, shop }: HeaderProps) {
               </svg>
             </button>
 
-            {/* logo (única info “da loja” no header) */}
+            {/* Logo */}
             <Link href="/" className="flex items-center shrink-0">
               <Image
                 src={logoSrc}
                 alt={logoAlt}
-                width={360}
-                height={120}
+                width={280}
+                height={80}
                 priority
-                className="w-auto [height:clamp(2.6rem,5vw,5.5rem)] sm:[height:clamp(2.8rem,5vw,6rem)]"
-                sizes="(max-width: 640px) 160px, (max-width: 1024px) 220px, 260px"
+                className="w-auto h-8 sm:h-9 md:h-10"
+                sizes="(max-width: 640px) 120px, (max-width: 1024px) 160px, 200px"
               />
             </Link>
 
-            {/* search desktop */}
+            {/* Search (desktop/tablet) */}
             <div
-              className="hidden sm:flex flex-1 justify-center mx-3 md:mx-6"
+              className="hidden sm:flex flex-1 justify-center min-w-0"
               suppressHydrationWarning
             >
-              <div className="w-full max-w-xl">
+              <div className="w-full max-w-lg">
                 <SearchBar />
               </div>
             </div>
 
-            {/* lado direito */}
-            <div className="flex items-center gap-3 md:gap-6">
-              {/* Kavita News (desktop) */}
-              <Link
-                href="/news"
-                className={`hidden md:inline-flex items-center text-sm font-semibold tracking-wide rounded-full px-4 py-1.5 border transition-all
-                  ${
-                    isNewsPage
-                      ? "border-white text-white bg-white/10"
-                      : "border-white/25 text-white/95 hover:border-white hover:text-white"
-                  }`}
-              >
-                Kavita News
-              </Link>
+            {/* Navegação direita */}
+            <div className="flex items-center gap-2 md:gap-3 lg:gap-5 ml-auto shrink-0">
+              {/* Módulos — desktop only */}
+              <nav className="hidden md:flex items-center gap-1 lg:gap-2" aria-label="Módulos">
+                <ModuleLink
+                  href="/news"
+                  label="News"
+                  active={pathname.startsWith("/news")}
+                />
+                <ModuleLink
+                  href="/mercado-do-cafe"
+                  label="Café"
+                  icon="☕"
+                  active={pathname.startsWith("/mercado-do-cafe")}
+                />
+                <ModuleLink
+                  href="/contato"
+                  label="Atendimento"
+                  active={pathname.startsWith("/contato")}
+                />
+              </nav>
 
-              {/* Mercado do Café (desktop) */}
-              <Link
-                href="/mercado-do-cafe"
-                className={`hidden md:inline-flex items-center text-sm font-semibold tracking-wide rounded-full px-4 py-1.5 border transition-all
-                  ${
-                    pathname.startsWith("/mercado-do-cafe")
-                      ? "border-white text-white bg-white/10"
-                      : "border-white/25 text-white/95 hover:border-white hover:text-white"
-                  }`}
-              >
-                ☕ Mercado do Café
-              </Link>
+              {/* Separador */}
+              <span className="hidden md:block w-px h-5 bg-white/15" aria-hidden />
 
-              {/* atendimento desktop */}
-              <Link
-                href="/contato"
-                className="hidden md:inline-flex items-center text-sm font-medium tracking-wide rounded-full px-4 py-1.5 border border-white/25 text-white/95 hover:border-white hover:text-white transition-all"
-              >
-                Atendimento
-              </Link>
-
-              {/* user menu desktop */}
-              <div className={`hidden md:block ${brandColor}`}>
+              {/* User menu desktop */}
+              <div className="hidden md:block">
                 <UserMenu />
               </div>
 
-              {/* carrinho */}
+              {/* Carrinho */}
               <div className="relative">
                 <button
                   aria-label="Abrir carrinho"
-                  className="p-1.5 rounded-full text-accent hover:bg-black/10 transition-colors"
+                  className="p-1.5 rounded-full text-white/80 hover:text-accent transition-colors"
                   onClick={() => setIsCartOpen(true)}
                 >
-                  <svg
-                    width="26"
-                    height="26"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.9"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="9" cy="20" r="1.6" />
-                    <circle cx="18" cy="20" r="1.6" />
-                    <path d="M3 4h2l2.4 11h11.2l2-8H7" />
-                  </svg>
+                  <CartIcon size={22} />
                 </button>
-
-                {!!cartCount && (
-                  <span className="absolute -top-1 -right-1 bg-white text-header text-[11px] font-bold rounded-full px-1.5 py-0.5 leading-none">
-                    {cartCount}
-                  </span>
-                )}
+                {!!cartCount && <CartBadge count={cartCount} />}
               </div>
             </div>
           </div>
         </div>
 
-        {/* NAV DESKTOP */}
-        <nav className={`hidden md:block w-full h-[44px] ${navBg} shadow-sm`}>
-          <div className="max-w-6xl mx-auto h-full px-4 md:px-6 flex items-center justify-center">
-            <MainNavCategories categories={publicActiveCategories} />
-          </div>
-        </nav>
+        {/* ── NAV CATEGORIAS (apenas ecommerce) ── */}
+        {showCategories && publicActiveCategories.length > 0 && (
+          <nav className="hidden md:block w-full bg-nav/95 backdrop-blur-sm">
+            <div className="max-w-7xl mx-auto h-9 px-4 md:px-6 lg:px-8 flex items-center justify-center">
+              <MainNavCategories categories={publicActiveCategories} />
+            </div>
+          </nav>
+        )}
       </header>
 
-      {/* backdrop mobile */}
+      {/* ── BACKDROP MOBILE ── */}
       {isMenuOpen && (
         <button
           aria-label="Fechar menu"
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[3px] animate-[fadeIn_0.2s_ease-out]"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
 
-      {/* MENU MOBILE */}
+      {/* ── MENU MOBILE ── */}
       {isMenuOpen && (
         <aside
           ref={menuRef}
           id="mobile-menu"
           role="dialog"
           aria-modal="true"
-          className="fixed z-50 top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl p-5 flex flex-col gap-4 overflow-y-auto animate-[slideInLeft_0.25s_ease-out]"
+          className="fixed z-50 top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col overflow-y-auto animate-[slideInLeft_0.25s_ease-out]"
           style={{ willChange: "transform" }}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold text-header">Menu</span>
+          {/* Cabeçalho do drawer */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <Link href="/" onClick={() => setIsMenuOpen(false)}>
+              <Image
+                src={logoSrc}
+                alt={logoAlt}
+                width={140}
+                height={40}
+                className="w-auto h-7"
+                sizes="120px"
+              />
+            </Link>
             <button
               aria-label="Fechar menu"
-              className="rounded-full p-2 hover:bg-gray-100"
+              className="rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              ✕
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
-          {/* search mobile */}
-          <div className="sm:hidden" suppressHydrationWarning>
+          {/* Busca mobile */}
+          <div className="px-5 py-3 border-b border-gray-100 sm:hidden" suppressHydrationWarning>
             <SearchBar />
           </div>
 
-          {/* saudação / auth */}
-          <div className="mt-1">
-            {isAuthenticated ? (
-              <p className="text-sm text-gray-600">
-                Olá,{" "}
-                <span className="font-semibold text-header">
-                  {user?.nome ?? "Usuário"}
-                </span>
-                .{" "}
-                <button
-                  className="text-header font-semibold underline"
-                  onClick={logout}
-                >
-                  Sair
-                </button>
-              </p>
-            ) : (
-              <p className="text-sm text-gray-600">
-                Olá!{" "}
-                <Link
-                  className="text-header font-semibold underline"
-                  href="/login"
-                >
-                  Faça login
-                </Link>{" "}
-                para acompanhar seus pedidos.
-              </p>
-            )}
-          </div>
+          {/* Conteúdo do menu */}
+          <div className="flex-1 px-3 py-3 space-y-1">
+            {/* ── Seção: Loja ── */}
+            <MobileMenuSection label="Loja">
+              {publicActiveCategories.map((cat) => (
+                <MobileMenuLink
+                  key={cat.id}
+                  href={`/categorias/${cat.slug}`}
+                  label={cat.name}
+                  onClick={() => setIsMenuOpen(false)}
+                />
+              ))}
+              <MobileMenuLink
+                href="/servicos"
+                label="Serviços"
+                onClick={() => setIsMenuOpen(false)}
+              />
+            </MobileMenuSection>
 
-          {/* links fixos + categorias */}
-          <nav className="mt-2">
-            <ul className="space-y-1.5">
-              <li>
-                <Link
-                  className="block rounded-xl px-3.5 py-2.5 text-sm font-semibold text-header hover:bg-gray-100"
-                  href="/news"
-                >
-                  Kavita News
-                </Link>
-              </li>
+            {/* ── Seção: Módulos ── */}
+            <MobileMenuSection label="Módulos">
+              <MobileMenuLink
+                href="/news"
+                label="Kavita News"
+                onClick={() => setIsMenuOpen(false)}
+              />
+              <MobileMenuLink
+                href="/mercado-do-cafe"
+                label="Mercado do Café"
+                icon="☕"
+                onClick={() => setIsMenuOpen(false)}
+              />
+              <MobileMenuLink
+                href="/drones"
+                label="Kavita Drone"
+                onClick={() => setIsMenuOpen(false)}
+              />
+            </MobileMenuSection>
 
-              <li>
-                <Link
-                  className="block rounded-xl px-3.5 py-2.5 text-sm font-semibold text-header hover:bg-gray-100"
-                  href="/mercado-do-cafe"
-                >
-                  ☕ Mercado do Café
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  className="block rounded-xl px-3.5 py-2.5 text-sm font-medium text-header hover:bg-gray-100"
-                  href="/servicos"
-                >
-                  Serviços
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  className="block rounded-xl px-3.5 py-2.5 text-sm font-medium text-header hover:bg-gray-100"
-                  href="/contato"
-                >
-                  Atendimento
-                </Link>
-              </li>
-
-              {/* categorias públicas ativas */}
-              {publicActiveCategories.length > 0 && (
-                <li className="pt-2">
-                  <div className="text-xs font-semibold text-gray-500 px-3.5 pb-1">
-                    Categorias
+            {/* ── Seção: Minha Conta ── */}
+            <MobileMenuSection label="Minha Conta">
+              {isAuthenticated ? (
+                <>
+                  <div className="px-3 py-2 mb-1">
+                    <p className="text-sm font-medium text-gray-900">{user?.nome ?? "Usuário"}</p>
+                    {user?.email && <p className="text-xs text-gray-500">{user.email}</p>}
                   </div>
-                  <ul className="space-y-1.5">
-                    {publicActiveCategories.map((cat) => (
-                      <li key={cat.id}>
-                        <Link
-                          className="block rounded-xl px-3.5 py-2.5 text-sm font-medium text-header hover:bg-gray-100"
-                          href={`/categorias/${cat.slug}`}
-                        >
-                          {cat.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
+                  <MobileMenuLink href="/meus-dados" label="Meus Dados" onClick={() => setIsMenuOpen(false)} />
+                  <MobileMenuLink href="/favoritos" label="Favoritos" onClick={() => setIsMenuOpen(false)} />
+                  <MobileMenuLink href="/pedidos" label="Meus Pedidos" onClick={() => setIsMenuOpen(false)} />
+                  <button
+                    onClick={() => { logout(); setIsMenuOpen(false); }}
+                    className="w-full text-left rounded-lg px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    Sair
+                  </button>
+                </>
+              ) : (
+                <MobileMenuLink href="/login" label="Entrar / Criar conta" onClick={() => setIsMenuOpen(false)} />
               )}
-            </ul>
-          </nav>
+            </MobileMenuSection>
 
-          {/* login / meus pedidos */}
-          {!isAuthenticated && (
-            <div className="border-top border-t pt-3 mt-2">
-              <Link
-                className="block text-sm text-header hover:underline"
-                href="/login"
-              >
-                Login / Meus Pedidos
-              </Link>
-            </div>
-          )}
+            {/* ── Seção: Atendimento ── */}
+            <MobileMenuSection label="Atendimento">
+              <MobileMenuLink
+                href="/contato"
+                label="Fale conosco"
+                onClick={() => setIsMenuOpen(false)}
+              />
+              <MobileMenuLink
+                href="/trabalhe-conosco"
+                label="Trabalhe conosco"
+                onClick={() => setIsMenuOpen(false)}
+              />
+            </MobileMenuSection>
+          </div>
         </aside>
       )}
 
-      {/* carrinho lateral */}
+      {/* Carrinho lateral */}
       <CartCar isCartOpen={isCartOpen} closeCart={() => setIsCartOpen(false)} />
 
-      {/* espaçador do header fixo — 76px topbar + 0 nav (mobile) | 88px topbar + 44px nav (desktop) + 2px border */}
-      <div aria-hidden className="h-[78px] sm:h-[78px] md:h-[134px]" />
+      {/* Espaçador — topbar + nav (se ecommerce com categorias) */}
+      <div
+        aria-hidden
+        className={
+          showCategories && publicActiveCategories.length > 0
+            ? "h-14 md:h-[96px]"    /* 60px topbar + 36px nav */
+            : "h-14 md:h-[60px]"     /* só topbar */
+        }
+      />
     </>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Sub-componentes internos
+   ═══════════════════════════════════════════ */
+
+function ModuleLink({
+  href,
+  label,
+  icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon?: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`text-[13px] font-medium px-3 py-1.5 rounded-full transition-colors whitespace-nowrap ${
+        active
+          ? "bg-white/15 text-white"
+          : "text-white/65 hover:text-white hover:bg-white/10"
+      }`}
+    >
+      {icon && <span className="mr-1">{icon}</span>}
+      {label}
+    </Link>
+  );
+}
+
+function MobileMenuSection({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="py-2">
+      <p className="px-3 pb-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+        {label}
+      </p>
+      <div className="space-y-0.5">{children}</div>
+    </div>
+  );
+}
+
+function MobileMenuLink({
+  href,
+  label,
+  icon,
+  onClick,
+}: {
+  href: string;
+  label: string;
+  icon?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      className="block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-header transition-colors"
+      onClick={onClick}
+    >
+      {icon && <span className="mr-1.5">{icon}</span>}
+      {label}
+    </Link>
+  );
+}
+
+function CartIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </svg>
+  );
+}
+
+function CartBadge({ count }: { count: number }) {
+  return (
+    <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+      {count}
+    </span>
   );
 }
