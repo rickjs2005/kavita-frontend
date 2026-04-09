@@ -61,10 +61,10 @@ export default function MainNavCategories({ categories }: Props) {
 
       <Link
         href="/drones"
-        className={`text-[13px] font-semibold px-3 py-1.5 rounded-full transition-colors ${
+        className={`text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition-all border ${
           pathname.startsWith("/drones")
-            ? "bg-white/15 text-white"
-            : "text-info/90 hover:text-white hover:bg-white/10"
+            ? "border-accent-bright/60 bg-accent-bright/15 text-accent-bright"
+            : "border-accent-bright/30 text-accent-bright/90 hover:border-accent-bright/60 hover:bg-accent-bright/10 hover:text-accent-bright"
         }`}
       >
         Kavita Drone

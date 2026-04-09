@@ -118,7 +118,7 @@ export default function Header({ categories, shop }: HeaderProps) {
       <>
         <header className="fixed top-0 left-0 w-full z-50 bg-header">
           <div className="w-full border-b border-white/10">
-            <div className="max-w-6xl mx-auto h-14 flex items-center justify-between px-4 md:px-6">
+            <div className="max-w-6xl mx-auto h-[60px] flex items-center justify-between px-4 md:px-6">
               {/* Voltar */}
               <button
                 onClick={() => router.back()}
@@ -146,11 +146,11 @@ export default function Header({ categories, shop }: HeaderProps) {
                 <Image
                   src={logoSrc}
                   alt={logoAlt}
-                  width={240}
-                  height={70}
+                  width={280}
+                  height={80}
                   priority
-                  className={`w-auto h-9 sm:h-10 ${isDronePage ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" : ""}`}
-                  sizes="(max-width: 640px) 140px, 180px"
+                  className={`w-auto h-10 sm:h-11 ${isDronePage ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" : ""}`}
+                  sizes="(max-width: 640px) 160px, 200px"
                 />
               </Link>
 
@@ -170,7 +170,7 @@ export default function Header({ categories, shop }: HeaderProps) {
         </header>
 
         <CartCar isCartOpen={isCartOpen} closeCart={() => setIsCartOpen(false)} />
-        <div aria-hidden className="h-14" />
+        <div aria-hidden className="h-[60px]" />
       </>
     );
   }
@@ -191,13 +191,13 @@ export default function Header({ categories, shop }: HeaderProps) {
       <header className="fixed top-0 left-0 w-full z-50 bg-header">
         {/* ── TOP BAR ── */}
         <div className="w-full border-b border-white/[0.06]">
-          <div className="max-w-7xl mx-auto h-14 md:h-16 flex items-center px-4 md:px-6 lg:px-8 gap-3 md:gap-5 lg:gap-8">
-            {/* Menu mobile */}
+          <div className="max-w-7xl mx-auto h-[60px] md:h-[72px] flex items-center px-4 md:px-6 lg:px-8 gap-3 md:gap-5 lg:gap-8">
+            {/* Menu mobile + Logo formam bloco esquerdo no mobile */}
             <button
               aria-label="Abrir menu"
               aria-controls="mobile-menu"
               aria-expanded={isMenuOpen}
-              className="md:hidden shrink-0 rounded-lg p-1.5 text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+              className="md:hidden shrink-0 rounded-lg p-1.5 -ml-1 text-white/80 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
               onClick={() => setIsMenuOpen(true)}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -215,11 +215,11 @@ export default function Header({ categories, shop }: HeaderProps) {
               <Image
                 src={logoSrc}
                 alt={logoAlt}
-                width={320}
-                height={90}
+                width={360}
+                height={100}
                 priority
-                className={`w-auto h-9 sm:h-11 md:h-12 ${isDronePage ? "drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" : ""}`}
-                sizes="(max-width: 640px) 140px, (max-width: 1024px) 200px, 260px"
+                className={`w-auto h-10 sm:h-12 md:h-[56px] ${isDronePage ? "drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" : ""}`}
+                sizes="(max-width: 640px) 160px, (max-width: 1024px) 220px, 280px"
               />
             </Link>
 
@@ -313,10 +313,10 @@ export default function Header({ categories, shop }: HeaderProps) {
               <Image
                 src={logoSrc}
                 alt={logoAlt}
-                width={180}
-                height={50}
-                className="w-auto h-8"
-                sizes="140px"
+                width={200}
+                height={56}
+                className="w-auto h-9"
+                sizes="160px"
               />
             </Link>
             <button
@@ -422,8 +422,8 @@ export default function Header({ categories, shop }: HeaderProps) {
         aria-hidden
         className={
           showCategories && publicActiveCategories.length > 0
-            ? "h-14 md:h-[100px]"   /* 64px topbar + 36px nav */
-            : "h-14 md:h-16"         /* só topbar */
+            ? "h-[60px] md:h-[108px]" /* 72px topbar + 36px nav */
+            : "h-[60px] md:h-[72px]"   /* só topbar */
         }
       />
     </>
