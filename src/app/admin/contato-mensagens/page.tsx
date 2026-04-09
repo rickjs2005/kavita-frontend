@@ -181,7 +181,7 @@ export default function ContatoMensagensPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
+        <h1 className="text-xl font-bold text-teal-light sm:text-2xl">
           Mensagens de Contato
         </h1>
         <p className="mt-1 text-sm text-gray-500">
