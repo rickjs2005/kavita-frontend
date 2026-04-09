@@ -5,7 +5,8 @@ import { MdEmail } from "react-icons/md";
 import {
   HiOutlineClock,
   HiOutlineMapPin,
-  HiOutlineShieldCheck,
+  HiOutlineCheckBadge,
+  HiOutlineBolt,
 } from "react-icons/hi2";
 
 type Props = {
@@ -15,120 +16,116 @@ type Props = {
 };
 
 export default function BlocoConfianca({ whatsapp, email, whatsappUrl }: Props) {
-  const channels = [
-    whatsapp && {
-      icon: FaWhatsapp,
-      label: "WhatsApp",
-      value: whatsapp,
-      href: whatsappUrl || undefined,
-      color: "bg-green-50 text-green-600",
-    },
-    email && {
-      icon: MdEmail,
-      label: "E-mail",
-      value: email,
-      href: `mailto:${email}`,
-      color: "bg-blue-50 text-blue-600",
-    },
-  ].filter(Boolean) as {
-    icon: React.ComponentType<{ className?: string }>;
-    label: string;
-    value: string;
-    href?: string;
-    color: string;
-  }[];
-
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-      <div className="text-center mb-8 sm:mb-10">
-        <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-          Outros canais de atendimento
-        </h2>
-        <p className="mt-2 text-gray-600">
-          Escolha o canal que preferir para falar conosco
-        </p>
-      </div>
+    <section className="border-t border-gray-100 bg-white py-14 sm:py-20">
+      <div className="mx-auto max-w-5xl px-4">
+        {/* Header */}
+        <div className="mb-10 text-center sm:mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+            Por que confiar no atendimento Kavita
+          </h2>
+          <p className="mx-auto mt-2 max-w-lg text-gray-500">
+            Somos uma empresa real com equipe dedicada ao seu atendimento
+          </p>
+        </div>
 
-      {/* Channel cards */}
-      {channels.length > 0 && (
-        <div className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-2xl mx-auto">
-          {channels.map((ch) => {
-            const Icon = ch.icon;
-            const Wrapper = ch.href ? "a" : "div";
-            const linkProps = ch.href
-              ? {
-                  href: ch.href,
-                  target: "_blank" as const,
-                  rel: "noreferrer",
-                }
-              : {};
-
+        {/* Trust grid */}
+        <div className="mb-12 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {[
+            {
+              icon: HiOutlineBolt,
+              label: "Resposta rapida",
+              desc: "Ate 24h uteis",
+              color: "text-amber-500 bg-amber-50",
+            },
+            {
+              icon: HiOutlineClock,
+              label: "Horario comercial",
+              desc: "Seg a sex, 8h-18h",
+              color: "text-primary bg-primary/10",
+            },
+            {
+              icon: HiOutlineCheckBadge,
+              label: "Equipe qualificada",
+              desc: "Suporte especializado",
+              color: "text-blue-600 bg-blue-50",
+            },
+            {
+              icon: HiOutlineMapPin,
+              label: "Empresa real",
+              desc: "Perdoes - MG",
+              color: "text-purple bg-purple/10",
+            },
+          ].map((item) => {
+            const Icon = item.icon;
             return (
-              <Wrapper
-                key={ch.label}
-                {...linkProps}
-                className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md hover:border-primary/20"
+              <div
+                key={item.label}
+                className="flex flex-col items-center gap-2.5 rounded-2xl border border-gray-100 p-4 text-center sm:p-5"
               >
                 <div
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${ch.color}`}
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.color}`}
                 >
-                  <Icon className="h-6 w-6" />
+                  <Icon className="h-5 w-5" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {ch.label}
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {item.label}
                   </p>
-                  <p className="truncate text-sm text-gray-600">{ch.value}</p>
+                  <p className="mt-0.5 text-xs text-gray-500">{item.desc}</p>
                 </div>
-              </Wrapper>
+              </div>
             );
           })}
         </div>
-      )}
 
-      {/* Trust indicators */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <HiOutlineClock className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">
-              Horario de atendimento
+        {/* Channels */}
+        {(whatsapp || email) && (
+          <div className="mx-auto max-w-2xl">
+            <p className="mb-4 text-center text-sm font-medium text-gray-500">
+              Canais diretos
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Segunda a sexta, 8h as 18h
-            </p>
-          </div>
-        </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {whatsapp && (
+                <a
+                  href={whatsappUrl || "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-4 rounded-2xl border border-green-100 bg-green-50/50 p-4 transition hover:border-green-200 hover:shadow-sm"
+                >
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-600">
+                    <FaWhatsapp className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900">WhatsApp</p>
+                    <p className="truncate text-sm text-gray-600">{whatsapp}</p>
+                  </div>
+                  <span className="ml-auto shrink-0 text-xs font-medium text-green-600">
+                    Abrir
+                  </span>
+                </a>
+              )}
 
-        <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <HiOutlineShieldCheck className="h-5 w-5" />
+              {email && (
+                <a
+                  href={`mailto:${email}`}
+                  className="flex items-center gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 transition hover:border-blue-200 hover:shadow-sm"
+                >
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                    <MdEmail className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900">E-mail</p>
+                    <p className="truncate text-sm text-gray-600">{email}</p>
+                  </div>
+                  <span className="ml-auto shrink-0 text-xs font-medium text-blue-600">
+                    Enviar
+                  </span>
+                </a>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">
-              Atendimento seguro
-            </p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Seus dados protegidos e sigilosos
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <HiOutlineMapPin className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">
-              Empresa real
-            </p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Perdoes - MG, atendendo todo o Brasil
-            </p>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   );

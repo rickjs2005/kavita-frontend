@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { HiOutlinePaperAirplane, HiOutlineCheckCircle } from "react-icons/hi2";
+import { useState } from "react";
+import {
+  HiOutlinePaperAirplane,
+  HiOutlineCheckCircle,
+  HiOutlineEnvelope,
+  HiOutlineShieldCheck,
+} from "react-icons/hi2";
 import apiClient from "@/lib/apiClient";
 import { isApiError } from "@/lib/errors";
 
 type FormState = "idle" | "sending" | "success" | "error";
-
 type FieldErrors = Record<string, string>;
 
 function phoneMask(value: string) {
@@ -18,9 +22,17 @@ function phoneMask(value: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
-export default function FormularioContato() {
-  const formRef = useRef<HTMLFormElement>(null);
+const ASSUNTOS = [
+  "Duvida sobre pedido",
+  "Entrega e frete",
+  "Troca ou devolucao",
+  "Pagamento",
+  "Problema no site",
+  "Parceria comercial",
+  "Outro assunto",
+];
 
+export default function FormularioContato() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -58,7 +70,7 @@ export default function FormularioContato() {
       if (isApiError(err)) {
         if (err.status === 429) {
           setErrorMsg(
-            "Voce atingiu o limite de mensagens. Tente novamente mais tarde."
+            "Limite de envios atingido. Aguarde alguns minutos e tente novamente."
           );
           return;
         }
@@ -73,40 +85,51 @@ export default function FormularioContato() {
             fe[f.field] = f.message;
           }
           setFieldErrors(fe);
-          setErrorMsg("Verifique os campos destacados e tente novamente.");
+          setErrorMsg("Corrija os campos destacados abaixo.");
           return;
         }
 
-        setErrorMsg(err.message || "Erro ao enviar mensagem.");
+        setErrorMsg(err.message || "Erro ao enviar. Tente novamente.");
       } else {
         setErrorMsg(
-          "Nao foi possivel enviar sua mensagem. Verifique sua conexao e tente novamente."
+          "Falha na conexao. Verifique sua internet e tente novamente."
         );
       }
     }
   }
 
+  /* ── Success state ─────────────────────────────────────────────── */
+
   if (state === "success") {
     return (
-      <section id="formulario" className="bg-gray-50 py-12 sm:py-16">
-        <div className="mx-auto max-w-2xl px-4">
-          <div className="rounded-2xl border border-success/20 bg-white p-8 text-center shadow-sm sm:p-12">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
-              <HiOutlineCheckCircle className="h-8 w-8 text-success" />
+      <section id="formulario" className="bg-gradient-to-b from-gray-50 to-white py-14 sm:py-20">
+        <div className="mx-auto max-w-lg px-4">
+          <div className="rounded-3xl border border-success/20 bg-white p-8 text-center shadow-lg shadow-success/5 sm:p-12">
+            {/* Animated check */}
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
+              <HiOutlineCheckCircle className="h-10 w-10 text-success" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 sm:text-2xl">
-              Mensagem enviada!
+
+            <h3 className="text-2xl font-bold text-gray-900">
+              Mensagem recebida!
             </h3>
-            <p className="mt-3 text-gray-600">
-              Recebemos seu contato e responderemos em ate 24 horas uteis.
-              Fique atento ao e-mail informado.
+
+            <p className="mx-auto mt-3 max-w-sm text-gray-500 leading-relaxed">
+              Nossa equipe ja foi notificada e voce recebera uma resposta no
+              e-mail informado em ate <strong className="text-gray-700">24 horas uteis</strong>.
             </p>
+
+            <div className="mx-auto mt-6 flex items-center justify-center gap-2 rounded-xl bg-gray-50 px-4 py-2.5 text-sm text-gray-500">
+              <HiOutlineEnvelope className="h-4 w-4 shrink-0" />
+              <span className="truncate">{email || "seu e-mail"}</span>
+            </div>
+
             <button
               type="button"
               onClick={() => setState("idle")}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              className="mt-8 inline-flex items-center gap-2 rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50"
             >
-              Enviar nova mensagem
+              Enviar outra mensagem
             </button>
           </div>
         </div>
@@ -114,188 +137,232 @@ export default function FormularioContato() {
     );
   }
 
+  /* ── Form state ────────────────────────────────────────────────── */
+
   const inputBase =
-    "w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary";
+    "w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary";
   const inputOk = "border-gray-200 hover:border-gray-300";
-  const inputErr = "border-red-300 ring-1 ring-red-200";
+  const inputErr = "border-red-300 bg-red-50/30 ring-1 ring-red-200";
+  const labelCls = "mb-1.5 block text-sm font-medium text-gray-700";
 
   return (
-    <section id="formulario" className="bg-gray-50 py-12 sm:py-16">
-      <div className="mx-auto max-w-2xl px-4">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-            Fale com a equipe
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Preencha o formulario abaixo e retornaremos o mais breve possivel
-          </p>
-        </div>
+    <section id="formulario" className="bg-gradient-to-b from-gray-50 to-white py-14 sm:py-20">
+      <div className="mx-auto max-w-5xl px-4">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-5 lg:gap-14">
+          {/* Left column — context */}
+          <div className="lg:col-span-2">
+            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              Fale com a equipe Kavita
+            </h2>
+            <p className="mt-3 text-gray-500 leading-relaxed">
+              Descreva sua duvida ou solicitacao e retornaremos o mais rapido possivel.
+              Quanto mais detalhes, mais agil sera a resposta.
+            </p>
 
-        <form
-          ref={formRef}
-          onSubmit={handleSubmit}
-          noValidate
-          className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8"
-        >
-          {state === "error" && errorMsg && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {errorMsg}
-            </div>
-          )}
+            {/* Trust indicators */}
+            <div className="mt-8 space-y-4 hidden lg:block">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <HiOutlineEnvelope className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">
+                    Resposta por e-mail
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Voce recebera a resposta no e-mail informado
+                  </p>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            {/* Nome */}
-            <div className="sm:col-span-2">
-              <label
-                htmlFor="contato-nome"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
-              >
-                Nome completo <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="contato-nome"
-                type="text"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Seu nome"
-                required
-                className={`${inputBase} ${fieldErrors.nome ? inputErr : inputOk}`}
-              />
-              {fieldErrors.nome && (
-                <p className="mt-1 text-xs text-red-500">{fieldErrors.nome}</p>
-              )}
-            </div>
-
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="contato-email"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
-              >
-                E-mail <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="contato-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-                className={`${inputBase} ${fieldErrors.email ? inputErr : inputOk}`}
-              />
-              {fieldErrors.email && (
-                <p className="mt-1 text-xs text-red-500">{fieldErrors.email}</p>
-              )}
-            </div>
-
-            {/* Telefone */}
-            <div>
-              <label
-                htmlFor="contato-telefone"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
-              >
-                Telefone / WhatsApp
-              </label>
-              <input
-                id="contato-telefone"
-                type="tel"
-                value={telefone}
-                onChange={(e) => setTelefone(phoneMask(e.target.value))}
-                placeholder="(31) 99999-9999"
-                className={`${inputBase} ${fieldErrors.telefone ? inputErr : inputOk}`}
-              />
-              {fieldErrors.telefone && (
-                <p className="mt-1 text-xs text-red-500">
-                  {fieldErrors.telefone}
-                </p>
-              )}
-            </div>
-
-            {/* Assunto */}
-            <div className="sm:col-span-2">
-              <label
-                htmlFor="contato-assunto"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
-              >
-                Assunto <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="contato-assunto"
-                type="text"
-                value={assunto}
-                onChange={(e) => setAssunto(e.target.value)}
-                placeholder="Sobre o que voce precisa falar?"
-                required
-                className={`${inputBase} ${fieldErrors.assunto ? inputErr : inputOk}`}
-              />
-              {fieldErrors.assunto && (
-                <p className="mt-1 text-xs text-red-500">
-                  {fieldErrors.assunto}
-                </p>
-              )}
-            </div>
-
-            {/* Mensagem */}
-            <div className="sm:col-span-2">
-              <label
-                htmlFor="contato-mensagem"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
-              >
-                Mensagem <span className="text-red-400">*</span>
-              </label>
-              <textarea
-                id="contato-mensagem"
-                value={mensagem}
-                onChange={(e) => setMensagem(e.target.value)}
-                placeholder="Descreva sua duvida, sugestao ou solicitacao..."
-                rows={5}
-                required
-                className={`${inputBase} resize-y min-h-[120px] ${fieldErrors.mensagem ? inputErr : inputOk}`}
-              />
-              {fieldErrors.mensagem && (
-                <p className="mt-1 text-xs text-red-500">
-                  {fieldErrors.mensagem}
-                </p>
-              )}
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <HiOutlineShieldCheck className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">
+                    Dados protegidos
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Suas informacoes sao sigilosas e seguras
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={state === "sending"}
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-accent-hover disabled:opacity-60 disabled:cursor-not-allowed sm:w-auto"
-          >
-            {state === "sending" ? (
-              <>
-                <svg
-                  className="h-4 w-4 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
+          {/* Right column — form */}
+          <div className="lg:col-span-3">
+            <form
+              onSubmit={handleSubmit}
+              noValidate
+              className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-7"
+            >
+              {/* Error banner */}
+              {state === "error" && errorMsg && (
+                <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  <span className="mt-0.5 shrink-0 text-red-400">!</span>
+                  {errorMsg}
+                </div>
+              )}
+
+              <div className="space-y-5">
+                {/* Nome */}
+                <div>
+                  <label htmlFor="c-nome" className={labelCls}>
+                    Nome completo <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    id="c-nome"
+                    type="text"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    placeholder="Como voce se chama?"
+                    required
+                    autoComplete="name"
+                    className={`${inputBase} ${fieldErrors.nome ? inputErr : inputOk}`}
                   />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  {fieldErrors.nome && (
+                    <p className="mt-1 text-xs text-red-500">{fieldErrors.nome}</p>
+                  )}
+                </div>
+
+                {/* Email + Telefone */}
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="c-email" className={labelCls}>
+                      E-mail <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      id="c-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      required
+                      autoComplete="email"
+                      className={`${inputBase} ${fieldErrors.email ? inputErr : inputOk}`}
+                    />
+                    {fieldErrors.email && (
+                      <p className="mt-1 text-xs text-red-500">{fieldErrors.email}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="c-tel" className={labelCls}>
+                      WhatsApp
+                    </label>
+                    <input
+                      id="c-tel"
+                      type="tel"
+                      value={telefone}
+                      onChange={(e) => setTelefone(phoneMask(e.target.value))}
+                      placeholder="(31) 99999-9999"
+                      autoComplete="tel"
+                      className={`${inputBase} ${fieldErrors.telefone ? inputErr : inputOk}`}
+                    />
+                    {fieldErrors.telefone && (
+                      <p className="mt-1 text-xs text-red-500">{fieldErrors.telefone}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Assunto — select */}
+                <div>
+                  <label htmlFor="c-assunto" className={labelCls}>
+                    Assunto <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    id="c-assunto"
+                    value={assunto}
+                    onChange={(e) => setAssunto(e.target.value)}
+                    required
+                    className={`${inputBase} ${
+                      fieldErrors.assunto ? inputErr : inputOk
+                    } ${!assunto ? "text-gray-400" : "text-gray-900"}`}
+                  >
+                    <option value="" disabled>
+                      Selecione o assunto
+                    </option>
+                    {ASSUNTOS.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
+                  {fieldErrors.assunto && (
+                    <p className="mt-1 text-xs text-red-500">{fieldErrors.assunto}</p>
+                  )}
+                </div>
+
+                {/* Mensagem */}
+                <div>
+                  <label htmlFor="c-msg" className={labelCls}>
+                    Mensagem <span className="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    id="c-msg"
+                    value={mensagem}
+                    onChange={(e) => setMensagem(e.target.value)}
+                    placeholder="Descreva o que precisa. Inclua numero do pedido, se houver."
+                    rows={5}
+                    required
+                    className={`${inputBase} resize-y min-h-[130px] ${
+                      fieldErrors.mensagem ? inputErr : inputOk
+                    }`}
                   />
-                </svg>
-                Enviando...
-              </>
-            ) : (
-              <>
-                <HiOutlinePaperAirplane className="h-4 w-4" />
-                Enviar mensagem
-              </>
-            )}
-          </button>
-        </form>
+                  <div className="mt-1 flex items-center justify-between">
+                    {fieldErrors.mensagem ? (
+                      <p className="text-xs text-red-500">{fieldErrors.mensagem}</p>
+                    ) : (
+                      <span />
+                    )}
+                    <span className="text-xs text-gray-400">
+                      {mensagem.length}/5000
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={state === "sending"}
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-bold text-white shadow-sm shadow-accent/20 transition-all duration-150 hover:bg-accent-hover hover:shadow-md hover:shadow-accent/25 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none sm:w-auto"
+              >
+                {state === "sending" ? (
+                  <>
+                    <svg
+                      className="h-4 w-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <HiOutlinePaperAirplane className="h-4 w-4" />
+                    Enviar mensagem
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -26,7 +26,7 @@ export default async function AtendimentoPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <HeroAtendimento />
+      <HeroAtendimento whatsappUrl={whatsappUrl || undefined} />
       <AtalhoAjuda />
       <FormularioContato />
       <BlocoConfianca
