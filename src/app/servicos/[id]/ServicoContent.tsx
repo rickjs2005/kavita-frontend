@@ -347,7 +347,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                   </button>
                 ) : (
                   <a
-                    href={`/contatos?servico=${encodeURIComponent(
+                    href={`/contato?servico=${encodeURIComponent(
                       titulo,
                     )}&id=${servico.id}`}
                     className="inline-flex w-full items-center justify-center rounded-full bg-secondary px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-secondary-hover sm:w-auto"

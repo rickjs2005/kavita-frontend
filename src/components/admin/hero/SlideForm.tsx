@@ -341,7 +341,7 @@ export default function SlideForm({ slideId }: Props) {
                   </div>
                   <div>
                     <label htmlFor="btnSecHref" className="block text-sm text-white/80 mb-2">Link secundário</label>
-                    <input id="btnSecHref" value={form.button_secondary_href} maxLength={255} onChange={(e) => update({ button_secondary_href: e.target.value })} className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20" placeholder="/contatos" />
+                    <input id="btnSecHref" value={form.button_secondary_href} maxLength={255} onChange={(e) => update({ button_secondary_href: e.target.value })} className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-3 text-sm outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20" placeholder="/contato" />
                   </div>
                 </div>
               </div>

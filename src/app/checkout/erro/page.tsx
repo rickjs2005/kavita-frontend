@@ -33,8 +33,11 @@ function ErroContent() {
         Houve um problema ao processar seu pagamento.
       </p>
       <p className="text-gray-500 text-sm mb-8">
-        Seu pedido foi registrado, mas o pagamento não foi confirmado. Acesse o
-        pedido para verificar o status ou entre em contato com o suporte.
+        Seu pedido foi registrado, mas o pagamento nao foi confirmado. Acesse o
+        pedido para verificar o status ou{" "}
+        <a href="/contato" className="text-primary underline hover:text-primary-hover">
+          fale com nosso atendimento
+        </a>.
       </p>
 
       {pedidoId && (

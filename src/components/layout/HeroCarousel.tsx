@@ -31,7 +31,7 @@ const FALLBACK_SLIDE: HeroSlide = {
   badge_text: "Tecnologia para o campo", slide_type: "institutional",
   hero_video_url: null, hero_video_path: null, hero_image_url: null, hero_image_path: null,
   button_label: "Saiba Mais", button_href: "/drones",
-  button_secondary_label: "Falar com um especialista", button_secondary_href: "/contatos",
+  button_secondary_label: "Falar com um especialista", button_secondary_href: "/contato",
   sort_order: 0, is_active: 1, starts_at: null, ends_at: null, created_at: "", updated_at: "",
 };
 
