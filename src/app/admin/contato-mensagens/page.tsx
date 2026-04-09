@@ -29,6 +29,12 @@ type Stats = {
   total: number;
 };
 
+type Analytics = {
+  topTopics: { topic: string; views: number }[];
+  topSearches: { term: string; searches: number }[];
+  eventCounts: { event_type: string; total: number }[];
+};
+
 type ApiListResponse = {
   ok: boolean;
   data: Mensagem[];
@@ -70,6 +76,8 @@ export default function ContatoMensagensPage() {
   const [filtroStatus, setFiltroStatus] = useState<Status | "todas">("todas");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -85,6 +93,12 @@ export default function ContatoMensagensPage() {
 
       const s = (statsRes as any)?.data ?? statsRes;
       setStats(s);
+
+      // Analytics — best effort, don't block
+      try {
+        const aRes = await apiClient.get<Analytics>("/api/admin/contato-mensagens/analytics?days=30");
+        setAnalytics((aRes as any)?.data ?? aRes);
+      } catch { /* ignore */ }
     } catch {
       setErro("Erro ao carregar mensagens de contato.");
     } finally {
@@ -424,6 +438,84 @@ export default function ContatoMensagensPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Analytics section */}
+      {analytics && (
+        <div className="mt-8 border-t border-gray-100 pt-6">
+          <button
+            type="button"
+            onClick={() => setShowAnalytics((v) => !v)}
+            className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900"
+          >
+            <svg
+              className={`h-4 w-4 transition-transform ${showAnalytics ? "rotate-180" : ""}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+            Engajamento da Central de Ajuda (ultimos 30 dias)
+          </button>
+
+          {showAnalytics && (
+            <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Event summary */}
+              <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Resumo de eventos</h4>
+                <div className="space-y-2">
+                  {(analytics.eventCounts.length > 0 ? analytics.eventCounts : []).map((e) => (
+                    <div key={e.event_type} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">
+                        {e.event_type === "faq_topic_view" && "Topicos abertos"}
+                        {e.event_type === "faq_search" && "Buscas no FAQ"}
+                        {e.event_type === "form_start" && "Formulario iniciado"}
+                        {e.event_type === "whatsapp_hero_click" && "Cliques WhatsApp hero"}
+                      </span>
+                      <span className="font-semibold text-gray-900">{e.total}</span>
+                    </div>
+                  ))}
+                  {analytics.eventCounts.length === 0 && (
+                    <p className="text-xs text-gray-400">Nenhum evento registrado ainda.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Top topics */}
+              <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Topicos mais abertos</h4>
+                <div className="space-y-2">
+                  {analytics.topTopics.slice(0, 8).map((t, i) => (
+                    <div key={t.topic} className="flex items-center gap-2 text-sm">
+                      <span className="w-5 shrink-0 text-xs text-gray-400 text-right">{i + 1}.</span>
+                      <span className="flex-1 truncate text-gray-600">{t.topic}</span>
+                      <span className="shrink-0 font-medium text-gray-800">{t.views}x</span>
+                    </div>
+                  ))}
+                  {analytics.topTopics.length === 0 && (
+                    <p className="text-xs text-gray-400">Nenhum topico aberto ainda.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Top searches */}
+              <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Termos mais buscados</h4>
+                <div className="space-y-2">
+                  {analytics.topSearches.slice(0, 8).map((s, i) => (
+                    <div key={s.term} className="flex items-center gap-2 text-sm">
+                      <span className="w-5 shrink-0 text-xs text-gray-400 text-right">{i + 1}.</span>
+                      <span className="flex-1 truncate text-gray-600">&ldquo;{s.term}&rdquo;</span>
+                      <span className="shrink-0 font-medium text-gray-800">{s.searches}x</span>
+                    </div>
+                  ))}
+                  {analytics.topSearches.length === 0 && (
+                    <p className="text-xs text-gray-400">Nenhuma busca registrada ainda.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

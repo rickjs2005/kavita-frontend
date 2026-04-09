@@ -6,6 +6,7 @@ import {
   HiOutlineCheckBadge,
 } from "react-icons/hi2";
 import { FaWhatsapp } from "react-icons/fa";
+import { trackContatoEvent } from "../trackContatoEvent";
 
 type Props = {
   whatsappUrl?: string;
@@ -54,6 +55,7 @@ export default function HeroAtendimento({ whatsappUrl }: Props) {
                 href={whatsappUrl}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => trackContatoEvent("whatsapp_hero_click")}
                 className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-header shadow-lg shadow-black/10 transition hover:bg-gray-50 active:scale-[0.98] sm:w-auto"
               >
                 <FaWhatsapp className="h-5 w-5 text-green-600" />

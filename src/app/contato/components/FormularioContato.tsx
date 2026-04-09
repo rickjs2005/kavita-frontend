@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   HiOutlinePaperAirplane,
   HiOutlineCheckCircle,
@@ -9,6 +9,7 @@ import {
 } from "react-icons/hi2";
 import apiClient from "@/lib/apiClient";
 import { isApiError } from "@/lib/errors";
+import { trackContatoEvent } from "../trackContatoEvent";
 
 type FormState = "idle" | "sending" | "success" | "error";
 type FieldErrors = Record<string, string>;
@@ -42,6 +43,7 @@ export default function FormularioContato() {
   const [state, setState] = useState<FormState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const formStartTracked = useRef(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -196,6 +198,12 @@ export default function FormularioContato() {
             <form
               onSubmit={handleSubmit}
               noValidate
+              onFocusCapture={() => {
+                if (!formStartTracked.current) {
+                  formStartTracked.current = true;
+                  trackContatoEvent("form_start");
+                }
+              }}
               className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-7"
             >
               {/* Error banner */}

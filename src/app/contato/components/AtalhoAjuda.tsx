@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   HiOutlineTruck,
   HiOutlineArrowPath,
@@ -17,6 +17,7 @@ import {
   HiOutlineMagnifyingGlass,
 } from "react-icons/hi2";
 import topics from "@/data/topics";
+import { trackContatoEvent } from "../trackContatoEvent";
 
 type TopicItem = {
   title: string;
@@ -93,6 +94,7 @@ export default function AtalhoAjuda() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isSearching = search.trim().length > 0;
 
@@ -106,8 +108,21 @@ export default function AtalhoAjuda() {
   const visibleRemaining = isSearching || showAll ? remaining : [];
 
   function toggleTopic(title: string) {
-    setExpanded((prev) => (prev === title ? null : title));
+    setExpanded((prev) => {
+      const next = prev === title ? null : title;
+      if (next) trackContatoEvent("faq_topic_view", next);
+      return next;
+    });
   }
+
+  const trackSearch = useCallback((term: string) => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      if (term.trim().length >= 3) {
+        trackContatoEvent("faq_search", term.trim().slice(0, 100));
+      }
+    }, 1500);
+  }, []);
 
   function clearSearch() {
     setSearch("");
@@ -136,6 +151,7 @@ export default function AtalhoAjuda() {
             onChange={(e) => {
               setSearch(e.target.value);
               setShowAll(false);
+              trackSearch(e.target.value);
             }}
             placeholder="Buscar por tema, palavra-chave ou duvida..."
             className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-10 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25"
