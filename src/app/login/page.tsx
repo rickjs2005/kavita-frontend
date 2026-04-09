@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { safeInternalRedirect } from "@/utils/safeInternalRedirect";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,8 +16,9 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [serverMsg, setServerMsg] = useState<string | null>(null);
   const [showPw, setShowPw] = useState(false);
@@ -35,17 +37,14 @@ export default function LoginPage() {
       const r = await login(data.email, data.senha);
 
       if (!r.ok) {
-        // Consistência: SEMPRE a mesma frase
         setServerMsg("Credenciais inválidas.");
-        // Opcional: marcar campos como inválidos sem mensagem técnica
         setError("email", { message: undefined });
         setError("senha", { message: undefined });
-        return; // fica na tela de login
+        return;
       }
 
-      router.push("/");
+      router.push(safeInternalRedirect(searchParams.get("from"), "/"));
     } catch {
-      // Blindagem final: nunca deixar erro estourar overlay
       setServerMsg("Credenciais inválidas.");
     }
   };
@@ -168,5 +167,13 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

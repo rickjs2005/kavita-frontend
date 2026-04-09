@@ -4,14 +4,20 @@
  * AuthExpiredHandler — escuta o evento global "auth:expired" disparado pelo apiClient
  * quando qualquer request retorna 401 em área autenticada de usuário.
  *
- * Redireciona para /login sem que cada componente precise tratar 401 individualmente.
- * Não faz nada em rotas públicas (sem auth necessária).
+ * Redireciona para /login APENAS quando o usuário está em uma rota que requer auth.
+ * Rotas públicas (home, produtos, categorias etc.) NUNCA redirecionam — um 401 em
+ * /api/users/me para visitante anônimo é comportamento normal, não sessão expirada.
  */
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-// Rotas que não precisam redirecionar (já são públicas ou são o próprio login)
-const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/reset-password"];
+// Apenas rotas que REQUEREM autenticação disparam redirect para /login.
+// Todas as demais são consideradas públicas e ignoram 401 silenciosamente.
+const PROTECTED_PREFIXES = [
+  "/pedidos",
+  "/meus-dados",
+  "/favoritos",
+];
 
 export default function AuthExpiredHandler() {
   const router = useRouter();
@@ -19,11 +25,14 @@ export default function AuthExpiredHandler() {
 
   useEffect(() => {
     function handleAuthExpired() {
-      const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-      if (isPublic) return;
-
-      // Área admin tem seu próprio handler em AdminLayoutInner — não interferir
+      // Área admin tem seu próprio handler — não interferir
       if (pathname.startsWith("/admin")) return;
+
+      // Só redireciona se a rota atual requer autenticação
+      const isProtected = PROTECTED_PREFIXES.some((p) =>
+        pathname === p || pathname.startsWith(p + "/"),
+      );
+      if (!isProtected) return;
 
       const from = encodeURIComponent(pathname);
       router.replace(`/login?from=${from}`);
