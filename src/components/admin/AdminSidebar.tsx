@@ -89,6 +89,13 @@ const navItems: NavItem[] = [
     icon: "🚁",
     permission: "drones_manage",
   },
+  // Atendimento
+  {
+    label: "Mensagens de Contato",
+    href: "/admin/contato-mensagens",
+    icon: "✉️",
+    permission: "contato_mensagens_view",
+  },
   // Relatórios
   {
     label: "Relatórios",
