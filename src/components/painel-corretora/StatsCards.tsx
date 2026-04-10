@@ -1,5 +1,17 @@
 // src/components/painel-corretora/StatsCards.tsx
+//
+// KPI grid do dashboard da Sala Reservada. Design hierárquico:
+//
+//   - "Total" e "Novos" são os cards de maior destaque (hero stats)
+//   - "Em contato", "Fechados", "Perdidos" são secundários
+//   - Quando há leads novos, o card "Novos" ganha um ring esmeralda
+//     para pedir atenção, sem virar alarme vermelho
+//
+// Paleta monocromática deliberada: todos os números em stone-900,
+// diferenciação pela hierarquia tipográfica e micro-acentos
+// (ponto colorido no kicker, ring condicional).
 
+import { PanelCard } from "./PanelCard";
 import type { LeadsSummary } from "@/types/lead";
 
 type Props = {
@@ -7,61 +19,80 @@ type Props = {
   loading?: boolean;
 };
 
-const cards: Array<{
+type Card = {
   key: keyof LeadsSummary;
   label: string;
   hint: string;
-  tone: string;
-}> = [
+  dotClass: string;
+};
+
+const cards: Card[] = [
   {
     key: "total",
     label: "Total de leads",
-    hint: "Contatos recebidos no período",
-    tone: "text-zinc-900",
+    hint: "Contatos recebidos",
+    dotClass: "bg-stone-900",
   },
   {
     key: "new",
     label: "Novos",
-    hint: "Ainda não contatados",
-    tone: "text-emerald-700",
+    hint: "Aguardando resposta",
+    dotClass: "bg-emerald-600",
   },
   {
     key: "contacted",
     label: "Em contato",
-    hint: "Negociação em andamento",
-    tone: "text-amber-700",
+    hint: "Em negociação",
+    dotClass: "bg-amber-500",
   },
   {
     key: "closed",
     label: "Fechados",
-    hint: "Negociações ganhas",
-    tone: "text-sky-700",
+    hint: "Negócios ganhos",
+    dotClass: "bg-stone-700",
   },
   {
     key: "lost",
     label: "Perdidos",
     hint: "Não avançaram",
-    tone: "text-rose-700",
+    dotClass: "bg-stone-400",
   },
 ];
 
 export function StatsCards({ summary, loading }: Props) {
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-      {cards.map((card) => (
-        <div
-          key={card.key}
-          className="rounded-2xl border border-zinc-200 bg-white p-4"
-        >
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-            {card.label}
-          </p>
-          <p className={`mt-2 text-3xl font-bold ${card.tone}`}>
-            {loading ? "…" : (summary[card.key] ?? 0)}
-          </p>
-          <p className="mt-1 text-xs text-zinc-400">{card.hint}</p>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-5 md:gap-4">
+      {cards.map((card) => {
+        const value = summary[card.key] ?? 0;
+        const isAttention = card.key === "new" && value > 0;
+
+        return (
+          <PanelCard
+            key={card.key}
+            density="compact"
+            accent={isAttention ? "emerald" : "none"}
+            className="group"
+          >
+            <div className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className={`h-1.5 w-1.5 rounded-full ${card.dotClass}`}
+              />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                {card.label}
+              </p>
+            </div>
+            <p className="mt-3 text-3xl font-semibold tracking-tight text-stone-900 tabular-nums md:text-[2rem]">
+              {loading ? (
+                <span className="inline-block h-8 w-10 animate-pulse rounded bg-stone-100" />
+              ) : (
+                value
+              )}
+            </p>
+            <p className="mt-1 text-[11px] text-stone-500">{card.hint}</p>
+          </PanelCard>
+        );
+      })}
     </div>
   );
 }

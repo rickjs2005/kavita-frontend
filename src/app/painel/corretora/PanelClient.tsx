@@ -1,6 +1,11 @@
 "use client";
 
 // src/app/painel/corretora/PanelClient.tsx
+//
+// Dashboard da Sala Reservada. Três zonas de cima para baixo:
+//   1. Hero row — kicker + saudação + contexto (data) + CTA secundário
+//   2. KPI grid — 5 cards monocromáticos com hierarquia
+//   3. Recent leads — título + link "ver todos" + tabela
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -18,6 +23,19 @@ const EMPTY_SUMMARY: LeadsSummary = {
   closed: 0,
   lost: 0,
 };
+
+function formatTodayPt() {
+  try {
+    return new Date().toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
+}
 
 export default function PanelClient() {
   const { user } = useCorretoraAuth();
@@ -49,27 +67,61 @@ export default function PanelClient() {
     load();
   }, [load]);
 
+  const firstName = user?.nome?.split(" ")[0] ?? "bem-vinda";
+  const todayLabel = formatTodayPt();
+
   return (
-    <div className="space-y-6">
-      <section>
-        <h2 className="text-xl font-semibold text-zinc-900">
-          Olá, {user?.nome?.split(" ")[0] ?? "bem-vinda"} 👋
-        </h2>
-        <p className="text-sm text-zinc-500">
-          Resumo da sua atividade no Mercado do Café.
-        </p>
-      </section>
+    <div className="space-y-8 md:space-y-10">
+      {/* HERO */}
+      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+            Painel
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 md:text-3xl">
+            Olá, {firstName}
+          </h1>
+          <p className="mt-1 text-sm text-stone-500 first-letter:uppercase">
+            {todayLabel}
+          </p>
+        </div>
 
-      <StatsCards summary={summary} loading={loading} />
-
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-zinc-900">
-            Últimos leads recebidos
-          </h3>
+        <div className="flex gap-2">
           <Link
             href="/painel/corretora/leads"
-            className="text-sm font-medium text-emerald-700 hover:underline"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-stone-900 px-3.5 py-2 text-xs font-semibold text-stone-50 shadow-sm shadow-stone-900/20 transition-colors hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
+          >
+            Abrir leads
+            <span aria-hidden>→</span>
+          </Link>
+          <Link
+            href="/painel/corretora/perfil"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-700 shadow-sm shadow-stone-900/[0.03] transition-colors hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
+          >
+            Editar perfil
+          </Link>
+        </div>
+      </section>
+
+      {/* KPI GRID */}
+      <section aria-label="Resumo de leads">
+        <StatsCards summary={summary} loading={loading} />
+      </section>
+
+      {/* RECENT LEADS */}
+      <section>
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+              Atividade recente
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-stone-900">
+              Últimos leads recebidos
+            </h2>
+          </div>
+          <Link
+            href="/painel/corretora/leads"
+            className="text-xs font-semibold text-emerald-700 underline-offset-4 hover:text-emerald-800 hover:underline"
           >
             Ver todos →
           </Link>
@@ -78,7 +130,7 @@ export default function PanelClient() {
         {error && (
           <div
             role="alert"
-            className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+            className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-800"
           >
             {error}
           </div>
@@ -87,7 +139,7 @@ export default function PanelClient() {
         <LeadsTable
           leads={recent}
           onChanged={load}
-          emptyMessage="Ainda não há leads. Assim que um produtor entrar em contato, ele aparecerá aqui."
+          emptyMessage="Assim que um produtor entrar em contato pela sua página pública, o lead aparecerá aqui em tempo real."
         />
       </section>
     </div>

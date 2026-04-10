@@ -1,11 +1,10 @@
 "use client";
 
-// src/app/painel/corretora/esqueci-senha/ForgotClient.tsx
-
 import { useState } from "react";
 import Link from "next/link";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { AuthShell } from "@/components/painel-corretora/AuthShell";
 
 export default function ForgotClient() {
   const [email, setEmail] = useState("");
@@ -31,56 +30,72 @@ export default function ForgotClient() {
   }
 
   return (
-    <main className="fixed inset-0 flex items-center justify-center overflow-y-auto bg-gradient-to-b from-emerald-50 to-white p-4 sm:p-6">
-      <section className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl ring-1 ring-zinc-200 sm:max-w-md sm:p-8">
-        <header className="mb-6 text-center">
-          <div className="mb-2 text-3xl" aria-hidden>
-            🔑
-          </div>
-          <h1 className="text-xl font-bold text-zinc-900 sm:text-2xl">
-            Recuperar senha
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Enviaremos um link para o seu e-mail cadastrado.
-          </p>
-        </header>
+    <AuthShell
+      title="Recuperar acesso"
+      subtitle="Enviaremos um link seguro para o e-mail cadastrado."
+    >
+      <div className="relative overflow-hidden rounded-2xl bg-stone-50 p-7 shadow-2xl shadow-black/60 ring-1 ring-stone-900/10 sm:p-8">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+        />
 
         {sent ? (
           <div
             role="status"
-            className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+            className="space-y-3 text-center"
           >
-            <p className="font-semibold">✅ Pedido recebido</p>
-            <p className="mt-1">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <svg
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-5 w-5"
+                aria-hidden
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 011.42-1.42L8.5 12.09l6.79-6.8a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <h2 className="text-base font-semibold text-stone-900">
+              Pedido recebido
+            </h2>
+            <p className="text-sm leading-relaxed text-stone-600">
               Se este e-mail estiver cadastrado, você receberá um link para
-              redefinir a senha. O link expira em 1 hora.
+              redefinir a senha. O link expira em{" "}
+              <span className="font-semibold text-stone-900">1 hora</span>.
             </p>
-            <p className="mt-3 text-xs text-emerald-700">
-              Não recebeu? Confira a caixa de spam ou tente novamente em
-              instantes.
+            <p className="text-[11px] text-stone-500">
+              Não recebeu? Confira a caixa de spam.
             </p>
-            <Link
-              href="/painel/corretora/login"
-              className="mt-4 inline-block text-sm font-medium text-emerald-700 hover:underline"
-            >
-              ← Voltar para o login
-            </Link>
+            <div className="pt-2">
+              <Link
+                href="/painel/corretora/login"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+              >
+                ← Voltar para o login
+              </Link>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {errMsg && (
-              <p
-                role="alert"
-                className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
-              >
-                {errMsg}
-              </p>
-            )}
+            <div className="min-h-[28px]">
+              {errMsg && (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800"
+                >
+                  {errMsg}
+                </p>
+              )}
+            </div>
 
             <div>
               <label
                 htmlFor="email"
-                className="mb-1 block text-sm font-medium text-zinc-700"
+                className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-600"
               >
                 E-mail cadastrado
               </label>
@@ -92,30 +107,36 @@ export default function ForgotClient() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-base text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 placeholder="voce@corretora.com.br"
+                className="w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.03] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading || !email}
-              className="h-11 w-full rounded-xl bg-emerald-600 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="group relative h-11 w-full overflow-hidden rounded-xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-lg shadow-stone-900/20 transition-all hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Enviando..." : "Enviar link de recuperação"}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
+              />
+              <span className="relative">
+                {loading ? "Enviando..." : "Enviar link"}
+              </span>
             </button>
 
-            <div className="text-center">
+            <div className="pt-1 text-center">
               <Link
                 href="/painel/corretora/login"
-                className="text-sm font-medium text-zinc-500 hover:text-emerald-700"
+                className="text-xs font-medium text-stone-600 hover:text-emerald-700"
               >
                 ← Voltar para o login
               </Link>
             </div>
           </form>
         )}
-      </section>
-    </main>
+      </div>
+    </AuthShell>
   );
 }

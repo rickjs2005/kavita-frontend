@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { LeadsTable } from "@/components/painel-corretora/LeadsTable";
+import { PanelCard } from "@/components/painel-corretora/PanelCard";
 import type { CorretoraLead, LeadStatus } from "@/types/lead";
 
 type StatusFilter = LeadStatus | "all";
@@ -33,6 +34,7 @@ export default function LeadsClient() {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +50,7 @@ export default function LeadsClient() {
       );
       setLeads(res.items ?? []);
       setTotalPages(res.pages ?? 1);
+      setTotal(res.total ?? 0);
     } catch (err) {
       setError(formatApiError(err, "Erro ao carregar leads.").message);
     } finally {
@@ -59,46 +62,66 @@ export default function LeadsClient() {
     load();
   }, [load]);
 
-  // Volta para página 1 ao trocar filtro
   useEffect(() => {
     setPage(1);
   }, [filter]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h2 className="text-xl font-semibold text-zinc-900">Leads recebidos</h2>
-        <div className="flex flex-wrap gap-1.5">
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setFilter(f.value)}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                filter === f.value
-                  ? "border-emerald-600 bg-emerald-600 text-white"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+          Pipeline
+        </p>
+        <div className="mt-2 flex items-end justify-between gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight text-stone-900 md:text-3xl">
+            Leads recebidos
+          </h1>
+          {!loading && (
+            <span className="pb-1 text-xs font-medium text-stone-500">
+              <span className="tabular-nums">{total}</span>{" "}
+              {total === 1 ? "registro" : "registros"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Filter chips — bloco inset com fundo diferenciado */}
+      <div className="rounded-2xl bg-stone-100 p-1.5 ring-1 ring-stone-900/[0.04]">
+        <div className="flex flex-wrap items-center gap-1">
+          {FILTERS.map((f) => {
+            const active = filter === f.value;
+            return (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setFilter(f.value)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  active
+                    ? "bg-white text-stone-900 shadow-sm shadow-stone-900/[0.06] ring-1 ring-stone-900/[0.05]"
+                    : "text-stone-500 hover:text-stone-900"
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+          className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-800"
         >
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500">
-          Carregando...
-        </div>
+        <PanelCard density="spacious" className="text-center">
+          <p className="text-xs font-medium text-stone-500">Carregando...</p>
+        </PanelCard>
       ) : (
         <LeadsTable leads={leads} onChanged={load} />
       )}
@@ -109,18 +132,18 @@ export default function LeadsClient() {
             type="button"
             disabled={page === 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-600 disabled:opacity-50"
+            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-600 shadow-sm shadow-stone-900/[0.03] transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
             ← Anterior
           </button>
-          <span className="text-sm text-zinc-500">
+          <span className="text-xs font-medium text-stone-500 tabular-nums">
             Página {page} de {totalPages}
           </span>
           <button
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-600 disabled:opacity-50"
+            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-600 shadow-sm shadow-stone-900/[0.03] transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Próxima →
           </button>

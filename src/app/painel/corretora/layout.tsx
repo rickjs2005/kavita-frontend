@@ -76,9 +76,17 @@ function CorretoraPanelInner({ children }: { children: React.ReactNode }) {
   if (loading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+    <div className="relative min-h-screen bg-stone-50 text-stone-900">
+      {/* Warm ambient gradient no topo da página — muito sutil, dá vida
+          ao fundo sem concorrer com o conteúdo. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[340px] bg-gradient-to-b from-amber-50/60 via-stone-50/40 to-transparent"
+      />
+
       <CorretoraPanelNav />
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-6 md:py-8">
+
+      <main className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-6 md:px-8 md:pb-20 md:pt-8">
         {children}
       </main>
     </div>
