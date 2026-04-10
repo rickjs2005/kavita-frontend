@@ -1,12 +1,80 @@
 // src/components/mercado-do-cafe/CorretoraContactChannels.tsx
 "use client";
 
+// Lista de canais de contato da corretora. Dois variants:
+//
+//   - "compact": usado dentro do CorretoraCard na listagem. Cada canal
+//     vira uma pill button pequena com ícone SVG.
+//   - "full": usado na página de detalhe. Cada canal vira uma linha
+//     grande com ícone destacado, rótulo principal, ação secundária
+//     e um "Abrir →" animado. WhatsApp, quando presente, recebe um
+//     tratamento primário em tom esmeralda (canal mais usado no agro).
+//
+// Design premium: paleta stone, hairline rings, ícones Lucide-style
+// inline (NUNCA emoji), hover com feedback coeso com o resto do módulo.
+
 import type { PublicCorretora } from "@/types/corretora";
 
+// ─── Ícones SVG inline (Lucide-style, stroke 1.8) ─────────────────
+// Reutilizados entre variants. Cor via currentColor no parent.
+
+const iconProps = {
+  viewBox: "0 0 24 24",
+  fill: "none" as const,
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
+
+const ICONS: Record<
+  "whatsapp" | "phone" | "email" | "website" | "instagram" | "facebook",
+  (size: number) => JSX.Element
+> = {
+  whatsapp: (size) => (
+    <svg width={size} height={size} {...iconProps}>
+      <path d="M3 21l1.65-3.8a9 9 0 113.4 2.9L3 21" />
+      <path d="M9 10a.5.5 0 001 0V9a.5.5 0 00-1 0v1a5 5 0 005 5h1a.5.5 0 000-1h-1a.5.5 0 000 1" />
+    </svg>
+  ),
+  phone: (size) => (
+    <svg width={size} height={size} {...iconProps}>
+      <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+    </svg>
+  ),
+  email: (size) => (
+    <svg width={size} height={size} {...iconProps}>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="M22 7l-10 7L2 7" />
+    </svg>
+  ),
+  website: (size) => (
+    <svg width={size} height={size} {...iconProps}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
+    </svg>
+  ),
+  instagram: (size) => (
+    <svg width={size} height={size} {...iconProps}>
+      <rect x="2" y="2" width="20" height="20" rx="5" />
+      <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  ),
+  facebook: (size) => (
+    <svg width={size} height={size} {...iconProps}>
+      <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
+    </svg>
+  ),
+};
+
+type ChannelKey = keyof typeof ICONS;
+
 type Channel = {
-  key: string;
+  key: ChannelKey;
   label: string;
-  icon: string;
+  detail: string;
   href: string;
   actionLabel: string;
 };
@@ -18,54 +86,61 @@ function buildChannels(c: PublicCorretora): Channel[] {
     const num = c.whatsapp.replace(/\D/g, "");
     channels.push({
       key: "whatsapp",
-      label: c.whatsapp,
-      icon: "📱",
+      label: "WhatsApp",
+      detail: c.whatsapp,
       href: `https://wa.me/55${num}`,
-      actionLabel: "Abrir WhatsApp",
+      actionLabel: "Abrir conversa",
     });
   }
 
   if (c.phone) {
-    const num = c.phone.replace(/\D/g, "");
     channels.push({
       key: "phone",
-      label: c.phone,
-      icon: "📞",
-      href: `tel:+55${num}`,
-      actionLabel: "Ligar",
+      label: "Telefone",
+      detail: c.phone,
+      href: `tel:+55${c.phone.replace(/\D/g, "")}`,
+      actionLabel: "Ligar agora",
     });
   }
 
   if (c.email) {
     channels.push({
       key: "email",
-      label: c.email,
-      icon: "📧",
+      label: "E-mail",
+      detail: c.email,
       href: `mailto:${c.email}`,
-      actionLabel: "Enviar e-mail",
+      actionLabel: "Enviar mensagem",
     });
   }
 
   if (c.website) {
-    const url = c.website.startsWith("http") ? c.website : `https://${c.website}`;
+    const url = c.website.startsWith("http")
+      ? c.website
+      : `https://${c.website}`;
     channels.push({
       key: "website",
-      label: c.website.replace(/^https?:\/\//, ""),
-      icon: "🌐",
+      label: "Site oficial",
+      detail: c.website.replace(/^https?:\/\//, ""),
       href: url,
-      actionLabel: "Acessar site",
+      actionLabel: "Visitar site",
     });
   }
 
   if (c.instagram) {
-    const handle = c.instagram.startsWith("@") ? c.instagram : `@${c.instagram}`;
-    const user = c.instagram.replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//, "");
+    const handle = c.instagram.startsWith("@")
+      ? c.instagram
+      : `@${c.instagram}`;
+    const user = c.instagram
+      .replace(/^@/, "")
+      .replace(/^https?:\/\/(www\.)?instagram\.com\//, "");
     channels.push({
       key: "instagram",
-      label: handle,
-      icon: "📷",
-      href: c.instagram.startsWith("http") ? c.instagram : `https://instagram.com/${user}`,
-      actionLabel: "Ver Instagram",
+      label: "Instagram",
+      detail: handle,
+      href: c.instagram.startsWith("http")
+        ? c.instagram
+        : `https://instagram.com/${user}`,
+      actionLabel: "Ver perfil",
     });
   }
 
@@ -73,9 +148,11 @@ function buildChannels(c: PublicCorretora): Channel[] {
     channels.push({
       key: "facebook",
       label: "Facebook",
-      icon: "📘",
-      href: c.facebook.startsWith("http") ? c.facebook : `https://facebook.com/${c.facebook}`,
-      actionLabel: "Ver Facebook",
+      detail: "Perfil comercial",
+      href: c.facebook.startsWith("http")
+        ? c.facebook
+        : `https://facebook.com/${c.facebook}`,
+      actionLabel: "Ver página",
     });
   }
 
@@ -87,56 +164,111 @@ type Props = {
   variant?: "compact" | "full";
 };
 
-export function CorretoraContactChannels({ corretora, variant = "full" }: Props) {
+export function CorretoraContactChannels({
+  corretora,
+  variant = "full",
+}: Props) {
   const channels = buildChannels(corretora);
 
   if (channels.length === 0) return null;
 
+  // ─── Compact: usado nos cards da listagem ──────────────────────
   if (variant === "compact") {
     return (
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {channels.map((ch) => (
           <a
             key={ch.key}
             href={ch.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-zinc-300 hover:text-zinc-900 transition-colors"
             title={ch.actionLabel}
+            aria-label={`${ch.actionLabel} — ${corretora.name}`}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition-all hover:border-stone-900 hover:bg-stone-900 hover:text-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-1"
           >
-            <span aria-hidden>{ch.icon}</span>
-            {ch.label}
+            {ICONS[ch.key](14)}
           </a>
         ))}
       </div>
     );
   }
 
+  // ─── Full: usado na página de detalhe da corretora ─────────────
+  // Cada canal é uma linha clicável com layout "ícone · textos · ação".
+  // WhatsApp (se presente) é o canal primário — fica ligeiramente
+  // destacado com ring esmeralda e micro-badge "CANAL PRIMÁRIO".
   return (
-    <ul className="space-y-3">
-      {channels.map((ch) => (
-        <li key={ch.key}>
-          <a
-            href={ch.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-3 transition-all hover:border-zinc-300 hover:shadow-sm"
-          >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-50 text-lg">
-              {ch.icon}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-zinc-900 truncate">
-                {ch.label}
-              </p>
-              <p className="text-xs text-zinc-500">{ch.actionLabel}</p>
-            </div>
-            <span className="shrink-0 text-xs font-medium text-emerald-700">
-              Abrir →
-            </span>
-          </a>
-        </li>
-      ))}
+    <ul role="list" className="space-y-2">
+      {channels.map((ch) => {
+        const isPrimary = ch.key === "whatsapp";
+        return (
+          <li key={ch.key}>
+            <a
+              href={ch.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${ch.actionLabel} — ${corretora.name}`}
+              className={`group relative flex items-center gap-4 overflow-hidden rounded-xl bg-white p-3.5 shadow-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 md:p-4 ${
+                isPrimary
+                  ? "shadow-emerald-900/[0.04] ring-1 ring-emerald-600/30 hover:-translate-y-0.5 hover:shadow-md hover:shadow-emerald-900/[0.08] hover:ring-emerald-600/50"
+                  : "shadow-stone-900/[0.03] ring-1 ring-stone-900/[0.05] hover:-translate-y-0.5 hover:shadow-md hover:shadow-stone-900/[0.06] hover:ring-stone-900/[0.1]"
+              }`}
+            >
+              {/* Top highlight — catching light */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+              />
+
+              {/* Icon — primary WhatsApp uses filled emerald square */}
+              <span
+                aria-hidden
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                  isPrimary
+                    ? "bg-emerald-600 text-emerald-50 shadow-sm shadow-emerald-900/20"
+                    : "bg-stone-100 text-stone-600 ring-1 ring-stone-900/[0.06]"
+                }`}
+              >
+                {ICONS[ch.key](18)}
+              </span>
+
+              {/* Textos */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-sm font-semibold text-stone-900">
+                    {ch.label}
+                  </p>
+                  {isPrimary && (
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-1.5 py-0 text-[9px] font-bold uppercase tracking-[0.1em] text-emerald-800 ring-1 ring-emerald-200">
+                      Canal primário
+                    </span>
+                  )}
+                </div>
+                <p className="mt-0.5 truncate text-[11px] text-stone-500">
+                  {ch.detail}
+                </p>
+              </div>
+
+              {/* CTA */}
+              <span
+                className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+                  isPrimary
+                    ? "text-emerald-800 group-hover:text-emerald-900"
+                    : "text-stone-600 group-hover:text-stone-900"
+                }`}
+              >
+                {ch.actionLabel}
+                <span
+                  aria-hidden
+                  className="transition-transform duration-300 group-hover:translate-x-0.5"
+                >
+                  →
+                </span>
+              </span>
+            </a>
+          </li>
+        );
+      })}
     </ul>
   );
 }
