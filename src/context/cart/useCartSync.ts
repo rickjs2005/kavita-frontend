@@ -7,6 +7,7 @@ import apiClient from "@/lib/apiClient";
 import { handleApiError } from "@/lib/handleApiError";
 import { CartGetResponseSchema } from "@/lib/schemas/api";
 import { normalizeApiItems, loadFromLocalStorage } from "./cartUtils";
+import { isPrivateArea } from "@/utils/isPrivateArea";
 
 type Props = {
   userId: number | null;
@@ -19,15 +20,15 @@ type Props = {
  * Carrega o carrinho ao montar (ou quando cartKey muda) e expõe `refetchServerCart`.
  *
  * Regras de fonte de dados:
- * - /admin    → localStorage (nunca toca a API de carrinho)
- * - visitante → localStorage
- * - logado    → API é fonte da verdade; fallback para localStorage em caso de erro
+ * - área privada (admin, painel da corretora) → localStorage (nunca toca a API de carrinho)
+ * - visitante                                 → localStorage
+ * - logado                                    → API é fonte da verdade; fallback para localStorage em caso de erro
  */
 export function useCartSync({ userId, cartKey, pathname, setCartItems }: Props) {
   useEffect(() => {
     if (!cartKey || typeof window === "undefined") return;
 
-    if (pathname.startsWith("/admin") || !userId) {
+    if (isPrivateArea(pathname) || !userId) {
       setCartItems(loadFromLocalStorage(cartKey));
       return;
     }

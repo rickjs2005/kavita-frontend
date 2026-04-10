@@ -10,6 +10,7 @@
  */
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { isPrivateArea } from "@/utils/isPrivateArea";
 
 // Apenas rotas que REQUEREM autenticação disparam redirect para /login.
 // Todas as demais são consideradas públicas e ignoram 401 silenciosamente.
@@ -25,8 +26,9 @@ export default function AuthExpiredHandler() {
 
   useEffect(() => {
     function handleAuthExpired() {
-      // Área admin tem seu próprio handler — não interferir
-      if (pathname.startsWith("/admin")) return;
+      // Áreas privadas (admin, painel da corretora) têm handler próprio
+      // no layout exclusivo — não interferir para evitar dispatch duplo.
+      if (isPrivateArea(pathname)) return;
 
       // Só redireciona se a rota atual requer autenticação
       const isProtected = PROTECTED_PREFIXES.some((p) =>
