@@ -160,8 +160,8 @@ export default function FormularioContato({ config }: FormProps) {
               {config?.form_title ?? "Fale com a equipe Kavita"}
             </h2>
             <p className="mt-3 text-gray-500 leading-relaxed">
-              {config?.form_subtitle ?? "Descreva sua duvida ou solicitacao e retornaremos o mais rapido possivel."}
-              Quanto mais detalhes, mais agil sera a resposta.
+              {config?.form_subtitle ??
+                "Descreva sua duvida ou solicitacao e retornaremos o mais rapido possivel. Quanto mais detalhes, mais agil sera a resposta."}
             </p>
 
             {/* Trust indicators */}
