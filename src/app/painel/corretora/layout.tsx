@@ -24,6 +24,7 @@ const FULLSCREEN_ROUTES = [
   "/painel/corretora/login",
   "/painel/corretora/esqueci-senha",
   "/painel/corretora/resetar-senha",
+  "/painel/corretora/primeiro-acesso",
 ];
 
 function isFullscreenRoute(pathname: string | null | undefined): boolean {

@@ -70,6 +70,7 @@ export default function AdminMercadoDoCafePage() {
                 loading={corretoras.loading}
                 onToggleStatus={corretoras.toggleStatus}
                 onToggleFeatured={corretoras.toggleFeatured}
+                onInviteUser={corretoras.inviteUser}
               />
             )}
 

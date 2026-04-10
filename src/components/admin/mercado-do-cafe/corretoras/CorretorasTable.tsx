@@ -1,14 +1,20 @@
 // src/components/admin/mercado-do-cafe/corretoras/CorretorasTable.tsx
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { CorretoraAdmin } from "@/types/corretora";
+import InviteUserModal from "./InviteUserModal";
 
 type Props = {
   rows: CorretoraAdmin[];
   loading: boolean;
   onToggleStatus: (id: number, status: "active" | "inactive") => void;
   onToggleFeatured: (id: number, featured: boolean) => void;
+  onInviteUser: (
+    id: number,
+    payload: { nome: string; email: string },
+  ) => Promise<{ ok: true; resent: boolean }>;
 };
 
 export default function CorretorasTable({
@@ -16,7 +22,10 @@ export default function CorretorasTable({
   loading,
   onToggleStatus,
   onToggleFeatured,
+  onInviteUser,
 }: Props) {
+  const [inviteFor, setInviteFor] = useState<CorretoraAdmin | null>(null);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -80,6 +89,19 @@ export default function CorretorasTable({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setInviteFor(c)}
+                      disabled={!isActive}
+                      className="rounded-lg border border-emerald-800 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title={
+                        isActive
+                          ? "Criar acesso por convite (envia e-mail de primeiro acesso)"
+                          : "Ative a corretora para poder criar acesso"
+                      }
+                    >
+                      Criar acesso
+                    </button>
                     <Link
                       href={`/admin/mercado-do-cafe/corretoras/${c.id}`}
                       className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-emerald-500/40 hover:text-emerald-200 transition-colors"
@@ -115,6 +137,12 @@ export default function CorretorasTable({
           })}
         </tbody>
       </table>
+
+      <InviteUserModal
+        corretora={inviteFor}
+        onClose={() => setInviteFor(null)}
+        onInvite={onInviteUser}
+      />
     </div>
   );
 }

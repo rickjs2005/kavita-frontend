@@ -93,6 +93,44 @@ export function useCorretorasAdmin({ onUnauthorized }: Props) {
     [load, onUnauthorized]
   );
 
+  /**
+   * Envia (ou reenvia) o convite de primeiro acesso para uma corretora.
+   * Usado pelo modal "Criar acesso" da tabela admin. Idempotente no
+   * backend: mesma chamada cobre criação e reenvio.
+   *
+   * Retorna true em caso de sucesso para o modal poder fechar.
+   * Lança o ApiError original em caso de erro (inclusive 409 de
+   * "corretora já tem conta ativa"), para o modal tratar a mensagem.
+   */
+  const inviteUser = useCallback(
+    async (
+      id: number,
+      payload: { nome: string; email: string },
+    ): Promise<{ ok: true; resent: boolean } | never> => {
+      try {
+        const res = await apiClient.post<{ resent?: boolean }>(
+          `/api/admin/mercado-do-cafe/corretoras/${id}/users/invite`,
+          payload,
+        );
+        const resent = Boolean(res?.resent);
+        toast.success(
+          resent
+            ? "Convite reenviado. A corretora receberá um novo e-mail."
+            : "Convite enviado. A corretora receberá um e-mail com o link.",
+        );
+        return { ok: true, resent };
+      } catch (e: any) {
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+          onUnauthorized?.();
+        }
+        // Não damos toast aqui — o modal mostra o erro inline para
+        // que o admin possa corrigir nome/email sem perder contexto.
+        throw e;
+      }
+    },
+    [onUnauthorized],
+  );
+
   return {
     rows: sorted,
     loading,
@@ -102,5 +140,6 @@ export function useCorretorasAdmin({ onUnauthorized }: Props) {
     load,
     toggleStatus,
     toggleFeatured,
+    inviteUser,
   };
 }
