@@ -9,6 +9,7 @@
 // mesa iluminada, dando sensação de exclusividade.
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { PanelBrandMark } from "./PanelBrand";
 import { GrainOverlay } from "./GrainOverlay";
 
@@ -65,8 +66,33 @@ export function AuthShell({
         {/* Card slot — sempre centrado, largura controlada */}
         <section className="w-full max-w-[26rem]">{children}</section>
 
+        {/* Atalho de volta para a loja Kavita. Discreto, mas sempre
+            visível — dá saída clara para quem abriu o link sem querer
+            ou quer voltar ao site público sem ter que manipular a URL. */}
+        <Link
+          href="/"
+          className="group mt-8 inline-flex items-center gap-2 rounded-full border border-stone-800 bg-stone-900/50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-300 backdrop-blur-sm transition-colors hover:border-amber-200/30 hover:bg-stone-900/80 hover:text-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/40 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+            className="transition-transform group-hover:-translate-x-0.5"
+          >
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+          </svg>
+          Voltar à loja Kavita
+        </Link>
+
         {/* Footer sutil com wordmark completo */}
-        <footer className="mt-10 flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.2em] text-stone-500">
+        <footer className="mt-6 flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.2em] text-stone-500">
           <span>Kavita</span>
           <span aria-hidden className="h-px w-6 bg-stone-700" />
           <span>Mercado do Café</span>
