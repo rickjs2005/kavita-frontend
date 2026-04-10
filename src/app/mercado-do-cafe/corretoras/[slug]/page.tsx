@@ -84,29 +84,50 @@ export default async function CorretoraDetailPage({ params }: Props) {
           Mercado do Café
         </Link>
 
-        {/* ─── HERO — Gradient card premium ─────────────────────────
-            Aqui mora o gradient principal da página. Três camadas
-            trabalhando juntas: base linear warm cream → orange suave,
-            glow radial top-right (luz dourada), glow radial bottom-left
-            (profundidade), hairline ring fino para definir a borda. */}
+        {/* ─── HERO — Dark coffee card com animação sutil ──────────
+            Substitui o fundo warm cream anterior por uma superfície
+            dark espresso com duas luzes âmbar/caramelo que driftam
+            devagar (42s/55s). A atmosfera é de "torra premium sob
+            luz quente" — stone-950 base, amber-950 via, com glows
+            amber/orange que respiram lentamente. O conteúdo passa
+            para tipografia light (stone-50) com kickers amber. */}
         <header
-          className="relative mt-10 overflow-hidden rounded-3xl bg-gradient-to-br from-amber-50 via-stone-50 to-orange-50/60 px-6 py-14 ring-1 ring-stone-900/[0.06] md:mt-14 md:px-14 md:py-20"
+          className="relative mt-10 overflow-hidden rounded-3xl bg-stone-950 px-6 py-14 text-stone-100 shadow-2xl shadow-stone-950/40 ring-1 ring-white/[0.08] md:mt-14 md:px-14 md:py-20"
           aria-label={`Identidade da corretora ${corretora.name}`}
         >
-          {/* Camada 2 — Glow radial top-right (golden hour) */}
+          {/* Layer 1 — Base linear dark coffee gradient */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -right-24 -top-32 h-[440px] w-[440px] rounded-full bg-amber-200/50 blur-3xl"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80"
           />
-          {/* Camada 3 — Glow radial bottom-left (profundidade) */}
+
+          {/* Layer 2 — Drifting glow amber top-right (luz quente principal)
+              Animação kavita-drift-a: 42s ease-in-out infinite, translate
+              até ~40px, scale 0.95–1.08, opacidade oscilando 0.50–0.70. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -bottom-40 -left-32 h-[460px] w-[460px] rounded-full bg-orange-100/40 blur-3xl"
+            className="kavita-drift-a pointer-events-none absolute -right-32 -top-32 h-[520px] w-[520px] rounded-full bg-amber-700/35 blur-3xl"
           />
-          {/* Camada 4 — Top highlight catching light */}
+
+          {/* Layer 3 — Drifting glow caramelo/orange bottom-left (profundidade)
+              Animação kavita-drift-b: 55s ease-in-out infinite, translate
+              até ~50px, escalas diferentes da layer 2 para criar movimento
+              assimétrico e orgânico. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-14 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+            className="kavita-drift-b pointer-events-none absolute -bottom-40 -left-32 h-[500px] w-[500px] rounded-full bg-orange-900/40 blur-3xl"
+          />
+
+          {/* Layer 4 — Top highlight hairline catching light */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-14 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/25 to-transparent"
+          />
+
+          {/* Layer 5 — Vinheta muito sutil nas bordas para fechar a composição */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-950/30 via-transparent to-transparent"
           />
 
           <div className="relative grid gap-10 md:grid-cols-12 md:gap-10">
@@ -114,25 +135,22 @@ export default async function CorretoraDetailPage({ params }: Props) {
             <div className="md:col-span-8">
               {/* Kicker com brand mark inline */}
               <div className="flex items-center gap-3">
-                <div className="h-6 w-6 shrink-0 text-stone-900">
+                <div className="h-6 w-6 shrink-0 text-amber-200">
                   <PanelBrandMark className="h-full w-full" />
                 </div>
-                <span
-                  aria-hidden
-                  className="h-4 w-px bg-stone-900/20"
-                />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-800">
+                <span aria-hidden className="h-4 w-px bg-white/15" />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-200/90">
                   Corretora verificada
                 </p>
               </div>
 
-              {/* Display title — o momento tipográfico */}
-              <h1 className="mt-8 text-4xl font-semibold leading-[0.95] tracking-[-0.02em] text-stone-900 md:text-5xl lg:text-6xl">
+              {/* Display title — stone-50 com leve tracking negativo */}
+              <h1 className="mt-8 text-4xl font-semibold leading-[0.95] tracking-[-0.02em] text-stone-50 md:text-5xl lg:text-6xl">
                 {corretora.name}
               </h1>
 
-              {/* Location line */}
-              <div className="mt-7 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-stone-700">
+              {/* Location line em stone-200 */}
+              <div className="mt-7 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-stone-200">
                 <span className="inline-flex items-baseline gap-2 text-lg font-medium tracking-tight md:text-xl">
                   <svg
                     width="14"
@@ -143,7 +161,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="translate-y-[2px] text-amber-800/70"
+                    className="translate-y-[2px] text-amber-300/80"
                     aria-hidden
                   >
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
@@ -153,10 +171,10 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 </span>
                 {corretora.region && (
                   <>
-                    <span aria-hidden className="text-stone-400">
+                    <span aria-hidden className="text-stone-500">
                       ·
                     </span>
-                    <span className="text-sm font-semibold uppercase tracking-[0.14em] text-stone-500">
+                    <span className="text-sm font-semibold uppercase tracking-[0.14em] text-stone-400">
                       {corretora.region}
                     </span>
                   </>
@@ -164,18 +182,18 @@ export default async function CorretoraDetailPage({ params }: Props) {
               </div>
 
               {isFeatured && (
-                <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 ring-1 ring-amber-300/50 backdrop-blur-sm">
+                <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1 ring-1 ring-amber-400/30 backdrop-blur-sm">
                   <svg
                     width="11"
                     height="11"
                     viewBox="0 0 24 24"
                     fill="currentColor"
-                    className="text-amber-700"
+                    className="text-amber-300"
                     aria-hidden
                   >
                     <path d="M12 2l2.39 7.36H22l-6.2 4.5 2.38 7.36L12 16.72l-6.18 4.5 2.38-7.36L2 9.36h7.61L12 2z" />
                   </svg>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-800">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-200">
                     Corretora em destaque na rede
                   </span>
                 </div>
@@ -185,11 +203,11 @@ export default async function CorretoraDetailPage({ params }: Props) {
             {/* Aside: logo + fact sheet */}
             <aside className="md:col-span-4">
               <div className="flex items-start gap-5 md:flex-col md:items-stretch">
-                {/* Logo frame — com gradient interno + top highlight */}
-                <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-white to-stone-50 ring-1 ring-stone-900/[0.1] md:h-32 md:w-32 md:self-end">
+                {/* Logo frame — dark, ring em white/10, top highlight amber */}
+                <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 ring-1 ring-white/10 md:h-32 md:w-32 md:self-end">
                   <span
                     aria-hidden
-                    className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+                    className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
                   />
                   {corretora.logo_path ? (
                     <Image
@@ -200,27 +218,27 @@ export default async function CorretoraDetailPage({ params }: Props) {
                       className="relative h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="relative text-stone-300">
+                    <div className="relative text-amber-200/60">
                       <PanelBrandMark className="h-12 w-12" />
                     </div>
                   )}
                 </div>
 
-                {/* Fact sheet */}
-                <dl className="flex-1 divide-y divide-stone-900/[0.08] border-y border-stone-900/[0.08] md:mt-6 md:text-right">
+                {/* Fact sheet — dividers em white/10 */}
+                <dl className="flex-1 divide-y divide-white/[0.08] border-y border-white/[0.08] md:mt-6 md:text-right">
                   <div className="py-3">
-                    <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+                    <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-200/70">
                       Responsável
                     </dt>
-                    <dd className="mt-1 text-sm font-semibold text-stone-900">
+                    <dd className="mt-1 text-sm font-semibold text-stone-100">
                       {corretora.contact_name}
                     </dd>
                   </div>
                   <div className="py-3">
-                    <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+                    <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-200/70">
                       Atuação
                     </dt>
-                    <dd className="mt-1 text-sm font-semibold text-stone-900">
+                    <dd className="mt-1 text-sm font-semibold text-stone-100">
                       Compra e venda de café
                     </dd>
                   </div>

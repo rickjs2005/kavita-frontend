@@ -137,6 +137,47 @@
   animation: kavitaRiseIn 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
+/* Slow drift animations — luzes radiais que se movem devagarzinho
+   atrás do hero da corretora. Extremamente lentas (40s/55s) e com
+   movimento pequeno (translate <60px), criando sensação de ambiente
+   "vivo" sem nunca parecer efeito chamativo. Respeitadas pelo reset
+   de prefers-reduced-motion global abaixo. */
+@keyframes kavitaDriftA {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.55;
+  }
+  33% {
+    transform: translate3d(40px, -25px, 0) scale(1.08);
+    opacity: 0.7;
+  }
+  66% {
+    transform: translate3d(-20px, 30px, 0) scale(0.95);
+    opacity: 0.5;
+  }
+}
+
+@keyframes kavitaDriftB {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate3d(-50px, 35px, 0) scale(1.12);
+    opacity: 0.65;
+  }
+}
+
+.kavita-drift-a {
+  animation: kavitaDriftA 42s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.kavita-drift-b {
+  animation: kavitaDriftB 55s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
 /* Scroll-padding para compensar header fixo em anchor links */
 html {
   scroll-padding-top: 80px;
