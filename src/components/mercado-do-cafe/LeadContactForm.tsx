@@ -205,8 +205,12 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
 
   if (success) {
     return (
-      <div className="rounded-2xl bg-white p-8 ring-1 ring-stone-900/[0.06] md:p-10">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-stone-50 to-amber-50/40 p-8 ring-1 ring-stone-900/[0.06] shadow-sm shadow-stone-900/[0.03] md:p-10">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+        />
+        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
           <svg
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -220,10 +224,10 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
             />
           </svg>
         </div>
-        <h3 className="mt-5 text-xl font-semibold tracking-tight text-stone-900 md:text-2xl">
+        <h3 className="relative mt-5 text-xl font-semibold tracking-tight text-stone-900 md:text-2xl">
           Mensagem enviada
         </h3>
-        <p className="mt-2 max-w-md text-[15px] leading-relaxed text-stone-600">
+        <p className="relative mt-2 max-w-md text-[15px] leading-relaxed text-stone-600">
           A <strong className="font-semibold text-stone-900">{corretoraName}</strong>{" "}
           vai receber seu contato por e-mail e pelo painel privado dela.
           Aguarde o retorno ou use os canais diretos listados acima.
@@ -231,7 +235,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         <button
           type="button"
           onClick={() => setSuccess(false)}
-          className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-800 hover:text-emerald-900"
+          className="relative mt-6 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-800 hover:text-emerald-900"
         >
           Enviar outra mensagem
           <span aria-hidden>→</span>
@@ -243,20 +247,33 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="rounded-2xl bg-white p-6 ring-1 ring-stone-900/[0.06] md:p-8"
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-stone-50 to-amber-50/40 p-6 ring-1 ring-stone-900/[0.06] shadow-sm shadow-stone-900/[0.03] md:p-9"
       aria-label={`Formulário de contato com ${corretoraName}`}
     >
-      <div className="mb-7">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">
-          Envie uma mensagem
+      {/* Top highlight catching light — acompanha o warm gradient */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+      />
+
+      <div className="relative mb-8 border-b border-stone-900/[0.06] pb-6">
+        <p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-800">
+          <span
+            aria-hidden
+            className="inline-block h-1 w-1 rounded-full bg-amber-700/70"
+          />
+          Mensagem direta
         </p>
-        <p className="mt-2 max-w-md text-[15px] leading-relaxed text-stone-600">
-          Seu contato chega no painel da corretora e por e-mail. A resposta
-          vem pelos canais oficiais dela.
+        <h3 className="mt-2.5 text-xl font-semibold tracking-tight text-stone-900 md:text-2xl">
+          Envie seu contato
+        </h3>
+        <p className="mt-2 max-w-md text-[14px] leading-relaxed text-stone-600">
+          Sua mensagem chega no painel privado da corretora em segundos.
+          A resposta vem pelos canais oficiais dela.
         </p>
       </div>
 
-      <div className="space-y-5">
+      <div className="relative space-y-5">
 
       <div>
         <label className={labelClass} htmlFor="lead-nome">

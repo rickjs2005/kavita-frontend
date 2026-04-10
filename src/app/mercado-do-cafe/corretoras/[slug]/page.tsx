@@ -49,16 +49,30 @@ export default async function CorretoraDetailPage({ params }: Props) {
 
   return (
     <main className="relative min-h-[calc(100vh-120px)] overflow-hidden bg-stone-50 text-stone-900">
-      {/* ─── Layer 1 — Page atmosphere ─────────────────────────────
-          Warm glow muito sutil no topo, estende além da borda do hero.
-          Dá sensação de "luz da manhã entrando" sem texturizar nada. */}
+      {/* ─── Page atmosphere em 3 zonas ─────────────────────────────
+          Toda a página recebe warm ambient contínuo (topo/meio/base)
+          para criar unidade com o hero dark. Cada layer é fixa e
+          pointer-events-none, zero impacto em usabilidade. */}
+
+      {/* Zona 1 — Top warm glow, desce do hero */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[620px] bg-gradient-to-b from-amber-50/40 via-stone-50/20 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[620px] bg-gradient-to-b from-amber-50/50 via-stone-50/20 to-transparent"
       />
+      {/* Zona 1b — Radial elíptico centralizado no topo */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-20 left-1/2 h-[500px] w-[900px] -translate-x-1/2 rounded-[100%] bg-orange-100/20 blur-3xl"
+        className="pointer-events-none absolute -top-20 left-1/2 h-[500px] w-[900px] -translate-x-1/2 rounded-[100%] bg-orange-100/25 blur-3xl"
+      />
+      {/* Zona 2 — Middle ambient warm, banha a área central da página */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-[780px] h-[900px] w-[1200px] -translate-x-1/2 rounded-full bg-amber-100/15 blur-3xl"
+      />
+      {/* Zona 3 — Bottom warm tint, puxa para o footer */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[500px] bg-gradient-to-t from-amber-50/25 via-stone-50/10 to-transparent"
       />
 
       <div className="relative mx-auto w-full max-w-4xl px-5 pb-24 pt-6 md:px-8 md:pb-32 md:pt-10">
@@ -253,11 +267,13 @@ export default async function CorretoraDetailPage({ params }: Props) {
           <section className="mt-20 md:mt-28">
             <SectionLabel number="01" title="Sobre a corretora" />
             <div className="mt-8 max-w-2xl">
-              {/* Barra lateral amber como marca editorial — detalhe premium */}
-              <div className="relative pl-6">
+              {/* Barra lateral amber como marca editorial — detalhe premium.
+                  Engrossada (2px) e com gradient mais saturado para
+                  acompanhar o peso visual do hero dark acima. */}
+              <div className="relative pl-7">
                 <span
                   aria-hidden
-                  className="absolute left-0 top-1 h-[calc(100%-0.5rem)] w-px bg-gradient-to-b from-amber-700/40 via-amber-700/20 to-transparent"
+                  className="absolute left-0 top-1 h-[calc(100%-0.5rem)] w-[2px] rounded-full bg-gradient-to-b from-amber-700/60 via-amber-600/35 to-transparent"
                 />
                 <p className="whitespace-pre-line text-lg leading-[1.55] text-stone-700 md:text-xl md:leading-[1.5]">
                   {corretora.description}
@@ -351,9 +367,10 @@ export default async function CorretoraDetailPage({ params }: Props) {
 }
 
 // ─── Section label primitive ──────────────────────────────────
-// Marcador de seção editorial: hairline com fade gradient à direita
-// (micro-refinamento em relação ao border-t chapado), número mono
-// amber-800 tabular + título + subtítulo opcional.
+// Marcador de seção editorial: hairline com fade gradient + número
+// como pill amber com ring sutil + título + subtítulo opcional.
+// O pill amber substitui o texto mono solto da iteração anterior
+// para ganhar presença visual suficiente contra o hero dark.
 
 function SectionLabel({
   number,
@@ -365,14 +382,16 @@ function SectionLabel({
   subtitle?: string;
 }) {
   return (
-    <div className="relative pt-6">
-      {/* Hairline com fade — mais refinada que border-t chapado */}
+    <div className="relative pt-8">
+      {/* Hairline com fade — mais forte do que antes para ecoar o peso
+          do hero dark */}
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-stone-900/15 via-stone-900/10 to-transparent"
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-stone-900/20 via-stone-900/10 to-transparent"
       />
       <div className="flex items-baseline gap-5">
-        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-amber-800 tabular-nums">
+        {/* Número como pill amber — chapter marker editorial */}
+        <span className="inline-flex items-center rounded-md bg-amber-100/70 px-2 py-1 font-mono text-[10px] font-bold uppercase tabular-nums tracking-[0.1em] text-amber-900 ring-1 ring-amber-900/[0.08]">
           {number}
         </span>
         <div className="min-w-0 flex-1">
@@ -380,7 +399,7 @@ function SectionLabel({
             {title}
           </h2>
           {subtitle && (
-            <p className="mt-1 max-w-lg text-[13px] leading-relaxed text-stone-500">
+            <p className="mt-1.5 max-w-lg text-[13px] leading-relaxed text-stone-500">
               {subtitle}
             </p>
           )}

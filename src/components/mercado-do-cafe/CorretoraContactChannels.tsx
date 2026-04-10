@@ -204,8 +204,13 @@ export function CorretoraContactChannels({
   // no número e um fundo stone-50 sutil. Sem cards empilhados,
   // sem shadows múltiplas, sem ring colorido. Minimalismo editorial.
   return (
-    <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-stone-900/[0.06]">
-      <ul role="list" className="divide-y divide-stone-900/[0.06]">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-stone-50 to-amber-50/40 ring-1 ring-stone-900/[0.06] shadow-sm shadow-stone-900/[0.03]">
+      {/* Top highlight — catching light, acompanha o warm gradient */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+      />
+      <ul role="list" className="relative divide-y divide-stone-900/[0.06]">
         {channels.map((ch, i) => {
           const isPrimary = ch.key === "whatsapp";
           const number = String(i + 1).padStart(2, "0");
@@ -216,9 +221,9 @@ export function CorretoraContactChannels({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${ch.actionLabel} — ${corretora.name}`}
-                className={`group flex items-center gap-4 px-5 py-4 transition-colors focus:outline-none focus-visible:bg-stone-50 md:gap-5 md:px-6 md:py-5 ${
-                  isPrimary ? "bg-stone-50/60" : ""
-                } hover:bg-stone-50`}
+                className={`group flex items-center gap-4 px-5 py-4 transition-colors focus:outline-none focus-visible:bg-amber-50/70 md:gap-5 md:px-6 md:py-5 ${
+                  isPrimary ? "bg-amber-50/30" : ""
+                } hover:bg-amber-50/60`}
               >
                 {/* Number — editorial chapter mark */}
                 <span
