@@ -119,6 +119,24 @@
   }
 }
 
+/* Sala Reservada — rise-in suave (fade + translate up 6px) usado em
+   KPI cards e outros blocos do painel da corretora. Respeitado por
+   prefers-reduced-motion via o reset global abaixo. */
+@keyframes kavitaRiseIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kavita-rise-in {
+  animation: kavitaRiseIn 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
 /* Scroll-padding para compensar header fixo em anchor links */
 html {
   scroll-padding-top: 80px;

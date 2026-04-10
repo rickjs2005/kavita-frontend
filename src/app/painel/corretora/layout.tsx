@@ -18,6 +18,7 @@ import {
   useCorretoraAuth,
 } from "@/context/CorretoraAuthContext";
 import { CorretoraPanelNav } from "@/components/painel-corretora/CorretoraPanelNav";
+import { GrainOverlay } from "@/components/painel-corretora/GrainOverlay";
 
 const FULLSCREEN_ROUTES = [
   "/painel/corretora/login",
@@ -77,16 +78,18 @@ function CorretoraPanelInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative min-h-screen bg-stone-50 text-stone-900">
-      {/* Warm ambient gradient no topo da página — muito sutil, dá vida
-          ao fundo sem concorrer com o conteúdo. */}
+      {/* Camada 1 — Warm ambient gradient no topo (cria atmosfera) */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-[340px] bg-gradient-to-b from-amber-50/60 via-stone-50/40 to-transparent"
       />
 
+      {/* Camada 2 — Textura de grão, fixa na viewport (material) */}
+      <GrainOverlay tone="light" />
+
       <CorretoraPanelNav />
 
-      <main className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-6 md:px-8 md:pb-20 md:pt-8">
+      <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-16 pt-6 md:px-8 md:pb-20 md:pt-8">
         {children}
       </main>
     </div>

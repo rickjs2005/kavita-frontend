@@ -59,10 +59,16 @@ const cards: Card[] = [
   },
 ];
 
+// Delay incremental em ms aplicado a cada card do grid — cria cascata
+// sutil ao montar. Só entra em ação uma vez, no mount inicial do React.
+// O `.kavita-rise-in` honra prefers-reduced-motion via o reset global
+// em globals.css, então desktops com redução de movimento ficam estáticos.
+const STAGGER_STEP_MS = 70;
+
 export function StatsCards({ summary, loading }: Props) {
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-5 md:gap-4">
-      {cards.map((card) => {
+      {cards.map((card, index) => {
         const value = summary[card.key] ?? 0;
         const isAttention = card.key === "new" && value > 0;
 
@@ -71,7 +77,8 @@ export function StatsCards({ summary, loading }: Props) {
             key={card.key}
             density="compact"
             accent={isAttention ? "emerald" : "none"}
-            className="group"
+            className="kavita-rise-in group"
+            style={{ animationDelay: `${index * STAGGER_STEP_MS}ms` }}
           >
             <div className="flex items-center gap-2">
               <span

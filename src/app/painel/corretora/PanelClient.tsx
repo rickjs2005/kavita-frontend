@@ -73,7 +73,7 @@ export default function PanelClient() {
   return (
     <div className="space-y-8 md:space-y-10">
       {/* HERO */}
-      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <section className="kavita-rise-in flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
             Painel
@@ -109,7 +109,10 @@ export default function PanelClient() {
       </section>
 
       {/* RECENT LEADS */}
-      <section>
+      <section
+        className="kavita-rise-in"
+        style={{ animationDelay: "420ms" }}
+      >
         <div className="mb-4 flex items-end justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">

@@ -10,6 +10,7 @@
 
 import type { ReactNode } from "react";
 import { PanelBrandMark } from "./PanelBrand";
+import { GrainOverlay } from "./GrainOverlay";
 
 type Props = {
   children: ReactNode;
@@ -40,7 +41,10 @@ export function AuthShell({
         className="pointer-events-none absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-t from-black/60 to-transparent"
       />
 
-      <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-10 sm:px-6">
+      {/* Textura de grão em mix-blend-screen — realça highlights em dark */}
+      <GrainOverlay tone="dark" />
+
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-10 sm:px-6">
         {/* Brand lockup — mark + kicker + título */}
         <header className="mb-8 flex flex-col items-center text-center">
           <div className="mb-5 flex h-12 w-12 items-center justify-center text-stone-100">
