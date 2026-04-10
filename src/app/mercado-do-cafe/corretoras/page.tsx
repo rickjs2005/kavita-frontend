@@ -23,9 +23,31 @@ import {
   fetchPublicCorretoras,
   fetchCorretorasCities,
 } from "@/server/data/corretoras";
+import { fetchPublicCotacoes } from "@/server/data/cotacoes";
+import type { PublicCotacao } from "@/lib/newsPublicApi";
 import { CorretoraCard } from "@/components/mercado-do-cafe/CorretoraCard";
 import { CorretoraFilters } from "@/components/mercado-do-cafe/CorretoraFilters";
+import { MarketCotacaoPill } from "@/components/mercado-do-cafe/MarketCotacaoPill";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
+
+/**
+ * Seleciona a cotação de café mais relevante do array vindo do News.
+ * Prioriza café arábica (referência principal do mercado), cai para
+ * robusta se arábica não existir, e retorna null se não houver nada —
+ * a página não quebra, só renderiza estado "mercado indisponível".
+ */
+function pickCoffeeCotacao(list: PublicCotacao[]): PublicCotacao | null {
+  if (!Array.isArray(list) || list.length === 0) return null;
+  const bySlug = (s: string) => list.find((c) => c.slug === s);
+  return (
+    bySlug("cafe-arabica") ??
+    bySlug("cafe-robusta") ??
+    list.find((c) =>
+      (c.name ?? c.title ?? "").toLowerCase().includes("café"),
+    ) ??
+    null
+  );
+}
 
 export const metadata = {
   title: "Corretoras de Café — Zona da Mata | Kavita",
@@ -41,7 +63,7 @@ export default async function CorretorasListPage({ searchParams }: Props) {
   const params = await searchParams;
   const page = Number(params.page) || 1;
 
-  const [result, cities] = await Promise.all([
+  const [result, cities, cotacoes] = await Promise.all([
     fetchPublicCorretoras({
       city: params.city,
       search: params.search,
@@ -55,7 +77,13 @@ export default async function CorretorasListPage({ searchParams }: Props) {
       totalPages: 1,
     })),
     fetchCorretorasCities(),
+    // Reaproveita o fetcher do News — ISR 120s, zero duplicação.
+    // Em caso de falha, cai para array vazio; o componente de cotação
+    // sabe renderizar o estado "mercado indisponível" sem quebrar.
+    fetchPublicCotacoes().catch(() => [] as PublicCotacao[]),
   ]);
+
+  const coffeeCotacao = pickCoffeeCotacao(cotacoes);
 
   const featured = result.items.filter(
     (c) => c.is_featured === true || c.is_featured === 1,
@@ -69,7 +97,6 @@ export default async function CorretorasListPage({ searchParams }: Props) {
   // Stats reais derivados do que a API já retorna. Zero backend novo.
   const totalAtivas = result.total;
   const totalCidades = cities.length;
-  const regionLabel = "Zona da Mata, MG";
 
   const buildPageHref = (p: number) => {
     const qs = new URLSearchParams();
@@ -87,7 +114,7 @@ export default async function CorretorasListPage({ searchParams }: Props) {
         className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-gradient-to-b from-amber-50/70 via-stone-50/40 to-transparent"
       />
 
-      {/* Market strip — tira fina no topo com pulse dot */}
+      {/* Market strip — tira fina no topo com pulse dot + cotação real */}
       <div className="relative border-b border-stone-900/[0.05] bg-stone-900/[0.02] backdrop-blur-sm">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-2.5 md:px-6">
           <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
@@ -101,9 +128,10 @@ export default async function CorretorasListPage({ searchParams }: Props) {
             <span className="mx-2 text-stone-400">·</span>
             <span className="text-stone-500">MG</span>
           </p>
-          <span className="ml-auto hidden text-[10px] font-medium text-stone-500 md:inline">
-            Rede de corretoras verificadas
-          </span>
+          {/* Ticker-style coffee quote inline (desktop only) — reusa
+              cotação real vinda do News via MarketCotacaoPill strip */}
+          <span aria-hidden className="ml-auto hidden h-3 w-px bg-stone-300 md:inline-block" />
+          <MarketCotacaoPill cotacao={coffeeCotacao} variant="strip" />
         </div>
       </div>
 
@@ -135,12 +163,16 @@ export default async function CorretorasListPage({ searchParams }: Props) {
               </p>
             </div>
 
-            {/* Right: market intelligence stats */}
+            {/* Right: market intelligence block.
+                Primeira linha = 2 stats da rede + 1 card de cotação real
+                vinda do News. O card de cotação ocupa o mesmo slot que
+                antes era "Região" — a região agora vive no market strip
+                do topo, onde é mais apropriada. */}
             <aside
-              aria-label="Indicadores do mercado"
-              className="grid shrink-0 grid-cols-3 gap-px overflow-hidden rounded-2xl bg-stone-900/[0.06] ring-1 ring-stone-900/[0.08] md:min-w-[420px]"
+              aria-label="Indicadores do mercado do café"
+              className="grid shrink-0 grid-cols-3 gap-px overflow-hidden rounded-2xl bg-stone-900/[0.06] shadow-lg shadow-stone-900/[0.06] ring-1 ring-stone-900/[0.08] md:min-w-[460px]"
             >
-              {/* Top highlight */}
+              {/* Top highlight — catching-light effect */}
               <div className="col-span-3 -mb-px hidden h-px bg-gradient-to-r from-transparent via-white to-transparent md:block" />
 
               <Stat
@@ -153,7 +185,11 @@ export default async function CorretorasListPage({ searchParams }: Props) {
                 value={totalCidades}
                 hint={totalCidades === 1 ? "atendida" : "atendidas"}
               />
-              <Stat kicker="Região" value={regionLabel} textual />
+              {/* Cotação real do café via News (RSC, ISR 120s) */}
+              <MarketCotacaoPill
+                cotacao={coffeeCotacao}
+                variant="stat"
+              />
             </aside>
           </div>
         </div>
@@ -318,28 +354,20 @@ function Stat({
   kicker,
   value,
   hint,
-  textual = false,
 }: {
   kicker: string;
   value: number | string;
   hint?: string;
-  textual?: boolean;
 }) {
   return (
     <div className="bg-white p-4 md:p-5">
       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
         {kicker}
       </p>
-      <p
-        className={`mt-1.5 font-semibold tracking-tight text-stone-900 ${
-          textual ? "text-sm md:text-base" : "text-2xl tabular-nums md:text-3xl"
-        }`}
-      >
+      <p className="mt-1.5 text-2xl font-semibold tracking-tight tabular-nums text-stone-900 md:text-3xl">
         {value}
       </p>
-      {hint && (
-        <p className="mt-0.5 text-[10px] text-stone-500">{hint}</p>
-      )}
+      {hint && <p className="mt-0.5 text-[10px] text-stone-500">{hint}</p>}
     </div>
   );
 }
