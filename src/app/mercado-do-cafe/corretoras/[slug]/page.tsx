@@ -22,6 +22,24 @@ import { CorretoraContactChannels } from "@/components/mercado-do-cafe/Corretora
 import { LeadContactForm } from "@/components/mercado-do-cafe/LeadContactForm";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 
+// SVG de grão fractal inline (~550 bytes) usado como overlay de textura
+// no card atmosférico da seção 03. Simula o "grain" de uma fotografia
+// editorial, dando sensação orgânica que gradient puro não entrega.
+// Mesma técnica do GrainOverlay do painel privado, mas inline aqui
+// para manter a seção 03 autocontida.
+const GRAIN_SVG = encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'>
+    <filter id='n'>
+      <feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/>
+      <feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/>
+    </filter>
+    <rect width='100%' height='100%' filter='url(#n)'/>
+  </svg>`
+    .replace(/\s+/g, " ")
+    .trim(),
+);
+const GRAIN_URL = `url("data:image/svg+xml,${GRAIN_SVG}")`;
+
 type Props = {
   params: Promise<{ slug: string }>;
 };
@@ -295,18 +313,118 @@ export default async function CorretoraDetailPage({ params }: Props) {
           </div>
         </section>
 
-        {/* ─── 03 / FORMULÁRIO ─────────────────────────────────── */}
+        {/* ─── 03 / MENSAGEM DIRETA ────────────────────────────────
+            Seção redesenhada como card atmosférico contido. Alinhamento
+            resolvido por design: pitch editorial à esquerda e formulário
+            à direita vivem no MESMO grid 5/7 dentro do mesmo wrapper,
+            então estão literalmente alinhados pela mesma estrutura.
+            O card tem atmosfera warm própria (layered gradients + grain
+            overlay simulando fotografia editorial heavy overlay). */}
         <section className="mt-20 md:mt-28">
           <SectionLabel
             number="03"
             title="Envie uma mensagem"
-            subtitle="Alternativa ao contato direto. O lead cai no painel privado da corretora."
+            subtitle="Alternativa ao contato direto. O lead cai no painel privado da corretora em segundos."
           />
-          <div className="mt-8 md:ml-auto md:max-w-2xl">
-            <LeadContactForm
-              corretoraSlug={corretora.slug}
-              corretoraName={corretora.name}
+
+          <div className="relative mt-10 overflow-hidden rounded-3xl bg-gradient-to-br from-amber-100/85 via-orange-50 to-amber-50 ring-1 ring-amber-900/[0.1] shadow-xl shadow-amber-900/[0.08]">
+            {/* Atmosphere layer 1 — radial glow top-right (luz quente principal) */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -right-32 -top-32 h-[520px] w-[520px] rounded-full bg-amber-300/45 blur-3xl"
             />
+            {/* Atmosphere layer 2 — radial glow bottom-left (profundidade) */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -bottom-40 -left-32 h-[500px] w-[500px] rounded-full bg-orange-200/45 blur-3xl"
+            />
+            {/* Atmosphere layer 3 — radial central muito sutil */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[700px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-amber-200/25 blur-3xl"
+            />
+            {/* Grain overlay — dá sensação de fotografia editorial */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-[0.07] mix-blend-multiply"
+              style={{
+                backgroundImage: GRAIN_URL,
+                backgroundSize: "260px 260px",
+              }}
+            />
+            {/* Top highlight catching light */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-14 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent"
+            />
+
+            {/* Grid interno 5/7 — pitch editorial à esquerda, form à direita */}
+            <div className="relative grid gap-10 px-6 py-12 md:grid-cols-12 md:gap-12 md:px-12 md:py-16 lg:px-14 lg:py-20">
+              {/* ─ Left column: pitch editorial + trust signals ─ */}
+              <div className="md:col-span-5">
+                {/* Kicker decorativo — DIFERENTE do SectionLabel externo
+                    para não duplicar. O SectionLabel diz "esta é a seção
+                    03", este kicker diz "este é o tom da seção". */}
+                <p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-900/80">
+                  <span
+                    aria-hidden
+                    className="h-1 w-1 rounded-full bg-amber-700"
+                  />
+                  Contato direto
+                </p>
+
+                <h3 className="mt-5 text-[1.75rem] font-semibold leading-[1.08] tracking-tight text-stone-900 md:text-[2rem] lg:text-[2.25rem]">
+                  Deixe seu contato aqui
+                </h3>
+
+                <p className="mt-5 max-w-md text-[15px] leading-relaxed text-stone-700">
+                  Sua mensagem vai direto para o painel privado da{" "}
+                  <span className="font-semibold text-stone-900">
+                    {corretora.name}
+                  </span>
+                  . A resposta chega pelos canais oficiais dela — você mantém
+                  controle total da negociação.
+                </p>
+
+                {/* Trust signals — acabamento editorial premium */}
+                <ul className="mt-8 space-y-3.5 text-[13px] leading-relaxed text-stone-700">
+                  {[
+                    "Seus dados chegam apenas à corretora selecionada",
+                    "Resposta pelos canais oficiais dela",
+                    "Protegido por verificação anti-bot",
+                  ].map((text) => (
+                    <li key={text} className="flex items-start gap-3">
+                      <span
+                        aria-hidden
+                        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/70 text-amber-900 ring-1 ring-amber-900/[0.12] shadow-sm shadow-amber-900/10"
+                      >
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 011.42-1.42L8.5 12.09l6.79-6.8a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                      <span>{text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* ─ Right column: formulário ─ */}
+              <div className="md:col-span-7">
+                <LeadContactForm
+                  corretoraSlug={corretora.slug}
+                  corretoraName={corretora.name}
+                />
+              </div>
+            </div>
           </div>
         </section>
 
