@@ -74,10 +74,13 @@ function loadTurnstileScript(): Promise<void> {
   return turnstileScriptPromise;
 }
 
+// Inputs editoriais: um pouco maiores verticalmente (py-3), border
+// stone-300 sutil, focus stone-900 com halo emerald discreto. Sem
+// shadows internas — o peso vem da tipografia dos labels.
 const inputClass =
-  "w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.02] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40";
+  "w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-[15px] text-stone-900 placeholder:text-stone-400 transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/30";
 const labelClass =
-  "mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-600";
+  "mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500";
 const errorClass = "mt-1.5 text-[11px] font-medium text-red-700";
 
 export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
@@ -202,16 +205,12 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
 
   if (success) {
     return (
-      <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-md shadow-stone-900/[0.05] ring-1 ring-stone-900/[0.06]">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
-        />
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+      <div className="rounded-2xl bg-white p-8 ring-1 ring-stone-900/[0.06] md:p-10">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
           <svg
             viewBox="0 0 20 20"
             fill="currentColor"
-            className="h-5 w-5"
+            className="h-6 w-6"
             aria-hidden
           >
             <path
@@ -221,18 +220,18 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
             />
           </svg>
         </div>
-        <h3 className="mt-3 text-base font-semibold text-stone-900">
+        <h3 className="mt-5 text-xl font-semibold tracking-tight text-stone-900 md:text-2xl">
           Mensagem enviada
         </h3>
-        <p className="mt-1 text-sm leading-relaxed text-stone-600">
-          A <strong className="text-stone-900">{corretoraName}</strong> vai
-          receber seu contato por e-mail e pelo painel privado dela. Aguarde
-          o retorno ou use os canais diretos listados ao lado.
+        <p className="mt-2 max-w-md text-[15px] leading-relaxed text-stone-600">
+          A <strong className="font-semibold text-stone-900">{corretoraName}</strong>{" "}
+          vai receber seu contato por e-mail e pelo painel privado dela.
+          Aguarde o retorno ou use os canais diretos listados acima.
         </p>
         <button
           type="button"
           onClick={() => setSuccess(false)}
-          className="mt-4 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-800 hover:text-emerald-900"
+          className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-800 hover:text-emerald-900"
         >
           Enviar outra mensagem
           <span aria-hidden>→</span>
@@ -244,29 +243,20 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="relative overflow-hidden rounded-2xl bg-white p-5 shadow-md shadow-stone-900/[0.05] ring-1 ring-stone-900/[0.06] md:p-6"
+      className="rounded-2xl bg-white p-6 ring-1 ring-stone-900/[0.06] md:p-8"
       aria-label={`Formulário de contato com ${corretoraName}`}
     >
-      {/* Top highlight — catching light */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
-      />
-
-      <div className="mb-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-800">
-          Fale com esta corretora
+      <div className="mb-7">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+          Envie uma mensagem
         </p>
-        <h3 className="mt-1 text-lg font-semibold tracking-tight text-stone-900">
-          Envie uma mensagem direta
-        </h3>
-        <p className="mt-1 text-xs leading-relaxed text-stone-500">
-          Seu contato chega no painel da corretora e por e-mail. Resposta
-          pelos canais oficiais dela.
+        <p className="mt-2 max-w-md text-[15px] leading-relaxed text-stone-600">
+          Seu contato chega no painel da corretora e por e-mail. A resposta
+          vem pelos canais oficiais dela.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
 
       <div>
         <label className={labelClass} htmlFor="lead-nome">
@@ -347,20 +337,23 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         <button
           type="submit"
           disabled={submitting || (turnstileEnabled && !turnstileToken)}
-          className="group relative h-11 w-full overflow-hidden rounded-xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-lg shadow-stone-900/20 transition-colors hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-stone-900 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-50 transition-colors hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-10"
         >
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
-          />
-          <span className="relative">
-            {submitting ? "Enviando..." : "Enviar mensagem"}
-          </span>
+          {submitting ? "Enviando..." : "Enviar mensagem"}
+          {!submitting && (
+            <span
+              aria-hidden
+              className="transition-transform duration-300 group-hover:translate-x-0.5"
+            >
+              →
+            </span>
+          )}
         </button>
 
-        <p className="text-center text-[10px] text-stone-400">
-          Ao enviar, seus dados serão compartilhados apenas com a{" "}
+        <p className="text-[10px] text-stone-400">
+          Seus dados chegam apenas à{" "}
           <span className="font-medium text-stone-500">{corretoraName}</span>.
+          Nenhum dado é compartilhado com terceiros.
         </p>
       </div>
     </form>

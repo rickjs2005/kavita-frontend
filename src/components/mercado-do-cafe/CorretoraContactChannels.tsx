@@ -194,81 +194,88 @@ export function CorretoraContactChannels({
   }
 
   // ─── Full: usado na página de detalhe da corretora ─────────────
-  // Cada canal é uma linha clicável com layout "ícone · textos · ação".
-  // WhatsApp (se presente) é o canal primário — fica ligeiramente
-  // destacado com ring esmeralda e micro-badge "CANAL PRIMÁRIO".
+  //
+  // Switchboard editorial: um único painel branco com hairlines finas
+  // separando cada canal. Cada linha tem numeração 01–06 em mono-font
+  // (truque editorial de Linear docs / Monocle), ícone em caixa sutil,
+  // kicker uppercase com o tipo do canal, valor principal em peso
+  // maior, e CTA com seta que desliza no hover. WhatsApp, quando
+  // presente, é o canal primário — ganha um micro-ponto esmeralda
+  // no número e um fundo stone-50 sutil. Sem cards empilhados,
+  // sem shadows múltiplas, sem ring colorido. Minimalismo editorial.
   return (
-    <ul role="list" className="space-y-2">
-      {channels.map((ch) => {
-        const isPrimary = ch.key === "whatsapp";
-        return (
-          <li key={ch.key}>
-            <a
-              href={ch.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${ch.actionLabel} — ${corretora.name}`}
-              className={`group relative flex items-center gap-4 overflow-hidden rounded-xl bg-white p-3.5 shadow-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 md:p-4 ${
-                isPrimary
-                  ? "shadow-emerald-900/[0.04] ring-1 ring-emerald-600/30 hover:-translate-y-0.5 hover:shadow-md hover:shadow-emerald-900/[0.08] hover:ring-emerald-600/50"
-                  : "shadow-stone-900/[0.03] ring-1 ring-stone-900/[0.05] hover:-translate-y-0.5 hover:shadow-md hover:shadow-stone-900/[0.06] hover:ring-stone-900/[0.1]"
-              }`}
-            >
-              {/* Top highlight — catching light */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
-              />
-
-              {/* Icon — primary WhatsApp uses filled emerald square */}
-              <span
-                aria-hidden
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                  isPrimary
-                    ? "bg-emerald-600 text-emerald-50 shadow-sm shadow-emerald-900/20"
-                    : "bg-stone-100 text-stone-600 ring-1 ring-stone-900/[0.06]"
-                }`}
+    <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-stone-900/[0.06]">
+      <ul role="list" className="divide-y divide-stone-900/[0.06]">
+        {channels.map((ch, i) => {
+          const isPrimary = ch.key === "whatsapp";
+          const number = String(i + 1).padStart(2, "0");
+          return (
+            <li key={ch.key}>
+              <a
+                href={ch.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${ch.actionLabel} — ${corretora.name}`}
+                className={`group flex items-center gap-4 px-5 py-4 transition-colors focus:outline-none focus-visible:bg-stone-50 md:gap-5 md:px-6 md:py-5 ${
+                  isPrimary ? "bg-stone-50/60" : ""
+                } hover:bg-stone-50`}
               >
-                {ICONS[ch.key](18)}
-              </span>
-
-              {/* Textos */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-semibold text-stone-900">
-                    {ch.label}
-                  </p>
-                  {isPrimary && (
-                    <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-1.5 py-0 text-[9px] font-bold uppercase tracking-[0.1em] text-emerald-800 ring-1 ring-emerald-200">
-                      Canal primário
-                    </span>
-                  )}
-                </div>
-                <p className="mt-0.5 truncate text-[11px] text-stone-500">
-                  {ch.detail}
-                </p>
-              </div>
-
-              {/* CTA */}
-              <span
-                className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
-                  isPrimary
-                    ? "text-emerald-800 group-hover:text-emerald-900"
-                    : "text-stone-600 group-hover:text-stone-900"
-                }`}
-              >
-                {ch.actionLabel}
+                {/* Number — editorial chapter mark */}
                 <span
                   aria-hidden
-                  className="transition-transform duration-300 group-hover:translate-x-0.5"
+                  className="flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-stone-400"
                 >
-                  →
+                  {isPrimary && (
+                    <span className="h-1 w-1 rounded-full bg-emerald-600" />
+                  )}
+                  {number}
                 </span>
-              </span>
-            </a>
-          </li>
-        );
-      })}
-    </ul>
+
+                {/* Icon box */}
+                <span
+                  aria-hidden
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-600 ring-1 ring-stone-900/[0.04] transition-colors group-hover:bg-stone-900 group-hover:text-stone-50 group-hover:ring-transparent"
+                >
+                  {ICONS[ch.key](16)}
+                </span>
+
+                {/* Textos */}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                    {ch.label}
+                    {isPrimary && (
+                      <span className="ml-2 text-emerald-800">· Primário</span>
+                    )}
+                  </p>
+                  <p className="mt-0.5 truncate text-sm font-medium text-stone-900">
+                    {ch.detail}
+                  </p>
+                </div>
+
+                {/* CTA arrow */}
+                <span
+                  aria-hidden
+                  className="shrink-0 text-stone-400 transition-all group-hover:translate-x-0.5 group-hover:text-stone-900"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="M12 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
