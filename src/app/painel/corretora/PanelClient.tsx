@@ -32,16 +32,12 @@ export default function PanelClient() {
     try {
       const [summaryData, leadsRes] = await Promise.all([
         apiClient.get<LeadsSummary>("/api/corretora/leads/summary"),
-        apiClient.get<{ data: CorretoraLead[] }>(
+        apiClient.get<{ items: CorretoraLead[] }>(
           "/api/corretora/leads?limit=5",
         ),
       ]);
       setSummary(summaryData);
-      // apiClient já retorna o envelope parseado; extraímos data de forma defensiva
-      const list = Array.isArray(leadsRes)
-        ? (leadsRes as unknown as CorretoraLead[])
-        : ((leadsRes as { data?: CorretoraLead[] }).data ?? []);
-      setRecent(list);
+      setRecent(leadsRes.items ?? []);
     } catch (err) {
       setError(formatApiError(err, "Erro ao carregar painel.").message);
     } finally {

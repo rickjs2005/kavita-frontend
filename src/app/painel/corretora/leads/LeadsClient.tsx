@@ -18,9 +18,12 @@ const FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "lost", label: "Perdidos" },
 ];
 
-type ApiResponse = {
-  data?: CorretoraLead[];
-  meta?: { total: number; page: number; limit: number; pages: number };
+type ListResponse = {
+  items: CorretoraLead[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
 };
 
 export default function LeadsClient() {
@@ -40,14 +43,11 @@ export default function LeadsClient() {
       qs.set("page", String(page));
       qs.set("limit", "20");
 
-      const res = await apiClient.get<ApiResponse>(
+      const res = await apiClient.get<ListResponse>(
         `/api/corretora/leads?${qs.toString()}`,
       );
-      const list = Array.isArray(res)
-        ? (res as unknown as CorretoraLead[])
-        : (res.data ?? []);
-      setLeads(list);
-      setTotalPages(res?.meta?.pages ?? 1);
+      setLeads(res.items ?? []);
+      setTotalPages(res.pages ?? 1);
     } catch (err) {
       setError(formatApiError(err, "Erro ao carregar leads.").message);
     } finally {
