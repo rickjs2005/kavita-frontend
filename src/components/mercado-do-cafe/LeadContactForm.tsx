@@ -5,7 +5,7 @@
 // Formulário público "Fale com esta corretora" — exibido no detalhe.
 // Envia para POST /api/public/corretoras/:slug/leads.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
@@ -17,6 +17,63 @@ type Props = {
   corretoraName: string;
 };
 
+// --- Cloudflare Turnstile ---------------------------------------------------
+// Tipagem mínima do objeto global injetado pelo script da Cloudflare.
+// Só declaramos o que usamos aqui — qualquer outra API fica como "any".
+type TurnstileRenderOptions = {
+  sitekey: string;
+  callback?: (token: string) => void;
+  "error-callback"?: () => void;
+  "expired-callback"?: () => void;
+  theme?: "light" | "dark" | "auto";
+  size?: "normal" | "compact";
+};
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        el: HTMLElement | string,
+        options: TurnstileRenderOptions,
+      ) => string;
+      remove: (widgetId: string) => void;
+      reset: (widgetId?: string) => void;
+    };
+  }
+}
+
+const TURNSTILE_SCRIPT_SRC =
+  "https://challenges.cloudflare.com/turnstile/v0/api.js";
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+
+/** Carrega o script do Turnstile uma única vez por sessão. */
+let turnstileScriptPromise: Promise<void> | null = null;
+function loadTurnstileScript(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (window.turnstile) return Promise.resolve();
+  if (turnstileScriptPromise) return turnstileScriptPromise;
+
+  turnstileScriptPromise = new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${TURNSTILE_SCRIPT_SRC}"]`,
+    );
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("turnstile")));
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = TURNSTILE_SCRIPT_SRC;
+    s.async = true;
+    s.defer = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("turnstile"));
+    document.head.appendChild(s);
+  });
+
+  return turnstileScriptPromise;
+}
+
 const inputClass =
   "w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40";
 const labelClass = "block text-sm font-medium text-zinc-700 mb-1";
@@ -25,6 +82,56 @@ const errorClass = "mt-1 text-xs text-rose-600";
 export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Turnstile — só entra em ação se houver site key. Sem key, o form
+  // funciona como antes (útil em dev local sem credenciais Cloudflare).
+  const turnstileEnabled = Boolean(TURNSTILE_SITE_KEY);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
+  const turnstileWidgetIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!turnstileEnabled) return;
+    if (success) return; // form está escondido; widget será remontado
+
+    let cancelled = false;
+
+    loadTurnstileScript()
+      .then(() => {
+        if (cancelled) return;
+        const container = turnstileContainerRef.current;
+        if (!container || !window.turnstile) return;
+        // Evita renderizar duas vezes no mesmo container (StrictMode / HMR).
+        if (turnstileWidgetIdRef.current) return;
+
+        turnstileWidgetIdRef.current = window.turnstile.render(container, {
+          sitekey: TURNSTILE_SITE_KEY,
+          theme: "light",
+          callback: (token) => setTurnstileToken(token),
+          "error-callback": () => setTurnstileToken(null),
+          "expired-callback": () => setTurnstileToken(null),
+        });
+      })
+      .catch(() => {
+        // Script falhou em carregar (rede/adblock). Não trava UX — o
+        // backend ainda exige o token, então o usuário verá o erro ao
+        // tentar enviar. Em dev sem secret, passa direto.
+        console.warn("Turnstile: falha ao carregar o script");
+      });
+
+    return () => {
+      cancelled = true;
+      const id = turnstileWidgetIdRef.current;
+      if (id && window.turnstile) {
+        try {
+          window.turnstile.remove(id);
+        } catch {
+          // ignore
+        }
+      }
+      turnstileWidgetIdRef.current = null;
+    };
+  }, [turnstileEnabled, success]);
 
   const {
     register,
@@ -41,6 +148,11 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   });
 
   const onSubmit = async (data: LeadFormData) => {
+    if (turnstileEnabled && !turnstileToken) {
+      toast.error("Aguarde a verificação anti-bot ser concluída.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload: Record<string, string> = {
@@ -49,6 +161,9 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       };
       if (data.cidade?.trim()) payload.cidade = data.cidade.trim();
       if (data.mensagem?.trim()) payload.mensagem = data.mensagem.trim();
+      if (turnstileEnabled && turnstileToken) {
+        payload["cf-turnstile-response"] = turnstileToken;
+      }
 
       await apiClient.post(
         `/api/public/corretoras/${encodeURIComponent(corretoraSlug)}/leads`,
@@ -57,8 +172,28 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       toast.success("Mensagem enviada! A corretora receberá seu contato.");
       setSuccess(true);
       reset();
+      // Token Turnstile é single-use; reset para o caso do usuário reabrir
+      // o form via "Enviar outra mensagem".
+      setTurnstileToken(null);
+      if (turnstileWidgetIdRef.current && window.turnstile) {
+        try {
+          window.turnstile.reset(turnstileWidgetIdRef.current);
+        } catch {
+          // ignore
+        }
+      }
     } catch (err) {
       toast.error(formatApiError(err, "Erro ao enviar mensagem.").message);
+      // Em erro (ex: token expirou), resetamos o widget para o usuário
+      // obter um novo token sem precisar recarregar a página.
+      setTurnstileToken(null);
+      if (turnstileWidgetIdRef.current && window.turnstile) {
+        try {
+          window.turnstile.reset(turnstileWidgetIdRef.current);
+        } catch {
+          // ignore
+        }
+      }
     } finally {
       setSubmitting(false);
     }
@@ -168,9 +303,17 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         )}
       </div>
 
+      {turnstileEnabled && (
+        <div
+          ref={turnstileContainerRef}
+          className="flex justify-center"
+          aria-label="Verificação anti-bot"
+        />
+      )}
+
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || (turnstileEnabled && !turnstileToken)}
         className="h-11 w-full rounded-xl bg-emerald-600 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "Enviando..." : "Enviar mensagem"}
