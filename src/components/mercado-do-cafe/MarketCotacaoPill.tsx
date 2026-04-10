@@ -96,22 +96,22 @@ function getDirection(varNum: number | null): "up" | "down" | "flat" {
 function getToneClasses(direction: "up" | "down" | "flat") {
   if (direction === "up") {
     return {
-      text: "text-emerald-700",
-      bg: "bg-emerald-50",
-      ring: "ring-emerald-200",
+      text: "text-emerald-300",
+      bg: "bg-emerald-500/10",
+      ring: "ring-emerald-400/30",
     };
   }
   if (direction === "down") {
     return {
-      text: "text-rose-700",
-      bg: "bg-rose-50",
-      ring: "ring-rose-200",
+      text: "text-rose-300",
+      bg: "bg-rose-500/10",
+      ring: "ring-rose-400/30",
     };
   }
   return {
-    text: "text-stone-600",
-    bg: "bg-stone-100",
-    ring: "ring-stone-200",
+    text: "text-stone-300",
+    bg: "bg-white/[0.06]",
+    ring: "ring-white/15",
   };
 }
 
@@ -128,11 +128,11 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
       );
     }
     return (
-      <div className="bg-white p-4 md:p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+      <div className="p-4 md:p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/70">
           Café arábica
         </p>
-        <p className="mt-1.5 text-sm font-medium text-stone-400">
+        <p className="mt-1.5 text-sm font-medium text-stone-500">
           Mercado indisponível
         </p>
       </div>
@@ -161,25 +161,24 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
   const refPrefix = isUsdReference ? "$" : "";
 
   // ─── Variant: strip (inline no topbar de mercado) ────────────────
-  // No ticker do topo priorizamos a saca 60kg (valor mais relevante
-  // para o público agro), com a referência internacional como
-  // contexto discreto.
+  // Priorizamos a saca 60kg. Cores adaptadas para dark parent: text
+  // amber-300 nos nomes/valores, stone-600 nos separadores.
   if (variant === "strip") {
     return (
       <Link
         href={detailHref}
-        className="group hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-600 transition-colors hover:text-stone-900 md:inline-flex"
+        className="group hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400 transition-colors hover:text-amber-300 md:inline-flex"
         aria-label={`Ver cotação: ${cotacao.name ?? "café"}`}
       >
-        <span className="text-stone-500">
+        <span className="text-amber-300/80">
           {cotacao.name ?? "Café arábica"}
         </span>
         {localUnit ? (
           <>
-            <span aria-hidden className="text-stone-300">
+            <span aria-hidden className="text-stone-600">
               ·
             </span>
-            <span className="font-bold tabular-nums text-stone-900">
+            <span className="font-bold tabular-nums text-stone-100">
               R$ {formatPrice(localUnit.value)}
             </span>
             <span className="text-[9px] font-medium normal-case tracking-normal text-stone-500">
@@ -188,10 +187,10 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
           </>
         ) : hasPrice(cotacao.price) ? (
           <>
-            <span aria-hidden className="text-stone-300">
+            <span aria-hidden className="text-stone-600">
               ·
             </span>
-            <span className="font-bold tabular-nums text-stone-900">
+            <span className="font-bold tabular-nums text-stone-100">
               {refPrefix}
               {formatPrice(cotacao.price)}
             </span>
@@ -218,11 +217,11 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
   return (
     <Link
       href={detailHref}
-      className="group relative block bg-white p-4 transition-colors hover:bg-stone-50 md:p-5"
+      className="group relative block p-4 transition-colors hover:bg-white/[0.03] md:p-5"
       aria-label={`Ver detalhes da cotação: ${cotacao.name ?? "café"}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/80">
           {cotacao.name ?? "Café arábica"}
         </p>
         {varNum !== null && (
@@ -238,8 +237,8 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
       {localUnit ? (
         <>
           {/* Linha principal: R$ por saca 60kg — número grande */}
-          <p className="mt-1.5 flex items-baseline gap-1 font-semibold tracking-tight text-stone-900">
-            <span className="text-base font-medium text-stone-500">R$</span>
+          <p className="mt-1.5 flex items-baseline gap-1 font-semibold tracking-tight text-stone-50">
+            <span className="text-base font-medium text-stone-400">R$</span>
             <span className="text-2xl tabular-nums md:text-[1.9rem]">
               {formatPrice(localUnit.value)}
             </span>
@@ -249,9 +248,9 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
           </p>
           {/* Linha secundária: referência internacional — contexto */}
           {hasPrice(cotacao.price) && (
-            <p className="mt-1.5 truncate text-[10px] text-stone-400">
+            <p className="mt-1.5 truncate text-[10px] text-stone-500">
               Ref.{" "}
-              <span className="font-semibold tabular-nums text-stone-500">
+              <span className="font-semibold tabular-nums text-stone-400">
                 {refPrefix}
                 {formatPrice(cotacao.price)}
               </span>{" "}
@@ -262,9 +261,9 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
       ) : hasPrice(cotacao.price) ? (
         // Fallback: sem conversão local, mostra só a referência
         <>
-          <p className="mt-1.5 flex items-baseline gap-1 font-semibold tracking-tight text-stone-900">
+          <p className="mt-1.5 flex items-baseline gap-1 font-semibold tracking-tight text-stone-50">
             {isUsdReference && (
-              <span className="text-base font-medium text-stone-500">$</span>
+              <span className="text-base font-medium text-stone-400">$</span>
             )}
             <span className="text-2xl tabular-nums md:text-3xl">
               {formatPrice(cotacao.price)}
@@ -275,7 +274,7 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
           </p>
         </>
       ) : (
-        <p className="mt-1.5 text-sm font-medium text-stone-400">
+        <p className="mt-1.5 text-sm font-medium text-stone-500">
           Aguardando atualização
         </p>
       )}
@@ -283,7 +282,7 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
       {/* Subtle "see more" on hover */}
       <span
         aria-hidden
-        className="absolute right-4 top-4 text-[9px] font-semibold uppercase tracking-wider text-emerald-800 opacity-0 transition-opacity group-hover:opacity-100"
+        className="absolute right-4 top-4 text-[9px] font-semibold uppercase tracking-wider text-amber-300 opacity-0 transition-opacity group-hover:opacity-100"
       >
         Ver →
       </span>

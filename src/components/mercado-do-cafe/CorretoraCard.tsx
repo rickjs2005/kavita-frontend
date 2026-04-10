@@ -125,46 +125,50 @@ export function CorretoraCard({ corretora }: Props) {
   return (
     <article
       className="
-        group relative overflow-hidden rounded-2xl bg-white
-        ring-1 ring-stone-900/[0.06] shadow-sm shadow-stone-900/[0.04]
+        group relative overflow-hidden rounded-2xl bg-white/[0.04]
+        ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm
         transition-all duration-300
-        hover:-translate-y-0.5 hover:shadow-lg hover:shadow-stone-900/[0.08]
-        focus-within:ring-2 focus-within:ring-emerald-600/40
+        hover:-translate-y-0.5 hover:bg-white/[0.06] hover:ring-amber-400/30
+        focus-within:ring-2 focus-within:ring-amber-400/40
       "
       aria-labelledby={`corretora-${corretora.id}-name`}
     >
-      {/* Top highlight — catching-light effect */}
+      {/* Top highlight — amber catching-light effect */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
       />
 
-      {/* Subtle warm accent strip on featured — left border indicator */}
+      {/* Warm accent strip on featured — amber left border glow */}
       {isFeatured && (
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600"
+          className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 shadow-[0_0_12px_rgba(251,191,36,0.4)]"
         />
       )}
 
-      <div className="p-5 md:p-6">
+      <div className="relative p-5 md:p-6">
         {/* ── HEADER: Logo + name + badges ──────────────────────────── */}
         <div className="flex items-start gap-4">
-          {/* Logo */}
-          <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-stone-100 ring-1 ring-stone-900/[0.06]">
+          {/* Logo frame em dark glass */}
+          <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-stone-800 to-stone-900 ring-1 ring-white/10">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-2 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
+            />
             {corretora.logo_path ? (
               <Image
                 src={absUrl(corretora.logo_path)}
                 alt={`Logo ${corretora.name}`}
                 width={64}
                 height={64}
-                className="h-full w-full object-cover"
+                className="relative h-full w-full object-cover"
               />
             ) : (
               <svg
                 viewBox="0 0 32 32"
                 fill="none"
-                className="h-8 w-8 text-stone-400"
+                className="relative h-8 w-8 text-amber-200/60"
                 aria-hidden
               >
                 <g transform="rotate(-18 16 16)">
@@ -186,17 +190,17 @@ export function CorretoraCard({ corretora }: Props) {
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <h3
                 id={`corretora-${corretora.id}-name`}
-                className="truncate text-base font-semibold text-stone-900 md:text-lg"
+                className="truncate text-base font-semibold text-stone-50 md:text-lg"
               >
                 <Link
                   href={detailHref}
-                  className="outline-none transition-colors hover:text-emerald-800 focus-visible:text-emerald-800 focus-visible:underline"
+                  className="outline-none transition-colors hover:text-amber-300 focus-visible:text-amber-300 focus-visible:underline"
                 >
                   {corretora.name}
                 </Link>
               </h3>
               {isFeatured && (
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-800 ring-1 ring-amber-200">
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-200 ring-1 ring-amber-400/30">
                   <svg
                     width="10"
                     height="10"
@@ -211,9 +215,9 @@ export function CorretoraCard({ corretora }: Props) {
               )}
             </div>
 
-            {/* Meta: cidade + região como chip */}
+            {/* Meta: cidade + região */}
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-600">
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-300">
                 <svg
                   width="11"
                   height="11"
@@ -223,6 +227,7 @@ export function CorretoraCard({ corretora }: Props) {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  className="text-amber-300/70"
                   aria-hidden
                 >
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
@@ -232,8 +237,8 @@ export function CorretoraCard({ corretora }: Props) {
               </span>
               {corretora.region && (
                 <>
-                  <span aria-hidden className="text-stone-300">·</span>
-                  <span className="inline-flex items-center rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-600">
+                  <span aria-hidden className="text-stone-600">·</span>
+                  <span className="inline-flex items-center rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-300 ring-1 ring-white/10">
                     {corretora.region}
                   </span>
                 </>
@@ -243,26 +248,26 @@ export function CorretoraCard({ corretora }: Props) {
             {/* Contact person subtle */}
             <p className="mt-1 text-[11px] text-stone-500">
               Responsável:{" "}
-              <span className="text-stone-700">{corretora.contact_name}</span>
+              <span className="text-stone-300">{corretora.contact_name}</span>
             </p>
           </div>
         </div>
 
         {/* ── DESCRIPTION ───────────────────────────────────────────── */}
         {corretora.description && (
-          <p className="mt-4 line-clamp-2 text-sm leading-relaxed text-stone-600">
+          <p className="mt-4 line-clamp-2 text-sm leading-relaxed text-stone-300">
             {corretora.description}
           </p>
         )}
 
         {/* ── CHANNELS ROW ──────────────────────────────────────────── */}
         {channels.length > 0 && (
-          <div className="mt-4 border-t border-stone-900/[0.05] pt-4">
+          <div className="mt-4 border-t border-white/[0.06] pt-4">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/80">
                 Canais disponíveis
               </p>
-              <span className="text-[10px] font-semibold text-stone-400 tabular-nums">
+              <span className="text-[10px] font-semibold text-stone-500 tabular-nums">
                 {channels.length} {channels.length === 1 ? "canal" : "canais"}
               </span>
             </div>
@@ -275,7 +280,7 @@ export function CorretoraCard({ corretora }: Props) {
                   rel="noopener noreferrer"
                   title={ch.label}
                   aria-label={`${ch.label} de ${corretora.name}`}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 transition-all hover:border-stone-900 hover:bg-stone-900 hover:text-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-1"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.05] text-stone-300 ring-1 ring-white/10 transition-all hover:bg-amber-400 hover:text-stone-950 hover:ring-amber-300/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-1 focus-visible:ring-offset-stone-950"
                 >
                   {icons[ch.key]}
                 </a>
@@ -291,9 +296,9 @@ export function CorretoraCard({ corretora }: Props) {
             aria-label={`Ver detalhes de ${corretora.name}`}
             className="
               inline-flex items-center gap-1.5 rounded-lg
-              text-xs font-semibold uppercase tracking-[0.12em] text-emerald-800
-              transition-colors hover:text-emerald-900
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2
+              text-xs font-semibold uppercase tracking-[0.12em] text-amber-300
+              transition-colors hover:text-amber-200
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950
             "
           >
             Ver detalhes

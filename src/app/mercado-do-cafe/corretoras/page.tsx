@@ -2,20 +2,24 @@
 //
 // Listagem pública de corretoras — RSC
 //
-// Refatoração visual premium: a página deixa de ser "listagem branca
-// com cards" e passa a comunicar contexto de mercado/cotação do café.
-// Lógica e fluxo 100% preservados — só frontend.
+// Direção: DARK COMMITTED em match com a página interna da corretora
+// (commit 76b7666). Mesmo paradigma (stone-950 + glass panels +
+// amber-400 accent + 4 atmospheric glow zones) mas adaptado à função
+// de listagem (grid 2-col scan-heavy em vez de editorial single-flow).
 //
-// Mudanças principais:
-//   - Fundo stone-50 com warm ambient gradient (mesmo DNA do painel)
-//   - Market strip no topo ("MERCADO DO CAFÉ · ZONA DA MATA · MG")
-//     com pulse dot, sugerindo ambiente comercial ativo
-//   - Hero com stats reais: corretoras ativas, cidades atendidas,
-//     região. Dados derivados do que a API JÁ retorna (zero backend novo)
-//   - Section headers com kicker uppercase + count
-//   - Cards refatorados (ver CorretoraCard.tsx)
-//   - Filtros em command bar (ver CorretoraFilters.tsx)
-//   - CTA de cadastro premium (espresso button)
+// A página interna e a listagem agora compartilham:
+//   - Background stone-950
+//   - Superfícies glass bg-white/[0.04] ring-white/[0.08] backdrop-blur-sm
+//   - Accent único amber-400 (kickers, hovers, CTAs, glows)
+//   - 4 zonas radiais atmosféricas amber/orange
+//   - Tipografia stone-50/300/500 hierarchy
+//
+// O que é específico da listagem (diferente do detalhe):
+//   - Grid 2-col de CorretoraCard em vez de 1-col editorial
+//   - Market strip + hero com stats aside
+//   - Filters command bar
+//   - SectionHeader com kicker + count (não SectionLabel numerado 01-04)
+//   - CTA cadastro no fim
 
 import Link from "next/link";
 import { Suspense } from "react";
@@ -30,12 +34,6 @@ import { CorretoraFilters } from "@/components/mercado-do-cafe/CorretoraFilters"
 import { MarketCotacaoPill } from "@/components/mercado-do-cafe/MarketCotacaoPill";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 
-/**
- * Seleciona a cotação de café mais relevante do array vindo do News.
- * Prioriza café arábica (referência principal do mercado), cai para
- * robusta se arábica não existir, e retorna null se não houver nada —
- * a página não quebra, só renderiza estado "mercado indisponível".
- */
 function pickCoffeeCotacao(list: PublicCotacao[]): PublicCotacao | null {
   if (!Array.isArray(list) || list.length === 0) return null;
   const bySlug = (s: string) => list.find((c) => c.slug === s);
@@ -77,9 +75,6 @@ export default async function CorretorasListPage({ searchParams }: Props) {
       totalPages: 1,
     })),
     fetchCorretorasCities(),
-    // Reaproveita o fetcher do News — ISR 120s, zero duplicação.
-    // Em caso de falha, cai para array vazio; o componente de cotação
-    // sabe renderizar o estado "mercado indisponível" sem quebrar.
     fetchPublicCotacoes().catch(() => [] as PublicCotacao[]),
   ]);
 
@@ -94,7 +89,6 @@ export default async function CorretorasListPage({ searchParams }: Props) {
 
   const hasFilters = !!(params.city || params.search);
 
-  // Stats reais derivados do que a API já retorna. Zero backend novo.
   const totalAtivas = result.total;
   const totalCidades = cities.length;
 
@@ -107,55 +101,74 @@ export default async function CorretorasListPage({ searchParams }: Props) {
   };
 
   return (
-    <main className="relative min-h-[calc(100vh-120px)] bg-stone-50 text-stone-900">
-      {/* Warm ambient gradient — coerente com o painel privado */}
+    <main className="relative min-h-[calc(100vh-120px)] overflow-hidden bg-stone-950 text-stone-100">
+      {/* ─── Atmospheric glows — 4 zonas ────────────────────────────
+          Distribuídas pela altura da página para criar profundidade
+          "warm light on dark surface". Todas pointer-events-none e
+          blur-3xl, custo zero em interação. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-gradient-to-b from-amber-50/70 via-stone-50/40 to-transparent"
+        className="pointer-events-none absolute -top-40 left-1/2 h-[700px] w-[1100px] -translate-x-1/2 rounded-[100%] bg-amber-500/[0.08] blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-[-10%] top-[800px] h-[600px] w-[700px] rounded-full bg-amber-700/[0.08] blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-[-10%] top-[1500px] h-[700px] w-[800px] rounded-full bg-orange-700/[0.07] blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-40 left-1/2 h-[500px] w-[1000px] -translate-x-1/2 rounded-[100%] bg-amber-500/[0.05] blur-3xl"
       />
 
-      {/* Market strip — tira fina no topo com pulse dot + cotação real */}
-      <div className="relative border-b border-stone-900/[0.05] bg-stone-900/[0.02] backdrop-blur-sm">
+      {/* ═══ MARKET STRIP — tira fina no topo em dark ═══════════════
+          Border-white/[0.08] hairline, pulse dot amber, cotação inline. */}
+      <div className="relative border-b border-white/[0.08] bg-stone-950/60 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-2.5 md:px-6">
           <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-600" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
           </span>
-          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-600">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-300">
             Mercado do Café
-            <span className="mx-2 text-stone-400">·</span>
-            <span className="text-stone-500">Zona da Mata</span>
-            <span className="mx-2 text-stone-400">·</span>
-            <span className="text-stone-500">MG</span>
+            <span className="mx-2 text-stone-600">·</span>
+            <span className="text-stone-400">Zona da Mata</span>
+            <span className="mx-2 text-stone-600">·</span>
+            <span className="text-stone-400">MG</span>
           </p>
-          {/* Ticker-style coffee quote inline (desktop only) — reusa
-              cotação real vinda do News via MarketCotacaoPill strip */}
-          <span aria-hidden className="ml-auto hidden h-3 w-px bg-stone-300 md:inline-block" />
+          <span
+            aria-hidden
+            className="ml-auto hidden h-3 w-px bg-white/20 md:inline-block"
+          />
           <MarketCotacaoPill cotacao={coffeeCotacao} variant="strip" />
         </div>
       </div>
 
-      {/* ═══ HERO ══════════════════════════════════════════════════ */}
+      {/* ═══ HERO ═══════════════════════════════════════════════════
+          Brand mark + kicker + título display + subtítulo à esquerda,
+          market intelligence stats em glass card à direita. */}
       <section className="relative">
-        <div className="mx-auto w-full max-w-6xl px-4 pb-8 pt-10 md:px-6 md:pb-12 md:pt-16">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-10 md:px-6 md:pb-14 md:pt-16">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between md:gap-10">
-            {/* Left: brand + kicker + title + subtitle */}
+            {/* Left: brand + title + subtitle */}
             <div className="min-w-0 flex-1">
               <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center text-stone-900">
+                <div className="flex h-10 w-10 items-center justify-center text-amber-200">
                   <PanelBrandMark className="h-full w-full" />
                 </div>
-                <div className="h-6 w-px bg-stone-300" aria-hidden />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800">
+                <div className="h-6 w-px bg-white/15" aria-hidden />
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300/90">
                   Corretoras verificadas
                 </p>
               </div>
 
-              <h1 className="text-3xl font-semibold tracking-tight text-stone-900 md:text-4xl lg:text-5xl">
+              <h1 className="text-3xl font-semibold leading-[1.05] tracking-tight text-stone-50 md:text-4xl lg:text-5xl">
                 A mesa do café da Zona&nbsp;da&nbsp;Mata
               </h1>
 
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-stone-600 md:text-base">
+              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-stone-300 md:text-base">
                 Encontre corretoras que atuam na Zona da Mata mineira. Rede
                 curada pelo Kavita — cada empresa listada passou pela análise
                 da nossa equipe antes de aparecer aqui. Negocie com confiança,
@@ -163,57 +176,63 @@ export default async function CorretorasListPage({ searchParams }: Props) {
               </p>
             </div>
 
-            {/* Right: market intelligence block.
-                Primeira linha = 2 stats da rede + 1 card de cotação real
-                vinda do News. O card de cotação ocupa o mesmo slot que
-                antes era "Região" — a região agora vive no market strip
-                do topo, onde é mais apropriada. */}
+            {/* Right: market intelligence block em dark glass */}
             <aside
               aria-label="Indicadores do mercado do café"
-              className="grid shrink-0 grid-cols-3 gap-px overflow-hidden rounded-2xl bg-stone-900/[0.06] shadow-lg shadow-stone-900/[0.06] ring-1 ring-stone-900/[0.08] md:min-w-[460px]"
+              className="relative shrink-0 overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:min-w-[460px]"
             >
-              {/* Top highlight — catching-light effect */}
-              <div className="col-span-3 -mb-px hidden h-px bg-gradient-to-r from-transparent via-white to-transparent md:block" />
+              {/* Top highlight amber */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
+              />
+              {/* Mini glow */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-amber-500/15 blur-3xl"
+              />
 
-              <Stat
-                kicker="Ativas"
-                value={totalAtivas}
-                hint={totalAtivas === 1 ? "corretora" : "corretoras"}
-              />
-              <Stat
-                kicker="Cidades"
-                value={totalCidades}
-                hint={totalCidades === 1 ? "atendida" : "atendidas"}
-              />
-              {/* Cotação real do café via News (RSC, ISR 120s) */}
-              <MarketCotacaoPill
-                cotacao={coffeeCotacao}
-                variant="stat"
-              />
+              <div className="relative grid grid-cols-3 divide-x divide-white/[0.06]">
+                <Stat
+                  kicker="Ativas"
+                  value={totalAtivas}
+                  hint={totalAtivas === 1 ? "corretora" : "corretoras"}
+                />
+                <Stat
+                  kicker="Cidades"
+                  value={totalCidades}
+                  hint={totalCidades === 1 ? "atendida" : "atendidas"}
+                />
+                <MarketCotacaoPill cotacao={coffeeCotacao} variant="stat" />
+              </div>
             </aside>
           </div>
         </div>
       </section>
 
-      {/* ═══ CONTEÚDO ══════════════════════════════════════════════ */}
-      <div className="relative mx-auto w-full max-w-6xl px-4 pb-20 md:px-6">
-        {/* Filters */}
+      {/* ═══ CONTEÚDO ═══════════════════════════════════════════════ */}
+      <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 md:px-6">
+        {/* Filters em dark command bar */}
         <Suspense fallback={null}>
           <CorretoraFilters cities={cities} />
         </Suspense>
 
         {/* Empty state */}
         {result.items.length === 0 && (
-          <section className="mt-8 rounded-2xl bg-white p-10 text-center shadow-sm shadow-stone-900/[0.04] ring-1 ring-stone-900/[0.06]">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-stone-100 text-stone-400">
+          <section className="relative mt-8 overflow-hidden rounded-2xl bg-white/[0.04] p-10 text-center ring-1 ring-white/[0.08] backdrop-blur-sm">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
+            />
+            <div className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.06] text-amber-200/60 ring-1 ring-white/10">
               <PanelBrandMark className="h-7 w-7" />
             </div>
-            <p className="text-sm font-semibold text-stone-900">
+            <p className="relative text-sm font-semibold text-stone-100">
               {hasFilters
                 ? "Nenhuma corretora encontrada para essa busca"
                 : "A mesa ainda está sendo montada"}
             </p>
-            <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-stone-500">
+            <p className="relative mx-auto mt-1 max-w-sm text-xs leading-relaxed text-stone-400">
               {hasFilters
                 ? "Tente outro filtro ou remova os critérios de busca."
                 : "Em breve novas corretoras verificadas aparecerão por aqui."}
@@ -221,7 +240,7 @@ export default async function CorretorasListPage({ searchParams }: Props) {
             {hasFilters && (
               <Link
                 href="/mercado-do-cafe/corretoras"
-                className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-stone-900 px-4 py-2 text-xs font-semibold text-stone-50 shadow-sm shadow-stone-900/20 hover:bg-stone-800"
+                className="relative mt-5 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-amber-300 to-amber-500 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400"
               >
                 Limpar filtros
               </Link>
@@ -270,7 +289,7 @@ export default async function CorretorasListPage({ searchParams }: Props) {
           </section>
         )}
 
-        {/* Pagination */}
+        {/* Pagination em dark glass */}
         {result.totalPages > 1 && (
           <nav
             className="mt-10 flex items-center justify-center gap-3"
@@ -279,68 +298,86 @@ export default async function CorretorasListPage({ searchParams }: Props) {
             {page > 1 ? (
               <Link
                 href={buildPageHref(page - 1)}
-                className="rounded-lg border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 shadow-sm shadow-stone-900/[0.03] transition-colors hover:bg-stone-100 hover:text-stone-900"
+                className="rounded-lg bg-white/[0.05] px-3.5 py-2 text-xs font-semibold text-stone-300 ring-1 ring-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.08] hover:text-amber-200 hover:ring-amber-400/30"
               >
                 ← Anterior
               </Link>
             ) : (
-              <span className="cursor-not-allowed rounded-lg border border-stone-200 bg-white/60 px-3.5 py-2 text-xs font-semibold text-stone-300">
+              <span className="cursor-not-allowed rounded-lg bg-white/[0.02] px-3.5 py-2 text-xs font-semibold text-stone-600 ring-1 ring-white/[0.04]">
                 ← Anterior
               </span>
             )}
-            <span className="text-xs font-medium tabular-nums text-stone-500">
+            <span className="text-xs font-medium tabular-nums text-stone-400">
               Página {page} de {result.totalPages}
             </span>
             {page < result.totalPages ? (
               <Link
                 href={buildPageHref(page + 1)}
-                className="rounded-lg border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 shadow-sm shadow-stone-900/[0.03] transition-colors hover:bg-stone-100 hover:text-stone-900"
+                className="rounded-lg bg-white/[0.05] px-3.5 py-2 text-xs font-semibold text-stone-300 ring-1 ring-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.08] hover:text-amber-200 hover:ring-amber-400/30"
               >
                 Próxima →
               </Link>
             ) : (
-              <span className="cursor-not-allowed rounded-lg border border-stone-200 bg-white/60 px-3.5 py-2 text-xs font-semibold text-stone-300">
+              <span className="cursor-not-allowed rounded-lg bg-white/[0.02] px-3.5 py-2 text-xs font-semibold text-stone-600 ring-1 ring-white/[0.04]">
                 Próxima →
               </span>
             )}
           </nav>
         )}
 
-        {/* CTA Cadastro — estilo premium */}
-        <section className="mt-16 overflow-hidden rounded-2xl bg-stone-900 p-7 text-stone-50 shadow-xl shadow-stone-900/20 ring-1 ring-stone-900/20 md:p-10">
-          <div className="relative">
-            {/* Top highlight */}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -inset-x-7 -top-7 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent md:-inset-x-10 md:-top-10"
-            />
-            {/* Warm glow */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl"
-            />
+        {/* CTA Cadastro — dark glass com botão amber */}
+        <section className="relative mt-16 overflow-hidden rounded-2xl bg-white/[0.04] p-7 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:p-10">
+          {/* Top highlight */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
+          />
+          {/* Warm glow */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-amber-500/15 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-orange-700/15 blur-3xl"
+          />
 
-            <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div className="max-w-xl">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-200/80">
-                  Seja parte da rede
-                </p>
-                <h2 className="mt-2 text-xl font-semibold tracking-tight text-stone-50 md:text-2xl">
-                  É corretor ou corretora de café?
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-stone-300">
-                  Cadastre sua empresa na mesa do Kavita. A análise é gratuita
-                  e, após aprovação, você acessa um painel próprio para
-                  gerenciar contatos recebidos de produtores da região.
-                </p>
-              </div>
-              <Link
-                href="/mercado-do-cafe/corretoras/cadastro"
-                className="shrink-0 rounded-xl bg-stone-50 px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-stone-900 shadow-lg shadow-black/20 transition-colors hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900"
-              >
-                Cadastrar empresa →
-              </Link>
+          <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-xl">
+              <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300/90">
+                <span
+                  aria-hidden
+                  className="h-1 w-1 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]"
+                />
+                Seja parte da rede
+              </p>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight text-stone-50 md:text-2xl">
+                É corretor ou corretora de café?
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-stone-300">
+                Cadastre sua empresa na mesa do Kavita. A análise é gratuita
+                e, após aprovação, você acessa um painel próprio para
+                gerenciar contatos recebidos de produtores da região.
+              </p>
             </div>
+            <Link
+              href="/mercado-do-cafe/corretoras/cadastro"
+              className="group relative shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+            >
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
+              />
+              <span className="relative flex items-center gap-2">
+                Cadastrar empresa
+                <span
+                  aria-hidden
+                  className="transition-transform duration-300 group-hover:translate-x-0.5"
+                >
+                  →
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
       </div>
@@ -348,7 +385,7 @@ export default async function CorretorasListPage({ searchParams }: Props) {
   );
 }
 
-// ─── Small building blocks (mesma página, baixa reuso) ──────────────
+// ─── Small building blocks — Dark version ──────────────
 
 function Stat({
   kicker,
@@ -360,11 +397,11 @@ function Stat({
   hint?: string;
 }) {
   return (
-    <div className="bg-white p-4 md:p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+    <div className="p-4 md:p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/80">
         {kicker}
       </p>
-      <p className="mt-1.5 text-2xl font-semibold tracking-tight tabular-nums text-stone-900 md:text-3xl">
+      <p className="mt-1.5 text-2xl font-semibold tracking-tight tabular-nums text-stone-50 md:text-3xl">
         {value}
       </p>
       {hint && <p className="mt-0.5 text-[10px] text-stone-500">{hint}</p>}
@@ -384,24 +421,30 @@ function SectionHeader({
   hint?: string;
 }) {
   return (
-    <header className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-800">
+    <header className="relative pt-6">
+      {/* Hairline com fade — white/15 sobre dark */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-white/15 via-white/[0.06] to-transparent"
+      />
+      <div className="flex items-baseline gap-3">
+        {/* Kicker como pill amber glow */}
+        <span className="inline-flex items-center rounded-md bg-amber-400/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tabular-nums tracking-[0.1em] text-amber-300 ring-1 ring-amber-400/20 shadow-[0_0_20px_rgba(251,191,36,0.1)]">
           {kicker}
-        </p>
+        </span>
         {typeof count === "number" && (
           <>
-            <span aria-hidden className="h-px w-6 bg-stone-300" />
-            <span className="text-[11px] font-semibold text-stone-500 tabular-nums">
+            <span aria-hidden className="h-px w-6 bg-white/15" />
+            <span className="text-[11px] font-semibold text-stone-400 tabular-nums">
               {count} {count === 1 ? "corretora" : "corretoras"}
             </span>
           </>
         )}
       </div>
-      <h2 className="text-lg font-semibold tracking-tight text-stone-900 md:text-xl">
+      <h2 className="mt-2 text-lg font-semibold tracking-tight text-stone-50 md:text-xl">
         {title}
       </h2>
-      {hint && <p className="text-xs text-stone-500">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-stone-400">{hint}</p>}
     </header>
   );
 }

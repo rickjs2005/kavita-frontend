@@ -52,8 +52,13 @@ export function CorretoraFilters({ cities }: Props) {
   }, [searchParams]);
 
   return (
-    <div className="rounded-2xl bg-stone-100 p-1.5 ring-1 ring-stone-900/[0.05]">
-      <div className="flex flex-col gap-1.5 md:flex-row md:items-center">
+    <div className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-1.5 ring-1 ring-white/[0.08] backdrop-blur-sm">
+      {/* Top highlight amber */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
+      />
+      <div className="relative flex flex-col gap-1.5 md:flex-row md:items-center">
         {/* Search input with leading icon */}
         <form
           onSubmit={handleSearchSubmit}
@@ -69,7 +74,7 @@ export function CorretoraFilters({ cities }: Props) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="pointer-events-none absolute left-3.5 text-stone-400"
+            className="pointer-events-none absolute left-3.5 text-stone-500"
             aria-hidden
           >
             <circle cx="11" cy="11" r="8" />
@@ -81,14 +86,14 @@ export function CorretoraFilters({ cities }: Props) {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nome, cidade ou contato..."
             aria-label="Buscar corretora"
-            className="w-full rounded-xl bg-white py-2.5 pl-10 pr-4 text-sm text-stone-800 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.03] ring-1 ring-stone-900/[0.05] focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-1 focus:ring-offset-stone-100"
+            className="w-full rounded-xl bg-white/[0.05] py-2.5 pl-10 pr-4 text-sm text-stone-100 placeholder:text-stone-500 ring-1 ring-white/10 transition-colors focus:border-amber-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-amber-400/30"
           />
         </form>
 
         {/* Divider — only on desktop */}
         <span
           aria-hidden
-          className="hidden h-6 w-px bg-stone-300 md:block"
+          className="hidden h-6 w-px bg-white/15 md:block"
         />
 
         {/* City select as chip */}
@@ -102,7 +107,7 @@ export function CorretoraFilters({ cities }: Props) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="pointer-events-none absolute left-3 text-stone-400"
+            className="pointer-events-none absolute left-3 text-stone-500"
             aria-hidden
           >
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
@@ -112,7 +117,7 @@ export function CorretoraFilters({ cities }: Props) {
             value={city}
             onChange={(e) => handleCityChange(e.target.value)}
             aria-label="Filtrar por cidade"
-            className="w-full appearance-none rounded-xl bg-white py-2.5 pl-9 pr-9 text-sm font-medium text-stone-700 shadow-sm shadow-stone-900/[0.03] ring-1 ring-stone-900/[0.05] focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-1 focus:ring-offset-stone-100"
+            className="w-full appearance-none rounded-xl bg-white/[0.05] py-2.5 pl-9 pr-9 text-sm font-medium text-stone-100 ring-1 ring-white/10 transition-colors focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-amber-400/30 [&>option]:bg-stone-900 [&>option]:text-stone-100"
           >
             <option value="">Todas as cidades</option>
             {cities.map((c) => (
@@ -130,7 +135,7 @@ export function CorretoraFilters({ cities }: Props) {
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="pointer-events-none absolute right-3 text-stone-400"
+            className="pointer-events-none absolute right-3 text-stone-500"
             aria-hidden
           >
             <path d="M6 9l6 6 6-6" />
