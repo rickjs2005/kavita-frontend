@@ -145,6 +145,26 @@ export default function UserMenu() {
             </Link>
           </div>
 
+          {/* Atalho para área privada da corretora. O painel tem contexto
+              de auth próprio (cookie corretoraToken) — este link navega
+              para /painel/corretora e o guard do layout cuida do redirect
+              caso o usuário ainda não tenha sessão de corretora ativa. */}
+          <div className="border-t border-gray-100 py-1">
+            <Link
+              href="/painel/corretora"
+              className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm transition-colors"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l2-4h14l2 4" />
+                <path d="M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9" />
+                <path d="M10 21v-9h4v9" />
+              </svg>
+              Painel da corretora
+            </Link>
+          </div>
+
           <div className="border-t border-gray-100 py-1">
             <button
               role="menuitem"
