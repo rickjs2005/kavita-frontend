@@ -66,4 +66,6 @@ export type CorretoraSubmissionFormData = {
   website: string;
   instagram: string;
   facebook: string;
+  senha: string;
+  senha_confirmacao: string;
 };
