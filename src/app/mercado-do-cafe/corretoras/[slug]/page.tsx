@@ -7,6 +7,7 @@ import { fetchPublicCorretoraBySlug } from "@/server/data/corretoras";
 import { absUrl } from "@/utils/absUrl";
 import { CorretoraContactChannels } from "@/components/mercado-do-cafe/CorretoraContactChannels";
 import { MercadoCafeCTA } from "@/components/mercado-do-cafe/MercadoCafeCTA";
+import { LeadContactForm } from "@/components/mercado-do-cafe/LeadContactForm";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -92,12 +93,23 @@ export default async function CorretoraDetailPage({ params }: Props) {
           </section>
         )}
 
-        {/* Contact channels */}
-        <section aria-label="Canais de contato">
-          <h2 className="text-base font-semibold text-zinc-900 mb-3">
-            Canais de Contato
-          </h2>
-          <CorretoraContactChannels corretora={corretora} variant="full" />
+        {/* Contact channels + Lead form (duas colunas no desktop) */}
+        <section
+          aria-label="Fale com a corretora"
+          className="grid gap-6 md:grid-cols-5"
+        >
+          <div className="md:col-span-2">
+            <h2 className="text-base font-semibold text-zinc-900 mb-3">
+              Canais diretos
+            </h2>
+            <CorretoraContactChannels corretora={corretora} variant="full" />
+          </div>
+          <div className="md:col-span-3">
+            <LeadContactForm
+              corretoraSlug={corretora.slug}
+              corretoraName={corretora.name}
+            />
+          </div>
         </section>
 
         {/* CTA Cotações */}
