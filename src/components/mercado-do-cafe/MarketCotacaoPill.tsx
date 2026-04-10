@@ -20,6 +20,7 @@ import {
   formatPrice,
   formatPct,
   hasPrice,
+  convertToLocalUnit,
 } from "@/utils/kavita-news/cotacoes";
 
 type Variant = "stat" | "strip";
@@ -146,7 +147,23 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
     ? `/news/cotacoes/${cotacao.slug}`
     : "/news/cotacoes";
 
+  // Valor convertido para unidade local brasileira (saca 60kg para
+  // café). Reusa o mesmo helper canônico que o News usa no CotacaoCard,
+  // então a matemática/rótulo ficam sempre em sincronia.
+  const priceNum = safeNum(cotacao.price);
+  const localUnit =
+    priceNum !== null && cotacao.slug
+      ? convertToLocalUnit(priceNum, cotacao.slug)
+      : null;
+
+  const isUsdReference =
+    cotacao.unit === "USD/lb" || cotacao.unit?.startsWith("USD");
+  const refPrefix = isUsdReference ? "$" : "";
+
   // ─── Variant: strip (inline no topbar de mercado) ────────────────
+  // No ticker do topo priorizamos a saca 60kg (valor mais relevante
+  // para o público agro), com a referência internacional como
+  // contexto discreto.
   if (variant === "strip") {
     return (
       <Link
@@ -157,19 +174,29 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
         <span className="text-stone-500">
           {cotacao.name ?? "Café arábica"}
         </span>
-        {hasPrice(cotacao.price) && (
+        {localUnit ? (
           <>
             <span aria-hidden className="text-stone-300">
               ·
             </span>
             <span className="font-bold tabular-nums text-stone-900">
-              {cotacao.unit === "USD/lb" || cotacao.unit?.startsWith("USD")
-                ? "$"
-                : ""}
+              R$ {formatPrice(localUnit.value)}
+            </span>
+            <span className="text-[9px] font-medium normal-case tracking-normal text-stone-500">
+              /{localUnit.label}
+            </span>
+          </>
+        ) : hasPrice(cotacao.price) ? (
+          <>
+            <span aria-hidden className="text-stone-300">
+              ·
+            </span>
+            <span className="font-bold tabular-nums text-stone-900">
+              {refPrefix}
               {formatPrice(cotacao.price)}
             </span>
           </>
-        )}
+        ) : null}
         {varNum !== null && (
           <span
             className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0 text-[9px] ${tone.text}`}
@@ -183,6 +210,11 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
   }
 
   // ─── Variant: stat (cartão no grid de stats do hero) ─────────────
+  // Hierarquia flipada em relação ao News: saca 60kg vira o número
+  // grande (é o que importa pro comprador/produtor), e a referência
+  // internacional ($/lb) fica como linha secundária de contexto.
+  // Quando não há conversão local disponível, cai para o preço de
+  // referência como valor principal (comportamento anterior).
   return (
     <Link
       href={detailHref}
@@ -202,12 +234,38 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
           </span>
         )}
       </div>
-      {hasPrice(cotacao.price) ? (
+
+      {localUnit ? (
+        <>
+          {/* Linha principal: R$ por saca 60kg — número grande */}
+          <p className="mt-1.5 flex items-baseline gap-1 font-semibold tracking-tight text-stone-900">
+            <span className="text-base font-medium text-stone-500">R$</span>
+            <span className="text-2xl tabular-nums md:text-[1.9rem]">
+              {formatPrice(localUnit.value)}
+            </span>
+          </p>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-500">
+            / {localUnit.label}
+          </p>
+          {/* Linha secundária: referência internacional — contexto */}
+          {hasPrice(cotacao.price) && (
+            <p className="mt-1.5 truncate text-[10px] text-stone-400">
+              Ref.{" "}
+              <span className="font-semibold tabular-nums text-stone-500">
+                {refPrefix}
+                {formatPrice(cotacao.price)}
+              </span>{" "}
+              {cotacao.unit ?? ""}
+            </p>
+          )}
+        </>
+      ) : hasPrice(cotacao.price) ? (
+        // Fallback: sem conversão local, mostra só a referência
         <>
           <p className="mt-1.5 flex items-baseline gap-1 font-semibold tracking-tight text-stone-900">
-            {cotacao.unit === "USD/lb" || cotacao.unit?.startsWith("USD") ? (
+            {isUsdReference && (
               <span className="text-base font-medium text-stone-500">$</span>
-            ) : null}
+            )}
             <span className="text-2xl tabular-nums md:text-3xl">
               {formatPrice(cotacao.price)}
             </span>
@@ -221,6 +279,7 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
           Aguardando atualização
         </p>
       )}
+
       {/* Subtle "see more" on hover */}
       <span
         aria-hidden
