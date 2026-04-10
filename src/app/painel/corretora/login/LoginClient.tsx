@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
@@ -121,6 +122,15 @@ export default function LoginClient() {
         >
           {loading ? "Entrando..." : "Entrar"}
         </button>
+
+        <div className="mt-4 text-center">
+          <Link
+            href="/painel/corretora/esqueci-senha"
+            className="text-sm font-medium text-emerald-700 hover:underline"
+          >
+            Esqueci minha senha
+          </Link>
+        </div>
 
         <p className="mt-4 text-center text-xs text-zinc-400">
           Ainda não tem acesso? Fale com o administrador do Kavita.
