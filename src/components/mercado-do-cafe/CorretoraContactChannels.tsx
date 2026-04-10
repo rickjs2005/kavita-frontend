@@ -204,13 +204,13 @@ export function CorretoraContactChannels({
   // no número e um fundo stone-50 sutil. Sem cards empilhados,
   // sem shadows múltiplas, sem ring colorido. Minimalismo editorial.
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-stone-50 to-amber-50/40 ring-1 ring-stone-900/[0.06] shadow-sm shadow-stone-900/[0.03]">
-      {/* Top highlight — catching light, acompanha o warm gradient */}
+    <div className="relative overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm">
+      {/* Top highlight — amber catching light */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
       />
-      <ul role="list" className="relative divide-y divide-stone-900/[0.06]">
+      <ul role="list" className="relative divide-y divide-white/[0.06]">
         {channels.map((ch, i) => {
           const isPrimary = ch.key === "whatsapp";
           const number = String(i + 1).padStart(2, "0");
@@ -221,38 +221,38 @@ export function CorretoraContactChannels({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${ch.actionLabel} — ${corretora.name}`}
-                className={`group flex items-center gap-4 px-5 py-4 transition-colors focus:outline-none focus-visible:bg-amber-50/70 md:gap-5 md:px-6 md:py-5 ${
-                  isPrimary ? "bg-amber-50/30" : ""
-                } hover:bg-amber-50/60`}
+                className={`group flex items-center gap-4 px-5 py-4 transition-colors focus:outline-none focus-visible:bg-white/[0.06] md:gap-5 md:px-6 md:py-5 ${
+                  isPrimary ? "bg-amber-400/[0.04]" : ""
+                } hover:bg-white/[0.06]`}
               >
                 {/* Number — editorial chapter mark */}
                 <span
                   aria-hidden
-                  className="flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-stone-400"
+                  className="flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-stone-500"
                 >
                   {isPrimary && (
-                    <span className="h-1 w-1 rounded-full bg-emerald-600" />
+                    <span className="h-1 w-1 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
                   )}
                   {number}
                 </span>
 
-                {/* Icon box */}
+                {/* Icon box — dark glass, hover vira amber */}
                 <span
                   aria-hidden
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-600 ring-1 ring-stone-900/[0.04] transition-colors group-hover:bg-stone-900 group-hover:text-stone-50 group-hover:ring-transparent"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-stone-300 ring-1 ring-white/10 transition-all group-hover:bg-amber-400 group-hover:text-stone-950 group-hover:ring-amber-300/50"
                 >
                   {ICONS[ch.key](16)}
                 </span>
 
                 {/* Textos */}
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/80">
                     {ch.label}
                     {isPrimary && (
-                      <span className="ml-2 text-emerald-800">· Primário</span>
+                      <span className="ml-2 text-amber-200">· Primário</span>
                     )}
                   </p>
-                  <p className="mt-0.5 truncate text-sm font-medium text-stone-900">
+                  <p className="mt-0.5 truncate text-sm font-medium text-stone-100">
                     {ch.detail}
                   </p>
                 </div>
@@ -260,7 +260,7 @@ export function CorretoraContactChannels({
                 {/* CTA arrow */}
                 <span
                   aria-hidden
-                  className="shrink-0 text-stone-400 transition-all group-hover:translate-x-0.5 group-hover:text-stone-900"
+                  className="shrink-0 text-stone-500 transition-all group-hover:translate-x-0.5 group-hover:text-amber-300"
                 >
                   <svg
                     width="16"

@@ -2,16 +2,21 @@
 //
 // Página individual da corretora — RSC
 //
-// Direção: editorial premium com gradiente como elemento principal.
-// Sem imagem, sem textura, sem dark hero. O visual vive de:
-//   1. Hero card com gradient linear + 2 glows radiais (warm golden hour)
-//   2. Page background stone-50 + overlay de luz warm no topo
-//   3. Footer row com mesmo gradient warm → rima visual topo/fundo
-//   4. Hairline rings em vez de shadows
-//   5. Tipografia display como âncora
-//   6. Seções numeradas 01–04 com hairline gradient fade
+// Direção: DARK COMMITTED. A página INTEIRA vive em stone-950, com
+// todas as superfícies como glass panels (bg-white/[0.04] ring-white/[0.08]
+// backdrop-blur-sm), textos em stone-100/300, e amber-400 como único
+// accent de assinatura. Paradigma inspirado em Kavita Drones, mas com
+// identidade coffee própria (amber em vez de emerald/blue).
 //
-// Lógica, fetch, estado — tudo intocado. Só composição e CSS.
+// O que mudou em relação à iteração anterior:
+//   - Page background stone-50 → stone-950 (committed dark)
+//   - Todas as seções (01 sobre, 02 canais, 03 msg, 04 mercado)
+//     ganham tratamento glass dark uniforme
+//   - Accent único amber-400 substitui o mix anterior de amber + emerald
+//   - Form e switchboard de canais também migram para dark glass
+//     (edits separados em LeadContactForm.tsx e CorretoraContactChannels.tsx)
+//
+// Lógica, fetch, estado — intocados. Só composição visual.
 
 import Link from "next/link";
 import Image from "next/image";
@@ -21,24 +26,6 @@ import { absUrl } from "@/utils/absUrl";
 import { CorretoraContactChannels } from "@/components/mercado-do-cafe/CorretoraContactChannels";
 import { LeadContactForm } from "@/components/mercado-do-cafe/LeadContactForm";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
-
-// SVG de grão fractal inline (~550 bytes) usado como overlay de textura
-// no card atmosférico da seção 03. Simula o "grain" de uma fotografia
-// editorial, dando sensação orgânica que gradient puro não entrega.
-// Mesma técnica do GrainOverlay do painel privado, mas inline aqui
-// para manter a seção 03 autocontida.
-const GRAIN_SVG = encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'>
-    <filter id='n'>
-      <feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/>
-      <feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/>
-    </filter>
-    <rect width='100%' height='100%' filter='url(#n)'/>
-  </svg>`
-    .replace(/\s+/g, " ")
-    .trim(),
-);
-const GRAIN_URL = `url("data:image/svg+xml,${GRAIN_SVG}")`;
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -66,38 +53,39 @@ export default async function CorretoraDetailPage({ params }: Props) {
     corretora.is_featured === true || corretora.is_featured === 1;
 
   return (
-    <main className="relative min-h-[calc(100vh-120px)] overflow-hidden bg-stone-50 text-stone-900">
-      {/* ─── Page atmosphere em 3 zonas ─────────────────────────────
-          Toda a página recebe warm ambient contínuo (topo/meio/base)
-          para criar unidade com o hero dark. Cada layer é fixa e
-          pointer-events-none, zero impacto em usabilidade. */}
+    <main className="relative min-h-[calc(100vh-120px)] overflow-hidden bg-stone-950 text-stone-100">
+      {/* ─── Atmospheric glows — 4 zonas ────────────────────────────
+          Radial lights espalhados ao longo da página que criam
+          profundidade e atmosfera "warm light on dark surface".
+          Todos pointer-events-none e blur-3xl — custo zero em
+          interação, GPU-accelerated. */}
 
-      {/* Zona 1 — Top warm glow, desce do hero */}
+      {/* Zona 1 — Top glow amber (atrás do hero) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[620px] bg-gradient-to-b from-amber-50/50 via-stone-50/20 to-transparent"
+        className="pointer-events-none absolute -top-40 left-1/2 h-[700px] w-[1100px] -translate-x-1/2 rounded-[100%] bg-amber-500/[0.08] blur-3xl"
       />
-      {/* Zona 1b — Radial elíptico centralizado no topo */}
+      {/* Zona 2 — Left glow amber (atrás da seção sobre) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-20 left-1/2 h-[500px] w-[900px] -translate-x-1/2 rounded-[100%] bg-orange-100/25 blur-3xl"
+        className="pointer-events-none absolute left-[-10%] top-[720px] h-[600px] w-[700px] rounded-full bg-amber-700/[0.08] blur-3xl"
       />
-      {/* Zona 2 — Middle ambient warm, banha a área central da página */}
+      {/* Zona 3 — Right glow orange (atrás do form) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[780px] h-[900px] w-[1200px] -translate-x-1/2 rounded-full bg-amber-100/15 blur-3xl"
+        className="pointer-events-none absolute right-[-10%] top-[1400px] h-[700px] w-[800px] rounded-full bg-orange-700/[0.07] blur-3xl"
       />
-      {/* Zona 3 — Bottom warm tint, puxa para o footer */}
+      {/* Zona 4 — Bottom glow amber (atrás do footer) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[500px] bg-gradient-to-t from-amber-50/25 via-stone-50/10 to-transparent"
+        className="pointer-events-none absolute -bottom-40 left-1/2 h-[500px] w-[1000px] -translate-x-1/2 rounded-[100%] bg-amber-500/[0.05] blur-3xl"
       />
 
       <div className="relative mx-auto w-full max-w-4xl px-5 pb-24 pt-6 md:px-8 md:pb-32 md:pt-10">
         {/* ─── Back link ──────────────────────────────────────────── */}
         <Link
           href="/mercado-do-cafe/corretoras"
-          className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500 transition-colors hover:text-stone-900"
+          className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 transition-colors hover:text-amber-300"
         >
           <svg
             width="12"
@@ -116,50 +104,43 @@ export default async function CorretoraDetailPage({ params }: Props) {
           Mercado do Café
         </Link>
 
-        {/* ─── HERO — Dark coffee card com animação sutil ──────────
-            Substitui o fundo warm cream anterior por uma superfície
-            dark espresso com duas luzes âmbar/caramelo que driftam
-            devagar (42s/55s). A atmosfera é de "torra premium sob
-            luz quente" — stone-950 base, amber-950 via, com glows
-            amber/orange que respiram lentamente. O conteúdo passa
-            para tipografia light (stone-50) com kickers amber. */}
+        {/* ─── HERO — dark espresso card com luzes driftando ────────
+            Card contido com fundo gradient dark, duas luzes amber
+            que animam lentamente (kavita-drift-a/b). Continua sendo
+            o elemento mais dramático da página, mas agora integrado
+            ao dark committed da página inteira. */}
         <header
-          className="relative mt-10 overflow-hidden rounded-3xl bg-stone-950 px-6 py-14 text-stone-100 shadow-2xl shadow-stone-950/40 ring-1 ring-white/[0.08] md:mt-14 md:px-14 md:py-20"
+          className="relative mt-10 overflow-hidden rounded-3xl bg-stone-900/60 px-6 py-14 ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 backdrop-blur-sm md:mt-14 md:px-14 md:py-20"
           aria-label={`Identidade da corretora ${corretora.name}`}
         >
-          {/* Layer 1 — Base linear dark coffee gradient */}
+          {/* Layer 1 — Base gradient dark coffee */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/80"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950/70"
           />
 
-          {/* Layer 2 — Drifting glow amber top-right (luz quente principal)
-              Animação kavita-drift-a: 42s ease-in-out infinite, translate
-              até ~40px, scale 0.95–1.08, opacidade oscilando 0.50–0.70. */}
+          {/* Layer 2 — Drifting amber glow top-right */}
           <div
             aria-hidden
-            className="kavita-drift-a pointer-events-none absolute -right-32 -top-32 h-[520px] w-[520px] rounded-full bg-amber-700/35 blur-3xl"
+            className="kavita-drift-a pointer-events-none absolute -right-32 -top-32 h-[520px] w-[520px] rounded-full bg-amber-600/35 blur-3xl"
           />
 
-          {/* Layer 3 — Drifting glow caramelo/orange bottom-left (profundidade)
-              Animação kavita-drift-b: 55s ease-in-out infinite, translate
-              até ~50px, escalas diferentes da layer 2 para criar movimento
-              assimétrico e orgânico. */}
+          {/* Layer 3 — Drifting orange glow bottom-left */}
           <div
             aria-hidden
-            className="kavita-drift-b pointer-events-none absolute -bottom-40 -left-32 h-[500px] w-[500px] rounded-full bg-orange-900/40 blur-3xl"
+            className="kavita-drift-b pointer-events-none absolute -bottom-40 -left-32 h-[500px] w-[500px] rounded-full bg-orange-800/40 blur-3xl"
           />
 
-          {/* Layer 4 — Top highlight hairline catching light */}
+          {/* Layer 4 — Top highlight hairline */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-14 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/25 to-transparent"
+            className="pointer-events-none absolute inset-x-14 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
           />
 
-          {/* Layer 5 — Vinheta muito sutil nas bordas para fechar a composição */}
+          {/* Layer 5 — Vinheta inferior */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-950/30 via-transparent to-transparent"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-950/40 via-transparent to-transparent"
           />
 
           <div className="relative grid gap-10 md:grid-cols-12 md:gap-10">
@@ -176,13 +157,13 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 </p>
               </div>
 
-              {/* Display title — stone-50 com leve tracking negativo */}
+              {/* Display title */}
               <h1 className="mt-8 text-4xl font-semibold leading-[0.95] tracking-[-0.02em] text-stone-50 md:text-5xl lg:text-6xl">
                 {corretora.name}
               </h1>
 
-              {/* Location line em stone-200 */}
-              <div className="mt-7 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-stone-200">
+              {/* Location line */}
+              <div className="mt-7 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-stone-300">
                 <span className="inline-flex items-baseline gap-2 text-lg font-medium tracking-tight md:text-xl">
                   <svg
                     width="14"
@@ -203,7 +184,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 </span>
                 {corretora.region && (
                   <>
-                    <span aria-hidden className="text-stone-500">
+                    <span aria-hidden className="text-stone-600">
                       ·
                     </span>
                     <span className="text-sm font-semibold uppercase tracking-[0.14em] text-stone-400">
@@ -235,7 +216,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
             {/* Aside: logo + fact sheet */}
             <aside className="md:col-span-4">
               <div className="flex items-start gap-5 md:flex-col md:items-stretch">
-                {/* Logo frame — dark, ring em white/10, top highlight amber */}
+                {/* Logo frame */}
                 <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 ring-1 ring-white/10 md:h-32 md:w-32 md:self-end">
                   <span
                     aria-hidden
@@ -256,10 +237,10 @@ export default async function CorretoraDetailPage({ params }: Props) {
                   )}
                 </div>
 
-                {/* Fact sheet — dividers em white/10 */}
+                {/* Fact sheet */}
                 <dl className="flex-1 divide-y divide-white/[0.08] border-y border-white/[0.08] md:mt-6 md:text-right">
                   <div className="py-3">
-                    <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                    <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-300/70">
                       Responsável
                     </dt>
                     <dd className="mt-1 text-sm font-semibold text-stone-100">
@@ -267,7 +248,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                     </dd>
                   </div>
                   <div className="py-3">
-                    <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-200/70">
+                    <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-300/70">
                       Atuação
                     </dt>
                     <dd className="mt-1 text-sm font-semibold text-stone-100">
@@ -280,20 +261,18 @@ export default async function CorretoraDetailPage({ params }: Props) {
           </div>
         </header>
 
-        {/* ─── 01 / SOBRE ───────────────────────────────────────── */}
+        {/* ─── 01 / SOBRE A CORRETORA ───────────────────────────── */}
         {corretora.description && (
           <section className="mt-20 md:mt-28">
             <SectionLabel number="01" title="Sobre a corretora" />
             <div className="mt-8 max-w-2xl">
-              {/* Barra lateral amber como marca editorial — detalhe premium.
-                  Engrossada (2px) e com gradient mais saturado para
-                  acompanhar o peso visual do hero dark acima. */}
+              {/* Pull-quote editorial com barra amber vertical */}
               <div className="relative pl-7">
                 <span
                   aria-hidden
-                  className="absolute left-0 top-1 h-[calc(100%-0.5rem)] w-[2px] rounded-full bg-gradient-to-b from-amber-700/60 via-amber-600/35 to-transparent"
+                  className="absolute left-0 top-1 h-[calc(100%-0.5rem)] w-[2px] rounded-full bg-gradient-to-b from-amber-400/80 via-amber-500/40 to-transparent"
                 />
-                <p className="whitespace-pre-line text-lg leading-[1.55] text-stone-700 md:text-xl md:leading-[1.5]">
+                <p className="whitespace-pre-line text-lg leading-[1.55] text-stone-300 md:text-xl md:leading-[1.5]">
                   {corretora.description}
                 </p>
               </div>
@@ -314,12 +293,9 @@ export default async function CorretoraDetailPage({ params }: Props) {
         </section>
 
         {/* ─── 03 / MENSAGEM DIRETA ────────────────────────────────
-            Seção redesenhada como card atmosférico contido. Alinhamento
-            resolvido por design: pitch editorial à esquerda e formulário
-            à direita vivem no MESMO grid 5/7 dentro do mesmo wrapper,
-            então estão literalmente alinhados pela mesma estrutura.
-            O card tem atmosfera warm própria (layered gradients + grain
-            overlay simulando fotografia editorial heavy overlay). */}
+            Card atmosférico dark com duas luzes amber nas bordas.
+            Grid 5/7 interno: pitch editorial à esquerda, form à direita.
+            Tudo alinhado pelo mesmo grid. */}
         <section className="mt-20 md:mt-28">
           <SectionLabel
             number="03"
@@ -327,67 +303,54 @@ export default async function CorretoraDetailPage({ params }: Props) {
             subtitle="Alternativa ao contato direto. O lead cai no painel privado da corretora em segundos."
           />
 
-          <div className="relative mt-10 overflow-hidden rounded-3xl bg-gradient-to-br from-amber-100/85 via-orange-50 to-amber-50 ring-1 ring-amber-900/[0.1] shadow-xl shadow-amber-900/[0.08]">
-            {/* Atmosphere layer 1 — radial glow top-right (luz quente principal) */}
+          <div className="relative mt-10 overflow-hidden rounded-3xl bg-stone-900/60 ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 backdrop-blur-sm">
+            {/* Base gradient dark — mesma DNA do hero para coerência */}
             <div
               aria-hidden
-              className="pointer-events-none absolute -right-32 -top-32 h-[520px] w-[520px] rounded-full bg-amber-300/45 blur-3xl"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stone-950/60 via-stone-900/80 to-amber-950/40"
             />
-            {/* Atmosphere layer 2 — radial glow bottom-left (profundidade) */}
+            {/* Glow amber top-right */}
             <div
               aria-hidden
-              className="pointer-events-none absolute -bottom-40 -left-32 h-[500px] w-[500px] rounded-full bg-orange-200/45 blur-3xl"
+              className="pointer-events-none absolute -right-32 -top-32 h-[520px] w-[520px] rounded-full bg-amber-500/20 blur-3xl"
             />
-            {/* Atmosphere layer 3 — radial central muito sutil */}
+            {/* Glow orange bottom-left */}
             <div
               aria-hidden
-              className="pointer-events-none absolute left-1/2 top-1/2 h-[700px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-amber-200/25 blur-3xl"
+              className="pointer-events-none absolute -bottom-40 -left-32 h-[500px] w-[500px] rounded-full bg-orange-700/20 blur-3xl"
             />
-            {/* Grain overlay — dá sensação de fotografia editorial */}
+            {/* Top highlight amber */}
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 opacity-[0.07] mix-blend-multiply"
-              style={{
-                backgroundImage: GRAIN_URL,
-                backgroundSize: "260px 260px",
-              }}
-            />
-            {/* Top highlight catching light */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-14 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent"
+              className="pointer-events-none absolute inset-x-14 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
             />
 
-            {/* Grid interno 5/7 — pitch editorial à esquerda, form à direita */}
             <div className="relative grid gap-10 px-6 py-12 md:grid-cols-12 md:gap-12 md:px-12 md:py-16 lg:px-14 lg:py-20">
-              {/* ─ Left column: pitch editorial + trust signals ─ */}
+              {/* Left column: pitch editorial + trust signals */}
               <div className="md:col-span-5">
-                {/* Kicker decorativo — DIFERENTE do SectionLabel externo
-                    para não duplicar. O SectionLabel diz "esta é a seção
-                    03", este kicker diz "este é o tom da seção". */}
-                <p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-900/80">
+                <p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-300/90">
                   <span
                     aria-hidden
-                    className="h-1 w-1 rounded-full bg-amber-700"
+                    className="h-1 w-1 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]"
                   />
                   Contato direto
                 </p>
 
-                <h3 className="mt-5 text-[1.75rem] font-semibold leading-[1.08] tracking-tight text-stone-900 md:text-[2rem] lg:text-[2.25rem]">
+                <h3 className="mt-5 text-[1.75rem] font-semibold leading-[1.08] tracking-tight text-stone-50 md:text-[2rem] lg:text-[2.25rem]">
                   Deixe seu contato aqui
                 </h3>
 
-                <p className="mt-5 max-w-md text-[15px] leading-relaxed text-stone-700">
+                <p className="mt-5 max-w-md text-[15px] leading-relaxed text-stone-300">
                   Sua mensagem vai direto para o painel privado da{" "}
-                  <span className="font-semibold text-stone-900">
+                  <span className="font-semibold text-stone-100">
                     {corretora.name}
                   </span>
                   . A resposta chega pelos canais oficiais dela — você mantém
                   controle total da negociação.
                 </p>
 
-                {/* Trust signals — acabamento editorial premium */}
-                <ul className="mt-8 space-y-3.5 text-[13px] leading-relaxed text-stone-700">
+                {/* Trust signals */}
+                <ul className="mt-8 space-y-3.5 text-[13px] leading-relaxed text-stone-300">
                   {[
                     "Seus dados chegam apenas à corretora selecionada",
                     "Resposta pelos canais oficiais dela",
@@ -396,7 +359,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                     <li key={text} className="flex items-start gap-3">
                       <span
                         aria-hidden
-                        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/70 text-amber-900 ring-1 ring-amber-900/[0.12] shadow-sm shadow-amber-900/10"
+                        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400/10 text-amber-300 ring-1 ring-amber-400/30"
                       >
                         <svg
                           width="11"
@@ -417,7 +380,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 </ul>
               </div>
 
-              {/* ─ Right column: formulário ─ */}
+              {/* Right column: formulário dark glass */}
               <div className="md:col-span-7">
                 <LeadContactForm
                   corretoraSlug={corretora.slug}
@@ -428,40 +391,38 @@ export default async function CorretoraDetailPage({ params }: Props) {
           </div>
         </section>
 
-        {/* ─── 04 / MERCADO — Row com gradient warm ────────────────
-            Esse gradient faz rima visual com o hero: abre e fecha a
-            página com a mesma atmosfera warm, criando sanduíche. */}
+        {/* ─── 04 / MERCADO — Link para cotações ─────────────────── */}
         <section className="mt-20 md:mt-28">
           <SectionLabel number="04" title="Mercado" />
           <Link
             href="/news/cotacoes"
-            className="group relative mt-8 flex items-center justify-between gap-5 overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 via-stone-50 to-orange-50/60 px-6 py-6 ring-1 ring-stone-900/[0.06] transition-all hover:from-amber-100/70 hover:to-orange-100/60 md:px-10 md:py-7"
+            className="group relative mt-8 flex items-center justify-between gap-5 overflow-hidden rounded-2xl bg-white/[0.04] px-6 py-6 ring-1 ring-white/[0.08] shadow-xl shadow-black/40 backdrop-blur-sm transition-all hover:bg-white/[0.06] hover:ring-amber-400/30 md:px-10 md:py-7"
           >
             {/* Mini glow top-right */}
             <div
               aria-hidden
-              className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-amber-200/35 blur-3xl"
+              className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-amber-500/15 blur-3xl"
             />
             {/* Top highlight */}
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+              className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
             />
 
             <div className="relative min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-800">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300">
                 Cotação do café arábica
               </p>
-              <p className="mt-1.5 text-base font-semibold tracking-tight text-stone-900 md:text-lg">
+              <p className="mt-1.5 text-base font-semibold tracking-tight text-stone-100 md:text-lg">
                 Acompanhe o preço em R$/saca 60kg antes de negociar
               </p>
-              <p className="mt-1 text-[11px] text-stone-500">
+              <p className="mt-1 text-[11px] text-stone-400">
                 Dados atualizados do mercado internacional
               </p>
             </div>
             <span
               aria-hidden
-              className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-stone-900 text-stone-50 shadow-lg shadow-stone-900/20 transition-transform group-hover:translate-x-0.5"
+              className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-stone-950 shadow-lg shadow-amber-500/30 transition-transform group-hover:translate-x-0.5"
             >
               <svg
                 width="16"
@@ -469,7 +430,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
@@ -484,11 +445,9 @@ export default async function CorretoraDetailPage({ params }: Props) {
   );
 }
 
-// ─── Section label primitive ──────────────────────────────────
-// Marcador de seção editorial: hairline com fade gradient + número
-// como pill amber com ring sutil + título + subtítulo opcional.
-// O pill amber substitui o texto mono solto da iteração anterior
-// para ganhar presença visual suficiente contra o hero dark.
+// ─── Section label primitive — Dark version ──────────────────
+// Número como pill amber glow, título em stone-50, subtítulo em
+// stone-400, hairline em white/15 com fade gradient.
 
 function SectionLabel({
   number,
@@ -501,23 +460,22 @@ function SectionLabel({
 }) {
   return (
     <div className="relative pt-8">
-      {/* Hairline com fade — mais forte do que antes para ecoar o peso
-          do hero dark */}
+      {/* Hairline com fade — white/15 sobre o dark background */}
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-stone-900/20 via-stone-900/10 to-transparent"
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-white/15 via-white/[0.06] to-transparent"
       />
       <div className="flex items-baseline gap-5">
-        {/* Número como pill amber — chapter marker editorial */}
-        <span className="inline-flex items-center rounded-md bg-amber-100/70 px-2 py-1 font-mono text-[10px] font-bold uppercase tabular-nums tracking-[0.1em] text-amber-900 ring-1 ring-amber-900/[0.08]">
+        {/* Número pill amber glow */}
+        <span className="inline-flex items-center rounded-md bg-amber-400/10 px-2 py-1 font-mono text-[10px] font-bold uppercase tabular-nums tracking-[0.1em] text-amber-300 ring-1 ring-amber-400/20 shadow-[0_0_20px_rgba(251,191,36,0.1)]">
           {number}
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-semibold tracking-tight text-stone-900 md:text-2xl">
+          <h2 className="text-xl font-semibold tracking-tight text-stone-50 md:text-2xl">
             {title}
           </h2>
           {subtitle && (
-            <p className="mt-1.5 max-w-lg text-[13px] leading-relaxed text-stone-500">
+            <p className="mt-1.5 max-w-lg text-[13px] leading-relaxed text-stone-400">
               {subtitle}
             </p>
           )}

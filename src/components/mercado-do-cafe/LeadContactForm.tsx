@@ -74,14 +74,15 @@ function loadTurnstileScript(): Promise<void> {
   return turnstileScriptPromise;
 }
 
-// Inputs editoriais: um pouco maiores verticalmente (py-3), border
-// stone-300 sutil, focus stone-900 com halo emerald discreto. Sem
-// shadows internas — o peso vem da tipografia dos labels.
+// Dark glass inputs: superfície white/[0.05] com ring white/10,
+// texto stone-100, placeholder stone-500, focus ring amber-400/50.
+// O hover/focus puxa a luz amber-400 que é o accent de assinatura
+// da página dark committed.
 const inputClass =
-  "w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-[15px] text-stone-900 placeholder:text-stone-400 transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/30";
+  "w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-[15px] text-stone-100 placeholder:text-stone-500 transition-colors focus:border-amber-400/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-amber-400/25";
 const labelClass =
-  "mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500";
-const errorClass = "mt-1.5 text-[11px] font-medium text-red-700";
+  "mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300/80";
+const errorClass = "mt-1.5 text-[11px] font-medium text-red-300";
 
 export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   const [submitting, setSubmitting] = useState(false);
@@ -205,12 +206,12 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
 
   if (success) {
     return (
-      <div className="relative overflow-hidden rounded-2xl bg-white p-8 ring-1 ring-stone-900/[0.08] shadow-xl shadow-amber-900/[0.1] md:p-10">
+      <div className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-8 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:p-10">
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+          className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
         />
-        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30">
           <svg
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -224,18 +225,18 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
             />
           </svg>
         </div>
-        <h3 className="relative mt-5 text-xl font-semibold tracking-tight text-stone-900 md:text-2xl">
+        <h3 className="relative mt-5 text-xl font-semibold tracking-tight text-stone-50 md:text-2xl">
           Mensagem enviada
         </h3>
-        <p className="relative mt-2 max-w-md text-[15px] leading-relaxed text-stone-600">
-          A <strong className="font-semibold text-stone-900">{corretoraName}</strong>{" "}
+        <p className="relative mt-2 max-w-md text-[15px] leading-relaxed text-stone-300">
+          A <strong className="font-semibold text-stone-100">{corretoraName}</strong>{" "}
           vai receber seu contato por e-mail e pelo painel privado dela.
           Aguarde o retorno ou use os canais diretos listados acima.
         </p>
         <button
           type="button"
           onClick={() => setSuccess(false)}
-          className="relative mt-6 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-800 hover:text-emerald-900"
+          className="relative mt-6 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-300 hover:text-amber-200"
         >
           Enviar outra mensagem
           <span aria-hidden>→</span>
@@ -247,13 +248,13 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="relative overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-stone-900/[0.08] shadow-xl shadow-amber-900/[0.1] md:p-8"
+      className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:p-8"
       aria-label={`Formulário de contato com ${corretoraName}`}
     >
-      {/* Top highlight catching light */}
+      {/* Top highlight catching amber light */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
       />
 
       <div className="relative space-y-5">
@@ -337,19 +338,24 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         <button
           type="submit"
           disabled={submitting || (turnstileEnabled && !turnstileToken)}
-          className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-stone-900 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-50 transition-colors hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-10"
+          className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-10"
         >
-          {submitting ? "Enviando..." : "Enviar mensagem"}
-          {!submitting && (
-            <span
-              aria-hidden
-              className="transition-transform duration-300 group-hover:translate-x-0.5"
-            >
-              →
-            </span>
-          )}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
+          />
+          <span className="relative flex items-center gap-2">
+            {submitting ? "Enviando..." : "Enviar mensagem"}
+            {!submitting && (
+              <span
+                aria-hidden
+                className="transition-transform duration-300 group-hover:translate-x-0.5"
+              >
+                →
+              </span>
+            )}
+          </span>
         </button>
-
       </div>
     </form>
   );
