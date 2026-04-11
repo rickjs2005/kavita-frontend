@@ -211,6 +211,24 @@ describe("PromocoesHero (DestaquesSection)", () => {
     vi.useRealTimers();
   });
 
+  it("exibe título de campanha configurado no admin quando presente", async () => {
+    // Regressão: backend devolve d.title mas o type Product não declarava
+    // a chave, então o valor era perdido no spread e nunca renderizado.
+    apiMock.mockResolvedValueOnce([
+      { ...baseProduct, title: "Oferta do Campo" },
+    ]);
+
+    render(<PromocoesHero />);
+    await screen.findByText("Oferta do Campo");
+  });
+
+  it("mantém rótulo padrão 'Oferta em destaque' quando título não é configurado", async () => {
+    apiMock.mockResolvedValueOnce([baseProduct]); // sem title
+
+    render(<PromocoesHero />);
+    await screen.findByText("Oferta em destaque");
+  });
+
   it("não quebra quando API lança erro (negativo/robustez)", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     apiMock.mockRejectedValueOnce(new Error("Erro API"));

@@ -76,6 +76,10 @@ type PromoProduct = Product & {
   discount_percent?: number | string | null;
   promo_price?: number | string | null;
   ends_at?: string | null;
+  // Título da campanha configurado no admin (ex.: "Oferta do Campo").
+  // Backend já devolve via d.title em /api/public/promocoes, mas o tipo
+  // Product não declara esse campo, então o spread perdia a chave.
+  title?: string | null;
 };
 
 const AUTOPLAY_MS = 10000; // 10s
@@ -122,6 +126,12 @@ export default function PromocoesHero() {
             promo_price:
               item.promo_price != null ? Number(item.promo_price) : null,
             ends_at: item.ends_at ?? null,
+            // Preserva o título da campanha configurado no admin.
+            // Normaliza string vazia para null pra fallback limpo depois.
+            title:
+              typeof item.title === "string" && item.title.trim()
+                ? item.title.trim()
+                : null,
           };
         });
 
@@ -325,14 +335,25 @@ export default function PromocoesHero() {
           key={produto.id}
           className="kavita-promo-grid relative animate-[fadeIn_0.6s_ease-out] p-4 sm:p-5 md:p-10 lg:p-12"
         >
-          {/* ── PILL ── */}
+          {/* ── PILL — título da campanha (admin) com fallback ── */}
+          {/*
+            Quando o admin configura um título no formulário de promoção
+            (ex.: "Oferta do Campo"), ele aparece aqui como selo da
+            campanha. Sem título configurado, mantém o rótulo padrão
+            "Oferta em destaque" — sem mudança visual na base instalada.
+          */}
           <div style={{ gridArea: "pill" }}>
-            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary ring-1 ring-primary/40 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-[11px] sm:tracking-[0.16em]">
-              <span aria-hidden className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
+            <p
+              className="inline-flex w-fit max-w-full items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary ring-1 ring-primary/40 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-[11px] sm:tracking-[0.16em]"
+              title={produto.title || undefined}
+            >
+              <span aria-hidden className="relative flex h-1.5 w-1.5 shrink-0 sm:h-2 sm:w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary sm:h-2 sm:w-2" />
               </span>
-              Oferta em destaque
+              <span className="truncate">
+                {produto.title || "Oferta em destaque"}
+              </span>
             </p>
           </div>
 
