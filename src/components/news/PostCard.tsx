@@ -2,8 +2,8 @@
 //
 // Post card em dark glass premium. Parte do redesign do /news como
 // central de inteligência do agro. Mesmo DNA das outras telas dark
-// committed do projeto (Drones, Mercado do Café), mas com accent
-// emerald-400 como signature do News.
+// committed do projeto (Drones, Mercado do Café), com accent amber-400
+// como signature do módulo Posts (jornal premium / editorial quente).
 
 import Link from "next/link";
 import type { PublicPost } from "@/lib/newsPublicApi";
@@ -47,15 +47,15 @@ export function PostCard({ item }: { item: PublicPost }) {
         group relative block overflow-hidden rounded-2xl bg-white/[0.04]
         ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm
         transition-all duration-300
-        hover:-translate-y-0.5 hover:bg-white/[0.06] hover:ring-emerald-400/30
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50
+        hover:-translate-y-0.5 hover:bg-white/[0.06] hover:ring-amber-400/30
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50
       "
       aria-label={`Abrir matéria: ${item.title}`}
     >
       {/* Top highlight emerald */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-8 top-0 z-10 h-px bg-gradient-to-r from-transparent via-emerald-300/40 to-transparent"
+        className="pointer-events-none absolute inset-x-8 top-0 z-10 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
       />
 
       <div className="relative">
@@ -68,7 +68,7 @@ export function PostCard({ item }: { item: PublicPost }) {
             loading="lazy"
           />
         ) : (
-          <div className="flex h-44 w-full items-center justify-center bg-gradient-to-br from-stone-900 via-stone-950 to-emerald-950/30 md:h-44">
+          <div className="flex h-44 w-full items-center justify-center bg-gradient-to-br from-stone-900 via-stone-950 to-amber-950/30 md:h-44">
             <div className="text-center">
               <div className="text-3xl opacity-40" aria-hidden>
                 📰
@@ -88,9 +88,9 @@ export function PostCard({ item }: { item: PublicPost }) {
 
         {/* Selo editorial */}
         <div className="absolute left-3 top-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-950/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-300 ring-1 ring-emerald-400/30 backdrop-blur-md">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-950/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300 ring-1 ring-amber-400/30 backdrop-blur-md">
             <span
-              className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]"
+              className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.7)]"
               aria-hidden
             />
             Kavita News
