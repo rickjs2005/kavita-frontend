@@ -13,6 +13,7 @@
 // Design premium: paleta stone, hairline rings, ícones Lucide-style
 // inline (NUNCA emoji), hover com feedback coeso com o resto do módulo.
 
+import type { ReactElement } from "react";
 import type { PublicCorretora } from "@/types/corretora";
 
 // ─── Ícones SVG inline (Lucide-style, stroke 1.8) ─────────────────
@@ -29,7 +30,7 @@ const iconProps = {
 
 const ICONS: Record<
   "whatsapp" | "phone" | "email" | "website" | "instagram" | "facebook",
-  (size: number) => JSX.Element
+  (size: number) => ReactElement
 > = {
   whatsapp: (size) => (
     <svg width={size} height={size} {...iconProps}>
