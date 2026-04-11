@@ -145,37 +145,9 @@ export default function CadastroCorretoraPage() {
           </ol>
         </section>
 
-        {/* ─── Light island com o formulário ───────────────────────
-            Form é um Client Component existente em tema light — vive
-            sobre uma "ilha de papel claro" descansando na mesa escura.
-            Padrão premium clássico, zero refactor no form. */}
-        <section
-          aria-label="Formulário de cadastro"
-          className="relative mt-10"
-        >
-          <div className="relative overflow-hidden rounded-3xl bg-stone-50 p-6 text-stone-900 ring-1 ring-white/15 shadow-2xl shadow-black/60 md:p-10">
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/60 to-transparent"
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-amber-200/40 blur-3xl"
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-orange-100/40 blur-3xl"
-            />
-
-            <div className="relative">
-              <CorretoraSubmissionForm />
-            </div>
-          </div>
-
-          <p className="mt-5 text-center text-[11px] text-stone-500">
-            Ao enviar, você concorda em ter os dados analisados pela equipe
-            Kavita antes da publicação.
-          </p>
+        {/* ─── Formulário (dark committed nativo) ─── */}
+        <section aria-label="Formulário de cadastro" className="mt-10">
+          <CorretoraSubmissionForm />
         </section>
       </div>
     </main>
