@@ -1,6 +1,15 @@
 /**
- * useCep — hook centralizado para consulta de CEP via ViaCEP.
- * Substitui as 4+ implementações duplicadas espalhadas no projeto.
+ * useCep — hook centralizado para consulta de CEP.
+ *
+ * Desde a revisão pós-CSP: a consulta ao ViaCEP passou a ser feita via
+ * proxy do backend (GET /api/public/cep/:cep) em vez de fetch direto do
+ * browser. Motivo: o CSP do painel /admin/* bloqueia connect-src externo,
+ * então chamar viacep.com.br diretamente quebrava em produção no admin.
+ * O backend fica como o único ponto autorizado a falar com o ViaCEP.
+ *
+ * A assinatura pública do hook (`lookup`, `loading`, `error`, retorno
+ * `CepResult | null`) continua IDÊNTICA — nenhum consumidor precisa
+ * ser atualizado (checkout, meus-dados/enderecos, admin/frete).
  *
  * Uso:
  *   const { lookup, loading } = useCep();
@@ -8,6 +17,8 @@
  *   if (result) { setRua(result.logradouro); ... }
  */
 import { useState } from "react";
+import apiClient from "@/lib/apiClient";
+import { ApiError } from "@/lib/errors";
 import type { CepResult } from "@/types/address";
 
 export type { CepResult };
@@ -28,22 +39,27 @@ export function useCep() {
     setError(null);
 
     try {
-      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-
-      if (!res.ok) {
-        setError("Não foi possível consultar o CEP. Tente novamente.");
-        return null;
-      }
-
-      const data: CepResult = await res.json();
-
-      if (data.erro) {
-        setError("CEP não encontrado.");
-        return null;
-      }
-
+      // Backend retorna o payload já no formato CepResult (sem o campo
+      // `erro` — quando o ViaCEP retorna erro, o backend responde 404).
+      const data = await apiClient.get<CepResult>(
+        `/api/public/cep/${digits}`,
+      );
       return data;
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 404) {
+          setError("CEP não encontrado.");
+          return null;
+        }
+        if (err.status === 400) {
+          setError("CEP inválido. Informe 8 dígitos.");
+          return null;
+        }
+        if (err.status === 503) {
+          setError("Serviço de CEP indisponível. Tente novamente.");
+          return null;
+        }
+      }
       setError("Erro de conexão ao consultar CEP.");
       return null;
     } finally {

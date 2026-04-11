@@ -83,6 +83,13 @@ function toCepDigits(v: string) {
     .slice(0, 8);
 }
 
+// Mascara amigavel: 12345-678 (aplicada no onChange do input)
+function formatCepMask(v: string) {
+  const d = toCepDigits(v);
+  if (d.length <= 5) return d;
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
+}
+
 /* =========================
    UI helpers (fix texto invisível + responsivo)
 ========================= */
@@ -544,26 +551,61 @@ export default function FreteAdminPage() {
                     cepLoading
                       ? "Consultando CEP..."
                       : cepError
-                        ? "CEP não encontrado."
-                        : ""
+                        ? cepError
+                        : form.cepInfo
+                          ? "Cidade e UF preenchidas automaticamente."
+                          : "Digite 8 dígitos."
                   }
                 >
-                  <input
-                    value={form.cepInput}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, cepInput: e.target.value }))
-                    }
-                    placeholder="Ex.: 36900-000"
-                    inputMode="numeric"
-                    className={inputBase}
-                  />
+                  <div className="relative">
+                    <input
+                      value={form.cepInput}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          cepInput: formatCepMask(e.target.value),
+                        }))
+                      }
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pasted = e.clipboardData.getData("text");
+                        setForm((p) => ({
+                          ...p,
+                          cepInput: formatCepMask(pasted),
+                        }));
+                      }}
+                      placeholder="Ex.: 36900-000"
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      maxLength={9}
+                      aria-label="CEP"
+                      aria-busy={cepLoading}
+                      aria-invalid={!!cepError}
+                      className={`${inputBase} pr-9 tabular-nums tracking-wide`}
+                    />
+                    {cepLoading && (
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute right-3 top-1/2 inline-block h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+                      />
+                    )}
+                  </div>
                 </Field>
 
                 <div className="sm:col-span-2">
                   <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-700">
                     Resultado
                   </div>
-                  <div className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900">
+                  <div
+                    className={`mt-1 min-h-[44px] w-full rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+                      form.cepInfo
+                        ? "border-primary/30 bg-primary/5 text-gray-900"
+                        : cepError
+                          ? "border-red-200 bg-red-50 text-red-700"
+                          : "border-gray-200 bg-gray-50 text-gray-900"
+                    }`}
+                    aria-live="polite"
+                  >
                     {form.cepInfo ? (
                       <div className="flex flex-col">
                         <span className="font-semibold">
@@ -576,8 +618,12 @@ export default function FreteAdminPage() {
                           {form.cepInfo.bairro || ""}
                         </span>
                       </div>
+                    ) : cepError ? (
+                      <span>{cepError}</span>
                     ) : (
-                      <span className="text-gray-500">—</span>
+                      <span className="text-gray-500">
+                        Aguardando um CEP válido…
+                      </span>
                     )}
                   </div>
                 </div>
