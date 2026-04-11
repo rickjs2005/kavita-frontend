@@ -4,49 +4,62 @@
 //
 // PromocoesHero — vitrine de ofertas da home, na identidade Kavita.
 //
-// Direção visual: TEAL KAVITA + ORANGE COMERCIAL.
-// A versão anterior caiu numa paleta amber/lime "safra" que ficou
-// bonita mas parecia outro projeto. Esta rewrite traz a seção de volta
-// para a identidade real da marca usando os tokens do projeto:
-//
+// Identidade visual: TEAL KAVITA + ORANGE COMERCIAL.
 //   - bg-primary       (#359293) — teal Kavita, base de marca
 //   - bg-accent        (#EC5B20) — laranja Kavita, energia comercial
 //   - bg-accent-bright (#FF7A00) — laranja vibrante para hover/glow
 //   - --color-header   (#083E46) — teal-navy fundo premium
-//   - --color-teal-dark/light — gradients e auras
 //
-// Estrutura visual:
-//   - Container dark teal-navy gradient (header → primary → teal-dark)
-//   - Tira top "VITRINE KAVITA · OFERTAS DA SEMANA" em primary
-//   - Imagem grande à esquerda, contida em card branco com halo teal
-//   - Conteúdo à direita com preço big em laranja (accent), CTA orange
-//   - Sticker de desconto laranja-tijolo rotacionado
-//   - Navegação inferior com prev/next + dots primary
+// Carrossel: padrão canônico do HeroCarousel.tsx (useRef + progressKey,
+// deps [total, paused], setCurrent updater function), 10s, pause on
+// hover/touch.
 //
-// Carrossel — fix do autoplay:
-//   A versão anterior tinha `current` no deps do useEffect, então o
-//   interval era recriado a cada tick e podia bagunçar com o React 18
-//   StrictMode (efeito dispara duas vezes em dev). Agora seguimos o
-//   padrão canônico do HeroCarousel.tsx do projeto:
+// ─── Responsividade — refactor com grid-template-areas ──────────
 //
-//     useEffect(() => {
-//       if (total <= 1 || paused) return;
-//       timerRef.current = setInterval(() => {
-//         setCurrent((prev) => (prev + 1) % total);
-//         setProgressKey((k) => k + 1);
-//       }, AUTOPLAY_MS);
-//       return () => clearInterval(timerRef.current);
-//     }, [total, paused]);
+// O problema das versões anteriores era escalar valores sem reorganizar
+// a composição. No mobile o usuário via uma versão "comprimida" do
+// desktop, com card-dentro-de-card, imagem dominando a vertical e
+// hierarquia confusa entre o título da seção e o nome do produto.
 //
-//   Deps só dependem de `total` e `paused`. O `setCurrent` usa
-//   updater function, então não precisa do `current` no deps. O timer
-//   roda sozinho até o componente desmontar ou o usuário pausar.
+// Esta versão usa grid-template-areas com media query para reordenar
+// e relayoutar de verdade — não só ajustar tamanhos. UM ÚNICO h2
+// renderizado, posicionado por grid em ambas as telas:
 //
-//   Pausa: onMouseEnter/Leave + onTouchStart/End — funciona no mobile
-//   (toque pausa, soltar retoma).
+// Mobile (single col, ordem comercial):
+//   ┌──────────┐
+//   │   pill   │  ← oferta em destaque
+//   │  title   │  ← "Produtos em Promoção" (kicker pequeno mobile)
+//   │ product  │  ← nome BIG + preço HUGE + desconto
+//   │   cta    │  ← botão full-width
+//   │  image   │  ← banner horizontal compacto no fim
+//   └──────────┘
 //
-// Lógica preservada — mesmo fetch /api/public/promocoes, mesmo state
-// interno, mesmos textos exigidos pelos testes.
+// Desktop (5fr 7fr, image span vertical):
+//   ┌──────┬────────┐
+//   │      │  pill  │
+//   │      │ title  │
+//   │image │product │
+//   │      │  cta   │
+//   │      │   .    │
+//   └──────┴────────┘
+//
+// Decisões mobile (mobile-first real, não shrink):
+//   - Sem inner glass card no produto (o container já é o card)
+//   - Sem subtítulo institucional
+//   - Sem descrição do produto (line-clamp comia 2 linhas inúteis)
+//   - Sem "Em destaque agora" interno (a pill já fala isso)
+//   - Sem selo "Verificado Kavita" (poluía o frame)
+//   - Title h2 vira KICKER pequeno (cor primary uppercase) para não
+//     competir com o nome do produto, que é o herói visual
+//   - Imagem vai pro FIM, em formato banner h-44 (não devora vertical)
+//   - Sticker de desconto reduzido para 64px com -2/-2
+//   - CTA full-width
+//
+// Desktop preserva tudo: glass card no produto, descrição, subtítulo,
+// selo verificado, título display grande, halo teal, image quadrada.
+//
+// Lógica preservada — mesmo fetch /api/public/promocoes, mesmo state,
+// mesmos textos exigidos pelos testes.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -168,6 +181,44 @@ export default function PromocoesHero() {
       aria-label="Promoções em destaque"
       aria-roledescription="carousel"
     >
+      {/* Grid template areas — fonte de verdade da reorganização */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .kavita-promo-grid {
+              display: grid;
+              grid-template-columns: 1fr;
+              grid-template-areas:
+                "pill"
+                "title"
+                "product"
+                "cta"
+                "image";
+              gap: 0.75rem;
+            }
+            @media (min-width: 768px) {
+              .kavita-promo-grid {
+                grid-template-columns: 5fr 7fr;
+                grid-template-areas:
+                  "image pill"
+                  "image title"
+                  "image product"
+                  "image cta"
+                  "image .";
+                column-gap: 2.5rem;
+                row-gap: 0;
+                align-items: start;
+              }
+            }
+            @media (min-width: 1024px) {
+              .kavita-promo-grid {
+                column-gap: 3.5rem;
+              }
+            }
+          `,
+        }}
+      />
+
       <div
         className="relative overflow-hidden rounded-2xl shadow-xl shadow-[#041a24]/40 md:rounded-3xl md:shadow-2xl"
         style={{
@@ -179,7 +230,7 @@ export default function PromocoesHero() {
         onTouchStart={() => setPaused(true)}
         onTouchEnd={() => setPaused(false)}
       >
-        {/* ─── Atmospheric layer — auras teal + accent ─────────── */}
+        {/* ─── Atmospheric layer ─────────── */}
         <div
           aria-hidden
           className="pointer-events-none absolute -left-32 -top-32 h-[460px] w-[460px] rounded-full blur-3xl"
@@ -205,7 +256,7 @@ export default function PromocoesHero() {
           }}
         />
 
-        {/* ─── Top strip — vitrine Kavita ─────────────────────── */}
+        {/* ─── Top strip ─────────── */}
         <div className="relative border-b border-white/10 bg-white/[0.04] backdrop-blur-md">
           <div className="flex items-center gap-2.5 px-4 py-3 sm:gap-3 sm:px-6 sm:py-3.5 md:px-10">
             <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
@@ -235,7 +286,7 @@ export default function PromocoesHero() {
             )}
           </div>
 
-          {/* Progress bars (uma por slide) */}
+          {/* Progress bars */}
           {total > 1 && (
             <div
               key={progressKey}
@@ -269,47 +320,259 @@ export default function PromocoesHero() {
           )}
         </div>
 
-        {/* ─── Conteúdo principal ─────────────────────────────────── */}
-        {/*
-          Mobile (default): single column stacked.
-            1. Pill kicker
-            2. Título h2 + subtítulo (subtítulo escondido até sm)
-            3. Imagem (compacta, aspect-[5/4])
-            4. Card oferta com nome, preço stack vertical, ends_at compacto
-            5. CTA full-width
-          Desktop (md+): 2 colunas (imagem 5 | conteúdo 7) lado a lado.
-        */}
+        {/* ─── Conteúdo principal — grid template areas ─────────── */}
         <div
           key={produto.id}
-          className="relative animate-[fadeIn_0.6s_ease-out] p-4 sm:p-6 md:grid md:grid-cols-12 md:gap-10 md:p-10 lg:gap-14 lg:p-12"
+          className="kavita-promo-grid relative animate-[fadeIn_0.6s_ease-out] p-4 sm:p-5 md:p-10 lg:p-12"
         >
-          {/* ─── ÁREA DA IMAGEM ─── */}
-          <div className="relative md:col-span-5">
-            <div className="relative mx-auto max-w-[260px] sm:max-w-xs md:max-w-md">
-              {/* Halo teal atrás do produto */}
+          {/* ── PILL ── */}
+          <div style={{ gridArea: "pill" }}>
+            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary ring-1 ring-primary/40 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-[11px] sm:tracking-[0.16em]">
+              <span aria-hidden className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary sm:h-2 sm:w-2" />
+              </span>
+              Oferta em destaque
+            </p>
+          </div>
+
+          {/* ── TITLE — h2 único, dois visuais via responsive classes ── */}
+          {/*
+            Mobile: small kicker style (text-[10px] uppercase tracking-wide
+                    color primary). Não compete com o nome do produto.
+            Desktop: BIG display (text-3xl/4xl extrabold branco) com
+                     sublinhado pintado teal embaixo.
+          */}
+          <div
+            style={{ gridArea: "title" }}
+            className="mt-1 md:mt-4"
+          >
+            <div className="relative md:w-fit">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-1 hidden h-3 rounded-full bg-primary/30 md:block md:h-4"
+              />
+              <h2 className="relative text-[10px] font-bold uppercase tracking-[0.18em] text-primary md:text-3xl md:font-extrabold md:normal-case md:leading-[1.05] md:tracking-tight md:text-white lg:text-4xl xl:text-[2.75rem]">
+                Produtos em Promoção
+              </h2>
+            </div>
+
+            {/* Subtítulo — só desktop */}
+            <p className="mt-4 hidden max-w-xl text-sm leading-relaxed text-white/70 md:block md:text-[15px]">
+              Selecionados pela equipe Kavita para o produtor rural —
+              preços especiais por tempo limitado nas principais soluções
+              da loja.
+            </p>
+          </div>
+
+          {/* ── PRODUCT (nome + preço + desconto + ends_at) ── */}
+          {/*
+            Mobile: sem wrapper glass — flui direto no gradient.
+                    Nome e preço são os heróis visuais.
+            Desktop: glass card via classes md: (border, bg, padding, shadow).
+          */}
+          <div
+            style={{ gridArea: "product" }}
+            className="relative mt-2 md:mt-6 md:overflow-hidden md:rounded-2xl md:border md:border-white/15 md:bg-white/[0.06] md:p-6 md:shadow-xl md:shadow-black/40 md:backdrop-blur-sm"
+          >
+            {/* Faixa multicolor topo — só desktop dentro do card */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 hidden h-1 md:block"
+              style={{
+                background:
+                  "linear-gradient(90deg, #35c2c4 0%, #359293 50%, #FF7A00 100%)",
+              }}
+            />
+
+            {/* Kicker "Em destaque agora" — só desktop */}
+            <p className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-primary md:block">
+              Em destaque agora
+            </p>
+
+            {/* NOME DO PRODUTO — herói visual no mobile */}
+            <p className="text-[1.625rem] font-extrabold leading-[1.1] tracking-tight text-white md:mt-2 md:text-2xl md:font-bold md:leading-tight">
+              {produto.name}
+            </p>
+
+            {/* Descrição — só desktop */}
+            {produto.description && (
+              <p className="mt-2 hidden line-clamp-2 text-[13px] leading-relaxed text-white/70 md:block">
+                {produto.description}
+              </p>
+            )}
+
+            {/* Bloco de preço — sempre coluna no mobile */}
+            <div className="mt-3 md:mt-5 md:flex md:items-end md:gap-4">
+              <div className="min-w-0 md:flex-1">
+                {original > final && (
+                  <p className="font-mono text-[12px] tabular-nums text-white/55">
+                    <span className="mr-1 font-sans not-italic text-white/40">
+                      de
+                    </span>
+                    <span className="line-through">
+                      {formatCurrency(original)}
+                    </span>
+                  </p>
+                )}
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span
+                    className="text-[11px] font-bold uppercase tracking-[0.14em]"
+                    style={{ color: "var(--color-accent-bright)" }}
+                  >
+                    por
+                  </span>
+                  <span
+                    className="bg-clip-text text-[2.5rem] font-extrabold tabular-nums leading-none tracking-tight text-transparent sm:text-5xl md:text-5xl"
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(135deg, #FF7A00 0%, #EC5B20 70%, #d44c19 100%)",
+                    }}
+                  >
+                    {formatCurrency(final)}
+                  </span>
+                </div>
+              </div>
+
+              {desconto > 0 && (
+                <span
+                  className="mt-3 inline-flex w-fit shrink-0 rounded-full border-2 px-3 py-1.5 font-mono text-[11px] font-extrabold tabular-nums uppercase tracking-[0.1em] md:mt-0"
+                  style={{
+                    borderColor: "var(--color-accent)",
+                    background: "rgba(236,91,32,0.12)",
+                    color: "var(--color-accent-bright)",
+                  }}
+                >
+                  -{desconto.toFixed(0)}% OFF
+                </span>
+              )}
+            </div>
+
+            {/* ends_at */}
+            {endsAt && (
+              <p
+                className="mt-4 inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold ring-1"
+                style={{
+                  background: "rgba(53,194,196,0.10)",
+                  color: "#cffafe",
+                  borderColor: "rgba(53,194,196,0.30)",
+                }}
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                  className="shrink-0 text-primary"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+                <span>
+                  Válido até{" "}
+                  {new Date(endsAt).toLocaleDateString("pt-BR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                  })}
+                </span>
+                <span className="hidden text-white/30 md:inline">·</span>
+                <span className="hidden font-normal text-white/60 md:inline">
+                  enquanto durarem os estoques
+                </span>
+              </p>
+            )}
+          </div>
+
+          {/* ── CTA ── */}
+          <div
+            style={{ gridArea: "cta" }}
+            className="mt-4 flex flex-col items-stretch gap-3 md:mt-6 md:flex-row md:flex-wrap md:items-center md:gap-4"
+          >
+            <Link
+              href={`/produtos/${produto.id}`}
+              className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-6 py-3.5 text-[13px] font-bold uppercase tracking-[0.12em] text-white shadow-xl transition-all hover:brightness-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-accent-bright)]/40 md:w-auto md:px-7 md:text-sm"
+              style={{
+                background:
+                  "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
+                boxShadow:
+                  "0 12px 30px -8px rgba(236,91,32,0.55), 0 0 0 1px rgba(255,255,255,0.15) inset",
+              }}
+            >
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent"
+              />
+              <span className="relative">Ver oferta</span>
+              <span
+                aria-hidden
+                className="relative flex h-6 w-6 items-center justify-center rounded-full bg-white/25 transition-transform duration-300 group-hover:translate-x-0.5"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="M12 5l7 7-7 7" />
+                </svg>
+              </span>
+            </Link>
+
+            <Link
+              href="/produtos"
+              className="text-center text-[11px] font-bold uppercase tracking-[0.14em] text-primary underline-offset-4 transition-colors hover:text-[var(--color-teal-light)] hover:underline md:text-left md:tracking-[0.16em]"
+            >
+              Ver todas as ofertas →
+            </Link>
+          </div>
+
+          {/* ── IMAGEM ── */}
+          {/*
+            Mobile: vai pro fim do flow, banner horizontal h-44 (não
+                    devora vertical), sem halo, sem selo verificado.
+            Desktop: span vertical na coluna esquerda, aspect quadrado
+                     com halo teal e selo verificado.
+          */}
+          <div
+            style={{ gridArea: "image" }}
+            className="relative mt-4 md:mt-0 md:self-stretch"
+          >
+            <div className="relative md:mx-auto md:max-w-md">
+              {/* Halo teal — só desktop */}
               <div
                 aria-hidden
-                className="pointer-events-none absolute -inset-6 rounded-[2.5rem] blur-2xl md:-inset-8"
+                className="pointer-events-none absolute -inset-8 hidden rounded-[2.5rem] blur-2xl md:block"
                 style={{
                   background:
                     "radial-gradient(circle at center, rgba(53,194,196,0.30) 0%, rgba(53,146,147,0.15) 40%, transparent 70%)",
                 }}
               />
 
-              {/* Frame branco com borda teal */}
-              <div className="relative overflow-hidden rounded-2xl border-[3px] border-white/95 bg-white shadow-2xl shadow-[#041a24]/60 ring-1 ring-primary/20 md:rounded-[2rem] md:border-4">
+              {/* Frame branco */}
+              <div className="relative overflow-hidden rounded-2xl border-[3px] border-white/95 bg-white shadow-xl shadow-[#041a24]/60 ring-1 ring-primary/20 md:rounded-[2rem] md:border-4 md:shadow-2xl">
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-x-8 top-0 z-10 h-px bg-gradient-to-r from-transparent via-primary to-transparent md:inset-x-10"
                 />
 
-                <div className="relative aspect-[5/4] w-full md:aspect-square">
+                {/* Mobile: banner horizontal h-40 / Desktop: quadrado */}
+                <div className="relative h-40 w-full sm:h-48 md:aspect-square md:h-auto">
                   <Image
                     src={imageUrl}
                     alt={produto.name}
                     fill
                     className="object-cover"
-                    sizes="(max-width:640px) 70vw, (max-width:1024px) 45vw, 38vw"
+                    sizes="(max-width:640px) 100vw, (max-width:1024px) 45vw, 38vw"
                     priority
                   />
                   <div
@@ -319,7 +582,7 @@ export default function PromocoesHero() {
                 </div>
               </div>
 
-              {/* STICKER de desconto */}
+              {/* STICKER de desconto — menor e mais discreto no mobile */}
               {desconto > 0 && (
                 <div
                   className="absolute -right-2 -top-2 z-20 -rotate-[8deg] md:-right-6 md:-top-6"
@@ -331,7 +594,7 @@ export default function PromocoesHero() {
                       style={{ background: "rgba(255,122,0,0.50)" }}
                     />
                     <div
-                      className="relative flex h-[68px] w-[68px] flex-col items-center justify-center rounded-full text-white shadow-xl ring-[3px] ring-white md:h-[108px] md:w-[108px] md:ring-4"
+                      className="relative flex h-[60px] w-[60px] flex-col items-center justify-center rounded-full text-white shadow-xl ring-[3px] ring-white md:h-[108px] md:w-[108px] md:ring-4"
                       style={{
                         background:
                           "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
@@ -339,13 +602,13 @@ export default function PromocoesHero() {
                           "0 12px 30px -8px rgba(236,91,32,0.65), 0 0 0 1px rgba(255,255,255,0.4) inset",
                       }}
                     >
-                      <span className="text-[8px] font-bold uppercase tracking-[0.14em] opacity-95 md:text-[9px] md:tracking-[0.16em]">
+                      <span className="text-[7px] font-bold uppercase tracking-[0.10em] opacity-95 md:text-[9px] md:tracking-[0.16em]">
                         Oferta
                       </span>
-                      <span className="font-mono text-xl font-extrabold tabular-nums leading-none tracking-tight md:text-[1.85rem]">
+                      <span className="font-mono text-base font-extrabold tabular-nums leading-none tracking-tight md:text-[1.85rem]">
                         -{desconto.toFixed(0)}%
                       </span>
-                      <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.12em] opacity-95 md:text-[9px] md:tracking-[0.14em]">
+                      <span className="mt-0.5 text-[7px] font-bold uppercase tracking-[0.08em] opacity-95 md:text-[9px] md:tracking-[0.14em]">
                         Off
                       </span>
                     </div>
@@ -353,13 +616,13 @@ export default function PromocoesHero() {
                 </div>
               )}
 
-              {/* Selo Kavita bottom-left (escondido em telas muito pequenas) */}
+              {/* Selo Kavita — só desktop */}
               <div
-                className="absolute -bottom-3 left-2 z-20 hidden sm:block md:-bottom-4 md:left-6"
+                className="absolute -bottom-4 left-6 z-20 hidden md:block"
                 aria-hidden
               >
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-white shadow-lg ring-2 ring-white md:px-3 md:py-1.5 md:text-[10px] md:tracking-[0.14em]"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-lg ring-2 ring-white"
                   style={{
                     background:
                       "linear-gradient(135deg, #35c2c4 0%, #359293 60%, #2b797a 100%)",
@@ -367,8 +630,8 @@ export default function PromocoesHero() {
                   }}
                 >
                   <svg
-                    width="10"
-                    height="10"
+                    width="11"
+                    height="11"
                     viewBox="0 0 24 24"
                     fill="currentColor"
                   >
@@ -379,199 +642,12 @@ export default function PromocoesHero() {
               </div>
             </div>
           </div>
-
-          {/* ─── CONTEÚDO ─── */}
-          <div className="relative mt-7 flex flex-col justify-center md:col-span-7 md:mt-0">
-            {/* Pill kicker — escala mobile-first */}
-            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary ring-1 ring-primary/40 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-[11px] sm:tracking-[0.16em]">
-              <span aria-hidden className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary sm:h-2 sm:w-2" />
-              </span>
-              Oferta em destaque
-            </p>
-
-            {/* Título principal — escala mobile-first, h2 ÚNICO no DOM */}
-            <div className="relative mt-3 w-fit sm:mt-4">
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-0.5 h-2.5 rounded-full bg-primary/30 sm:bottom-1 sm:h-3 md:h-4"
-              />
-              <h2 className="relative text-2xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-3xl md:text-4xl lg:text-[2.75rem]">
-                Produtos em Promoção
-              </h2>
-            </div>
-
-            {/* Subtítulo escondido em telas muito pequenas para dar respiro */}
-            <p className="mt-3 hidden max-w-xl text-sm leading-relaxed text-white/70 sm:block sm:mt-4 md:text-[15px]">
-              Selecionados pela equipe Kavita para o produtor rural —
-              preços especiais por tempo limitado nas principais soluções
-              da loja.
-            </p>
-
-
-            {/* Card da oferta */}
-            <div className="relative mt-5 overflow-hidden rounded-xl border border-white/15 bg-white/[0.06] p-4 shadow-xl shadow-black/40 backdrop-blur-sm sm:mt-6 sm:p-5 md:rounded-2xl md:p-6">
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 h-1"
-                style={{
-                  background:
-                    "linear-gradient(90deg, #35c2c4 0%, #359293 50%, #FF7A00 100%)",
-                }}
-              />
-
-              <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-primary sm:text-[10px] sm:tracking-[0.18em]">
-                Em destaque agora
-              </p>
-
-              <p className="mt-1.5 text-base font-bold leading-tight tracking-tight text-white sm:text-lg md:text-2xl">
-                {produto.name}
-              </p>
-
-              {produto.description && (
-                <p className="mt-1.5 line-clamp-2 text-[12px] leading-relaxed text-white/70 sm:text-[13px]">
-                  {produto.description}
-                </p>
-              )}
-
-              {/* Bloco de preço — MOBILE: stack vertical / DESKTOP: row */}
-              <div className="mt-4 flex flex-col gap-3 sm:gap-4 md:flex-row md:items-end md:gap-4">
-                <div className="min-w-0 flex-1">
-                  {original > final && (
-                    <p className="font-mono text-[11px] tabular-nums text-white/50 sm:text-[12px]">
-                      <span className="mr-1 font-sans not-italic text-white/40">
-                        de
-                      </span>
-                      <span className="line-through">
-                        {formatCurrency(original)}
-                      </span>
-                    </p>
-                  )}
-                  <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-[0.14em] sm:text-[11px]"
-                      style={{ color: "var(--color-accent-bright)" }}
-                    >
-                      por
-                    </span>
-                    <span
-                      className="bg-clip-text text-3xl font-extrabold tabular-nums leading-none tracking-tight text-transparent sm:text-4xl md:text-5xl"
-                      style={{
-                        backgroundImage:
-                          "linear-gradient(135deg, #FF7A00 0%, #EC5B20 70%, #d44c19 100%)",
-                      }}
-                    >
-                      {formatCurrency(final)}
-                    </span>
-                  </div>
-                </div>
-
-                {desconto > 0 && (
-                  <span
-                    className="inline-flex w-fit shrink-0 rounded-full border-2 px-2.5 py-1 font-mono text-[10px] font-extrabold tabular-nums uppercase tracking-[0.08em] sm:px-3 sm:py-1.5 sm:text-[11px] sm:tracking-[0.1em]"
-                    style={{
-                      borderColor: "var(--color-accent)",
-                      background: "rgba(236,91,32,0.12)",
-                      color: "var(--color-accent-bright)",
-                    }}
-                  >
-                    -{desconto.toFixed(0)}% OFF
-                  </span>
-                )}
-              </div>
-
-              {endsAt && (
-                <p
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-semibold ring-1 sm:mt-4 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[11px]"
-                  style={{
-                    background: "rgba(53,194,196,0.10)",
-                    color: "#cffafe",
-                    borderColor: "rgba(53,194,196,0.30)",
-                  }}
-                >
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                    className="shrink-0 text-primary"
-                  >
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v5l3 2" />
-                  </svg>
-                  <span>
-                    Válido até{" "}
-                    {new Date(endsAt).toLocaleDateString("pt-BR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                    })}
-                  </span>
-                  <span className="hidden text-white/30 sm:inline">·</span>
-                  <span className="hidden font-normal text-white/60 sm:inline">
-                    enquanto durarem os estoques
-                  </span>
-                </p>
-              )}
-            </div>
-
-            {/* CTAs */}
-            <div className="mt-5 flex flex-col items-stretch gap-3 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-              <Link
-                href={`/produtos/${produto.id}`}
-                className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-6 py-3 text-[13px] font-bold uppercase tracking-[0.12em] text-white shadow-xl transition-all hover:brightness-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-accent-bright)]/40 sm:px-7 sm:py-3.5 sm:text-sm"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
-                  boxShadow:
-                    "0 12px 30px -8px rgba(236,91,32,0.55), 0 0 0 1px rgba(255,255,255,0.15) inset",
-                }}
-              >
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent"
-                />
-                <span className="relative">Ver oferta</span>
-                <span
-                  aria-hidden
-                  className="relative flex h-6 w-6 items-center justify-center rounded-full bg-white/25 transition-transform duration-300 group-hover:translate-x-0.5"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="M12 5l7 7-7 7" />
-                  </svg>
-                </span>
-              </Link>
-
-              <Link
-                href="/produtos"
-                className="text-center text-[11px] font-bold uppercase tracking-[0.14em] text-primary underline-offset-4 transition-colors hover:text-[var(--color-teal-light)] hover:underline sm:text-left sm:tracking-[0.16em]"
-              >
-                Ver todas as ofertas →
-              </Link>
-            </div>
-          </div>
         </div>
 
-        {/* ─── Navegação inferior ─────────────────────────────────── */}
+        {/* ─── Navegação inferior ─────────── */}
         {total > 1 && (
           <div className="relative border-t border-white/10 bg-white/[0.04] backdrop-blur-md">
             <div className="flex items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 md:px-10">
-              {/* Prev/Next */}
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   type="button"
@@ -615,12 +691,10 @@ export default function PromocoesHero() {
                 </button>
               </div>
 
-              {/* Microcopy */}
               <p className="hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-white/50 sm:block">
                 Vitrine automática
               </p>
 
-              {/* Dots */}
               <div className="flex items-center gap-2">
                 {promocoes.map((_, index) => (
                   <button
