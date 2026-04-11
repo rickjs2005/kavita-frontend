@@ -169,7 +169,7 @@ export default function PromocoesHero() {
       aria-roledescription="carousel"
     >
       <div
-        className="relative overflow-hidden rounded-3xl shadow-2xl shadow-[#041a24]/40"
+        className="relative overflow-hidden rounded-2xl shadow-xl shadow-[#041a24]/40 md:rounded-3xl md:shadow-2xl"
         style={{
           background:
             "linear-gradient(135deg, #041a24 0%, #083E46 35%, #0f5e63 70%, #053a3f 100%)",
@@ -207,7 +207,7 @@ export default function PromocoesHero() {
 
         {/* ─── Top strip — vitrine Kavita ─────────────────────── */}
         <div className="relative border-b border-white/10 bg-white/[0.04] backdrop-blur-md">
-          <div className="flex items-center gap-3 px-6 py-3.5 md:px-10">
+          <div className="flex items-center gap-2.5 px-4 py-3 sm:gap-3 sm:px-6 sm:py-3.5 md:px-10">
             <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
               <span
                 className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
@@ -218,14 +218,16 @@ export default function PromocoesHero() {
                 style={{ background: "var(--color-accent-bright)" }}
               />
             </span>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white">
-              Vitrine Kavita
-              <span className="mx-2 text-white/30">·</span>
+            <p className="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-white sm:text-[11px] sm:tracking-[0.22em]">
               <span className="text-primary">Ofertas da semana</span>
+              <span className="hidden sm:inline">
+                <span className="mx-2 text-white/30">·</span>
+                <span className="text-white">Vitrine Kavita</span>
+              </span>
             </p>
 
             {total > 1 && (
-              <span className="ml-auto font-mono text-[10px] font-bold tabular-nums tracking-[0.18em] text-white/60">
+              <span className="ml-auto shrink-0 font-mono text-[10px] font-bold tabular-nums tracking-[0.16em] text-white/60 sm:tracking-[0.18em]">
                 {String(current + 1).padStart(2, "0")}
                 <span className="mx-1 text-white/30">/</span>
                 {String(total).padStart(2, "0")}
@@ -268,17 +270,26 @@ export default function PromocoesHero() {
         </div>
 
         {/* ─── Conteúdo principal ─────────────────────────────────── */}
+        {/*
+          Mobile (default): single column stacked.
+            1. Pill kicker
+            2. Título h2 + subtítulo (subtítulo escondido até sm)
+            3. Imagem (compacta, aspect-[5/4])
+            4. Card oferta com nome, preço stack vertical, ends_at compacto
+            5. CTA full-width
+          Desktop (md+): 2 colunas (imagem 5 | conteúdo 7) lado a lado.
+        */}
         <div
           key={produto.id}
-          className="relative grid animate-[fadeIn_0.6s_ease-out] gap-8 p-6 md:grid-cols-12 md:gap-10 md:p-10 lg:gap-14 lg:p-12"
+          className="relative animate-[fadeIn_0.6s_ease-out] p-4 sm:p-6 md:grid md:grid-cols-12 md:gap-10 md:p-10 lg:gap-14 lg:p-12"
         >
-          {/* ─── ÁREA DA IMAGEM (col 6) ─── */}
-          <div className="relative md:col-span-6">
-            <div className="relative mx-auto max-w-md">
+          {/* ─── ÁREA DA IMAGEM ─── */}
+          <div className="relative md:col-span-5">
+            <div className="relative mx-auto max-w-[260px] sm:max-w-xs md:max-w-md">
               {/* Halo teal atrás do produto */}
               <div
                 aria-hidden
-                className="pointer-events-none absolute -inset-8 rounded-[2.5rem] blur-2xl"
+                className="pointer-events-none absolute -inset-6 rounded-[2.5rem] blur-2xl md:-inset-8"
                 style={{
                   background:
                     "radial-gradient(circle at center, rgba(53,194,196,0.30) 0%, rgba(53,146,147,0.15) 40%, transparent 70%)",
@@ -286,20 +297,19 @@ export default function PromocoesHero() {
               />
 
               {/* Frame branco com borda teal */}
-              <div className="relative overflow-hidden rounded-[2rem] border-4 border-white/95 bg-white shadow-2xl shadow-[#041a24]/60 ring-1 ring-primary/20">
-                {/* Faixa hairline primary topo */}
+              <div className="relative overflow-hidden rounded-2xl border-[3px] border-white/95 bg-white shadow-2xl shadow-[#041a24]/60 ring-1 ring-primary/20 md:rounded-[2rem] md:border-4">
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-x-10 top-0 z-10 h-px bg-gradient-to-r from-transparent via-primary to-transparent"
+                  className="pointer-events-none absolute inset-x-8 top-0 z-10 h-px bg-gradient-to-r from-transparent via-primary to-transparent md:inset-x-10"
                 />
 
-                <div className="relative aspect-square w-full">
+                <div className="relative aspect-[5/4] w-full md:aspect-square">
                   <Image
                     src={imageUrl}
                     alt={produto.name}
                     fill
                     className="object-cover"
-                    sizes="(max-width:768px) 80vw, (max-width:1024px) 50vw, 40vw"
+                    sizes="(max-width:640px) 70vw, (max-width:1024px) 45vw, 38vw"
                     priority
                   />
                   <div
@@ -309,21 +319,19 @@ export default function PromocoesHero() {
                 </div>
               </div>
 
-              {/* STICKER de desconto — laranja Kavita */}
+              {/* STICKER de desconto */}
               {desconto > 0 && (
                 <div
-                  className="absolute -right-3 -top-3 z-20 -rotate-[8deg] md:-right-6 md:-top-6"
+                  className="absolute -right-2 -top-2 z-20 -rotate-[8deg] md:-right-6 md:-top-6"
                   aria-hidden
                 >
                   <div className="relative">
-                    {/* Glow accent */}
                     <div
-                      className="absolute -inset-3 rounded-full blur-lg"
+                      className="absolute -inset-2 rounded-full blur-lg md:-inset-3"
                       style={{ background: "rgba(255,122,0,0.50)" }}
                     />
-                    {/* Sticker corpo */}
                     <div
-                      className="relative flex h-[88px] w-[88px] flex-col items-center justify-center rounded-full text-white shadow-xl ring-4 ring-white md:h-[108px] md:w-[108px]"
+                      className="relative flex h-[68px] w-[68px] flex-col items-center justify-center rounded-full text-white shadow-xl ring-[3px] ring-white md:h-[108px] md:w-[108px] md:ring-4"
                       style={{
                         background:
                           "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
@@ -331,13 +339,13 @@ export default function PromocoesHero() {
                           "0 12px 30px -8px rgba(236,91,32,0.65), 0 0 0 1px rgba(255,255,255,0.4) inset",
                       }}
                     >
-                      <span className="text-[9px] font-bold uppercase tracking-[0.16em] opacity-95">
+                      <span className="text-[8px] font-bold uppercase tracking-[0.14em] opacity-95 md:text-[9px] md:tracking-[0.16em]">
                         Oferta
                       </span>
-                      <span className="font-mono text-2xl font-extrabold tabular-nums leading-none tracking-tight md:text-[1.85rem]">
+                      <span className="font-mono text-xl font-extrabold tabular-nums leading-none tracking-tight md:text-[1.85rem]">
                         -{desconto.toFixed(0)}%
                       </span>
-                      <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] opacity-95">
+                      <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.12em] opacity-95 md:text-[9px] md:tracking-[0.14em]">
                         Off
                       </span>
                     </div>
@@ -345,13 +353,13 @@ export default function PromocoesHero() {
                 </div>
               )}
 
-              {/* Selo Kavita bottom-left */}
+              {/* Selo Kavita bottom-left (escondido em telas muito pequenas) */}
               <div
-                className="absolute -bottom-3 left-3 z-20 md:-bottom-4 md:left-6"
+                className="absolute -bottom-3 left-2 z-20 hidden sm:block md:-bottom-4 md:left-6"
                 aria-hidden
               >
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-lg ring-2 ring-white"
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-white shadow-lg ring-2 ring-white md:px-3 md:py-1.5 md:text-[10px] md:tracking-[0.14em]"
                   style={{
                     background:
                       "linear-gradient(135deg, #35c2c4 0%, #359293 60%, #2b797a 100%)",
@@ -359,8 +367,8 @@ export default function PromocoesHero() {
                   }}
                 >
                   <svg
-                    width="11"
-                    height="11"
+                    width="10"
+                    height="10"
                     viewBox="0 0 24 24"
                     fill="currentColor"
                   >
@@ -372,38 +380,38 @@ export default function PromocoesHero() {
             </div>
           </div>
 
-          {/* ─── CONTEÚDO (col 6) ─── */}
-          <div className="relative flex flex-col justify-center md:col-span-6">
-            {/* Pill kicker primary */}
-            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-primary ring-1 ring-primary/40 backdrop-blur-sm">
-              <span aria-hidden className="relative flex h-2 w-2">
+          {/* ─── CONTEÚDO ─── */}
+          <div className="relative mt-7 flex flex-col justify-center md:col-span-7 md:mt-0">
+            {/* Pill kicker — escala mobile-first */}
+            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary ring-1 ring-primary/40 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-[11px] sm:tracking-[0.16em]">
+              <span aria-hidden className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary sm:h-2 sm:w-2" />
               </span>
               Oferta em destaque
             </p>
 
-            {/* Título principal */}
-            <div className="relative mt-4 w-fit">
-              {/* Sublinhado pintado teal */}
+            {/* Título principal — escala mobile-first, h2 ÚNICO no DOM */}
+            <div className="relative mt-3 w-fit sm:mt-4">
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-1 h-3 rounded-full bg-primary/30 md:h-4"
+                className="pointer-events-none absolute inset-x-0 bottom-0.5 h-2.5 rounded-full bg-primary/30 sm:bottom-1 sm:h-3 md:h-4"
               />
-              <h2 className="relative text-3xl font-extrabold leading-[1.05] tracking-tight text-white md:text-4xl lg:text-[2.75rem]">
+              <h2 className="relative text-2xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-3xl md:text-4xl lg:text-[2.75rem]">
                 Produtos em Promoção
               </h2>
             </div>
 
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/70 md:text-[15px]">
+            {/* Subtítulo escondido em telas muito pequenas para dar respiro */}
+            <p className="mt-3 hidden max-w-xl text-sm leading-relaxed text-white/70 sm:block sm:mt-4 md:text-[15px]">
               Selecionados pela equipe Kavita para o produtor rural —
               preços especiais por tempo limitado nas principais soluções
               da loja.
             </p>
 
+
             {/* Card da oferta */}
-            <div className="relative mt-6 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 shadow-xl shadow-black/40 backdrop-blur-sm md:p-6">
-              {/* Faixa multicolor topo Kavita (teal → accent) */}
+            <div className="relative mt-5 overflow-hidden rounded-xl border border-white/15 bg-white/[0.06] p-4 shadow-xl shadow-black/40 backdrop-blur-sm sm:mt-6 sm:p-5 md:rounded-2xl md:p-6">
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-x-0 top-0 h-1"
@@ -413,25 +421,25 @@ export default function PromocoesHero() {
                 }}
               />
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+              <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-primary sm:text-[10px] sm:tracking-[0.18em]">
                 Em destaque agora
               </p>
 
-              <p className="mt-2 text-xl font-bold leading-tight tracking-tight text-white md:text-2xl">
+              <p className="mt-1.5 text-base font-bold leading-tight tracking-tight text-white sm:text-lg md:text-2xl">
                 {produto.name}
               </p>
 
               {produto.description && (
-                <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-white/70">
+                <p className="mt-1.5 line-clamp-2 text-[12px] leading-relaxed text-white/70 sm:text-[13px]">
                   {produto.description}
                 </p>
               )}
 
-              {/* Bloco de preço */}
-              <div className="mt-5 flex items-end gap-4">
-                <div className="min-w-0">
+              {/* Bloco de preço — MOBILE: stack vertical / DESKTOP: row */}
+              <div className="mt-4 flex flex-col gap-3 sm:gap-4 md:flex-row md:items-end md:gap-4">
+                <div className="min-w-0 flex-1">
                   {original > final && (
-                    <p className="font-mono text-[12px] tabular-nums text-white/50">
+                    <p className="font-mono text-[11px] tabular-nums text-white/50 sm:text-[12px]">
                       <span className="mr-1 font-sans not-italic text-white/40">
                         de
                       </span>
@@ -440,15 +448,15 @@ export default function PromocoesHero() {
                       </span>
                     </p>
                   )}
-                  <div className="mt-0.5 flex items-baseline gap-2">
+                  <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     <span
-                      className="text-[11px] font-bold uppercase tracking-[0.14em]"
+                      className="text-[10px] font-bold uppercase tracking-[0.14em] sm:text-[11px]"
                       style={{ color: "var(--color-accent-bright)" }}
                     >
                       por
                     </span>
                     <span
-                      className="bg-clip-text text-4xl font-extrabold tabular-nums leading-none tracking-tight text-transparent md:text-5xl"
+                      className="bg-clip-text text-3xl font-extrabold tabular-nums leading-none tracking-tight text-transparent sm:text-4xl md:text-5xl"
                       style={{
                         backgroundImage:
                           "linear-gradient(135deg, #FF7A00 0%, #EC5B20 70%, #d44c19 100%)",
@@ -461,7 +469,7 @@ export default function PromocoesHero() {
 
                 {desconto > 0 && (
                   <span
-                    className="shrink-0 rounded-full border-2 px-3 py-1.5 font-mono text-[11px] font-extrabold tabular-nums uppercase tracking-[0.1em]"
+                    className="inline-flex w-fit shrink-0 rounded-full border-2 px-2.5 py-1 font-mono text-[10px] font-extrabold tabular-nums uppercase tracking-[0.08em] sm:px-3 sm:py-1.5 sm:text-[11px] sm:tracking-[0.1em]"
                     style={{
                       borderColor: "var(--color-accent)",
                       background: "rgba(236,91,32,0.12)",
@@ -475,7 +483,7 @@ export default function PromocoesHero() {
 
               {endsAt && (
                 <p
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold ring-1"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-semibold ring-1 sm:mt-4 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[11px]"
                   style={{
                     background: "rgba(53,194,196,0.10)",
                     color: "#cffafe",
@@ -483,8 +491,8 @@ export default function PromocoesHero() {
                   }}
                 >
                   <svg
-                    width="12"
-                    height="12"
+                    width="11"
+                    height="11"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -492,18 +500,20 @@ export default function PromocoesHero() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden
-                    className="text-primary"
+                    className="shrink-0 text-primary"
                   >
                     <circle cx="12" cy="12" r="9" />
                     <path d="M12 7v5l3 2" />
                   </svg>
-                  Válido até{" "}
-                  {new Date(endsAt).toLocaleDateString("pt-BR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                  })}
-                  <span className="text-white/30">·</span>
-                  <span className="font-normal text-white/60">
+                  <span>
+                    Válido até{" "}
+                    {new Date(endsAt).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                    })}
+                  </span>
+                  <span className="hidden text-white/30 sm:inline">·</span>
+                  <span className="hidden font-normal text-white/60 sm:inline">
                     enquanto durarem os estoques
                   </span>
                 </p>
@@ -511,10 +521,10 @@ export default function PromocoesHero() {
             </div>
 
             {/* CTAs */}
-            <div className="mt-6 flex flex-wrap items-center gap-4">
+            <div className="mt-5 flex flex-col items-stretch gap-3 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
               <Link
                 href={`/produtos/${produto.id}`}
-                className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-xl transition-all hover:brightness-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-accent-bright)]/40"
+                className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-6 py-3 text-[13px] font-bold uppercase tracking-[0.12em] text-white shadow-xl transition-all hover:brightness-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-accent-bright)]/40 sm:px-7 sm:py-3.5 sm:text-sm"
                 style={{
                   background:
                     "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
@@ -549,7 +559,7 @@ export default function PromocoesHero() {
 
               <Link
                 href="/produtos"
-                className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary underline-offset-4 transition-colors hover:text-[var(--color-teal-light)] hover:underline"
+                className="text-center text-[11px] font-bold uppercase tracking-[0.14em] text-primary underline-offset-4 transition-colors hover:text-[var(--color-teal-light)] hover:underline sm:text-left sm:tracking-[0.16em]"
               >
                 Ver todas as ofertas →
               </Link>
@@ -560,14 +570,14 @@ export default function PromocoesHero() {
         {/* ─── Navegação inferior ─────────────────────────────────── */}
         {total > 1 && (
           <div className="relative border-t border-white/10 bg-white/[0.04] backdrop-blur-md">
-            <div className="flex items-center justify-between gap-4 px-6 py-4 md:px-10">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 md:px-10">
               {/* Prev/Next */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => goTo(current - 1)}
                   aria-label="Promoção anterior"
-                  className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-primary/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="group flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-primary/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:h-10 sm:w-10"
                 >
                   <svg
                     width="15"
@@ -587,7 +597,7 @@ export default function PromocoesHero() {
                   type="button"
                   onClick={() => goTo(current + 1)}
                   aria-label="Próxima promoção"
-                  className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-primary/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="group flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-primary/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:h-10 sm:w-10"
                 >
                   <svg
                     width="15"
