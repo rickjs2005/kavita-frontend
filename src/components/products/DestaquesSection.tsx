@@ -2,39 +2,53 @@
 
 // src/components/products/DestaquesSection.tsx
 //
-// PromocoesHero — vitrine de ofertas da safra na home.
+// PromocoesHero — vitrine de ofertas da home, na identidade Kavita.
 //
-// Direção visual: SAFRA / VITRINE COMERCIAL DO AGRO. A versão anterior
-// herdou o DNA dark espresso de Mercado do Café e ficou com cara de
-// "outra página de corretora", quando promoções precisam transmitir
-// energia comercial, vitrine viva, oportunidade. Essa rewrite quebra
-// completamente com o stone-950 e adota uma paleta light warm campo:
+// Direção visual: TEAL KAVITA + ORANGE COMERCIAL.
+// A versão anterior caiu numa paleta amber/lime "safra" que ficou
+// bonita mas parecia outro projeto. Esta rewrite traz a seção de volta
+// para a identidade real da marca usando os tokens do projeto:
 //
-//   - Background: gradient cream → orange-50 → lime-50 (sol + sand + folha)
-//   - Accent comercial: emerald-600 (CTA, vida, crescimento)
-//   - Accent urgência: rose-600 (sticker de desconto rotacionado)
-//   - Accent calor: amber-500 (kickers, sun-burst atrás da imagem)
+//   - bg-primary       (#359293) — teal Kavita, base de marca
+//   - bg-accent        (#EC5B20) — laranja Kavita, energia comercial
+//   - bg-accent-bright (#FF7A00) — laranja vibrante para hover/glow
+//   - --color-header   (#083E46) — teal-navy fundo premium
+//   - --color-teal-dark/light — gradients e auras
 //
-// Outras decisões:
-//   - Container com border orgânica (rounded-[2.5rem]) e sombras quentes
-//   - Padrão sutil de "campo" (linhas curvas SVG topographic) no fundo
-//   - Imagem do produto sobre um sun-burst radial amber + leaf-blob
-//     verde — referência sutil a sol e folhagem, sem virar caricato
-//   - Sticker de desconto vermelho rotacionado -8deg (linguagem de
-//     etiqueta de promoção, mas com ring branco e shadow elegante)
-//   - Preço final em vermelho-tijolo grande (urgência) com gradient
-//     leve, original riscado discreto acima
-//   - CTA verde-folha sólido (emerald-600 → emerald-700 hover) com
-//     ícone de seta e ring de foco coerente
-//   - Carrossel: autoplay 6s + crossfade entre slides + tick bar +
-//     prev/next + dots ativos verdes + pausa no hover/focus
+// Estrutura visual:
+//   - Container dark teal-navy gradient (header → primary → teal-dark)
+//   - Tira top "VITRINE KAVITA · OFERTAS DA SEMANA" em primary
+//   - Imagem grande à esquerda, contida em card branco com halo teal
+//   - Conteúdo à direita com preço big em laranja (accent), CTA orange
+//   - Sticker de desconto laranja-tijolo rotacionado
+//   - Navegação inferior com prev/next + dots primary
 //
-// Lógica preservada — mesmo fetch /api/public/promocoes, mesmo state,
-// mesmos textos exigidos pelos testes (h2 "Produtos em Promoção",
-// "-X% OFF", "Válido até DD/MM", aria-label "Ir para promoção N",
-// link "/produtos/{id}", formatCurrency).
+// Carrossel — fix do autoplay:
+//   A versão anterior tinha `current` no deps do useEffect, então o
+//   interval era recriado a cada tick e podia bagunçar com o React 18
+//   StrictMode (efeito dispara duas vezes em dev). Agora seguimos o
+//   padrão canônico do HeroCarousel.tsx do projeto:
+//
+//     useEffect(() => {
+//       if (total <= 1 || paused) return;
+//       timerRef.current = setInterval(() => {
+//         setCurrent((prev) => (prev + 1) % total);
+//         setProgressKey((k) => k + 1);
+//       }, AUTOPLAY_MS);
+//       return () => clearInterval(timerRef.current);
+//     }, [total, paused]);
+//
+//   Deps só dependem de `total` e `paused`. O `setCurrent` usa
+//   updater function, então não precisa do `current` no deps. O timer
+//   roda sozinho até o componente desmontar ou o usuário pausar.
+//
+//   Pausa: onMouseEnter/Leave + onTouchStart/End — funciona no mobile
+//   (toque pausa, soltar retoma).
+//
+// Lógica preservada — mesmo fetch /api/public/promocoes, mesmo state
+// interno, mesmos textos exigidos pelos testes.
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Product } from "@/types/product";
@@ -51,14 +65,16 @@ type PromoProduct = Product & {
   ends_at?: string | null;
 };
 
-const SLIDE_INTERVAL = 6000; // 6s
+const AUTOPLAY_MS = 10000; // 10s
 
 export default function PromocoesHero() {
   const [promocoes, setPromocoes] = useState<PromoProduct[]>([]);
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
-  const tickRef = useRef<HTMLDivElement | null>(null);
+  const [progressKey, setProgressKey] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ── Fetch ──────────────────────────────────────────────────────
   useEffect(() => {
     const fetchPromocoes = async () => {
       try {
@@ -98,6 +114,7 @@ export default function PromocoesHero() {
 
         setPromocoes(mapped);
         setCurrent(0);
+        setProgressKey((k) => k + 1);
       } catch (err) {
         console.error("Erro ao buscar promoções:", err);
       }
@@ -106,29 +123,28 @@ export default function PromocoesHero() {
     fetchPromocoes();
   }, []);
 
-  // Autoplay (pausa no hover/focus)
+  // ── Autoplay (padrão canônico HeroCarousel) ───────────────────
+  const total = promocoes.length;
+
   useEffect(() => {
-    if (promocoes.length <= 1 || paused) return;
+    if (total <= 1 || paused) return;
+    timerRef.current = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % total);
+      setProgressKey((k) => k + 1);
+    }, AUTOPLAY_MS);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [total, paused]);
 
-    const id = setInterval(
-      () =>
-        setCurrent((prev) => (prev + 1 >= promocoes.length ? 0 : prev + 1)),
-      SLIDE_INTERVAL,
-    );
-
-    return () => clearInterval(id);
-  }, [promocoes.length, paused, current]);
-
-  // Reinicia animação da barra de tick a cada slide
-  useEffect(() => {
-    const el = tickRef.current;
-    if (!el) return;
-    el.style.animation = "none";
-    void el.offsetWidth;
-    if (!paused && promocoes.length > 1) {
-      el.style.animation = `kavita-promo-tick ${SLIDE_INTERVAL}ms linear forwards`;
-    }
-  }, [current, paused, promocoes.length]);
+  const goTo = useCallback(
+    (idx: number) => {
+      if (total === 0) return;
+      setCurrent(((idx % total) + total) % total);
+      setProgressKey((k) => k + 1);
+    },
+    [total],
+  );
 
   if (promocoes.length === 0) return null;
 
@@ -147,151 +163,106 @@ export default function PromocoesHero() {
   const endsAt = produto.ends_at;
   const imageUrl = absUrl(produto.image as string | null);
 
-  const total = promocoes.length;
-  const goPrev = () =>
-    setCurrent((prev) => (prev === 0 ? total - 1 : prev - 1));
-  const goNext = () =>
-    setCurrent((prev) => (prev + 1 >= total ? 0 : prev + 1));
-
   return (
-    <section aria-label="Promoções em destaque">
-      {/* Keyframes locais (tick autoplay + crossfade) */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            @keyframes kavita-promo-tick {
-              from { transform: scaleX(0); }
-              to { transform: scaleX(1); }
-            }
-            @keyframes kavita-promo-fade {
-              from { opacity: 0; transform: translateY(8px); }
-              to { opacity: 1; transform: translateY(0); }
-            }
-            .kavita-promo-fade {
-              animation: kavita-promo-fade 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
-            }
-          `,
-        }}
-      />
-
+    <section
+      aria-label="Promoções em destaque"
+      aria-roledescription="carousel"
+    >
       <div
-        className="relative overflow-hidden rounded-[2.5rem] border border-amber-200/70 bg-gradient-to-br from-amber-50 via-orange-50 to-lime-50 shadow-2xl shadow-amber-900/10"
+        className="relative overflow-hidden rounded-3xl shadow-2xl shadow-[#041a24]/40"
+        style={{
+          background:
+            "linear-gradient(135deg, #041a24 0%, #083E46 35%, #0f5e63 70%, #053a3f 100%)",
+        }}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
-        onFocus={() => setPaused(true)}
-        onBlur={() => setPaused(false)}
+        onTouchStart={() => setPaused(true)}
+        onTouchEnd={() => setPaused(false)}
       >
-        {/* ─── Background decorativo: campo / safra ─────────────── */}
-
-        {/* Sol nascente top-right */}
+        {/* ─── Atmospheric layer — auras teal + accent ─────────── */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-32 -top-40 h-[520px] w-[520px] rounded-full bg-gradient-radial from-amber-300/40 via-orange-200/20 to-transparent blur-2xl"
+          className="pointer-events-none absolute -left-32 -top-32 h-[460px] w-[460px] rounded-full blur-3xl"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(252,211,77,0.45), rgba(254,215,170,0.18) 40%, transparent 70%)",
+              "radial-gradient(circle, rgba(53,194,196,0.20) 0%, transparent 70%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-32 -bottom-32 h-[480px] w-[480px] rounded-full blur-3xl"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(236,91,32,0.18) 0%, transparent 70%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/3 h-[360px] w-[360px] -translate-x-1/2 rounded-full blur-3xl"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(53,146,147,0.12) 0%, transparent 70%)",
           }}
         />
 
-        {/* Folhagem bottom-left (verde-folha orgânico) */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-32 -left-32 h-[460px] w-[460px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at center, rgba(132,204,22,0.30), rgba(190,242,100,0.12) 45%, transparent 75%)",
-          }}
-        />
-
-        {/* Faixa horizonte sutil — terra/colheita */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-amber-100/50 to-transparent"
-        />
-
-        {/* Padrão de linhas curvas tipo lavoura (topographic SVG) */}
-        <svg
-          aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.06]"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1200 600"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <pattern
-              id="kavita-field-rows"
-              x="0"
-              y="0"
-              width="1200"
-              height="120"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M0,80 Q300,40 600,80 T1200,80"
-                fill="none"
-                stroke="#65a30d"
-                strokeWidth="1.5"
-              />
-              <path
-                d="M0,40 Q300,0 600,40 T1200,40"
-                fill="none"
-                stroke="#a16207"
-                strokeWidth="1"
-              />
-            </pattern>
-          </defs>
-          <rect width="1200" height="600" fill="url(#kavita-field-rows)" />
-        </svg>
-
-        {/* ─── Top strip: marca vitrine + counter + tick ─────── */}
-        <div className="relative border-b border-amber-200/60 bg-white/40 backdrop-blur-sm">
+        {/* ─── Top strip — vitrine Kavita ─────────────────────── */}
+        <div className="relative border-b border-white/10 bg-white/[0.04] backdrop-blur-md">
           <div className="flex items-center gap-3 px-6 py-3.5 md:px-10">
-            {/* Folhinha SVG inline — referência sutil ao agro */}
-            <span
-              className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-md shadow-emerald-700/30"
-              aria-hidden
-            >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-white"
-              >
-                <path d="M11 20A7 7 0 0 1 4 13c0-2.5 1-4.5 3-6 3-2 7-2 11-1-1 4-1 8-3 11-1.5 2-3.5 3-4 3z" />
-                <path d="M2 22c1-7 5-11 12-13" />
-              </svg>
+            <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
+              <span
+                className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
+                style={{ background: "var(--color-accent-bright)" }}
+              />
+              <span
+                className="relative inline-flex h-2 w-2 rounded-full shadow-[0_0_8px_rgba(255,122,0,0.7)]"
+                style={{ background: "var(--color-accent-bright)" }}
+              />
             </span>
-
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-800">
-              Kavita
-              <span className="mx-2 text-amber-700/60">·</span>
-              <span className="text-amber-800">Ofertas da Safra</span>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white">
+              Vitrine Kavita
+              <span className="mx-2 text-white/30">·</span>
+              <span className="text-primary">Ofertas da semana</span>
             </p>
 
             {total > 1 && (
-              <span className="ml-auto font-mono text-[10px] font-bold tabular-nums tracking-[0.18em] text-stone-500">
+              <span className="ml-auto font-mono text-[10px] font-bold tabular-nums tracking-[0.18em] text-white/60">
                 {String(current + 1).padStart(2, "0")}
-                <span className="mx-1 text-stone-400">/</span>
+                <span className="mx-1 text-white/30">/</span>
                 {String(total).padStart(2, "0")}
               </span>
             )}
           </div>
 
-          {/* Tick bar autoplay (sun + leaf gradient) */}
+          {/* Progress bars (uma por slide) */}
           {total > 1 && (
             <div
-              className="relative h-[3px] w-full overflow-hidden bg-amber-100"
+              key={progressKey}
+              className="flex h-[3px] w-full items-stretch gap-[2px] bg-white/5 px-1"
               aria-hidden
             >
-              <div
-                ref={tickRef}
-                className="h-full origin-left bg-gradient-to-r from-emerald-500 via-lime-500 to-amber-500 shadow-[0_0_10px_rgba(132,204,22,0.5)]"
-              />
+              {promocoes.map((_, i) => (
+                <div
+                  key={i}
+                  className="relative flex-1 overflow-hidden rounded-full bg-white/10"
+                >
+                  <div
+                    className={
+                      i === current
+                        ? !paused
+                          ? "absolute inset-y-0 left-0 rounded-full bg-primary animate-[progressBar_linear_forwards]"
+                          : "absolute inset-0 rounded-full bg-primary"
+                        : i < current
+                          ? "absolute inset-0 rounded-full bg-primary/40"
+                          : ""
+                    }
+                    style={
+                      i === current && !paused
+                        ? { animationDuration: `${AUTOPLAY_MS}ms` }
+                        : undefined
+                    }
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -299,43 +270,29 @@ export default function PromocoesHero() {
         {/* ─── Conteúdo principal ─────────────────────────────────── */}
         <div
           key={produto.id}
-          className="kavita-promo-fade relative grid gap-8 p-6 md:grid-cols-12 md:gap-10 md:p-10 lg:gap-14 lg:p-12"
+          className="relative grid animate-[fadeIn_0.6s_ease-out] gap-8 p-6 md:grid-cols-12 md:gap-10 md:p-10 lg:gap-14 lg:p-12"
         >
           {/* ─── ÁREA DA IMAGEM (col 6) ─── */}
           <div className="relative md:col-span-6">
             <div className="relative mx-auto max-w-md">
-              {/* Sun-burst SVG atrás do produto */}
-              <svg
-                aria-hidden
-                viewBox="0 0 200 200"
-                className="pointer-events-none absolute inset-0 -m-12 h-[calc(100%+6rem)] w-[calc(100%+6rem)] animate-[spin_60s_linear_infinite] text-amber-300/30"
-              >
-                {Array.from({ length: 24 }).map((_, i) => {
-                  const angle = (i * 360) / 24;
-                  return (
-                    <line
-                      key={i}
-                      x1="100"
-                      y1="100"
-                      x2="100"
-                      y2="6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      transform={`rotate(${angle} 100 100)`}
-                    />
-                  );
-                })}
-              </svg>
-
-              {/* Leaf blob verde atrás (assimétrico, orgânico) */}
+              {/* Halo teal atrás do produto */}
               <div
                 aria-hidden
-                className="pointer-events-none absolute -inset-4 rounded-[40%_60%_55%_45%/55%_45%_60%_40%] bg-gradient-to-br from-lime-200/70 via-emerald-200/50 to-amber-100/40 blur-sm"
+                className="pointer-events-none absolute -inset-8 rounded-[2.5rem] blur-2xl"
+                style={{
+                  background:
+                    "radial-gradient(circle at center, rgba(53,194,196,0.30) 0%, rgba(53,146,147,0.15) 40%, transparent 70%)",
+                }}
               />
 
-              {/* Card da imagem */}
-              <div className="relative overflow-hidden rounded-[2rem] border-4 border-white bg-white shadow-2xl shadow-amber-900/20">
+              {/* Frame branco com borda teal */}
+              <div className="relative overflow-hidden rounded-[2rem] border-4 border-white/95 bg-white shadow-2xl shadow-[#041a24]/60 ring-1 ring-primary/20">
+                {/* Faixa hairline primary topo */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-10 top-0 z-10 h-px bg-gradient-to-r from-transparent via-primary to-transparent"
+                />
+
                 <div className="relative aspect-square w-full">
                   <Image
                     src={imageUrl}
@@ -345,35 +302,42 @@ export default function PromocoesHero() {
                     sizes="(max-width:768px) 80vw, (max-width:1024px) 50vw, 40vw"
                     priority
                   />
-                  {/* Vinheta inferior */}
                   <div
                     aria-hidden
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-amber-900/10 via-transparent to-transparent"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#083E46]/15 via-transparent to-transparent"
                   />
                 </div>
               </div>
 
-              {/* STICKER DESCONTO — selo rotacionado de promoção */}
+              {/* STICKER de desconto — laranja Kavita */}
               {desconto > 0 && (
                 <div
                   className="absolute -right-3 -top-3 z-20 -rotate-[8deg] md:-right-6 md:-top-6"
                   aria-hidden
                 >
                   <div className="relative">
-                    {/* Glow vermelho atrás */}
+                    {/* Glow accent */}
                     <div
-                      className="absolute -inset-2 rounded-full bg-rose-500/40 blur-lg"
-                      aria-hidden
+                      className="absolute -inset-3 rounded-full blur-lg"
+                      style={{ background: "rgba(255,122,0,0.50)" }}
                     />
-                    {/* Sticker */}
-                    <div className="relative flex h-[88px] w-[88px] flex-col items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-red-600 to-rose-700 text-white shadow-xl shadow-rose-900/40 ring-4 ring-white md:h-[104px] md:w-[104px]">
-                      <span className="text-[9px] font-bold uppercase tracking-[0.16em] opacity-90">
+                    {/* Sticker corpo */}
+                    <div
+                      className="relative flex h-[88px] w-[88px] flex-col items-center justify-center rounded-full text-white shadow-xl ring-4 ring-white md:h-[108px] md:w-[108px]"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
+                        boxShadow:
+                          "0 12px 30px -8px rgba(236,91,32,0.65), 0 0 0 1px rgba(255,255,255,0.4) inset",
+                      }}
+                    >
+                      <span className="text-[9px] font-bold uppercase tracking-[0.16em] opacity-95">
                         Oferta
                       </span>
-                      <span className="font-mono text-2xl font-extrabold tabular-nums leading-none tracking-tight md:text-3xl">
+                      <span className="font-mono text-2xl font-extrabold tabular-nums leading-none tracking-tight md:text-[1.85rem]">
                         -{desconto.toFixed(0)}%
                       </span>
-                      <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] opacity-90">
+                      <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] opacity-95">
                         Off
                       </span>
                     </div>
@@ -381,12 +345,19 @@ export default function PromocoesHero() {
                 </div>
               )}
 
-              {/* Selo "Direto do campo" bottom-left */}
+              {/* Selo Kavita bottom-left */}
               <div
                 className="absolute -bottom-3 left-3 z-20 md:-bottom-4 md:left-6"
                 aria-hidden
               >
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-emerald-900/30 ring-2 ring-white">
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-lg ring-2 ring-white"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #35c2c4 0%, #359293 60%, #2b797a 100%)",
+                    boxShadow: "0 8px 20px -4px rgba(53,146,147,0.55)",
+                  }}
+                >
                   <svg
                     width="11"
                     height="11"
@@ -395,7 +366,7 @@ export default function PromocoesHero() {
                   >
                     <path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z" />
                   </svg>
-                  Para o campo
+                  Verificado Kavita
                 </span>
               </div>
             </div>
@@ -403,64 +374,65 @@ export default function PromocoesHero() {
 
           {/* ─── CONTEÚDO (col 6) ─── */}
           <div className="relative flex flex-col justify-center md:col-span-6">
-            {/* Pill kicker comercial */}
-            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-emerald-100 to-lime-100 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-800 shadow-sm ring-1 ring-emerald-600/20">
-              <span
-                aria-hidden
-                className="relative flex h-2 w-2"
-              >
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-600" />
+            {/* Pill kicker primary */}
+            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-primary ring-1 ring-primary/40 backdrop-blur-sm">
+              <span aria-hidden className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
               </span>
               Oferta em destaque
             </p>
 
             {/* Título principal */}
             <div className="relative mt-4 w-fit">
-              {/* Sublinhado pintado com tom amarelo-safra */}
+              {/* Sublinhado pintado teal */}
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-1 h-3 rounded-full bg-amber-300/60 md:h-4"
+                className="pointer-events-none absolute inset-x-0 bottom-1 h-3 rounded-full bg-primary/30 md:h-4"
               />
-              <h2 className="relative text-3xl font-extrabold leading-[1.05] tracking-tight text-stone-900 md:text-4xl lg:text-[2.75rem]">
+              <h2 className="relative text-3xl font-extrabold leading-[1.05] tracking-tight text-white md:text-4xl lg:text-[2.75rem]">
                 Produtos em Promoção
               </h2>
             </div>
 
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-stone-600 md:text-[15px]">
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/70 md:text-[15px]">
               Selecionados pela equipe Kavita para o produtor rural —
-              preços de safra por tempo limitado nas principais soluções
+              preços especiais por tempo limitado nas principais soluções
               da loja.
             </p>
 
-            {/* Card da oferta — vitrine */}
-            <div className="relative mt-6 overflow-hidden rounded-2xl border border-amber-200/80 bg-white/85 p-5 shadow-xl shadow-amber-900/10 backdrop-blur-sm md:p-6">
-              {/* Faixa superior amber */}
+            {/* Card da oferta */}
+            <div className="relative mt-6 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 shadow-xl shadow-black/40 backdrop-blur-sm md:p-6">
+              {/* Faixa multicolor topo Kavita (teal → accent) */}
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-500"
+                className="pointer-events-none absolute inset-x-0 top-0 h-1"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #35c2c4 0%, #359293 50%, #FF7A00 100%)",
+                }}
               />
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                 Em destaque agora
               </p>
 
-              <p className="mt-2 text-xl font-bold leading-tight tracking-tight text-stone-900 md:text-2xl">
+              <p className="mt-2 text-xl font-bold leading-tight tracking-tight text-white md:text-2xl">
                 {produto.name}
               </p>
 
               {produto.description && (
-                <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-stone-600">
+                <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-white/70">
                   {produto.description}
                 </p>
               )}
 
-              {/* Preço grande comercial */}
+              {/* Bloco de preço */}
               <div className="mt-5 flex items-end gap-4">
                 <div className="min-w-0">
                   {original > final && (
-                    <p className="font-mono text-[12px] tabular-nums text-stone-500">
-                      <span className="mr-1 font-sans not-italic text-stone-400">
+                    <p className="font-mono text-[12px] tabular-nums text-white/50">
+                      <span className="mr-1 font-sans not-italic text-white/40">
                         de
                       </span>
                       <span className="line-through">
@@ -469,24 +441,47 @@ export default function PromocoesHero() {
                     </p>
                   )}
                   <div className="mt-0.5 flex items-baseline gap-2">
-                    <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-rose-700">
+                    <span
+                      className="text-[11px] font-bold uppercase tracking-[0.14em]"
+                      style={{ color: "var(--color-accent-bright)" }}
+                    >
                       por
                     </span>
-                    <span className="bg-gradient-to-br from-rose-600 via-red-600 to-rose-700 bg-clip-text text-4xl font-extrabold tabular-nums leading-none tracking-tight text-transparent md:text-5xl">
+                    <span
+                      className="bg-clip-text text-4xl font-extrabold tabular-nums leading-none tracking-tight text-transparent md:text-5xl"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(135deg, #FF7A00 0%, #EC5B20 70%, #d44c19 100%)",
+                      }}
+                    >
                       {formatCurrency(final)}
                     </span>
                   </div>
                 </div>
 
                 {desconto > 0 && (
-                  <span className="shrink-0 rounded-full border-2 border-rose-600 bg-rose-50 px-3 py-1.5 font-mono text-[11px] font-extrabold tabular-nums uppercase tracking-[0.1em] text-rose-700">
+                  <span
+                    className="shrink-0 rounded-full border-2 px-3 py-1.5 font-mono text-[11px] font-extrabold tabular-nums uppercase tracking-[0.1em]"
+                    style={{
+                      borderColor: "var(--color-accent)",
+                      background: "rgba(236,91,32,0.12)",
+                      color: "var(--color-accent-bright)",
+                    }}
+                  >
                     -{desconto.toFixed(0)}% OFF
                   </span>
                 )}
               </div>
 
               {endsAt && (
-                <p className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-900 ring-1 ring-amber-200">
+                <p
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold ring-1"
+                  style={{
+                    background: "rgba(53,194,196,0.10)",
+                    color: "#cffafe",
+                    borderColor: "rgba(53,194,196,0.30)",
+                  }}
+                >
                   <svg
                     width="12"
                     height="12"
@@ -497,7 +492,7 @@ export default function PromocoesHero() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden
-                    className="text-amber-700"
+                    className="text-primary"
                   >
                     <circle cx="12" cy="12" r="9" />
                     <path d="M12 7v5l3 2" />
@@ -507,8 +502,8 @@ export default function PromocoesHero() {
                     day: "2-digit",
                     month: "2-digit",
                   })}
-                  <span className="text-amber-600">·</span>
-                  <span className="font-normal text-amber-800/80">
+                  <span className="text-white/30">·</span>
+                  <span className="font-normal text-white/60">
                     enquanto durarem os estoques
                   </span>
                 </p>
@@ -519,16 +514,22 @@ export default function PromocoesHero() {
             <div className="mt-6 flex flex-wrap items-center gap-4">
               <Link
                 href={`/produtos/${produto.id}`}
-                className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-xl shadow-emerald-700/30 transition-all hover:from-emerald-400 hover:via-emerald-500 hover:to-emerald-600 hover:shadow-emerald-700/50 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/40"
+                className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-7 py-3.5 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-xl transition-all hover:brightness-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-accent-bright)]/40"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
+                  boxShadow:
+                    "0 12px 30px -8px rgba(236,91,32,0.55), 0 0 0 1px rgba(255,255,255,0.15) inset",
+                }}
               >
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
+                  className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent"
                 />
                 <span className="relative">Ver oferta</span>
                 <span
                   aria-hidden
-                  className="relative flex h-6 w-6 items-center justify-center rounded-full bg-white/20 transition-transform duration-300 group-hover:translate-x-0.5"
+                  className="relative flex h-6 w-6 items-center justify-center rounded-full bg-white/25 transition-transform duration-300 group-hover:translate-x-0.5"
                 >
                   <svg
                     width="12"
@@ -548,7 +549,7 @@ export default function PromocoesHero() {
 
               <Link
                 href="/produtos"
-                className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-800 underline-offset-4 transition-colors hover:text-emerald-700 hover:underline"
+                className="text-[11px] font-bold uppercase tracking-[0.16em] text-primary underline-offset-4 transition-colors hover:text-[var(--color-teal-light)] hover:underline"
               >
                 Ver todas as ofertas →
               </Link>
@@ -558,15 +559,15 @@ export default function PromocoesHero() {
 
         {/* ─── Navegação inferior ─────────────────────────────────── */}
         {total > 1 && (
-          <div className="relative border-t border-amber-200/60 bg-white/50 backdrop-blur-sm">
+          <div className="relative border-t border-white/10 bg-white/[0.04] backdrop-blur-md">
             <div className="flex items-center justify-between gap-4 px-6 py-4 md:px-10">
               {/* Prev/Next */}
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={goPrev}
+                  onClick={() => goTo(current - 1)}
                   aria-label="Promoção anterior"
-                  className="group flex h-10 w-10 items-center justify-center rounded-full border border-emerald-600/30 bg-white text-emerald-700 shadow-sm transition-all hover:border-emerald-600 hover:bg-emerald-50 hover:text-emerald-800 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+                  className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-primary/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <svg
                     width="15"
@@ -584,9 +585,9 @@ export default function PromocoesHero() {
                 </button>
                 <button
                   type="button"
-                  onClick={goNext}
+                  onClick={() => goTo(current + 1)}
                   aria-label="Próxima promoção"
-                  className="group flex h-10 w-10 items-center justify-center rounded-full border border-emerald-600/30 bg-white text-emerald-700 shadow-sm transition-all hover:border-emerald-600 hover:bg-emerald-50 hover:text-emerald-800 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+                  className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-primary/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <svg
                     width="15"
@@ -604,8 +605,8 @@ export default function PromocoesHero() {
                 </button>
               </div>
 
-              {/* Microcopy "auto" */}
-              <p className="hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500 sm:block">
+              {/* Microcopy */}
+              <p className="hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-white/50 sm:block">
                 Vitrine automática
               </p>
 
@@ -615,14 +616,14 @@ export default function PromocoesHero() {
                   <button
                     key={index}
                     type="button"
-                    onClick={() => setCurrent(index)}
+                    onClick={() => goTo(index)}
                     aria-label={`Ir para promoção ${index + 1}`}
                     aria-current={index === current ? "true" : undefined}
-                    className={`h-2 rounded-full transition-all duration-300 ${
+                    className={
                       index === current
-                        ? "w-9 bg-gradient-to-r from-emerald-500 to-lime-500 shadow-md shadow-emerald-700/30"
-                        : "w-2 bg-amber-300/60 hover:bg-emerald-400/60"
-                    }`}
+                        ? "h-2 w-9 rounded-full bg-primary shadow-[0_0_10px_rgba(53,194,196,0.6)] transition-all duration-300"
+                        : "h-2 w-2 rounded-full bg-white/25 transition-all duration-300 hover:bg-primary/60"
+                    }
                   />
                 ))}
               </div>

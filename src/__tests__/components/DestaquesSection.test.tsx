@@ -185,7 +185,7 @@ describe("PromocoesHero (DestaquesSection)", () => {
     expect(screen.getAllByText("Produto Teste").length).toBeGreaterThan(0);
 
     act(() => {
-      vi.advanceTimersByTime(6000);
+      vi.advanceTimersByTime(10000);
     });
 
     expect(screen.getAllByText("Produto 2").length).toBeGreaterThan(0);
