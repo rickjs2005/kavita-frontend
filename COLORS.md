@@ -88,6 +88,14 @@ const CARD_COLORS = {
 |-------|-----|-----|
 | `teal-light` | `#35c2c4` | Charts admin, tabs, relatorios |
 | `teal-dark` | `#0f5e63` | Textos escuros, links |
+| `teal-text-light` | `#cffafe` | Texto claro sobre superficies teal/dark (ex: chip "valido ate" da promo) |
+
+### Social brands
+
+| Token | Hex | Uso |
+|-------|-----|-----|
+| `whatsapp` | `#25D366` | Botoes/icones do WhatsApp (cor oficial da marca) |
+| `whatsapp-hover` | `#20bd5a` | Hover do botao WhatsApp |
 
 ### Info / Sky
 

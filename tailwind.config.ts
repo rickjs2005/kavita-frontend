@@ -36,6 +36,13 @@ export default {
         /* Teal variants */
         "teal-light": "var(--color-teal-light)",
         "teal-dark": "var(--color-teal-dark)",
+        "teal-text-light": "var(--color-teal-text-light)",
+
+        /* Social brands */
+        whatsapp: {
+          DEFAULT: "var(--color-whatsapp)",
+          hover: "var(--color-whatsapp-hover)",
+        },
 
         /* Info / Sky */
         info: {

@@ -24,6 +24,7 @@
   /* ── Teal variants ── */
   --color-teal-light: #35c2c4;
   --color-teal-dark: #0f5e63;
+  --color-teal-text-light: #cffafe;
 
   /* ── Info / Sky ── */
   --color-info: #38bdf8;
@@ -56,6 +57,10 @@
   /* ── Gradients: Drones ── */
   --color-drone-from: #0b1220;
   --color-drone-to: #070b13;
+
+  /* ── Social brands ── */
+  --color-whatsapp: #25D366;
+  --color-whatsapp-hover: #20bd5a;
 
   /* ── Admin login ── */
   --color-admin-login: #2b7c7c;

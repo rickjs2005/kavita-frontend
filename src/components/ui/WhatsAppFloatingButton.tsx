@@ -38,7 +38,7 @@ export default function WhatsAppFloatingButton({ phone, url }: Props) {
       aria-label="Falar pelo WhatsApp"
       title="Falar pelo WhatsApp"
       className={[
-        "fixed bottom-[5.25rem] right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-black/15",
+        "fixed bottom-[5.25rem] right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-whatsapp text-white shadow-lg shadow-black/15",
         "transition-all duration-500 hover:scale-110 hover:shadow-xl active:scale-95",
         "sm:bottom-[5.5rem] sm:right-6",
         visible

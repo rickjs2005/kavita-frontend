@@ -413,7 +413,7 @@ export default function ChatAssistant({ whatsappUrl }: Props) {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#20bd5a]"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-whatsapp px-3 py-2 text-xs font-semibold text-white transition hover:bg-whatsapp-hover"
                 >
                   <FaWhatsapp className="h-3.5 w-3.5" />
                   WhatsApp

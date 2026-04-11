@@ -220,7 +220,7 @@ export default function PromocoesHero() {
       />
 
       <div
-        className="relative overflow-hidden rounded-2xl shadow-xl shadow-[#041a24]/40 md:rounded-3xl md:shadow-2xl"
+        className="relative overflow-hidden rounded-2xl shadow-xl shadow-service-from/40 md:rounded-3xl md:shadow-2xl"
         style={{
           background:
             "linear-gradient(135deg, #041a24 0%, #083E46 35%, #0f5e63 70%, #053a3f 100%)",
@@ -454,7 +454,7 @@ export default function PromocoesHero() {
                 className="mt-4 inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold ring-1"
                 style={{
                   background: "rgba(53,194,196,0.10)",
-                  color: "#cffafe",
+                  color: "var(--color-teal-text-light)",
                   borderColor: "rgba(53,194,196,0.30)",
                 }}
               >
@@ -559,7 +559,7 @@ export default function PromocoesHero() {
               />
 
               {/* Frame branco */}
-              <div className="relative overflow-hidden rounded-2xl border-[3px] border-white/95 bg-white shadow-xl shadow-[#041a24]/60 ring-1 ring-primary/20 md:rounded-[2rem] md:border-4 md:shadow-2xl">
+              <div className="relative overflow-hidden rounded-2xl border-[3px] border-white/95 bg-white shadow-xl shadow-service-from/60 ring-1 ring-primary/20 md:rounded-[2rem] md:border-4 md:shadow-2xl">
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-x-8 top-0 z-10 h-px bg-gradient-to-r from-transparent via-primary to-transparent md:inset-x-10"
@@ -577,7 +577,7 @@ export default function PromocoesHero() {
                   />
                   <div
                     aria-hidden
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#083E46]/15 via-transparent to-transparent"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-header/15 via-transparent to-transparent"
                   />
                 </div>
               </div>
