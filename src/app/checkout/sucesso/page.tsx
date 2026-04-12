@@ -46,11 +46,11 @@ function SucessoContent() {
       </div>
 
       <h1 className="text-2xl font-bold text-gray-900 mb-3">
-        Pedido registrado!
+        Seu pedido foi realizado com sucesso!
       </h1>
 
       <p className="text-gray-600 mb-2">
-        Seu pedido foi criado com sucesso. O pagamento está sendo processado.
+        Seu pedido foi criado e o pagamento está sendo processado.
       </p>
       <p className="text-gray-500 text-sm mb-8">
         A confirmação do pagamento depende do processador. Você receberá uma
@@ -76,7 +76,7 @@ function SucessoContent() {
           onClick={() => router.push("/")}
           className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
         >
-          Continuar comprando
+          Voltar para loja
         </button>
       </div>
     </main>

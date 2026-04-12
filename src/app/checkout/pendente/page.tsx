@@ -79,7 +79,7 @@ function PendenteContent() {
           onClick={() => router.push("/")}
           className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
         >
-          Continuar comprando
+          Voltar para loja
         </button>
       </div>
     </main>

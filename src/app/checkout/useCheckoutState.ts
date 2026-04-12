@@ -530,18 +530,47 @@ export function useCheckoutState() {
     try {
       setSubmitting(true);
 
-      const rawCheckout = await apiClient.post<unknown>(
-        ENDPOINTS.CHECKOUT.PLACE_ORDER,
-        payload,
-      );
+      // -----------------------------------------------------------------
+      // Step 1: Criar pedido
+      // Se falhar aqui, nenhum pedido existe → tratamos como erro normal.
+      // -----------------------------------------------------------------
+      let pedidoId: number;
 
-      const checkoutParsed = CheckoutResponseSchema.safeParse(rawCheckout);
-      if (!checkoutParsed.success) {
-        toast.error("Resposta inesperada ao criar pedido. Contate o suporte.");
+      try {
+        const rawCheckout = await apiClient.post<unknown>(
+          ENDPOINTS.CHECKOUT.PLACE_ORDER,
+          payload,
+        );
+
+        const checkoutParsed = CheckoutResponseSchema.safeParse(rawCheckout);
+        if (!checkoutParsed.success) {
+          toast.error("Resposta inesperada ao criar pedido. Contate o suporte.");
+          return;
+        }
+
+        pedidoId = checkoutParsed.data.pedido_id;
+      } catch (err: unknown) {
+        // Pedido NÃO foi criado — erro real de autenticação ou validação.
+        const uiErr = formatApiError(err, "Erro ao processar pedido.");
+
+        if (isApiError(err) && err.status === 401) {
+          toast.error("Sua sessão expirou. Faça login novamente para finalizar a compra.");
+          try { await logout(); } catch {}
+          router.push("/login");
+          return;
+        }
+
+        toast.error(
+          uiErr.message ||
+            "Erro ao finalizar a compra. Verifique os dados e tente novamente.",
+        );
         return;
       }
 
-      const pedidoId = checkoutParsed.data.pedido_id;
+      // -----------------------------------------------------------------
+      // Pedido criado com sucesso — a partir daqui, o pedido EXISTE.
+      // Qualquer falha no pagamento NÃO deve redirecionar para /login.
+      // -----------------------------------------------------------------
 
       if (typeof window !== "undefined" && userId) {
         sessionStorage.setItem(
@@ -567,61 +596,58 @@ export function useCheckoutState() {
       );
 
       if (isGatewayPayment) {
-        const rawPayment = await apiClient.post<unknown>(
-          ENDPOINTS.PAYMENT.START,
-          { pedidoId },
-        );
-
-        const paymentParsed = PaymentResponseSchema.safeParse(rawPayment);
-        const rawUrl = paymentParsed.success
-          ? (paymentParsed.data.init_point ?? paymentParsed.data.sandbox_init_point ?? null)
-          : null;
-
-        const sanitized = rawUrl ? sanitizeUrl(rawUrl) : null;
-        const safeUrl =
-          sanitized && isMercadoPagoUrl(sanitized) ? sanitized : null;
-
-        if (!safeUrl && sanitized) {
-          console.warn(
-            "[checkout] URL de pagamento rejeitada: domínio não pertence ao MercadoPago.",
+        try {
+          const rawPayment = await apiClient.post<unknown>(
+            ENDPOINTS.PAYMENT.START,
+            { pedidoId },
           );
-        }
 
-        // Não limpar o carrinho aqui: o pagamento externo ainda não foi confirmado.
-        // A limpeza ocorre em /sucesso ou /pendente após o retorno do gateway.
-        if (safeUrl) {
-          window.location.href = safeUrl;
+          const paymentParsed = PaymentResponseSchema.safeParse(rawPayment);
+          const rawUrl = paymentParsed.success
+            ? (paymentParsed.data.init_point ?? paymentParsed.data.sandbox_init_point ?? null)
+            : null;
+
+          const sanitized = rawUrl ? sanitizeUrl(rawUrl) : null;
+          const safeUrl =
+            sanitized && isMercadoPagoUrl(sanitized) ? sanitized : null;
+
+          if (!safeUrl && sanitized) {
+            console.warn(
+              "[checkout] URL de pagamento rejeitada: domínio não pertence ao MercadoPago.",
+            );
+          }
+
+          // Não limpar o carrinho aqui: o pagamento externo ainda não foi confirmado.
+          // A limpeza ocorre em /sucesso ou /pendente após o retorno do gateway.
+          if (safeUrl) {
+            window.location.href = safeUrl;
+            return;
+          }
+
+          // URL inválida ou ausente — o pedido existe, encaminhar para sucesso.
+          toast.error("Não foi possível abrir a tela de pagamento. O pedido foi criado — acompanhe pelo painel.");
+          clearCart?.();
+          router.push(`/checkout/sucesso?pedidoId=${pedidoId}`);
+          return;
+        } catch (err: unknown) {
+          // Pagamento falhou MAS o pedido já existe.
+          // Não fazer logout nem redirecionar para /login.
+          const uiErr = formatApiError(err, "Erro ao iniciar pagamento.");
+          console.warn("[checkout] payment/start falhou após pedido criado:", uiErr.message);
+
+          toast.error(
+            uiErr.message ||
+              "Não foi possível iniciar o pagamento. Seu pedido foi criado — acompanhe pelo painel.",
+          );
+          clearCart?.();
+          router.push(`/checkout/sucesso?pedidoId=${pedidoId}`);
           return;
         }
-
-        toast.error("Não foi possível abrir a tela de pagamento. Tente novamente.");
-        return;
       }
 
       clearCart?.();
       toast.success("Pedido criado com sucesso!");
       router.push(`/pedidos/${pedidoId}`);
-    } catch (err: unknown) {
-      const uiErr = formatApiError(err, "Erro ao processar pedido.");
-
-      if (isApiError(err) && (err.status === 401 || err.status === 403)) {
-        toast.error(
-          uiErr.message ||
-            "Sua sessão expirou. Faça login novamente para finalizar a compra.",
-        );
-        try {
-          await logout();
-        } catch {
-          //
-        }
-        router.push("/login");
-        return;
-      }
-
-      toast.error(
-        uiErr.message ||
-          "Erro ao finalizar a compra. Verifique os dados e tente novamente.",
-      );
     } finally {
       setSubmitting(false);
     }
