@@ -404,11 +404,11 @@ export function useCheckoutState() {
     const endereco = formData?.endereco || ({} as any);
     const formaPagamento = (() => {
       const v = String(formData?.formaPagamento || "").toLowerCase();
-      if (v.includes("mercado") || v.includes("cart")) return "mercadopago";
+      if (v.includes("mercado") || v.includes("cart") || v.includes("credito") || v.includes("débito") || v.includes("debito")) return "cartao";
       if (v.includes("pix")) return "pix";
       if (v.includes("boleto")) return "boleto";
       if (v.includes("prazo")) return "prazo";
-      return "pix";
+      return "";
     })();
 
     const nome = String(formData?.nome || "").trim();
@@ -503,6 +503,7 @@ export function useCheckoutState() {
     }
 
     const errors: string[] = [];
+    if (!payload.formaPagamento) errors.push("Selecione a forma de pagamento.");
     if (!payload.nome) errors.push("Informe o nome do cliente.");
     if (!payload.cpf) errors.push("Informe o CPF.");
     else if (payload.cpf.length !== 11) errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
@@ -588,7 +589,7 @@ export function useCheckoutState() {
         );
       }
 
-      const isGatewayPayment = ["mercadopago", "pix", "boleto"].includes(
+      const isGatewayPayment = ["cartao", "pix", "boleto"].includes(
         payload.formaPagamento,
       );
 
