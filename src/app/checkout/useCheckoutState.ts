@@ -42,6 +42,9 @@ export function useCheckoutState() {
   const isLoggedIn = !!userId;
 
   const [submitting, setSubmitting] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState<
+    "idle" | "creating_order" | "starting_payment" | "redirecting"
+  >("idle");
 
   // ---------------------------------------------------------------------------
   // Delivery type
@@ -537,6 +540,7 @@ export function useCheckoutState() {
 
     try {
       setSubmitting(true);
+      setCheckoutStep("creating_order");
 
       // -----------------------------------------------------------------
       // Step 1: Criar pedido
@@ -623,6 +627,7 @@ export function useCheckoutState() {
       );
 
       if (isGatewayPayment) {
+        setCheckoutStep("starting_payment");
         try {
           const rawPayment = await apiClient.post<unknown>(
             ENDPOINTS.PAYMENT.START,
@@ -647,6 +652,7 @@ export function useCheckoutState() {
           // Não limpar o carrinho aqui: o pagamento externo ainda não foi confirmado.
           // A limpeza ocorre em /sucesso ou /pendente após o retorno do gateway.
           if (safeUrl) {
+            setCheckoutStep("redirecting");
             window.location.href = safeUrl;
             return;
           }
@@ -672,6 +678,7 @@ export function useCheckoutState() {
       router.push(`/checkout/sucesso?pedidoId=${pedidoId}`);
     } finally {
       setSubmitting(false);
+      setCheckoutStep("idle");
     }
   };
 
@@ -716,6 +723,7 @@ export function useCheckoutState() {
     // totals + submit
     total,
     submitting,
+    checkoutStep,
     canFinalizeCheckout,
     handleSubmit,
   };

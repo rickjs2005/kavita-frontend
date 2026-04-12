@@ -131,6 +131,7 @@ export default function CheckoutPage() {
             couponError={state.couponError}
             handleApplyCoupon={state.handleApplyCoupon}
             submitting={state.submitting}
+            checkoutStep={state.checkoutStep}
             canFinalizeCheckout={state.canFinalizeCheckout}
             handleSubmit={state.handleSubmit}
           />

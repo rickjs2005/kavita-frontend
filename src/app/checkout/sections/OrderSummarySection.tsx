@@ -26,6 +26,7 @@ type Props = {
   couponError: string | null;
   handleApplyCoupon: () => void;
   submitting: boolean;
+  checkoutStep: "idle" | "creating_order" | "starting_payment" | "redirecting";
   canFinalizeCheckout: boolean;
   handleSubmit: () => void;
 };
@@ -50,6 +51,7 @@ export function OrderSummarySection({
   couponError,
   handleApplyCoupon,
   submitting,
+  checkoutStep,
   canFinalizeCheckout,
   handleSubmit,
 }: Props) {
@@ -247,8 +249,31 @@ export function OrderSummarySection({
           disabled={!canFinalizeCheckout || submitting}
           className="w-full justify-center rounded-2xl bg-accent py-3 text-sm sm:text-base font-semibold text-white shadow-md shadow-accent/30 transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Confirmar pedido
+          {checkoutStep === "creating_order"
+            ? "Criando pedido..."
+            : checkoutStep === "starting_payment"
+              ? "Iniciando pagamento..."
+              : checkoutStep === "redirecting"
+                ? "Redirecionando..."
+                : "Confirmar pedido"}
         </LoadingButton>
+
+        {submitting && checkoutStep !== "idle" && (
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <div className="flex gap-1">
+              <span className={`h-2 w-2 rounded-full transition-colors ${checkoutStep === "creating_order" || checkoutStep === "starting_payment" || checkoutStep === "redirecting" ? "bg-accent" : "bg-gray-300"}`} />
+              <span className={`h-2 w-2 rounded-full transition-colors ${checkoutStep === "starting_payment" || checkoutStep === "redirecting" ? "bg-accent" : "bg-gray-300"}`} />
+              <span className={`h-2 w-2 rounded-full transition-colors ${checkoutStep === "redirecting" ? "bg-accent" : "bg-gray-300"}`} />
+            </div>
+            <span className="text-xs text-gray-500">
+              {checkoutStep === "creating_order"
+                ? "Registrando seu pedido..."
+                : checkoutStep === "starting_payment"
+                  ? "Preparando o pagamento..."
+                  : "Abrindo tela de pagamento..."}
+            </span>
+          </div>
+        )}
 
         {!canFinalizeCheckout && (
           <p className="mt-2 text-center text-[11px] text-gray-500">
