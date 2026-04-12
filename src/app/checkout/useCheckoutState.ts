@@ -599,6 +599,25 @@ export function useCheckoutState() {
         );
       }
 
+      // Salvar endereço novo automaticamente para futuros pedidos.
+      // Condições: entrega, endereço novo (não selecionou salvo), e sem endereços salvos.
+      // Fire-and-forget: não bloqueia o checkout nem exibe erro ao usuário.
+      if (
+        !isPickup &&
+        showNewAddressForm &&
+        savedAddresses.length === 0 &&
+        payload.endereco
+      ) {
+        apiClient
+          .post(ENDPOINTS.USERS.ADDRESSES, {
+            ...payload.endereco,
+            is_default: true,
+          })
+          .catch((err) =>
+            console.warn("[checkout] falha ao salvar endereço automaticamente:", err),
+          );
+      }
+
       const isGatewayPayment = ["cartao", "pix", "boleto"].includes(
         payload.formaPagamento,
       );
