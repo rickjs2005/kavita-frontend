@@ -234,7 +234,7 @@ export function useCartActions({
     after.forEach((fn) => fn());
   };
 
-  const clearCart = () => {
+  const clearCart = (opts?: { silent?: boolean }) => {
     setCartItems([]);
     closeCart();
 
@@ -256,7 +256,9 @@ export function useCartActions({
         );
     }
 
-    toast("Carrinho limpo.");
+    if (!opts?.silent) {
+      toast("Carrinho limpo.");
+    }
   };
 
   return { addToCart, updateQuantity, removeFromCart, syncStock, clearCart };

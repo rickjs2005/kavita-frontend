@@ -626,7 +626,7 @@ export function useCheckoutState() {
 
           // URL inválida ou ausente — o pedido existe, encaminhar para sucesso.
           toast.error("Não foi possível abrir a tela de pagamento. O pedido foi criado — acompanhe pelo painel.");
-          clearCart?.();
+          clearCart?.({ silent: true });
           router.push(`/checkout/sucesso?pedidoId=${pedidoId}`);
           return;
         } catch (err: unknown) {
@@ -639,13 +639,13 @@ export function useCheckoutState() {
             uiErr.message ||
               "Não foi possível iniciar o pagamento. Seu pedido foi criado — acompanhe pelo painel.",
           );
-          clearCart?.();
+          clearCart?.({ silent: true });
           router.push(`/checkout/sucesso?pedidoId=${pedidoId}`);
           return;
         }
       }
 
-      clearCart?.();
+      clearCart?.({ silent: true });
       router.push(`/checkout/sucesso?pedidoId=${pedidoId}`);
     } finally {
       setSubmitting(false);

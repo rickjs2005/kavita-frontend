@@ -22,7 +22,7 @@ interface CartContextProps {
   updateQuantity: (id: number, quantity: number) => void;
   removeFromCart: (id: number) => void;
   syncStock: (productId: number, newStock: number) => void;
-  clearCart: () => void;
+  clearCart: (opts?: { silent?: boolean }) => void;
   cartTotal: number;
   isCartOpen: boolean;
   openCart: () => void;

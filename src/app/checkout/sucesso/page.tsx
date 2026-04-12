@@ -21,10 +21,10 @@ function SucessoContent() {
         const parsed = JSON.parse(sessionStorage.getItem(k) || "{}");
         return String(parsed?.id) === String(pedidoId);
       });
-      if (owns) clearCart?.();
+      if (owns) clearCart?.({ silent: true });
     } catch {
       // sessionStorage indisponível — limpa por segurança para não travar o fluxo
-      clearCart?.();
+      clearCart?.({ silent: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
