@@ -646,8 +646,7 @@ export function useCheckoutState() {
       }
 
       clearCart?.();
-      toast.success("Pedido criado com sucesso!");
-      router.push(`/pedidos/${pedidoId}`);
+      router.push(`/checkout/sucesso?pedidoId=${pedidoId}`);
     } finally {
       setSubmitting(false);
     }
