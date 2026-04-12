@@ -651,10 +651,10 @@ export function useCheckoutState() {
             return;
           }
 
-          // URL inválida ou ausente — o pedido existe, encaminhar para sucesso.
-          toast.error("Não foi possível abrir a tela de pagamento. O pedido foi criado — acompanhe pelo painel.");
+          // URL inválida ou ausente — o pedido existe, encaminhar com indicador de pagamento pendente.
+          console.warn("[checkout] URL de pagamento inválida ou ausente após payment/start.");
           clearCart?.({ silent: true });
-          router.push(`/checkout/sucesso?pedidoId=${pedidoId}`);
+          router.push(`/checkout/sucesso?pedidoId=${pedidoId}&pagamento=pendente`);
           return;
         } catch (err: unknown) {
           // Pagamento falhou MAS o pedido já existe.
@@ -662,12 +662,8 @@ export function useCheckoutState() {
           const uiErr = formatApiError(err, "Erro ao iniciar pagamento.");
           console.warn("[checkout] payment/start falhou após pedido criado:", uiErr.message);
 
-          toast.error(
-            uiErr.message ||
-              "Não foi possível iniciar o pagamento. Seu pedido foi criado — acompanhe pelo painel.",
-          );
           clearCart?.({ silent: true });
-          router.push(`/checkout/sucesso?pedidoId=${pedidoId}`);
+          router.push(`/checkout/sucesso?pedidoId=${pedidoId}&pagamento=pendente`);
           return;
         }
       }
