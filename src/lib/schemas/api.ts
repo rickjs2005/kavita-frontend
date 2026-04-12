@@ -146,8 +146,6 @@ export const PaymentResponseSchema = z.object({
 export type PaymentResponse = z.infer<typeof PaymentResponseSchema>;
 
 export const CouponPreviewSchema = z.object({
-  success: z.boolean(),
-  message: z.string().optional(),
   desconto: z.number().min(0).optional(),
   total_original: z.number().positive().optional(),
   total_com_desconto: z.number().min(0).optional(),

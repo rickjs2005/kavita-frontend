@@ -189,20 +189,17 @@ export function useCheckoutState() {
       );
 
       const couponParsed = CouponPreviewSchema.safeParse(rawCoupon);
-      if (!couponParsed.success || !couponParsed.data.success) {
-        const msg =
-          (couponParsed.success ? couponParsed.data.message : null) ||
-          "Não foi possível aplicar este cupom.";
+      if (!couponParsed.success) {
         setDiscount(0);
-        setCouponError(msg);
-        toast.error(msg);
+        setCouponError("Não foi possível aplicar este cupom.");
+        toast.error("Não foi possível aplicar este cupom.");
         return;
       }
 
       const desconto = couponParsed.data.desconto ?? 0;
       setDiscount(desconto > 0 ? desconto : 0);
 
-      const msg = couponParsed.data.message || "Cupom aplicado com sucesso!";
+      const msg = "Cupom aplicado com sucesso!";
       setCouponMessage(msg);
       setCouponError(null);
       toast.success(msg);
