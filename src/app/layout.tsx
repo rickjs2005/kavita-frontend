@@ -7,6 +7,7 @@ import { CartProvider } from "../context/CartContext";
 import Header from "../components/layout/Header";
 import AuthExpiredHandler from "@/components/auth/AuthExpiredHandler";
 import ConditionalHeader from "@/components/layout/ConditionalHeader";
+import ConditionalFloatingWidgets from "@/components/layout/ConditionalFloatingWidgets";
 import WhatsAppFloatingButton from "@/components/ui/WhatsAppFloatingButton";
 import ChatAssistant from "@/components/ui/ChatAssistant";
 
@@ -74,7 +75,7 @@ export default async function RootLayout({
             <ConditionalHeader>
               <AuthExpiredHandler />
             </ConditionalHeader>
-            <ConditionalHeader>
+            <ConditionalFloatingWidgets>
               {showWhatsApp && (
                 <WhatsAppFloatingButton
                   phone={shop?.contact_whatsapp}
@@ -84,7 +85,7 @@ export default async function RootLayout({
               {showChatbot && (
                 <ChatAssistant whatsappUrl={whatsappUrl} />
               )}
-            </ConditionalHeader>
+            </ConditionalFloatingWidgets>
             <Toaster position="top-right" />
           </CartProvider>
         </AuthProvider>
