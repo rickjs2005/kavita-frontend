@@ -37,7 +37,7 @@ export default function CheckoutPage() {
 
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
-                href="/login"
+                href="/login?from=%2Fcheckout"
                 className="inline-flex items-center justify-center rounded-xl bg-accent px-6 py-3 text-sm sm:text-base font-semibold text-white transition hover:bg-accent-hover"
               >
                 Ir para login

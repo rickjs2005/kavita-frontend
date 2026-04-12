@@ -162,7 +162,7 @@ export function useCheckoutState() {
     }
     if (!isLoggedIn) {
       toast.error("Você precisa estar logado para aplicar um cupom.");
-      router.push("/login");
+      router.push("/login?from=%2Fcheckout");
       return;
     }
     if (!normalizedCartItems.length) {
@@ -478,7 +478,7 @@ export function useCheckoutState() {
 
     if (!isLoggedIn) {
       toast.error("Você precisa estar logado para finalizar a compra.");
-      router.push("/login");
+      router.push("/login?from=%2Fcheckout");
       return;
     }
 
@@ -553,7 +553,7 @@ export function useCheckoutState() {
         if (isApiError(err) && err.status === 401) {
           toast.error("Sua sessão expirou. Faça login novamente para finalizar a compra.");
           try { await logout(); } catch {}
-          router.push("/login");
+          router.push("/login?from=%2Fcheckout");
           return;
         }
 
