@@ -505,6 +505,8 @@ export function useCheckoutState() {
     const errors: string[] = [];
     if (!payload.formaPagamento) errors.push("Selecione a forma de pagamento.");
     if (!payload.nome) errors.push("Informe o nome do cliente.");
+    if (!payload.email) errors.push("Informe o e-mail.");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) errors.push("Informe um e-mail válido.");
     if (!payload.cpf) errors.push("Informe o CPF.");
     else if (payload.cpf.length !== 11) errors.push("CPF deve ter exatamente 11 dígitos numéricos.");
     if (!payload.telefone) errors.push("Informe o WhatsApp.");
