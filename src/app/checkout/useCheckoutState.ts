@@ -96,6 +96,7 @@ export function useCheckoutState() {
     let cancelled = false;
     (async () => {
       try {
+        const failed: number[] = [];
         const results = await Promise.all(
           uniqueIds.map(async (id) => {
             try {
@@ -103,19 +104,26 @@ export function useCheckoutState() {
                 ENDPOINTS.PRODUCTS.PROMOTIONS(id),
               );
               return { id, promo: res };
-            } catch {
+            } catch (err) {
+              failed.push(id);
+              console.warn(`[checkout] promoção indisponível para produto ${id}:`, err);
               return { id, promo: null };
             }
           }),
         );
         if (cancelled) return;
+        if (failed.length > 0) {
+          console.warn(
+            `[checkout] ${failed.length} promoção(ões) não carregada(s): produtos ${failed.join(", ")}. Preços sem desconto serão exibidos.`,
+          );
+        }
         setPromotions((prev) => {
           const next: Record<number, ProductPromotion | null> = { ...prev };
           for (const { id, promo } of results) next[id] = promo;
           return next;
         });
-      } catch {
-        // silencioso
+      } catch (err) {
+        console.warn("[checkout] falha geral ao carregar promoções:", err);
       }
     })();
     return () => { cancelled = true; };
