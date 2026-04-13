@@ -53,6 +53,14 @@ export type TopServico = {
   nota_media?: number | null;
 };
 
+export type ModulesStatus = {
+  news: { publicados: number; rascunhos: number };
+  clima: { cidadesAtivas: number; ultimaSync: string | null };
+  cotacoes: { ativas: number; ultimaAtualizacao: string | null; statusSync: string | null };
+  drones: { modelos: number; comentariosPendentes: number };
+  mercadoCafe: { corretorasAtivas: number; solicitacoesPendentes: number };
+};
+
 export type AlertNivel = "info" | "warning" | "danger";
 export type AlertTipo = "pagamento" | "estoque" | "carrinhos" | "sistema" | "outro";
 

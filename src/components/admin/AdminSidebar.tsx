@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 
 type AdminSidebarProps = {
@@ -17,131 +18,60 @@ type NavItem = {
   permission: string;
 };
 
-const navItems: NavItem[] = [
-  // Dashboard
+type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
+const navGroups: NavGroup[] = [
   {
-    label: "Dashboard",
-    href: "/admin",
-    icon: "🏠",
-    permission: "dashboard_view",
-  },
-  // Catálogo
-  {
-    label: "Produtos",
-    href: "/admin/produtos",
-    icon: "📦",
-    permission: "products_manage",
-  },
-  {
-    label: "marketing & Promoções",
-    href: "/admin/destaques",
-    icon: "⭐",
-    permission: "highlights_manage",
+    label: "Operação",
+    items: [
+      { label: "Dashboard", href: "/admin", icon: "🏠", permission: "dashboard_view" },
+      { label: "Pedidos", href: "/admin/pedidos", icon: "🧾", permission: "orders_view" },
+      { label: "Ocorrências", href: "/admin/ocorrencias", icon: "📋", permission: "orders_view" },
+      { label: "Carrinhos", href: "/admin/carrinhos", icon: "🛒", permission: "carts_view" },
+      { label: "Clientes", href: "/admin/clientes", icon: "👥", permission: "customers_view" },
+    ],
   },
   {
-    label: "Cupons",
-    href: "/admin/cupons",
-    icon: "🏷️",
-    permission: "coupons_manage",
-  },
-  // Pedidos
-  {
-    label: "Pedidos",
-    href: "/admin/pedidos",
-    icon: "🧾",
-    permission: "orders_view",
+    label: "Catálogo",
+    items: [
+      { label: "Produtos", href: "/admin/produtos", icon: "📦", permission: "products_manage" },
+      { label: "Serviços", href: "/admin/servicos", icon: "🛠️", permission: "services_manage" },
+    ],
   },
   {
-    label: "Ocorrências",
-    href: "/admin/ocorrencias",
-    icon: "📋",
-    permission: "orders_view",
-  },
-  // Serviços / Clientes
-  {
-    label: "Serviços",
-    href: "/admin/servicos",
-    icon: "🛠️",
-    permission: "services_manage",
+    label: "Marketing",
+    items: [
+      { label: "Marketing & Promoções", href: "/admin/destaques", icon: "⭐", permission: "highlights_manage" },
+      { label: "Cupons", href: "/admin/cupons", icon: "🏷️", permission: "coupons_manage" },
+    ],
   },
   {
-    label: "Clientes",
-    href: "/admin/clientes",
-    icon: "👥",
-    permission: "customers_view",
-  },
-  // Carrinhos
-  {
-    label: "Carrinhos",
-    href: "/admin/carrinhos",
-    icon: "🛒",
-    permission: "carts_view",
+    label: "Conteúdo",
+    items: [
+      { label: "Kavita News", href: "/admin/kavita-news", icon: "📰", permission: "news_view" },
+      { label: "Mercado do Café", href: "/admin/mercado-do-cafe", icon: "☕", permission: "mercado_cafe_manage" },
+      { label: "Kavita Drones", href: "/admin/drones", icon: "🚁", permission: "drones_manage" },
+    ],
   },
   {
-    label: "Kavita News",
-    href: "/admin/kavita-news",
-    icon: "📰",
-    permission: "news_view",
+    label: "Comunicação",
+    items: [
+      { label: "Mensagens de Contato", href: "/admin/contato-mensagens", icon: "✉️", permission: "contato_mensagens_view" },
+      { label: "Config. Atendimento", href: "/admin/atendimento-config", icon: "💬", permission: "settings_manage" },
+    ],
   },
   {
-    label: "Mercado do Café",
-    href: "/admin/mercado-do-cafe",
-    icon: "☕",
-    permission: "mercado_cafe_manage",
-  },
-  {
-    label: "kavita-drones",
-    href: "/admin/drones",
-    icon: "🚁",
-    permission: "drones_manage",
-  },
-  // Atendimento
-  {
-    label: "Mensagens de Contato",
-    href: "/admin/contato-mensagens",
-    icon: "✉️",
-    permission: "contato_mensagens_view",
-  },
-  {
-    label: "Config. Atendimento",
-    href: "/admin/atendimento-config",
-    icon: "💬",
-    permission: "settings_manage",
-  },
-  // Relatórios
-  {
-    label: "Relatórios",
-    href: "/admin/relatorios",
-    icon: "📊",
-    permission: "reports_view",
-  },
-  // Configurações gerais
-  {
-    label: "Configurações",
-    href: "/admin/configuracoes",
-    icon: "⚙️",
-    permission: "settings_manage",
-  },
-  // Papéis & Permissões
-  {
-    label: "Papéis & Permissões",
-    href: "/admin/configuracoes/usuarios",
-    icon: "🛡️",
-    permission: "roles_permissions_manage", // usamos como marcador
-  },
-  // Equipe (gestão de administradores)
-  {
-    label: "Equipe",
-    href: "/admin/equipe",
-    icon: "🧑‍🌾",
-    permission: "admins_manage",
-  },
-  // Logs
-  {
-    label: "Logs",
-    href: "/admin/logs",
-    icon: "📜",
-    permission: "logs_view",
+    label: "Sistema",
+    items: [
+      { label: "Relatórios", href: "/admin/relatorios", icon: "📊", permission: "reports_view" },
+      { label: "Configurações", href: "/admin/configuracoes", icon: "⚙️", permission: "settings_manage" },
+      { label: "Papéis & Permissões", href: "/admin/configuracoes/usuarios", icon: "🛡️", permission: "roles_permissions_manage" },
+      { label: "Equipe", href: "/admin/equipe", icon: "🧑‍🌾", permission: "admins_manage" },
+      { label: "Logs", href: "/admin/logs", icon: "📜", permission: "logs_view" },
+    ],
   },
 ];
 
@@ -153,14 +83,16 @@ export default function AdminSidebar({
   const pathname = usePathname();
   const { logout, hasPermission } = useAdminAuth();
 
+  // All groups start expanded
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (label: string) => {
+    setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
   const handleLogout = () => {
     logout();
   };
-
-  // Filtra por permissão no momento da renderização
-  const itemsVisiveis = navItems.filter((item) =>
-    item.href === "/admin" ? true : hasPermission(item.permission),
-  );
 
   return (
     <div
@@ -186,33 +118,81 @@ export default function AdminSidebar({
       </div>
 
       {/* ÁREA SCROLLÁVEL (nav) */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-4">
         <nav className="space-y-1 text-sm">
-          {itemsVisiveis.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/admin" && pathname.startsWith(item.href));
+          {navGroups.map((group) => {
+            const visibleItems = group.items.filter((item) =>
+              item.href === "/admin" ? true : hasPermission(item.permission),
+            );
+            if (visibleItems.length === 0) return null;
 
-            const base =
-              "group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors";
-            const active =
-              "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/40";
-            const inactive =
-              "text-slate-300 hover:bg-slate-800/80 hover:text-slate-50";
+            const isCollapsed = collapsed[group.label] ?? false;
+
+            // Check if any item in this group is active
+            const hasActiveItem = visibleItems.some(
+              (item) =>
+                pathname === item.href ||
+                (item.href !== "/admin" && pathname.startsWith(item.href)),
+            );
 
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                aria-current={isActive ? "page" : undefined}
-                className={`${base} ${isActive ? active : inactive} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500`}
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/80 text-base">
-                  {item.icon}
-                </span>
-                <span className="truncate">{item.label}</span>
-              </Link>
+              <div key={group.label} className="pt-2 first:pt-0">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-slate-300"
+                >
+                  <span className="flex items-center gap-1.5">
+                    {group.label}
+                    {hasActiveItem && !isCollapsed && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    )}
+                    {hasActiveItem && isCollapsed && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    )}
+                  </span>
+                  <svg
+                    className={`h-3 w-3 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {!isCollapsed && (
+                  <div className="mt-0.5 space-y-0.5 pl-0">
+                    {visibleItems.map((item) => {
+                      const isActive =
+                        pathname === item.href ||
+                        (item.href !== "/admin" && pathname.startsWith(item.href));
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={onNavigate}
+                          aria-current={isActive ? "page" : undefined}
+                          className={[
+                            "group flex items-center gap-3 rounded-lg px-3 py-2 transition-colors",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+                            isActive
+                              ? "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/40"
+                              : "text-slate-300 hover:bg-slate-800/80 hover:text-slate-50",
+                          ].join(" ")}
+                        >
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/80 text-base">
+                            {item.icon}
+                          </span>
+                          <span className="truncate">{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

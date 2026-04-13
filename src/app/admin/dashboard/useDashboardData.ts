@@ -7,6 +7,7 @@ import type {
   AdminLog,
   AdminResumo,
   AlertItem,
+  ModulesStatus,
   TopCliente,
   TopProduto,
   TopServico,
@@ -217,33 +218,59 @@ export function useDashboardData({ handleUnauthorized, role }: Props) {
   }, [stableHandleUnauthorized]);
 
   // ---------------------------------------------------------------------------
-  // Store alerts
+  // Store alerts + modules status (loaded in parallel)
   // ---------------------------------------------------------------------------
   const [alertas, setAlertas] = useState<AlertItem[]>([]);
   const [alertasLoading, setAlertasLoading] = useState(false);
   const [alertasError, setAlertasError] = useState<string | null>(null);
+  const [modulesStatus, setModulesStatus] = useState<ModulesStatus | null>(null);
+  const [modulesLoading, setModulesLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setAlertasLoading(true);
+      setModulesLoading(true);
       setAlertasError(null);
       try {
-        const data = await apiClient.get<AlertItem[]>("/api/admin/stats/alertas");
+        const [alertasData, modulesData] = await Promise.allSettled([
+          apiClient.get<AlertItem[]>("/api/admin/stats/alertas"),
+          apiClient.get<ModulesStatus>("/api/admin/stats/modulos-status"),
+        ]);
         if (cancelled) return;
-        setAlertas(Array.isArray(data) ? data : []);
-      } catch (err: any) {
-        if (cancelled) return;
-        if (err?.status === 401 || err?.status === 403) {
-          stableHandleUnauthorized();
-          return;
+
+        // Handle alerts
+        if (alertasData.status === "fulfilled") {
+          setAlertas(Array.isArray(alertasData.value) ? alertasData.value : []);
+        } else {
+          const err = alertasData.reason;
+          if (err?.status === 401 || err?.status === 403) {
+            stableHandleUnauthorized();
+            return;
+          }
+          if (err?.status !== 404) {
+            console.warn("Erro ao carregar alertas:", err);
+            setAlertasError("Não foi possível carregar os alertas da loja.");
+          }
         }
-        if (err?.status === 404) return; // endpoint may not exist yet — silent
-        console.warn("Erro ao carregar alertas:", err);
-        setAlertasError("Não foi possível carregar os alertas da loja.");
+
+        // Handle modules status
+        if (modulesData.status === "fulfilled") {
+          setModulesStatus(modulesData.value ?? null);
+        } else {
+          const err = modulesData.reason;
+          if (err?.status === 401 || err?.status === 403) {
+            stableHandleUnauthorized();
+            return;
+          }
+          // Silent fail — modules status is non-critical
+        }
       } finally {
-        if (!cancelled) setAlertasLoading(false);
+        if (!cancelled) {
+          setAlertasLoading(false);
+          setModulesLoading(false);
+        }
       }
     }
 
@@ -272,5 +299,8 @@ export function useDashboardData({ handleUnauthorized, role }: Props) {
     alertas,
     alertasLoading,
     alertasError,
+    // modules status
+    modulesStatus,
+    modulesLoading,
   };
 }

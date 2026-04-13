@@ -10,6 +10,7 @@ import { useDashboardData } from "./dashboard/useDashboardData";
 import { KpiSection } from "./dashboard/sections/KpiSection";
 import { AlertsAndMetricsSection } from "./dashboard/sections/AlertsAndMetricsSection";
 import { OperationsSection } from "./dashboard/sections/OperationsSection";
+import { ModulesStatusSection } from "./dashboard/sections/ModulesStatusSection";
 
 const SalesChartSection = dynamic(
   () => import("./dashboard/sections/SalesChartSection").then((m) => m.SalesChartSection),
@@ -59,6 +60,8 @@ export default function AdminDashboardPage() {
     alertas,
     alertasLoading,
     alertasError,
+    modulesStatus,
+    modulesLoading,
   } = useDashboardData({ handleUnauthorized, role });
 
   // ---------------------------------------------------------------------------
@@ -228,10 +231,12 @@ export default function AdminDashboardPage() {
               canViewLogs={canViewLogs}
             />
 
+            <ModulesStatusSection
+              status={modulesStatus}
+              loading={modulesLoading}
+            />
+
             <AlertsAndMetricsSection
-              alertas={[]}
-              alertasLoading={false}
-              alertasError={null}
               topClientes={topClientes}
               topProdutos={topProdutos}
               topServicos={topServicos}
