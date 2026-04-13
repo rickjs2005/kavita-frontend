@@ -44,7 +44,7 @@ export default function PedidoPage() {
   const params = useParams<{ id: string }>();
   const pedidoId = params?.id;
 
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const isLoggedIn = !!user?.id;
 
@@ -79,17 +79,18 @@ export default function PedidoPage() {
     }
   };
 
-  // Redireciona se não estiver logado
+  // Redireciona se não estiver logado — só após auth terminar de carregar
   useEffect(() => {
+    if (authLoading) return;
     if (!isLoggedIn) {
       setError("Você precisa estar logado para ver o detalhe da compra.");
       router.push("/login");
     }
-  }, [isLoggedIn, router]);
+  }, [authLoading, isLoggedIn, router]);
 
   // Busca os dados do pedido
   useEffect(() => {
-    if (!pedidoId || !isLoggedIn) return;
+    if (authLoading || !pedidoId || !isLoggedIn) return;
 
     const fetchPedido = async () => {
       try {

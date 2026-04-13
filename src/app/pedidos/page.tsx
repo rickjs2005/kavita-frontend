@@ -21,7 +21,7 @@ type PedidoResumo = {
 
 export default function PedidosClientePage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const isLoggedIn = !!user?.id;
 
@@ -29,17 +29,18 @@ export default function PedidosClientePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Se não estiver logado, manda para login
+  // Se não estiver logado, manda para login — só após auth terminar de carregar
   useEffect(() => {
+    if (authLoading) return;
     if (!isLoggedIn) {
       setError("Você precisa estar logado para ver suas compras.");
       router.push("/login");
     }
-  }, [isLoggedIn, router]);
+  }, [authLoading, isLoggedIn, router]);
 
   // Buscar pedidos do cliente (via cookie HttpOnly)
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (authLoading || !isLoggedIn) return;
 
     const fetchPedidos = async () => {
       try {
@@ -63,7 +64,7 @@ export default function PedidosClientePage() {
     };
 
     fetchPedidos();
-  }, [isLoggedIn, router]);
+  }, [authLoading, isLoggedIn, router]);
 
   // --------- RENDER ---------
 
