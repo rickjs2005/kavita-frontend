@@ -37,7 +37,7 @@ const cards: Card[] = [
     key: "new",
     label: "Novos",
     hint: "Aguardando resposta",
-    dotClass: "bg-emerald-600",
+    dotClass: "bg-amber-500",
   },
   {
     key: "contacted",
@@ -76,7 +76,7 @@ export function StatsCards({ summary, loading }: Props) {
           <PanelCard
             key={card.key}
             density="compact"
-            accent={isAttention ? "emerald" : "none"}
+            accent={isAttention ? "amber" : "none"}
             className="kavita-rise-in group"
             style={{ animationDelay: `${index * STAGGER_STEP_MS}ms` }}
           >
@@ -89,14 +89,22 @@ export function StatsCards({ summary, loading }: Props) {
                 {card.label}
               </p>
             </div>
-            <p className="mt-3 text-3xl font-semibold tracking-tight text-stone-900 tabular-nums md:text-[2rem]">
+            <p
+              className={`mt-3 text-3xl font-semibold tracking-tight tabular-nums md:text-[2rem] ${
+                !loading && value === 0 ? "text-stone-300" : "text-stone-900"
+              }`}
+            >
               {loading ? (
                 <span className="inline-block h-8 w-10 animate-pulse rounded bg-stone-100" />
               ) : (
                 value
               )}
             </p>
-            <p className="mt-1 text-[11px] text-stone-500">{card.hint}</p>
+            <p className="mt-1 text-[11px] text-stone-500">
+              {!loading && value === 0 && card.key === "total"
+                ? "Aguardando primeiros contatos"
+                : card.hint}
+            </p>
           </PanelCard>
         );
       })}

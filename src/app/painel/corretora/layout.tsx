@@ -82,7 +82,13 @@ function CorretoraPanelInner({ children }: { children: React.ReactNode }) {
       {/* Camada 1 — Warm ambient gradient no topo (cria atmosfera) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[340px] bg-gradient-to-b from-amber-50/60 via-stone-50/40 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[500px] bg-gradient-to-b from-amber-100/50 via-orange-50/20 to-transparent"
+      />
+
+      {/* Camada 1b — Radial warm glow sutil (depth) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-32 top-16 h-72 w-72 rounded-full bg-amber-200/[0.06] blur-3xl"
       />
 
       {/* Camada 2 — Textura de grão, fixa na viewport (material) */}

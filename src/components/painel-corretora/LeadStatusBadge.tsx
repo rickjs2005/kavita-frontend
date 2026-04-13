@@ -13,7 +13,7 @@ const STYLES: Record<
 > = {
   new: {
     label: "Novo",
-    dot: "bg-emerald-600",
+    dot: "bg-amber-500",
   },
   contacted: {
     label: "Em contato",

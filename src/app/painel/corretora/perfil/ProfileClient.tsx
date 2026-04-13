@@ -31,7 +31,7 @@ const CONTACT_FIELDS = [
 ] as const;
 
 const inputClass =
-  "w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.02] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40";
+  "w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.02] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40";
 const labelClass =
   "mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-600";
 const errorClass = "mt-1.5 text-[11px] font-medium text-red-700";
@@ -134,7 +134,7 @@ export default function ProfileClient() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">
           Identidade
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 md:text-3xl">
@@ -305,7 +305,7 @@ export default function ProfileClient() {
           <button
             type="submit"
             disabled={saving || !isDirty}
-            className="group relative overflow-hidden rounded-xl bg-stone-900 px-5 py-2.5 text-sm font-semibold text-stone-50 shadow-lg shadow-stone-900/20 transition-colors hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-600/20 transition-colors hover:from-amber-400 hover:to-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span
               aria-hidden

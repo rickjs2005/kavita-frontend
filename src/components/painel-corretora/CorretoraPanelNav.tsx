@@ -47,7 +47,7 @@ export function CorretoraPanelNav() {
           <div className="flex min-w-0 items-center gap-5">
             <Link
               href="/painel/corretora"
-              className="shrink-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
+              className="shrink-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
               aria-label="Ir para o resumo"
             >
               <PanelBrand tone="dark" />
@@ -85,7 +85,7 @@ export function CorretoraPanelNav() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`relative rounded-lg px-3 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 ${
+                    className={`relative rounded-lg px-3 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 ${
                       active
                         ? "text-stone-900"
                         : "text-stone-500 hover:text-stone-900"
@@ -95,7 +95,7 @@ export function CorretoraPanelNav() {
                     {active && (
                       <span
                         aria-hidden
-                        className="absolute inset-x-3 -bottom-[17px] h-[2px] rounded-full bg-emerald-700"
+                        className="absolute inset-x-3 -bottom-[17px] h-[2px] rounded-full bg-amber-500"
                       />
                     )}
                   </Link>
@@ -127,7 +127,7 @@ export function CorretoraPanelNav() {
               onClick={() =>
                 logout({ redirectTo: "/painel/corretora/login" })
               }
-              className="ml-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm shadow-stone-900/[0.03] transition-colors hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
+              className="ml-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm shadow-stone-900/[0.03] transition-colors hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
               aria-label="Encerrar sessão"
             >
               Sair

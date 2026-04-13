@@ -25,7 +25,7 @@ type Props = HTMLAttributes<HTMLDivElement> & {
   /** Remove o padding interno (útil quando o card envolve um <ul>/table). */
   flush?: boolean;
   /** Ring de destaque colorido (usado pelo card "Novos" quando há leads). */
-  accent?: "emerald" | "none";
+  accent?: "amber" | "none";
 };
 
 const densityMap: Record<Density, string> = {
@@ -50,8 +50,8 @@ export function PanelCard({
     ? "shadow-lg shadow-stone-900/[0.05]"
     : "shadow-sm shadow-stone-900/[0.04]";
   const accentRing =
-    accent === "emerald"
-      ? "ring-2 ring-emerald-600/70"
+    accent === "amber"
+      ? "ring-2 ring-amber-500/60"
       : "";
   const padding = flush ? "" : densityMap[density];
 
@@ -63,7 +63,7 @@ export function PanelCard({
       {/* Highlight de topo — luz caindo sobre a superfície */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
       />
       {children}
     </div>

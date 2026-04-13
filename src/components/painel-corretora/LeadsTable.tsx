@@ -68,16 +68,27 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
   if (leads.length === 0) {
     return (
       <PanelCard density="spacious" className="text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-stone-100 text-stone-400">
-          <PanelBrandMark className="h-7 w-7" />
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 ring-1 ring-amber-200/60">
+          <PanelBrandMark className="h-8 w-8 text-amber-600" />
         </div>
-        <h3 className="text-sm font-semibold text-stone-900">
-          Nenhum lead por aqui ainda
+        <h3 className="text-base font-semibold text-stone-900">
+          Sua sala está pronta
         </h3>
-        <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-stone-500">
+        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-stone-500">
           {emptyMessage ??
-            "Assim que um produtor entrar em contato pela sua página, o lead aparecerá aqui."}
+            "Leads aparecerão aqui em tempo real assim que visitantes entrarem em contato pela sua página no Mercado do Café."}
         </p>
+        <div className="mt-5 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+          <a
+            href="/mercado-do-cafe/corretoras"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-amber-600/20 transition-colors hover:from-amber-400 hover:to-amber-500"
+          >
+            Ver minha página pública
+            <span aria-hidden>↗</span>
+          </a>
+        </div>
       </PanelCard>
     );
   }
@@ -139,7 +150,7 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
                         status: e.target.value as LeadStatus,
                       })
                     }
-                    className="rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 shadow-sm shadow-stone-900/[0.02] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 disabled:opacity-60"
+                    className="rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 shadow-sm shadow-stone-900/[0.02] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40 disabled:opacity-60"
                   >
                     {STATUS_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -152,7 +163,7 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
                     onClick={() =>
                       setExpandedId(isExpanded ? null : lead.id)
                     }
-                    className="text-[11px] font-semibold text-emerald-700 underline-offset-2 hover:underline"
+                    className="text-[11px] font-semibold text-amber-700 underline-offset-2 hover:underline"
                   >
                     {isExpanded ? "Fechar nota" : "Nota interna"}
                   </button>
@@ -199,7 +210,7 @@ function NoteEditor({
         rows={3}
         maxLength={2000}
         placeholder="Ex: Ligou em 10/04, vai mandar amostra na próxima semana..."
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.02] focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
+        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.02] focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
       />
       <div className="flex justify-end">
         <button

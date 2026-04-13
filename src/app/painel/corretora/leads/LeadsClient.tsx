@@ -70,7 +70,7 @@ export default function LeadsClient() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">
           Pipeline
         </p>
         <div className="mt-2 flex items-end justify-between gap-3">

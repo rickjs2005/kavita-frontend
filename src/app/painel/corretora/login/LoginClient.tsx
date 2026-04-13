@@ -92,7 +92,7 @@ export default function LoginClient() {
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="voce@corretora.com.br"
-              className="w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.03] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
+              className="w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.03] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
             />
           </div>
 
@@ -111,7 +111,7 @@ export default function LoginClient() {
               onChange={(e) => setSenha(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder="••••••••"
-              className="w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.03] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
+              className="w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.03] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
             />
           </div>
 
@@ -119,7 +119,7 @@ export default function LoginClient() {
             type="button"
             onClick={handleLogin}
             disabled={loading || !email || !senha}
-            className="group relative h-11 w-full overflow-hidden rounded-xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-lg shadow-stone-900/20 transition-all hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="group relative h-11 w-full overflow-hidden rounded-xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-lg shadow-stone-900/20 transition-all hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {/* Highlight top */}
             <span
@@ -134,7 +134,7 @@ export default function LoginClient() {
           <div className="pt-1 text-center">
             <Link
               href="/painel/corretora/esqueci-senha"
-              className="text-xs font-medium text-stone-600 underline-offset-4 hover:text-emerald-700 hover:underline"
+              className="text-xs font-medium text-stone-600 underline-offset-4 hover:text-amber-700 hover:underline"
             >
               Esqueci minha senha
             </Link>

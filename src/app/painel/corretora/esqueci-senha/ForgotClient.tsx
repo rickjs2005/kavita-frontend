@@ -45,7 +45,7 @@ export default function ForgotClient() {
             role="status"
             className="space-y-3 text-center"
           >
-            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
               <svg
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -73,7 +73,7 @@ export default function ForgotClient() {
             <div className="pt-2">
               <Link
                 href="/painel/corretora/login"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800"
               >
                 ← Voltar para o login
               </Link>
@@ -108,14 +108,14 @@ export default function ForgotClient() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="voce@corretora.com.br"
-                className="w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.03] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/40"
+                className="w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.03] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading || !email}
-              className="group relative h-11 w-full overflow-hidden rounded-xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-lg shadow-stone-900/20 transition-all hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="group relative h-11 w-full overflow-hidden rounded-xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-lg shadow-stone-900/20 transition-all hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span
                 aria-hidden
@@ -129,7 +129,7 @@ export default function ForgotClient() {
             <div className="pt-1 text-center">
               <Link
                 href="/painel/corretora/login"
-                className="text-xs font-medium text-stone-600 hover:text-emerald-700"
+                className="text-xs font-medium text-stone-600 hover:text-amber-700"
               >
                 ← Voltar para o login
               </Link>
