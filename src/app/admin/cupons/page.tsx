@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
-import type { Coupon } from "@/types/coupon";
+import type { Coupon, CouponRestriction } from "@/types/coupon";
 import { emptyCoupon } from "@/types/coupon";
 
 export default function CuponsPage() {
@@ -48,8 +48,38 @@ export default function CuponsPage() {
     setForm({
       ...cupom,
       expiracao: cupom.expiracao ? cupom.expiracao.slice(0, 16) : "",
+      restricoes: Array.isArray(cupom.restricoes) ? cupom.restricoes : [],
     });
     scrollToForm();
+  }
+
+  function handleAddRestricao() {
+    setForm((prev) => ({
+      ...prev,
+      restricoes: [
+        ...(prev.restricoes || []),
+        { tipo: "produto" as const, target_id: 0 },
+      ],
+    }));
+  }
+
+  function handleRemoveRestricao(index: number) {
+    setForm((prev) => ({
+      ...prev,
+      restricoes: (prev.restricoes || []).filter((_, i) => i !== index),
+    }));
+  }
+
+  function handleRestricaoChange(
+    index: number,
+    field: keyof CouponRestriction,
+    value: string | number,
+  ) {
+    setForm((prev) => {
+      const restricoes = [...(prev.restricoes || [])];
+      restricoes[index] = { ...restricoes[index], [field]: value };
+      return { ...prev, restricoes };
+    });
   }
 
   // ========= requests =========
@@ -98,7 +128,14 @@ export default function CuponsPage() {
           form.max_usos === null || (form.max_usos as any) === ""
             ? null
             : Number(form.max_usos),
+        max_usos_por_usuario:
+          form.max_usos_por_usuario === null || (form.max_usos_por_usuario as any) === ""
+            ? null
+            : Number(form.max_usos_por_usuario),
         ativo: !!form.ativo,
+        restricoes: (form.restricoes || [])
+          .filter((r) => r.target_id > 0)
+          .map((r) => ({ tipo: r.tipo, target_id: Number(r.target_id) })),
       };
 
       if (editing) {
@@ -319,6 +356,82 @@ export default function CuponsPage() {
                 </div>
               </div>
 
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-200">
+                  Máx. de usos por cliente
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.max_usos_por_usuario ?? ""}
+                  onChange={(e) =>
+                    handleChange(
+                      "max_usos_por_usuario",
+                      e.target.value === "" ? null : Number(e.target.value),
+                    )
+                  }
+                  className="w-full rounded-lg border border-white/10 bg-dark-750 px-3 py-2 text-sm text-white outline-none focus:border-info"
+                  placeholder="Ilimitado"
+                />
+                <p className="text-[11px] text-gray-400">
+                  Quantas vezes cada cliente pode usar este cupom. Deixe em branco para ilimitado.
+                </p>
+              </div>
+
+              {/* Restrições por categoria/produto */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-200">
+                    Restrições (opcional)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddRestricao}
+                    className="text-xs font-medium text-info hover:underline"
+                  >
+                    + Adicionar
+                  </button>
+                </div>
+                <p className="text-[11px] text-gray-400">
+                  Sem restrições = cupom vale para todos os produtos.
+                </p>
+                {(form.restricoes || []).map((r, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <select
+                      value={r.tipo}
+                      onChange={(e) =>
+                        handleRestricaoChange(idx, "tipo", e.target.value)
+                      }
+                      className="rounded-lg border border-white/10 bg-dark-750 px-2 py-1.5 text-xs text-white outline-none focus:border-info"
+                    >
+                      <option value="produto">Produto</option>
+                      <option value="categoria">Categoria</option>
+                    </select>
+                    <input
+                      type="number"
+                      min={1}
+                      value={r.target_id || ""}
+                      onChange={(e) =>
+                        handleRestricaoChange(
+                          idx,
+                          "target_id",
+                          Number(e.target.value),
+                        )
+                      }
+                      className="flex-1 rounded-lg border border-white/10 bg-dark-750 px-2 py-1.5 text-xs text-white outline-none focus:border-info"
+                      placeholder="ID"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveRestricao(idx)}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-gray-200">
@@ -424,6 +537,9 @@ export default function CuponsPage() {
                       <div className="text-[11px] text-gray-400">
                         Usos: {c.usos}
                         {c.max_usos != null && ` / ${c.max_usos}`}
+                        {c.max_usos_por_usuario != null && (
+                          <> · {c.max_usos_por_usuario}x por cliente</>
+                        )}
                         {c.expiracao && (
                           <>
                             {" "}
@@ -432,6 +548,14 @@ export default function CuponsPage() {
                           </>
                         )}
                       </div>
+                      {Array.isArray(c.restricoes) && c.restricoes.length > 0 && (
+                        <div className="text-[11px] text-gray-400">
+                          Restrito a:{" "}
+                          {c.restricoes.map((r) =>
+                            `${r.tipo === "categoria" ? "Cat" : "Prod"} #${r.target_id}`
+                          ).join(", ")}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex gap-2 pt-2 sm:pt-0">
