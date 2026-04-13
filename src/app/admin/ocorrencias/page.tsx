@@ -23,6 +23,7 @@ type Ocorrencia = {
   status: StatusOcorrencia;
   resposta_admin: string | null;
   taxa_extra: number;
+  admin_id: number | null;
   created_at: string;
   updated_at: string;
   pedido_endereco: string | null;
