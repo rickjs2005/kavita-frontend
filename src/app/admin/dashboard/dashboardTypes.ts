@@ -61,6 +61,8 @@ export type ModulesStatus = {
   drones: { modelos: number; comentariosPendentes: number };
   mercadoCafe: { corretorasAtivas: number; solicitacoesPendentes: number };
   mensagens: { naoLidas: number; total: number };
+  ocorrencias: { abertas: number; total: number };
+  carrinhos: { abandonados: number; ativos: number };
 };
 
 export type AlertNivel = "info" | "warning" | "danger";

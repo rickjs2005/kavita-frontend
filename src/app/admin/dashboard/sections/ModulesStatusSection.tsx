@@ -168,6 +168,26 @@ export function ModulesStatusSection({ status, loading }: Props) {
             { label: "Total", value: status.mensagens.total },
           ]}
         />
+
+        <ModuleCard
+          icon="📋"
+          title="Ocorrências"
+          href="/admin/ocorrencias"
+          lines={[
+            { label: "Abertas", value: status.ocorrencias.abertas, dotColor: status.ocorrencias.abertas > 0 ? "amber" : "green" },
+            { label: "Total", value: status.ocorrencias.total },
+          ]}
+        />
+
+        <ModuleCard
+          icon="🛒"
+          title="Carrinhos"
+          href="/admin/carrinhos"
+          lines={[
+            { label: "Abandonados", value: status.carrinhos.abandonados, dotColor: status.carrinhos.abandonados > 0 ? "amber" : "green" },
+            { label: "Ativos", value: status.carrinhos.ativos },
+          ]}
+        />
       </div>
     </section>
   );
