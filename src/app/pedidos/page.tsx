@@ -23,7 +23,6 @@ type PedidoResumo = {
   id: number;
   usuario_id: number;
   forma_pagamento: string;
-  status: string;
   status_pagamento: StatusPagamento;
   status_entrega: StatusEntrega;
   data_pedido: string;
@@ -33,17 +32,17 @@ type PedidoResumo = {
   qtd_itens: number;
 };
 
-// ----- Labels e badges -----
+// ----- Labels profissionais -----
 const LABEL_PAGAMENTO: Record<StatusPagamento, string> = {
-  pendente: "Pendente",
-  pago: "Pago",
-  falhou: "Falhou",
-  estornado: "Estornado",
+  pendente: "Pagamento pendente",
+  pago: "Pagamento aprovado",
+  falhou: "Pagamento recusado",
+  estornado: "Pagamento estornado",
 };
 
 const LABEL_ENTREGA: Record<StatusEntrega, string> = {
-  em_separacao: "Em separação",
-  processando: "Processando",
+  em_separacao: "Pedido recebido",
+  processando: "Em preparação",
   enviado: "Enviado",
   entregue: "Entregue",
   cancelado: "Cancelado",
@@ -67,7 +66,7 @@ const COR_ENTREGA: Record<StatusEntrega, string> = {
 function Badge({ label, className }: { label: string; className: string }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${className}`}
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium leading-tight ${className}`}
     >
       {label}
     </span>
@@ -127,7 +126,7 @@ export default function PedidosClientePage() {
             Meus Pedidos
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Acompanhe suas compras e status de entrega
+            Acompanhe suas compras e o status de entrega
           </p>
         </div>
         <button
@@ -164,10 +163,10 @@ export default function PedidosClientePage() {
               <Link
                 key={p.id}
                 href={`/pedidos/${p.id}`}
-                className="block rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:shadow-md sm:p-5"
+                className="block rounded-xl border border-gray-200 bg-white shadow-sm transition hover:border-gray-300 hover:shadow-md"
               >
-                {/* Linha 1: ID + Data + Total */}
-                <div className="flex flex-wrap items-start justify-between gap-2">
+                {/* Topo: ID + Total */}
+                <div className="flex items-start justify-between gap-3 px-4 pt-4 sm:px-5 sm:pt-5">
                   <div className="min-w-0">
                     <p className="text-base font-semibold text-gray-900 sm:text-lg">
                       Pedido #{p.id}
@@ -176,13 +175,15 @@ export default function PedidosClientePage() {
                       {formatDateTime(p.data_pedido)}
                     </p>
                   </div>
-                  <p className="text-lg font-bold text-gray-900 sm:text-xl">
-                    {formatCurrency(p.total)}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-900 sm:text-xl">
+                      {formatCurrency(p.total)}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Linha 2: Badges + Info */}
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                {/* Badges */}
+                <div className="mt-3 flex flex-wrap items-center gap-2 px-4 sm:px-5">
                   {sp && LABEL_PAGAMENTO[sp] && (
                     <Badge
                       label={LABEL_PAGAMENTO[sp]}
@@ -203,17 +204,23 @@ export default function PedidosClientePage() {
                   )}
                 </div>
 
-                {/* Linha 3: Detalhes */}
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                {/* Rodapé: detalhes */}
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-gray-100 px-4 py-3 text-sm text-gray-500 sm:px-5">
                   <span>{p.forma_pagamento}</span>
-                  <span className="hidden sm:inline">·</span>
+                  <span className="hidden sm:inline text-gray-300">|</span>
                   <span>
                     {p.qtd_itens} {p.qtd_itens === 1 ? "item" : "itens"}
                   </span>
                   {p.shipping_price > 0 && (
                     <>
-                      <span className="hidden sm:inline">·</span>
+                      <span className="hidden sm:inline text-gray-300">|</span>
                       <span>Frete: {formatCurrency(p.shipping_price)}</span>
+                    </>
+                  )}
+                  {p.shipping_price === 0 && (
+                    <>
+                      <span className="hidden sm:inline text-gray-300">|</span>
+                      <span className="text-emerald-600">Frete grátis</span>
                     </>
                   )}
                 </div>
