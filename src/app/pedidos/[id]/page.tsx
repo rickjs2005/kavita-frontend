@@ -31,6 +31,7 @@ type OcorrenciaCliente = {
   id: number;
   motivo: string;
   observacao: string | null;
+  resposta_cliente: string | null;
   status: string;
   resposta_admin: string | null;
   taxa_extra: number;
@@ -252,6 +253,165 @@ function AddressDisputeModal({
   );
 }
 
+// ----- Modal de resposta do cliente -----
+
+function ClientReplyModal({
+  pedidoId,
+  ocorrencia,
+  onClose,
+  onSuccess,
+}: {
+  pedidoId: number;
+  ocorrencia: OcorrenciaCliente;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [resposta, setResposta] = useState("");
+  const [addrForm, setAddrForm] = useState({
+    cep: "", rua: "", numero: "", bairro: "",
+    cidade: "", estado: "", complemento: "", ponto_referencia: "",
+  });
+  const [showAddr, setShowAddr] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async () => {
+    if (!resposta.trim()) {
+      setError("Informe sua resposta.");
+      return;
+    }
+    setSending(true);
+    setError(null);
+    try {
+      const body: Record<string, unknown> = {
+        resposta_cliente: resposta.trim(),
+      };
+      if (showAddr && addrForm.rua && addrForm.cep) {
+        body.endereco_sugerido = {
+          ...addrForm,
+          cep: addrForm.cep.replace(/\D/g, ""),
+        };
+      }
+      await apiClient.put(
+        `/api/pedidos/${pedidoId}/ocorrencias/${ocorrencia.id}/resposta`,
+        body,
+      );
+      onSuccess();
+    } catch (err: any) {
+      setError(err?.message || "Não foi possível enviar. Tente novamente.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const motivoLabel: Record<string, string> = {
+    numero_errado: "Número errado",
+    complemento_faltando: "Complemento faltando",
+    bairro_incorreto: "Bairro incorreto",
+    cep_incorreto: "CEP incorreto",
+    destinatario_incorreto: "Destinatário incorreto",
+    outro: "Outro problema",
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Responder solicitação"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-5 shadow-xl sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-900">
+          Responder solicitação
+        </h3>
+
+        {/* Contexto */}
+        <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5">
+          <p className="text-xs font-medium text-sky-700">
+            Motivo: {motivoLabel[ocorrencia.motivo] || ocorrencia.motivo}
+          </p>
+          {ocorrencia.resposta_admin && (
+            <p className="mt-1 text-sm text-sky-800">
+              {ocorrencia.resposta_admin}
+            </p>
+          )}
+        </div>
+
+        {/* Resposta */}
+        <label className="mt-4 block text-sm font-medium text-gray-700">
+          Sua resposta
+        </label>
+        <textarea
+          value={resposta}
+          onChange={(e) => setResposta(e.target.value)}
+          maxLength={1000}
+          rows={3}
+          placeholder="Descreva a correção ou informação solicitada..."
+          className="mt-1 w-full resize-none rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        />
+
+        {/* Toggle endereço */}
+        <button
+          type="button"
+          onClick={() => setShowAddr(!showAddr)}
+          className="mt-3 text-sm font-medium text-primary hover:text-primary-hover"
+        >
+          {showAddr ? "Ocultar formulário de endereço" : "Informar endereço correto"}
+        </button>
+
+        {/* Formulário de endereço */}
+        {showAddr && (
+          <div className="mt-3 grid grid-cols-1 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2">
+            {([
+              ["rua", "Rua / Logradouro", "sm:col-span-2"],
+              ["numero", "Número", ""],
+              ["complemento", "Complemento", ""],
+              ["bairro", "Bairro", ""],
+              ["cidade", "Cidade", ""],
+              ["estado", "Estado (UF)", ""],
+              ["cep", "CEP (8 dígitos)", ""],
+              ["ponto_referencia", "Ponto de referência", "sm:col-span-2"],
+            ] as const).map(([field, label, span]) => (
+              <div key={field} className={span}>
+                <label className="block text-xs text-gray-500">{label}</label>
+                <input
+                  type="text"
+                  value={addrForm[field]}
+                  onChange={(e) => setAddrForm((f) => ({ ...f, [field]: e.target.value }))}
+                  className="mt-0.5 w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {error && <p role="alert" className="mt-2 text-sm text-red-600">{error}</p>}
+
+        {/* Ações */}
+        <div className="mt-5 flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={sending}
+            className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={sending || !resposta.trim()}
+            className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {sending ? "Enviando..." : "Enviar resposta"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ----- Componente principal -----
 export default function PedidoPage() {
   const router = useRouter();
@@ -270,6 +430,8 @@ export default function PedidoPage() {
   // Estado do modal de ocorrência
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputeSent, setDisputeSent] = useState(false);
+  const [replyingOcId, setReplyingOcId] = useState<number | null>(null);
+  const [replySent, setReplySent] = useState<number | null>(null);
 
   const handleRetryPayment = useCallback(async () => {
     if (!pedido) return;
@@ -599,11 +761,14 @@ export default function PedidoPage() {
                 destinatario_incorreto: "Destinatário incorreto",
                 outro: "Outro problema",
               };
+              const isAguardando = oc.status === "aguardando_retorno";
+              const justReplied = replySent === oc.id;
+
               return (
-                <div key={oc.id} className="px-4 py-3 sm:px-5">
+                <div key={oc.id} className={`px-4 py-3 sm:px-5 ${isAguardando && !justReplied ? "bg-violet-50/50" : ""}`}>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColor[oc.status] || "border-gray-300 bg-gray-50 text-gray-600"}`}>
-                      {statusLabel[oc.status] || oc.status}
+                      {justReplied ? "Resposta enviada" : (statusLabel[oc.status] || oc.status)}
                     </span>
                     <span className="text-sm text-gray-600">
                       {motivoLabel[oc.motivo] || oc.motivo}
@@ -612,19 +777,52 @@ export default function PedidoPage() {
                       {formatDateTime(oc.created_at)}
                     </span>
                   </div>
+
+                  {/* Observação original */}
                   {oc.observacao && (
                     <p className="mt-1 text-sm text-gray-500">{oc.observacao}</p>
                   )}
+
+                  {/* Resposta do admin */}
                   {oc.resposta_admin && (
                     <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2">
                       <p className="text-xs font-medium text-sky-700">Resposta da equipe:</p>
                       <p className="mt-0.5 text-sm text-sky-800">{oc.resposta_admin}</p>
                     </div>
                   )}
+
+                  {/* Resposta do cliente (se já respondeu) */}
+                  {oc.resposta_cliente && (
+                    <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                      <p className="text-xs font-medium text-emerald-700">Sua resposta:</p>
+                      <p className="mt-0.5 text-sm text-emerald-800">{oc.resposta_cliente}</p>
+                    </div>
+                  )}
+
                   {oc.taxa_extra > 0 && (
                     <p className="mt-1 text-xs text-amber-600">
                       Taxa adicional: {formatCurrency(oc.taxa_extra)}
                     </p>
+                  )}
+
+                  {/* CTA: responder quando aguardando retorno */}
+                  {isAguardando && !justReplied && (
+                    <button
+                      type="button"
+                      onClick={() => setReplyingOcId(oc.id)}
+                      className="mt-3 inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
+                    >
+                      Enviar correção
+                    </button>
+                  )}
+
+                  {/* Feedback após envio */}
+                  {justReplied && (
+                    <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                      <p className="text-sm font-medium text-emerald-700">
+                        Resposta enviada com sucesso. Nossa equipe vai analisar.
+                      </p>
+                    </div>
                   )}
                 </div>
               );
@@ -739,6 +937,23 @@ export default function PedidoPage() {
           }}
         />
       )}
+
+      {/* Modal de resposta do cliente */}
+      {replyingOcId && pedido && (() => {
+        const oc = pedido.ocorrencias?.find((o) => o.id === replyingOcId);
+        if (!oc) return null;
+        return (
+          <ClientReplyModal
+            pedidoId={pedido.id}
+            ocorrencia={oc}
+            onClose={() => setReplyingOcId(null)}
+            onSuccess={() => {
+              setReplyingOcId(null);
+              setReplySent(oc.id);
+            }}
+          />
+        );
+      })()}
     </main>
   );
 }
