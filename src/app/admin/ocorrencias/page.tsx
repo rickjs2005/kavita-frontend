@@ -20,10 +20,15 @@ type Ocorrencia = {
   tipo: string;
   motivo: string;
   observacao: string | null;
+  resposta_cliente: string | null;
+  endereco_sugerido: string | null;
   status: StatusOcorrencia;
   resposta_admin: string | null;
+  endereco_corrigido: string | null;
   taxa_extra: number;
   admin_id: number | null;
+  feedback_nota: number | null;
+  feedback_comentario: string | null;
   created_at: string;
   updated_at: string;
   pedido_endereco: string | null;
@@ -415,6 +420,45 @@ function OcorrenciaDetail({
             <p className="mt-1 font-medium text-slate-200">{LABEL_MOTIVO[oc.motivo] || oc.motivo}</p>
             {oc.observacao && <p className="mt-1 whitespace-pre-wrap text-slate-400">{oc.observacao}</p>}
           </div>
+
+          {/* Resposta do cliente (se existir) */}
+          {oc.resposta_cliente && (
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 sm:col-span-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-400">Resposta do cliente</p>
+              <p className="mt-1 whitespace-pre-wrap text-slate-300">{oc.resposta_cliente}</p>
+              {oc.endereco_sugerido && (() => {
+                const addr = typeof oc.endereco_sugerido === "string"
+                  ? (() => { try { return JSON.parse(oc.endereco_sugerido); } catch { return null; } })()
+                  : oc.endereco_sugerido;
+                if (!addr) return null;
+                return (
+                  <div className="mt-2 rounded-md border border-emerald-500/10 bg-slate-950/30 p-2 text-xs text-slate-400">
+                    <p className="font-medium text-emerald-300">Endereço sugerido pelo cliente:</p>
+                    <p>{addr.rua}{addr.numero ? `, ${addr.numero}` : ""}</p>
+                    {addr.bairro && <p>{addr.bairro} — {addr.cidade}/{addr.estado}</p>}
+                    {addr.complemento && <p>{addr.complemento}</p>}
+                    {addr.cep && <p>CEP: {addr.cep}</p>}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Feedback de satisfação (se existir) */}
+          {oc.feedback_nota && (
+            <div className="rounded-lg border border-slate-700 bg-slate-950/40 p-3 sm:col-span-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Feedback do cliente</p>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-lg">{["😞","😕","😐","🙂","😊"][oc.feedback_nota - 1] || "—"}</span>
+                <span className="text-sm text-slate-300">
+                  {["Muito insatisfeito","Insatisfeito","Neutro","Satisfeito","Muito satisfeito"][oc.feedback_nota - 1] || "—"}
+                </span>
+              </div>
+              {oc.feedback_comentario && (
+                <p className="mt-1 text-sm text-slate-400">{oc.feedback_comentario}</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Contato com o cliente */}
