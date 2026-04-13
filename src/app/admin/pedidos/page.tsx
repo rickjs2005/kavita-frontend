@@ -382,8 +382,13 @@ export default function PedidosAdminPage() {
                     >
                       {/* Pedido / endereço */}
                       <div className="table-cell px-4 py-4 align-top">
-                        <div className="text-xs font-semibold text-gray-900 dark:text-gray-50">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-900 dark:text-gray-50">
                           #{pedido.id.toString().padStart(4, "0")}
+                          {pedido.ocorrencias_abertas > 0 && (
+                            <span className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-200" title="Ocorrência em andamento">
+                              {pedido.ocorrencias_abertas} oc.
+                            </span>
+                          )}
                         </div>
                         <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           {resumoEndereco(pedido.endereco)}
@@ -595,9 +600,16 @@ export default function PedidosAdminPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-50">
-                          Pedido #{pedido.id.toString().padStart(4, "0")}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-50">
+                            Pedido #{pedido.id.toString().padStart(4, "0")}
+                          </p>
+                          {pedido.ocorrencias_abertas > 0 && (
+                            <span className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-200" title="Ocorrência em andamento">
+                              {pedido.ocorrencias_abertas} oc.
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {pedido.usuario}
                         </p>

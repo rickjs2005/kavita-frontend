@@ -138,5 +138,7 @@ export type PedidoAdmin = {
   /** Custo de frete separado (para conciliação financeira) */
   shipping_price: number;
   data_pedido: string;
+  /** Quantidade de ocorrências em andamento (aberta/em_analise/aguardando_retorno) */
+  ocorrencias_abertas: number;
   itens: PedidoItem[];
 };
