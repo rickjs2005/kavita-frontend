@@ -27,6 +27,17 @@ type PedidoItem = {
   imagem?: string | null;
 };
 
+type OcorrenciaCliente = {
+  id: number;
+  motivo: string;
+  observacao: string | null;
+  status: string;
+  resposta_admin: string | null;
+  taxa_extra: number;
+  created_at: string;
+  updated_at: string;
+};
+
 type PedidoDetalhe = {
   id: number;
   usuario_id: number;
@@ -42,6 +53,7 @@ type PedidoDetalhe = {
   shipping_prazo_dias?: number | null;
   total: number;
   itens: PedidoItem[];
+  ocorrencias?: OcorrenciaCliente[];
 };
 
 type MotivoOcorrencia =
@@ -359,6 +371,9 @@ export default function PedidoPage() {
   const se = pedido.status_entrega as StatusEntrega;
   const isPrazo = pedido.forma_pagamento?.toLowerCase().includes("prazo");
   const canDisputeAddress = se !== "entregue" && se !== "cancelado";
+  const hasOpenDispute = pedido.ocorrencias?.some(
+    (o) => o.status === "aberta" || o.status === "em_analise" || o.status === "aguardando_retorno"
+  ) ?? false;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
@@ -468,7 +483,7 @@ export default function PedidoPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400">
               Endereço de entrega
             </h2>
-            {canDisputeAddress && !disputeSent && (
+            {canDisputeAddress && !disputeSent && !hasOpenDispute && (
               <button
                 type="button"
                 onClick={() => setShowDisputeModal(true)}
@@ -548,6 +563,72 @@ export default function PedidoPage() {
                 </div>
               )}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* Ocorrências do cliente */}
+      {pedido.ocorrencias && pedido.ocorrencias.length > 0 && (
+        <section className="mb-6 rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400">
+              Suas solicitações
+            </h2>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {pedido.ocorrencias.map((oc) => {
+              const statusLabel: Record<string, string> = {
+                aberta: "Enviada",
+                em_analise: "Em análise",
+                aguardando_retorno: "Aguardando seu retorno",
+                resolvida: "Resolvida",
+                rejeitada: "Não aprovada",
+              };
+              const statusColor: Record<string, string> = {
+                aberta: "border-amber-400/40 bg-amber-50 text-amber-700",
+                em_analise: "border-sky-400/40 bg-sky-50 text-sky-700",
+                aguardando_retorno: "border-violet-400/40 bg-violet-50 text-violet-700",
+                resolvida: "border-emerald-400/40 bg-emerald-50 text-emerald-700",
+                rejeitada: "border-rose-400/40 bg-rose-50 text-rose-700",
+              };
+              const motivoLabel: Record<string, string> = {
+                numero_errado: "Número errado",
+                complemento_faltando: "Complemento faltando",
+                bairro_incorreto: "Bairro incorreto",
+                cep_incorreto: "CEP incorreto",
+                destinatario_incorreto: "Destinatário incorreto",
+                outro: "Outro problema",
+              };
+              return (
+                <div key={oc.id} className="px-4 py-3 sm:px-5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColor[oc.status] || "border-gray-300 bg-gray-50 text-gray-600"}`}>
+                      {statusLabel[oc.status] || oc.status}
+                    </span>
+                    <span className="text-sm text-gray-600">
+                      {motivoLabel[oc.motivo] || oc.motivo}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {formatDateTime(oc.created_at)}
+                    </span>
+                  </div>
+                  {oc.observacao && (
+                    <p className="mt-1 text-sm text-gray-500">{oc.observacao}</p>
+                  )}
+                  {oc.resposta_admin && (
+                    <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2">
+                      <p className="text-xs font-medium text-sky-700">Resposta da equipe:</p>
+                      <p className="mt-0.5 text-sm text-sky-800">{oc.resposta_admin}</p>
+                    </div>
+                  )}
+                  {oc.taxa_extra > 0 && (
+                    <p className="mt-1 text-xs text-amber-600">
+                      Taxa adicional: {formatCurrency(oc.taxa_extra)}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
