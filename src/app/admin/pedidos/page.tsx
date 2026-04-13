@@ -77,6 +77,18 @@ function resumoEndereco(endereco: OrderAddress | null) {
   return partes.join(" · ") || "—";
 }
 
+function enderecoCompleto(endereco: OrderAddress | null): string {
+  if (!endereco) return "";
+  const linhas = [
+    endereco.rua && `${endereco.rua}, ${endereco.numero ?? ""}`.trim(),
+    endereco.complemento && `Complemento: ${endereco.complemento}`,
+    endereco.bairro,
+    endereco.cidade && `${endereco.cidade} - ${endereco.estado ?? ""}`.trim(),
+    endereco.cep && `CEP: ${endereco.cep}`,
+  ].filter(Boolean);
+  return linhas.join("\n") || "";
+}
+
 function resumoItens(itens: PedidoItem[]) {
   if (!itens || itens.length === 0) return "Nenhum item";
   if (itens.length === 1) {
@@ -390,7 +402,7 @@ export default function PedidosAdminPage() {
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="mt-1 cursor-help text-xs text-gray-500 dark:text-gray-400" title={enderecoCompleto(pedido.endereco)}>
                           {resumoEndereco(pedido.endereco)}
                         </div>
                         <div className="mt-1 text-[11px] text-gray-400">
@@ -624,7 +636,7 @@ export default function PedidosAdminPage() {
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400" title={enderecoCompleto(pedido.endereco)}>
                       {resumoEndereco(pedido.endereco)}
                     </p>
 

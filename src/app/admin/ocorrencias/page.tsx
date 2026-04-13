@@ -560,50 +560,90 @@ export default function OcorrenciasAdminPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  // Filtros
+  // Paginação + filtros server-side
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const limit = 20;
+
   const [filtroStatus, setFiltroStatus] = useState<StatusOcorrencia | "">("");
   const [filtroMotivo, setFiltroMotivo] = useState("");
   const [busca, setBusca] = useState("");
 
-  useEffect(() => {
-    const carregar = async () => {
-      try {
-        setLoading(true);
-        setErro(null);
-        const resp = await apiClient.get<Ocorrencia[]>(
-          "/api/admin/pedidos/ocorrencias",
-        );
-        setOcorrencias(resp);
-      } catch (err) {
-        console.error("Erro ao carregar ocorrências:", err);
-        setErro("Não foi possível carregar as ocorrências.");
-      } finally {
-        setLoading(false);
+  // Contadores vindos de endpoint separado
+  const [contadores, setContadores] = useState({ aberta: 0, em_analise: 0, aguardando_retorno: 0 });
+
+  const carregar = async (p = page) => {
+    try {
+      setLoading(true);
+      setErro(null);
+      const params = new URLSearchParams();
+      params.set("page", String(p));
+      params.set("limit", String(limit));
+      if (filtroStatus) params.set("status", filtroStatus);
+      if (filtroMotivo) params.set("motivo", filtroMotivo);
+
+      const resp = await apiClient.get<{ data: Ocorrencia[]; meta: { total: number; page: number; limit: number } }>(
+        `/api/admin/pedidos/ocorrencias?${params.toString()}`,
+      );
+
+      // response.paginated retorna { ok, data, meta }
+      // apiClient desempacota ok+data, mas meta fica no nível superior
+      // Precisamos lidar com ambos os formatos
+      if (Array.isArray(resp)) {
+        // Fallback: resposta não paginada
+        setOcorrencias(resp as unknown as Ocorrencia[]);
+        setTotalPages(1);
+        setTotalItems(resp.length);
+      } else if (resp && typeof resp === "object" && "data" in resp) {
+        setOcorrencias(resp.data);
+        setTotalPages(Math.ceil(resp.meta.total / resp.meta.limit) || 1);
+        setTotalItems(resp.meta.total);
+        setPage(resp.meta.page);
+      } else {
+        setOcorrencias([]);
       }
-    };
-    carregar();
+    } catch (err) {
+      console.error("Erro ao carregar ocorrências:", err);
+      setErro("Não foi possível carregar as ocorrências.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Carregar contadores
+  useEffect(() => {
+    apiClient
+      .get<{ aberta: number; em_analise: number; aguardando_retorno: number }>(
+        "/api/admin/pedidos/ocorrencias/count",
+      )
+      .then(setContadores)
+      .catch(() => {});
   }, []);
 
+  // Recarregar ao mudar filtros ou página
+  useEffect(() => {
+    carregar(page);
+  }, [page, filtroStatus, filtroMotivo]);
+
+  // Reset página ao mudar filtro
+  const handleFilterChange = (setter: (v: any) => void, value: any) => {
+    setter(value);
+    setPage(1);
+  };
+
+  // Busca client-side (dentro da página atual)
   const filtradas = useMemo(() => {
-    let result = ocorrencias;
-    if (filtroStatus) {
-      result = result.filter((o) => o.status === filtroStatus);
-    }
-    if (filtroMotivo) {
-      result = result.filter((o) => o.motivo === filtroMotivo);
-    }
-    if (busca.trim()) {
-      const q = busca.toLowerCase();
-      result = result.filter(
-        (o) =>
-          o.usuario_nome.toLowerCase().includes(q) ||
-          o.usuario_email.toLowerCase().includes(q) ||
-          String(o.pedido_id).includes(q) ||
-          String(o.id).includes(q),
-      );
-    }
-    return result;
-  }, [ocorrencias, filtroStatus, filtroMotivo, busca]);
+    if (!busca.trim()) return ocorrencias;
+    const q = busca.toLowerCase();
+    return ocorrencias.filter(
+      (o) =>
+        o.usuario_nome.toLowerCase().includes(q) ||
+        o.usuario_email.toLowerCase().includes(q) ||
+        String(o.pedido_id).includes(q) ||
+        String(o.id).includes(q),
+    );
+  }, [ocorrencias, busca]);
 
   const handleUpdate = (id: number, data: Partial<Ocorrencia>) => {
     setOcorrencias((prev) =>
@@ -613,14 +653,6 @@ export default function OcorrenciasAdminPage() {
   };
 
   const selectedOc = ocorrencias.find((o) => o.id === selectedId) ?? null;
-
-  const contadores = useMemo(() => {
-    const c = { aberta: 0, em_analise: 0, aguardando_retorno: 0, resolvida: 0, rejeitada: 0 };
-    for (const o of ocorrencias) {
-      if (o.status in c) c[o.status as StatusOcorrencia]++;
-    }
-    return c;
-  }, [ocorrencias]);
 
   // ----- Loading / Erro -----
   if (loading) {
@@ -693,7 +725,7 @@ export default function OcorrenciasAdminPage() {
           <select
             value={filtroStatus}
             onChange={(e) =>
-              setFiltroStatus(e.target.value as StatusOcorrencia | "")
+              handleFilterChange(setFiltroStatus, e.target.value as StatusOcorrencia | "")
             }
             className="rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
           >
@@ -706,7 +738,7 @@ export default function OcorrenciasAdminPage() {
           </select>
           <select
             value={filtroMotivo}
-            onChange={(e) => setFiltroMotivo(e.target.value)}
+            onChange={(e) => handleFilterChange(setFiltroMotivo, e.target.value)}
             className="rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
           >
             <option value="">Todos os motivos</option>
@@ -868,6 +900,31 @@ export default function OcorrenciasAdminPage() {
           </div>
         )}
       </div>
+
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="rounded-md border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Anterior
+          </button>
+          <span className="text-xs text-slate-400">
+            Página {page} de {totalPages} ({totalItems} total)
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="rounded-md border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Próxima
+          </button>
+        </div>
+      )}
 
       {/* Modal de detalhe */}
       {selectedOc && (
