@@ -169,7 +169,7 @@ function OcorrenciaDetail({
   const [error, setError] = useState<string | null>(null);
 
   // Contato
-  const [selectedTemplate, setSelectedTemplate] = useState(CONTACT_TEMPLATES[0].id);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(CONTACT_TEMPLATES[0].id);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [sendingWa, setSendingWa] = useState(false);
   const [contactMsg, setContactMsg] = useState<string | null>(null);
