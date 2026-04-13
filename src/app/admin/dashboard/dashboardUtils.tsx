@@ -35,6 +35,18 @@ export function formatLogDate(dateStr: string) {
   });
 }
 
+export function calcVariation(current: number, previous: number): number | null {
+  if (previous === 0 && current === 0) return null;
+  if (previous === 0) return 100;
+  return ((current - previous) / previous) * 100;
+}
+
+export function formatVariation(variation: number | null): string {
+  if (variation === null) return "";
+  const sign = variation >= 0 ? "+" : "";
+  return `${sign}${variation.toFixed(1)}%`;
+}
+
 export function getInitials(name: string) {
   return name
     .split(" ")

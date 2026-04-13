@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import type { AlertItem, TopCliente, TopProduto, TopServico } from "../dashboardTypes";
-import { formatMoney, getAlertColors, LoadingSpinner } from "../dashboardUtils";
+import { formatMoney, LoadingSpinner } from "../dashboardUtils";
 
 type Props = {
-  alertas: AlertItem[];
-  alertasLoading: boolean;
-  alertasError: string | null;
+  alertas?: AlertItem[];
+  alertasLoading?: boolean;
+  alertasError?: string | null;
   topClientes: TopCliente[];
   topProdutos: TopProduto[];
   topServicos: TopServico[];
@@ -16,9 +16,6 @@ type Props = {
 };
 
 export function AlertsAndMetricsSection({
-  alertas,
-  alertasLoading,
-  alertasError,
   topClientes,
   topProdutos,
   topServicos,
@@ -27,77 +24,6 @@ export function AlertsAndMetricsSection({
 }: Props) {
   return (
     <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      {/* Store alerts */}
-      <div className="col-span-1 flex flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-amber-300">
-              Alertas da loja
-            </p>
-            <h2 className="text-sm font-semibold text-slate-50">
-              O que precisa de atenção
-            </h2>
-          </div>
-          {alertas.length > 0 && (
-            <span className="rounded-full bg-amber-500/10 px-2 py-[2px] text-[10px] font-medium text-amber-200">
-              {alertas.length} alerta(s)
-            </span>
-          )}
-        </div>
-
-        <div className="mt-2 flex-1 space-y-2 overflow-y-auto pr-1 text-xs">
-          {alertasLoading && (
-            <div className="flex items-center justify-center py-5 text-xs text-slate-400">
-              <LoadingSpinner size="sm" />
-              <span className="ml-2">Verificando status da loja...</span>
-            </div>
-          )}
-
-          {alertasError && !alertasLoading && (
-            <p className="text-xs text-rose-300">{alertasError}</p>
-          )}
-
-          {!alertasLoading && !alertasError && alertas.length === 0 && (
-            <p className="text-xs text-slate-400">
-              Nenhum alerta crítico no momento. Sua loja está saudável. 🎉
-            </p>
-          )}
-
-          {alertas.map((alerta) => {
-            const colors = getAlertColors(alerta.nivel);
-            return (
-              <div
-                key={alerta.id}
-                className="rounded-xl border border-slate-800/70 bg-slate-900/80 px-3 py-2.5"
-              >
-                <div className="mb-1 flex items-center gap-2">
-                  <span className={`h-2.5 w-2.5 rounded-full ${colors.dot}`} />
-                  <span
-                    className={`rounded-full px-2 py-[1px] text-[10px] font-medium uppercase tracking-[0.14em] ${colors.badge}`}
-                  >
-                    {alerta.tipo.toUpperCase()}
-                  </span>
-                </div>
-                <p className="text-xs font-semibold text-slate-100">
-                  {alerta.titulo}
-                </p>
-                <p className="mt-0.5 text-[11px] text-slate-300">
-                  {alerta.mensagem}
-                </p>
-                {alerta.link && alerta.link_label && (
-                  <Link
-                    href={alerta.link}
-                    className="mt-1 inline-flex text-[11px] font-medium text-emerald-300 hover:text-emerald-200"
-                  >
-                    {alerta.link_label} →
-                  </Link>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Top clients */}
       <div className="col-span-1 flex flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60">
         <div className="mb-2 flex items-center justify-between gap-2">

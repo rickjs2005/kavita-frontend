@@ -11,6 +11,9 @@ interface KpiCardProps {
   icon?: ReactNode;
   variant?: KpiVariant;
   className?: string;
+  /** Percentage variation vs previous period (e.g. +12.5 or -3.2). null = don't show. */
+  variation?: number | null;
+  variationLabel?: string;
 }
 
 export function KpiCard({
@@ -20,6 +23,8 @@ export function KpiCard({
   icon,
   variant = "default",
   className = "",
+  variation = null,
+  variationLabel = "vs 30 dias anteriores",
 }: KpiCardProps) {
   const variantStyles: Record<KpiVariant, string> = {
     default:
@@ -39,6 +44,10 @@ export function KpiCard({
     danger: "bg-rose-900/60 text-rose-200 border-rose-600/60",
   };
 
+  const isPositive = variation !== null && variation >= 0;
+  const isNegative = variation !== null && variation < 0;
+  const showVariation = variation !== null;
+
   return (
     <div
       className={`
@@ -56,6 +65,24 @@ export function KpiCard({
           <span className="text-xl font-semibold text-slate-50 sm:text-2xl">
             {value}
           </span>
+
+          {showVariation && (
+            <span className="mt-0.5 flex items-center gap-1 text-[11px]">
+              <span
+                className={
+                  isPositive
+                    ? "font-semibold text-emerald-400"
+                    : isNegative
+                      ? "font-semibold text-rose-400"
+                      : "text-slate-400"
+                }
+              >
+                {isPositive ? "\u2191" : "\u2193"}
+                {Math.abs(variation).toFixed(1)}%
+              </span>
+              <span className="text-slate-500">{variationLabel}</span>
+            </span>
+          )}
         </div>
 
         {icon && (

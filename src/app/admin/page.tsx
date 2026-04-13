@@ -9,7 +9,7 @@ import CloseButton from "@/components/buttons/CloseButton";
 import { useDashboardData } from "./dashboard/useDashboardData";
 import { KpiSection } from "./dashboard/sections/KpiSection";
 import { AlertsAndMetricsSection } from "./dashboard/sections/AlertsAndMetricsSection";
-import { QuickLinksSection } from "./dashboard/sections/QuickLinksSection";
+import { OperationsSection } from "./dashboard/sections/OperationsSection";
 
 const SalesChartSection = dynamic(
   () => import("./dashboard/sections/SalesChartSection").then((m) => m.SalesChartSection),
@@ -24,7 +24,6 @@ import {
   ROLE_LABEL,
   ROLE_SHORT_LABEL,
   ROLE_BADGE_CLASS,
-  QUICK_LINKS,
 } from "./dashboard/dashboardTypes";
 import { getInitials, LoadingSpinner } from "./dashboard/dashboardUtils";
 
@@ -215,6 +214,12 @@ export default function AdminDashboardPage() {
           <>
             <KpiSection resumo={resumo} />
 
+            <OperationsSection
+              alertas={alertas}
+              alertasLoading={alertasLoading}
+              alertasError={alertasError}
+            />
+
             <SalesChartSection
               chartData={chartData}
               logs={logs}
@@ -224,19 +229,14 @@ export default function AdminDashboardPage() {
             />
 
             <AlertsAndMetricsSection
-              alertas={alertas}
-              alertasLoading={alertasLoading}
-              alertasError={alertasError}
+              alertas={[]}
+              alertasLoading={false}
+              alertasError={null}
               topClientes={topClientes}
               topProdutos={topProdutos}
               topServicos={topServicos}
               topsLoading={topsLoading}
               topsError={topsError}
-            />
-
-            <QuickLinksSection
-              links={QUICK_LINKS}
-              hasPermission={hasPermission}
             />
           </>
         )}
