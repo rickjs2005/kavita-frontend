@@ -279,7 +279,17 @@ function FeedbackSection({
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
-  if (dismissed) return null;
+  if (dismissed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setDismissed(false)}
+        className="mt-3 text-xs font-medium text-primary hover:text-primary-hover"
+      >
+        Avaliar atendimento
+      </button>
+    );
+  }
 
   const handleSubmit = async () => {
     if (!nota) {
@@ -385,6 +395,15 @@ function ClientReplyModal({
       const body: Record<string, unknown> = {
         resposta_cliente: resposta.trim(),
       };
+      if (showAddr) {
+        const required = ["rua", "numero", "bairro", "cidade", "estado", "cep"] as const;
+        const missing = required.filter((f) => !addrForm[f]?.trim());
+        if (missing.length > 0) {
+          setError("Preencha todos os campos obrigatórios do endereço.");
+          setSending(false);
+          return;
+        }
+      }
       if (showAddr && addrForm.rua && addrForm.cep) {
         body.endereco_sugerido = {
           ...addrForm,
@@ -824,6 +843,24 @@ export default function PedidoPage() {
                   </p>
                 </div>
               )}
+
+              {/* Campos rurais */}
+              {endereco.tipo_localidade === "RURAL" && (
+                <>
+                  {endereco.comunidade && (
+                    <div>
+                      <p className="text-xs text-gray-400">Comunidade</p>
+                      <p className="mt-0.5 text-gray-700">{endereco.comunidade}</p>
+                    </div>
+                  )}
+                  {endereco.observacoes_acesso && (
+                    <div className="sm:col-span-2">
+                      <p className="text-xs text-gray-400">Observações de acesso</p>
+                      <p className="mt-0.5 text-gray-700">{endereco.observacoes_acesso}</p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -1071,6 +1108,16 @@ export default function PedidoPage() {
             onSuccess={() => {
               setReplyingOcId(null);
               setReplySent(oc.id);
+              // Atualizar status local para refletir mudança sem refresh
+              setPedido((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  ocorrencias: prev.ocorrencias?.map((o) =>
+                    o.id === oc.id ? { ...o, status: "em_analise" } : o
+                  ),
+                };
+              });
             }}
           />
         );
