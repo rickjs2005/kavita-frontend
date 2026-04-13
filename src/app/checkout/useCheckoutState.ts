@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -158,10 +158,10 @@ export function useCheckoutState() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
 
-  // Reset coupon when subtotal changes (quantity change or promo applied)
+  // Reset desconto calculado quando subtotal muda (quantidade ou promoção).
+  // NÃO limpa couponCode — o código digitado/recuperado permanece para re-aplicação.
   useEffect(() => {
     setDiscount(0);
-    setCouponCode("");
     setCouponMessage(null);
     setCouponError(null);
   }, [subtotal]);
@@ -223,6 +223,67 @@ export function useCheckoutState() {
       setCouponLoading(false);
     }
   };
+
+  // ---------------------------------------------------------------------------
+  // Auto-apply coupon from cart (sessionStorage)
+  // ---------------------------------------------------------------------------
+  const couponAutoApplied = useRef(false);
+
+  useEffect(() => {
+    if (couponAutoApplied.current) return;
+    if (!isLoggedIn || !normalizedCartItems.length || !subtotal) return;
+
+    let savedCode: string | null = null;
+    try {
+      savedCode = sessionStorage.getItem("kavita_coupon");
+      sessionStorage.removeItem("kavita_coupon");
+    } catch {
+      // sessionStorage indisponível
+    }
+
+    if (!savedCode?.trim()) return;
+
+    const code = savedCode.trim();
+    couponAutoApplied.current = true;
+    setCouponCode(code);
+
+    // Aplica o cupom direto via API (sem depender de handleApplyCoupon,
+    // que lê couponCode do state — closure teria valor antigo).
+    (async () => {
+      try {
+        setCouponLoading(true);
+        setCouponError(null);
+
+        const rawCoupon = await apiClient.post<unknown>(
+          ENDPOINTS.CHECKOUT.PREVIEW_COUPON,
+          {
+            codigo: code,
+            produtos: normalizedCartItems.map((i) => ({
+              id: Number(i.id),
+              quantidade: Number(i.quantity ?? 1),
+            })),
+          },
+        );
+
+        const couponParsed = CouponPreviewSchema.safeParse(rawCoupon);
+        if (!couponParsed.success) {
+          setCouponError("Não foi possível aplicar o cupom do carrinho.");
+          return;
+        }
+
+        const desconto = couponParsed.data.desconto ?? 0;
+        setDiscount(desconto > 0 ? desconto : 0);
+        setCouponMessage("Cupom aplicado com sucesso!");
+        toast.success("Cupom do carrinho aplicado automaticamente!");
+      } catch (err: unknown) {
+        const ui = formatApiError(err, "Não foi possível aplicar o cupom do carrinho.");
+        setCouponError(ui.message);
+      } finally {
+        setCouponLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, normalizedCartItems, subtotal]);
 
   // ---------------------------------------------------------------------------
   // Saved addresses
@@ -477,6 +538,7 @@ export function useCheckoutState() {
   // Validados aqui para desabilitar o botão antes do clique, evitando toasts de erro evitáveis.
   const canFinalizeCheckout =
     isLoggedIn &&
+    !couponLoading &&
     (payload.produtos?.length || 0) > 0 &&
     !!payload.nome &&
     payload.cpf.length === 11 &&

@@ -174,6 +174,7 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
     setDiscount(0);
     setCouponMessage(null);
     setCouponError(null);
+    try { sessionStorage.removeItem("kavita_coupon"); } catch { /* */ }
   }, [cartItems, promotions]);
 
   // ============================
@@ -211,22 +212,30 @@ const CartCar: React.FC<{ isCartOpen: boolean; closeCart: () => void }> = ({
         },
       );
 
-      if (!data?.success) {
-        const msg = data?.message || "Não foi possível aplicar este cupom.";
+      // apiClient faz unwrap do envelope { ok, data } — resposta já é o payload interno.
+      // Valida presença de desconto (campo obrigatório do preview).
+      const desconto = Number(data?.desconto ?? 0);
+      if (desconto <= 0 && !data?.cupom) {
+        const msg = "Não foi possível aplicar este cupom.";
         setDiscount(0);
         setCouponError(msg);
         toast.error(msg);
         return;
       }
 
-      const desconto = Number(data.desconto || 0);
       setDiscount(desconto > 0 ? desconto : 0);
 
-      const msg = data.message || "Cupom aplicado com sucesso!";
+      const msg = "Cupom aplicado com sucesso!";
       setCouponMessage(msg);
       setCouponError(null);
       toast.success(msg);
-      // Cupom mantido apenas em estado React — sem persistência em localStorage
+
+      // Persiste código do cupom para o checkout reaproveitar
+      try {
+        sessionStorage.setItem("kavita_coupon", code);
+      } catch {
+        // sessionStorage indisponível — cupom funciona no carrinho, apenas não persiste
+      }
     } catch (err: unknown) {
       const ui = formatApiError(err, "Não foi possível aplicar este cupom.");
       setDiscount(0);
