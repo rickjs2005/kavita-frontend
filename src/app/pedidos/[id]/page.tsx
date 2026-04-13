@@ -35,6 +35,7 @@ type OcorrenciaCliente = {
   status: string;
   resposta_admin: string | null;
   taxa_extra: number;
+  feedback_nota: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -253,6 +254,104 @@ function AddressDisputeModal({
   );
 }
 
+// ----- Feedback inline -----
+
+const NOTAS = [
+  { value: 5, label: "Muito satisfeito", emoji: "😊" },
+  { value: 4, label: "Satisfeito", emoji: "🙂" },
+  { value: 3, label: "Neutro", emoji: "😐" },
+  { value: 2, label: "Insatisfeito", emoji: "😕" },
+  { value: 1, label: "Muito insatisfeito", emoji: "😞" },
+];
+
+function FeedbackSection({
+  pedidoId,
+  ocorrenciaId,
+  onSent,
+}: {
+  pedidoId: number;
+  ocorrenciaId: number;
+  onSent: () => void;
+}) {
+  const [nota, setNota] = useState<number | null>(null);
+  const [comentario, setComentario] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed) return null;
+
+  const handleSubmit = async () => {
+    if (!nota) {
+      setError("Selecione uma avaliação.");
+      return;
+    }
+    setSending(true);
+    setError(null);
+    try {
+      await apiClient.post(
+        `/api/pedidos/${pedidoId}/ocorrencias/${ocorrenciaId}/feedback`,
+        { nota, comentario: comentario.trim() },
+      );
+      onSent();
+    } catch (err: any) {
+      setError(err?.message || "Não foi possível enviar.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+      <p className="text-sm font-medium text-gray-700">
+        Como você avalia a atuação da nossa equipe?
+      </p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {NOTAS.map((n) => (
+          <button
+            key={n.value}
+            type="button"
+            onClick={() => setNota(n.value)}
+            className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+              nota === n.value
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-gray-300 bg-white text-gray-600 hover:border-gray-400"
+            }`}
+          >
+            <span>{n.emoji}</span> {n.label}
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={comentario}
+        onChange={(e) => setComentario(e.target.value)}
+        maxLength={1000}
+        rows={2}
+        placeholder="Quer deixar um feedback para nossa equipe? (opcional)"
+        className="mt-2 w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+      />
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      <div className="mt-2 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setDismissed(true)}
+          className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
+        >
+          Agora não
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={sending || !nota}
+          className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {sending ? "Enviando..." : "Enviar feedback"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ----- Modal de resposta do cliente -----
 
 function ClientReplyModal({
@@ -432,6 +531,7 @@ export default function PedidoPage() {
   const [disputeSent, setDisputeSent] = useState(false);
   const [replyingOcId, setReplyingOcId] = useState<number | null>(null);
   const [replySent, setReplySent] = useState<number | null>(null);
+  const [feedbackSentIds, setFeedbackSentIds] = useState<Set<number>>(new Set());
 
   const handleRetryPayment = useCallback(async () => {
     if (!pedido) return;
@@ -816,13 +916,34 @@ export default function PedidoPage() {
                     </button>
                   )}
 
-                  {/* Feedback após envio */}
+                  {/* Feedback após envio de resposta */}
                   {justReplied && (
                     <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
                       <p className="text-sm font-medium text-emerald-700">
                         Resposta enviada com sucesso. Nossa equipe vai analisar.
                       </p>
                     </div>
+                  )}
+
+                  {/* Feedback de satisfação pós-resolução */}
+                  {(oc.status === "resolvida" || oc.status === "rejeitada") && (
+                    oc.feedback_nota || feedbackSentIds.has(oc.id) ? (
+                      <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
+                        <span>Sua avaliação:</span>
+                        <span className="text-base">
+                          {NOTAS.find((n) => n.value === (oc.feedback_nota ?? 0))?.emoji || "✓"}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {feedbackSentIds.has(oc.id) ? "Enviado agora" : ""}
+                        </span>
+                      </div>
+                    ) : (
+                      <FeedbackSection
+                        pedidoId={pedido.id}
+                        ocorrenciaId={oc.id}
+                        onSent={() => setFeedbackSentIds((prev) => new Set(prev).add(oc.id))}
+                      />
+                    )
                   )}
                 </div>
               );
