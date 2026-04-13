@@ -15,8 +15,17 @@ import { formatMoney, formatLogDate, getInitials, LoadingSpinner, SalesTooltip }
 
 type ChartPoint = { date: string; total: number };
 
+const RANGE_OPTIONS = [
+  { label: "7d", value: 7 },
+  { label: "15d", value: 15 },
+  { label: "30d", value: 30 },
+] as const;
+
 type Props = {
   chartData: ChartPoint[];
+  chartLoading?: boolean;
+  salesRange?: number;
+  onRangeChange?: (range: number) => void;
   logs: AdminLog[];
   logsLoading: boolean;
   logsError: string | null;
@@ -25,41 +34,79 @@ type Props = {
 
 export function SalesChartSection({
   chartData,
+  chartLoading = false,
+  salesRange = 7,
+  onRangeChange,
   logs,
   logsLoading,
   logsError,
   canViewLogs,
 }: Props) {
+  const showLogs = canViewLogs;
+
   return (
-    <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <section className={`grid grid-cols-1 gap-4 ${showLogs ? "lg:grid-cols-3" : ""}`}>
       {/* Sales chart */}
-      <div className="col-span-1 flex max-h-[340px] flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60 lg:col-span-2">
+      <div
+        className={`col-span-1 flex max-h-[340px] flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60 ${
+          showLogs ? "lg:col-span-2" : ""
+        }`}
+      >
         <div className="mb-2 flex items-center justify-between gap-2">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300">
-              Vendas · 7 últimos dias
+              Vendas · {salesRange} últimos dias
             </p>
             <h2 className="text-sm font-semibold text-slate-50">
               Faturamento diário
             </h2>
           </div>
-          <Link
-            href="/admin/relatorios/vendas"
-            className="text-xs font-medium text-emerald-300 hover:text-emerald-200"
-          >
-            Ver relatório completo →
-          </Link>
+
+          <div className="flex items-center gap-2">
+            {onRangeChange && (
+              <div className="flex items-center gap-0.5 rounded-lg border border-slate-700/60 bg-slate-900/80 p-0.5">
+                {RANGE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => onRangeChange(opt.value)}
+                    disabled={chartLoading}
+                    className={[
+                      "rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+                      salesRange === opt.value
+                        ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40"
+                        : "text-slate-400 hover:text-slate-200",
+                      chartLoading ? "opacity-50" : "",
+                    ].join(" ")}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <Link
+              href="/admin/relatorios/vendas"
+              className="text-xs font-medium text-emerald-300 hover:text-emerald-200"
+            >
+              Ver relatório &rarr;
+            </Link>
+          </div>
         </div>
 
         <div className="mt-3 flex-1 overflow-y-auto">
           <div className="h-[260px] w-full">
-            {chartData.length === 0 ? (
+            {chartLoading ? (
+              <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                <LoadingSpinner size="sm" />
+                <span className="ml-2">Carregando gráfico...</span>
+              </div>
+            ) : chartData.length === 0 ? (
               <div className="flex h-full items-center justify-center text-xs text-slate-400">
                 Nenhum dado de vendas recente.
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} barSize={24}>
+                <BarChart data={chartData} barSize={salesRange > 15 ? 12 : 24}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="var(--color-chart-grid)"
@@ -70,6 +117,7 @@ export function SalesChartSection({
                     tickLine={false}
                     axisLine={false}
                     tick={{ fontSize: 11, fill: "var(--color-chart-tick-light)" }}
+                    interval={salesRange > 15 ? Math.floor(salesRange / 8) : 0}
                   />
                   <YAxis
                     tickLine={false}
@@ -86,73 +134,68 @@ export function SalesChartSection({
         </div>
       </div>
 
-      {/* Audit logs */}
-      <div className="col-span-1 flex max-h-[340px] flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">
-              Atividade recente
-            </p>
-            <h2 className="text-sm font-semibold text-slate-50">
-              Logs de admins
-            </h2>
-          </div>
-          <span className="text-[10px] text-slate-500">Últimas 20 ações</span>
-        </div>
-
-        <div className="mt-2 flex-1 space-y-2 overflow-y-auto pr-1">
-          {logsLoading && (
-            <div className="flex items-center justify-center py-6 text-xs text-slate-400">
-              <LoadingSpinner size="sm" />
-              <span className="ml-2">Carregando atividade recente...</span>
+      {/* Audit logs — only rendered for roles with access */}
+      {showLogs && (
+        <div className="col-span-1 flex max-h-[340px] flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">
+                Atividade recente
+              </p>
+              <h2 className="text-sm font-semibold text-slate-50">
+                Logs de admins
+              </h2>
             </div>
-          )}
+            <span className="text-[10px] text-slate-500">Últimas 20 ações</span>
+          </div>
 
-          {logsError && !logsLoading && (
-            <p className="text-xs text-rose-300">{logsError}</p>
-          )}
-
-          {!canViewLogs && (
-            <p className="text-xs text-slate-400">
-              Seu papel atual não possui acesso aos logs de auditoria.
-            </p>
-          )}
-
-          {canViewLogs && !logsLoading && !logsError && logs.length === 0 && (
-            <p className="text-xs text-slate-400">
-              Nenhuma atividade registrada recentemente.
-            </p>
-          )}
-
-          {canViewLogs &&
-            !logsLoading &&
-            !logsError &&
-            logs.map((log) => (
-              <div
-                key={log.id}
-                className="flex items-start gap-2 rounded-xl border border-slate-800/70 bg-slate-900/80 px-3 py-2.5"
-              >
-                <div className="mt-[2px] flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-[11px] font-semibold text-emerald-300">
-                  {getInitials(log.admin_nome || "ADM")}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-slate-100">
-                    {log.admin_nome || "Administrador"}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-slate-300">
-                    {log.acao}
-                    {log.detalhes && (
-                      <span className="text-slate-400"> — {log.detalhes}</span>
-                    )}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-slate-500">
-                    {formatLogDate(log.criado_em)}
-                  </p>
-                </div>
+          <div className="mt-2 flex-1 space-y-2 overflow-y-auto pr-1">
+            {logsLoading && (
+              <div className="flex items-center justify-center py-6 text-xs text-slate-400">
+                <LoadingSpinner size="sm" />
+                <span className="ml-2">Carregando atividade recente...</span>
               </div>
-            ))}
+            )}
+
+            {logsError && !logsLoading && (
+              <p className="text-xs text-rose-300">{logsError}</p>
+            )}
+
+            {!logsLoading && !logsError && logs.length === 0 && (
+              <p className="text-xs text-slate-400">
+                Nenhuma atividade registrada recentemente.
+              </p>
+            )}
+
+            {!logsLoading &&
+              !logsError &&
+              logs.map((log) => (
+                <div
+                  key={log.id}
+                  className="flex items-start gap-2 rounded-xl border border-slate-800/70 bg-slate-900/80 px-3 py-2.5"
+                >
+                  <div className="mt-[2px] flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-[11px] font-semibold text-emerald-300">
+                    {getInitials(log.admin_nome || "ADM")}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-slate-100">
+                      {log.admin_nome || "Administrador"}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-slate-300">
+                      {log.acao}
+                      {log.detalhes && (
+                        <span className="text-slate-400"> — {log.detalhes}</span>
+                      )}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-slate-500">
+                      {formatLogDate(log.criado_em)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

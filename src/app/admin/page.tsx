@@ -48,6 +48,9 @@ export default function AdminDashboardPage() {
     loading,
     errorMsg,
     chartData,
+    chartLoading,
+    salesRange,
+    changeSalesRange,
     logs,
     logsLoading,
     logsError,
@@ -225,6 +228,9 @@ export default function AdminDashboardPage() {
 
             <SalesChartSection
               chartData={chartData}
+              chartLoading={chartLoading}
+              salesRange={salesRange}
+              onRangeChange={changeSalesRange}
               logs={logs}
               logsLoading={logsLoading}
               logsError={logsError}

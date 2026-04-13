@@ -31,6 +31,8 @@ export function useDashboardData({ handleUnauthorized, role }: Props) {
   const [vendas, setVendas] = useState<VendaPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [salesRange, setSalesRange] = useState(7);
+  const [chartLoading, setChartLoading] = useState(false);
 
   const stableHandleUnauthorized = useCallback(
     handleUnauthorized,
@@ -38,6 +40,7 @@ export function useDashboardData({ handleUnauthorized, role }: Props) {
     [],
   );
 
+  // Initial load: resumo + chart
   useEffect(() => {
     let cancelled = false;
 
@@ -48,7 +51,7 @@ export function useDashboardData({ handleUnauthorized, role }: Props) {
         const [resumoJson, vendasJson] = await Promise.all([
           apiClient.get<AdminResumo>("/api/admin/stats/resumo"),
           apiClient.get<{ rangeDays: number; points: VendaPoint[] }>(
-            "/api/admin/stats/vendas?range=7",
+            `/api/admin/stats/vendas?range=${salesRange}`,
           ),
         ]);
         if (cancelled) return;
@@ -71,6 +74,25 @@ export function useDashboardData({ handleUnauthorized, role }: Props) {
 
     load();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stableHandleUnauthorized]);
+
+  // Reload chart when salesRange changes (after initial load)
+  const changeSalesRange = useCallback(async (range: number) => {
+    setSalesRange(range);
+    setChartLoading(true);
+    try {
+      const vendasJson = await apiClient.get<{ rangeDays: number; points: VendaPoint[] }>(
+        `/api/admin/stats/vendas?range=${range}`,
+      );
+      setVendas(Array.isArray(vendasJson.points) ? vendasJson.points : []);
+    } catch (err: any) {
+      if (err?.status === 401 || err?.status === 403) {
+        stableHandleUnauthorized();
+      }
+    } finally {
+      setChartLoading(false);
+    }
   }, [stableHandleUnauthorized]);
 
   const chartData = useMemo(
@@ -284,6 +306,9 @@ export function useDashboardData({ handleUnauthorized, role }: Props) {
     loading,
     errorMsg,
     chartData,
+    chartLoading,
+    salesRange,
+    changeSalesRange,
     // logs
     logs,
     logsLoading,

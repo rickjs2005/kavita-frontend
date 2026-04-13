@@ -98,7 +98,17 @@ export function ModulesStatusSection({ status, loading }: Props) {
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <ModuleCard
+          icon="🖼️"
+          title="Hero & Banners"
+          href="/admin/destaques/site-hero"
+          lines={[
+            { label: "Slides ativos", value: status.hero.ativos, dotColor: status.hero.ativos > 0 ? "green" : "amber" },
+            { label: "Inativos", value: status.hero.inativos },
+          ]}
+        />
+
         <ModuleCard
           icon="📰"
           title="News"

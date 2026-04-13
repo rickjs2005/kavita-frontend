@@ -54,6 +54,7 @@ export type TopServico = {
 };
 
 export type ModulesStatus = {
+  hero: { ativos: number; inativos: number };
   news: { publicados: number; rascunhos: number };
   clima: { cidadesAtivas: number; ultimaSync: string | null };
   cotacoes: { ativas: number; ultimaAtualizacao: string | null; statusSync: string | null };
