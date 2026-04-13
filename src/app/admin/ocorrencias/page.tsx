@@ -8,7 +8,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 // ----- Tipos -----
-type StatusOcorrencia = "aberta" | "em_analise" | "resolvida" | "rejeitada";
+type StatusOcorrencia = "aberta" | "em_analise" | "aguardando_retorno" | "resolvida" | "rejeitada";
 
 type Ocorrencia = {
   id: number;
@@ -37,6 +37,7 @@ type Ocorrencia = {
 const LABEL_STATUS: Record<StatusOcorrencia, string> = {
   aberta: "Nova",
   em_analise: "Em análise",
+  aguardando_retorno: "Aguardando retorno",
   resolvida: "Resolvida",
   rejeitada: "Recusada",
 };
@@ -46,6 +47,8 @@ const COR_STATUS: Record<StatusOcorrencia, string> = {
     "border-amber-500/40 bg-amber-500/10 text-amber-100 dark:border-amber-400/30 dark:bg-amber-500/15 dark:text-amber-200",
   em_analise:
     "border-sky-500/40 bg-sky-500/10 text-sky-100 dark:border-sky-400/30 dark:bg-sky-500/15 dark:text-sky-200",
+  aguardando_retorno:
+    "border-violet-500/40 bg-violet-500/10 text-violet-100 dark:border-violet-400/30 dark:bg-violet-500/15 dark:text-violet-200",
   resolvida:
     "border-emerald-500/40 bg-emerald-500/10 text-emerald-100 dark:border-emerald-400/30 dark:bg-emerald-500/15 dark:text-emerald-200",
   rejeitada:
@@ -63,6 +66,7 @@ const LABEL_MOTIVO: Record<string, string> = {
 
 const STATUS_OPTIONS: StatusOcorrencia[] = [
   "aberta",
+  "aguardando_retorno",
   "em_analise",
   "resolvida",
   "rejeitada",
@@ -119,6 +123,33 @@ function Badge({
   );
 }
 
+// ----- Templates de contato -----
+const CONTACT_TEMPLATES = [
+  { id: "ocorrencia_confirmacao", nome: "Confirmar recebimento" },
+  { id: "ocorrencia_solicitar_dados", nome: "Solicitar dados corretos" },
+  { id: "ocorrencia_taxa_extra", nome: "Informar possível taxa extra" },
+  { id: "ocorrencia_correcao_concluida", nome: "Correção concluída" },
+  { id: "ocorrencia_resolvida", nome: "Ocorrência resolvida" },
+] as const;
+
+function buildWhatsappMsg(templateId: string, nome: string, pedidoId: number): string {
+  const t: Record<string, string> = {
+    ocorrencia_confirmacao: `Olá ${nome}! Recebemos sua solicitação sobre o endereço de entrega do pedido #${pedidoId}. Nosso time está analisando e em breve retornamos. Equipe Kavita.`,
+    ocorrencia_solicitar_dados: `Olá ${nome}! Sobre o pedido #${pedidoId}, precisamos confirmar o endereço correto de entrega. Pode nos enviar os dados atualizados (rua, número, bairro, cidade, estado, CEP)? Equipe Kavita.`,
+    ocorrencia_taxa_extra: `Olá ${nome}! Analisamos a alteração de endereço do pedido #${pedidoId}. A mudança pode gerar um custo logístico adicional. Podemos conversar sobre os detalhes? Equipe Kavita.`,
+    ocorrencia_correcao_concluida: `Olá ${nome}! O endereço de entrega do pedido #${pedidoId} foi corrigido com sucesso. Seu pedido seguirá normalmente. Obrigado por nos informar! Equipe Kavita.`,
+    ocorrencia_resolvida: `Olá ${nome}! Sua solicitação sobre o pedido #${pedidoId} foi analisada e resolvida. Se precisar de algo mais, estamos aqui. Equipe Kavita.`,
+  };
+  return t[templateId] || `Olá ${nome}, sobre o seu pedido #${pedidoId}...`;
+}
+
+function normalizeTelBr(tel?: string | null): string | null {
+  if (!tel) return null;
+  const d = tel.replace(/\D/g, "");
+  if (!d) return null;
+  return d.startsWith("55") ? d : `55${d}`;
+}
+
 // ----- Componente de detalhe/edição -----
 function OcorrenciaDetail({
   oc,
@@ -137,7 +168,14 @@ function OcorrenciaDetail({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Contato
+  const [selectedTemplate, setSelectedTemplate] = useState(CONTACT_TEMPLATES[0].id);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendingWa, setSendingWa] = useState(false);
+  const [contactMsg, setContactMsg] = useState<string | null>(null);
+
   const endereco = parseEndereco(oc.pedido_endereco);
+  const whatsappNum = normalizeTelBr(oc.usuario_telefone);
 
   const handleSave = async () => {
     setSaving(true);
@@ -158,6 +196,44 @@ function OcorrenciaDetail({
       setError(err?.message || "Erro ao salvar.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    setSendingEmail(true);
+    setContactMsg(null);
+    try {
+      await apiClient.post("/api/admin/comunicacao/email", {
+        template: selectedTemplate,
+        pedidoId: oc.pedido_id,
+      });
+      setContactMsg("Email enviado com sucesso.");
+    } catch (err: any) {
+      setContactMsg(`Erro ao enviar email: ${err?.message || "tente novamente."}`);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const handleOpenWhatsApp = async () => {
+    if (!whatsappNum) return;
+    const msg = buildWhatsappMsg(selectedTemplate, oc.usuario_nome, oc.pedido_id);
+    const url = `https://wa.me/${whatsappNum}?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank");
+
+    // Registrar no backend que a mensagem foi enviada
+    setSendingWa(true);
+    setContactMsg(null);
+    try {
+      await apiClient.post("/api/admin/comunicacao/whatsapp", {
+        template: selectedTemplate,
+        pedidoId: oc.pedido_id,
+      });
+      setContactMsg("WhatsApp aberto e contato registrado.");
+    } catch {
+      setContactMsg("WhatsApp aberto. (Registro de log falhou, mas a mensagem foi enviada.)");
+    } finally {
+      setSendingWa(false);
     }
   };
 
@@ -188,18 +264,8 @@ function OcorrenciaDetail({
             className="rounded-md p-1 text-slate-400 hover:text-slate-200"
             aria-label="Fechar"
           >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -208,56 +274,31 @@ function OcorrenciaDetail({
         <div className="mt-5 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
           {/* Cliente */}
           <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              Cliente
-            </p>
-            <p className="mt-1 font-medium text-slate-200">
-              {oc.usuario_nome}
-            </p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Cliente</p>
+            <p className="mt-1 font-medium text-slate-200">{oc.usuario_nome}</p>
             <p className="text-slate-400">{oc.usuario_email}</p>
-            {oc.usuario_telefone && (
-              <p className="text-slate-400">{oc.usuario_telefone}</p>
-            )}
+            {oc.usuario_telefone && <p className="text-slate-400">{oc.usuario_telefone}</p>}
           </div>
 
           {/* Pedido */}
           <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              Pedido
-            </p>
-            <p className="mt-1 font-medium text-slate-200">
-              #{oc.pedido_id} — {formatCurrency(oc.pedido_total)}
-            </p>
-            <p className="text-slate-400">
-              {oc.pedido_forma_pagamento} — Pgto: {oc.pedido_status_pagamento}
-            </p>
-            <p className="text-slate-400">
-              Entrega: {oc.pedido_status_entrega}
-            </p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Pedido</p>
+            <p className="mt-1 font-medium text-slate-200">#{oc.pedido_id} — {formatCurrency(oc.pedido_total)}</p>
+            <p className="text-slate-400">{oc.pedido_forma_pagamento} — Pgto: {oc.pedido_status_pagamento}</p>
+            <p className="text-slate-400">Entrega: {oc.pedido_status_entrega}</p>
           </div>
 
           {/* Endereço atual */}
           <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3 sm:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              Endereço atual do pedido
-            </p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Endereço atual do pedido</p>
             {endereco ? (
               <div className="mt-1 space-y-0.5 text-slate-300">
-                <p>
-                  {endereco.rua || endereco.endereco || endereco.logradouro}
-                  {endereco.numero ? `, ${endereco.numero}` : ""}
-                </p>
-                {endereco.bairro && (
-                  <p>
-                    {endereco.bairro} — {endereco.cidade}/{endereco.estado}
-                  </p>
-                )}
+                <p>{endereco.rua || endereco.endereco || endereco.logradouro}{endereco.numero ? `, ${endereco.numero}` : ""}</p>
+                {endereco.bairro && <p>{endereco.bairro} — {endereco.cidade}/{endereco.estado}</p>}
                 {endereco.complemento && <p>{endereco.complemento}</p>}
                 {endereco.cep && <p>CEP: {endereco.cep}</p>}
                 {(endereco.ponto_referencia || endereco.referencia) && (
-                  <p>
-                    Ref: {endereco.ponto_referencia || endereco.referencia}
-                  </p>
+                  <p>Ref: {endereco.ponto_referencia || endereco.referencia}</p>
                 )}
               </div>
             ) : (
@@ -267,21 +308,76 @@ function OcorrenciaDetail({
 
           {/* Problema relatado */}
           <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 sm:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-400">
-              Problema relatado pelo cliente
-            </p>
-            <p className="mt-1 font-medium text-slate-200">
-              {LABEL_MOTIVO[oc.motivo] || oc.motivo}
-            </p>
-            {oc.observacao && (
-              <p className="mt-1 whitespace-pre-wrap text-slate-400">
-                {oc.observacao}
-              </p>
-            )}
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-400">Problema relatado pelo cliente</p>
+            <p className="mt-1 font-medium text-slate-200">{LABEL_MOTIVO[oc.motivo] || oc.motivo}</p>
+            {oc.observacao && <p className="mt-1 whitespace-pre-wrap text-slate-400">{oc.observacao}</p>}
           </div>
         </div>
 
-        {/* Formulário admin */}
+        {/* Contato com o cliente */}
+        <div className="mt-5 space-y-3 border-t border-slate-800 pt-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Contato com o cliente
+          </p>
+
+          {/* Template selector */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300">Mensagem</label>
+            <select
+              value={selectedTemplate}
+              onChange={(e) => setSelectedTemplate(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+            >
+              {CONTACT_TEMPLATES.map((t) => (
+                <option key={t.id} value={t.id}>{t.nome}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Preview */}
+          <div className="rounded-lg border border-slate-700/50 bg-slate-950/40 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Preview WhatsApp</p>
+            <p className="mt-1 text-sm text-slate-300">
+              {buildWhatsappMsg(selectedTemplate, oc.usuario_nome, oc.pedido_id)}
+            </p>
+          </div>
+
+          {/* Botões de envio */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleOpenWhatsApp}
+              disabled={!whatsappNum || sendingWa}
+              title={whatsappNum ? "" : "Cliente sem telefone cadastrado"}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {sendingWa ? "Abrindo..." : "WhatsApp"}
+            </button>
+            <button
+              type="button"
+              onClick={handleSendEmail}
+              disabled={sendingEmail}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/50 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {sendingEmail ? "Enviando..." : "Enviar email"}
+            </button>
+          </div>
+
+          {/* Feedback */}
+          {contactMsg && (
+            <p className={`text-sm ${contactMsg.startsWith("Erro") ? "text-red-400" : "text-emerald-400"}`}>
+              {contactMsg}
+            </p>
+          )}
+
+          {!whatsappNum && (
+            <p className="text-xs text-slate-500">
+              Cliente sem telefone cadastrado. Apenas email disponível.
+            </p>
+          )}
+        </div>
+
+        {/* Tratativa do admin */}
         <div className="mt-5 space-y-4 border-t border-slate-800 pt-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Tratativa do admin
@@ -289,29 +385,21 @@ function OcorrenciaDetail({
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-slate-300">
-              Status
-            </label>
+            <label className="block text-sm font-medium text-slate-300">Status</label>
             <select
               value={status}
-              onChange={(e) =>
-                setStatus(e.target.value as StatusOcorrencia)
-              }
+              onChange={(e) => setStatus(e.target.value as StatusOcorrencia)}
               className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
             >
               {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {LABEL_STATUS[s]}
-                </option>
+                <option key={s} value={s}>{LABEL_STATUS[s]}</option>
               ))}
             </select>
           </div>
 
           {/* Resposta */}
           <div>
-            <label className="block text-sm font-medium text-slate-300">
-              Observação interna / resposta
-            </label>
+            <label className="block text-sm font-medium text-slate-300">Observação interna / resposta</label>
             <textarea
               value={resposta}
               onChange={(e) => setResposta(e.target.value)}
@@ -324,9 +412,7 @@ function OcorrenciaDetail({
 
           {/* Taxa extra */}
           <div>
-            <label className="block text-sm font-medium text-slate-300">
-              Taxa extra (R$) — opcional
-            </label>
+            <label className="block text-sm font-medium text-slate-300">Taxa extra (R$) — opcional</label>
             <input
               type="text"
               inputMode="decimal"
@@ -335,17 +421,11 @@ function OcorrenciaDetail({
               placeholder="0,00"
               className="mt-1 w-full max-w-[200px] rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
             />
-            <p className="mt-1 text-xs text-slate-500">
-              Preencha apenas se houver custo logístico adicional.
-            </p>
+            <p className="mt-1 text-xs text-slate-500">Preencha apenas se houver custo logístico adicional.</p>
           </div>
 
           {/* Erro */}
-          {error && (
-            <p role="alert" className="text-sm text-red-400">
-              {error}
-            </p>
-          )}
+          {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
 
           {/* Botões */}
           <div className="flex gap-3 pt-1">
@@ -434,7 +514,7 @@ export default function OcorrenciasAdminPage() {
   const selectedOc = ocorrencias.find((o) => o.id === selectedId) ?? null;
 
   const contadores = useMemo(() => {
-    const c = { aberta: 0, em_analise: 0, resolvida: 0, rejeitada: 0 };
+    const c = { aberta: 0, em_analise: 0, aguardando_retorno: 0, resolvida: 0, rejeitada: 0 };
     for (const o of ocorrencias) {
       if (o.status in c) c[o.status as StatusOcorrencia]++;
     }
