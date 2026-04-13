@@ -4,25 +4,27 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { absUrl } from "@/utils/absUrl";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import apiClient from "@/lib/apiClient";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatDateTime } from "@/utils/formatters";
+
+// ----- Tipos -----
+type StatusPagamento = "pendente" | "pago" | "falhou" | "estornado";
+type StatusEntrega =
+  | "em_separacao"
+  | "processando"
+  | "enviado"
+  | "entregue"
+  | "cancelado";
 
 type PedidoItem = {
-  id: number; // id na tabela pedidos_produtos
-
-  // possíveis nomes que o backend pode usar para o id do produto
-  produto_id?: number;
-  product_id?: number;
-  id_produto?: number;
-
+  id: number;
+  produto_id: number;
   nome: string;
   preco: number;
   quantidade: number;
-
-  // possíveis nomes para a imagem
   imagem?: string | null;
-  image?: string | null;
-  product_image?: string | null;
 };
 
 type PedidoDetalhe = {
@@ -30,22 +32,77 @@ type PedidoDetalhe = {
   usuario_id: number;
   forma_pagamento: string;
   status: string;
-  status_pagamento?: string | null;
+  status_pagamento: StatusPagamento;
+  status_entrega: StatusEntrega;
   data_pedido: string;
-  endereco: any;
+  endereco: string | Record<string, string> | null;
+  cupom_codigo?: string | null;
+  subtotal: number;
+  desconto: number;
+  shipping_price: number;
+  shipping_prazo_dias?: number | null;
   total: number;
-  shipping_price?: number;
   itens: PedidoItem[];
 };
 
+// ----- Labels e badges -----
+const LABEL_PAGAMENTO: Record<StatusPagamento, string> = {
+  pendente: "Pendente",
+  pago: "Pago",
+  falhou: "Falhou",
+  estornado: "Estornado",
+};
 
+const LABEL_ENTREGA: Record<StatusEntrega, string> = {
+  em_separacao: "Em separação",
+  processando: "Processando",
+  enviado: "Enviado",
+  entregue: "Entregue",
+  cancelado: "Cancelado",
+};
+
+const COR_PAGAMENTO: Record<StatusPagamento, string> = {
+  pendente: "border-amber-400/40 bg-amber-50 text-amber-700",
+  pago: "border-emerald-400/40 bg-emerald-50 text-emerald-700",
+  falhou: "border-rose-400/40 bg-rose-50 text-rose-700",
+  estornado: "border-sky-400/40 bg-sky-50 text-sky-700",
+};
+
+const COR_ENTREGA: Record<StatusEntrega, string> = {
+  em_separacao: "border-slate-400/40 bg-slate-50 text-slate-600",
+  processando: "border-indigo-400/40 bg-indigo-50 text-indigo-700",
+  enviado: "border-sky-400/40 bg-sky-50 text-sky-700",
+  entregue: "border-emerald-400/40 bg-emerald-50 text-emerald-700",
+  cancelado: "border-rose-400/40 bg-rose-50 text-rose-700",
+};
+
+function Badge({ label, className }: { label: string; className: string }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${className}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function parseEndereco(raw: string | Record<string, string> | null) {
+  if (!raw) return null;
+  if (typeof raw === "object") return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+// ----- Componente principal -----
 export default function PedidoPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const pedidoId = params?.id;
 
   const { user, loading: authLoading } = useAuth();
-
   const isLoggedIn = !!user?.id;
 
   const [pedido, setPedido] = useState<PedidoDetalhe | null>(null);
@@ -59,10 +116,10 @@ export default function PedidoPage() {
     setRetrying(true);
     setRetryError(null);
     try {
-      const data = await apiClient.post<{ init_point?: string; sandbox_init_point?: string }>(
-        "/api/payment/start",
-        { pedidoId: pedido.id }
-      );
+      const data = await apiClient.post<{
+        init_point?: string;
+        sandbox_init_point?: string;
+      }>("/api/payment/start", { pedidoId: pedido.id });
       const url =
         process.env.NODE_ENV === "production"
           ? data.init_point
@@ -74,21 +131,20 @@ export default function PedidoPage() {
         setRetrying(false);
       }
     } catch (err: any) {
-      setRetryError(err?.message || "Erro ao iniciar pagamento. Tente novamente.");
+      setRetryError(
+        err?.message || "Erro ao iniciar pagamento. Tente novamente.",
+      );
       setRetrying(false);
     }
   };
 
-  // Redireciona se não estiver logado — só após auth terminar de carregar
   useEffect(() => {
     if (authLoading) return;
     if (!isLoggedIn) {
-      setError("Você precisa estar logado para ver o detalhe da compra.");
       router.push("/login");
     }
   }, [authLoading, isLoggedIn, router]);
 
-  // Busca os dados do pedido
   useEffect(() => {
     if (authLoading || !pedidoId || !isLoggedIn) return;
 
@@ -96,20 +152,15 @@ export default function PedidoPage() {
       try {
         setLoading(true);
         setError(null);
-
         const data = await apiClient.get<PedidoDetalhe>(
           `/api/pedidos/${pedidoId}`,
         );
-
         setPedido(data);
       } catch (err: any) {
         const status = err?.status;
         if (status === 404) {
           setError("Pedido não encontrado.");
         } else if (status === 401 || status === 403) {
-          setError(
-            "Você não tem permissão para ver este pedido. Faça login novamente.",
-          );
           router.push("/login");
         } else {
           setError(err?.message || "Não foi possível carregar esta compra.");
@@ -120,217 +171,278 @@ export default function PedidoPage() {
     };
 
     fetchPedido();
-  }, [pedidoId, isLoggedIn, router]);
+  }, [authLoading, pedidoId, isLoggedIn, router]);
+
+  // --------- RENDER ---------
 
   if (loading) {
     return (
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold mb-4">Detalhe da compra</h1>
-        <p className="text-gray-600">Carregando informações do pedido...</p>
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
+        <h1 className="mb-6 text-xl font-bold text-gray-900 sm:text-2xl">
+          Detalhe do Pedido
+        </h1>
+        <LoadingState message="Carregando informações do pedido..." />
       </main>
     );
   }
 
   if (error || !pedido) {
     return (
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold mb-4">Detalhe da compra</h1>
-        <p className="text-red-600">
-          {error || "Não foi possível carregar esta compra."}
-        </p>
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
+        <h1 className="mb-6 text-xl font-bold text-gray-900 sm:text-2xl">
+          Detalhe do Pedido
+        </h1>
+        <ErrorState message={error || "Não foi possível carregar esta compra."} />
+        <button
+          type="button"
+          onClick={() => router.push("/pedidos")}
+          className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+        >
+          Voltar para meus pedidos
+        </button>
       </main>
     );
   }
 
-  // endereço vem como JSON string ou objeto
-  const endereco = (() => {
-    if (!pedido.endereco) return null;
-    if (typeof pedido.endereco === "string") {
-      try {
-        return JSON.parse(pedido.endereco);
-      } catch {
-        return pedido.endereco;
-      }
-    }
-    return pedido.endereco;
-  })();
+  const endereco = parseEndereco(pedido.endereco);
+  const sp = pedido.status_pagamento as StatusPagamento;
+  const se = pedido.status_entrega as StatusEntrega;
+  const isPrazo = pedido.forma_pagamento?.toLowerCase().includes("prazo");
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-10">
-      {/* Título */}
-      <div className="flex items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold">Detalhe da compra</h1>
-
+    <main className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
+      {/* Header */}
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
+            Pedido #{pedido.id}
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {formatDateTime(pedido.data_pedido)}
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => router.push("/pedidos")}
-          className="hidden sm:inline-flex px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          className="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:inline-flex"
         >
-          Voltar para minhas compras
+          Voltar para meus pedidos
         </button>
       </div>
 
-      {/* Dados gerais */}
-      <section className="mb-6 space-y-2 text-sm text-gray-800">
-        <p>
-          <span className="font-semibold">Pedido:</span> #{pedido.id}
-        </p>
-        <p>
-          <span className="font-semibold">Status:</span> {pedido.status}
-        </p>
-        <p>
-          <span className="font-semibold">Forma de pagamento:</span>{" "}
-          {pedido.forma_pagamento}
-        </p>
-        {pedido.status_pagamento && (
-          <p>
-            <span className="font-semibold">Status do pagamento:</span>{" "}
-            {pedido.status_pagamento}
-          </p>
-        )}
-        <p>
-          <span className="font-semibold">Data:</span>{" "}
-          {new Date(pedido.data_pedido).toLocaleString("pt-BR")}
-        </p>
+      {/* Status + Pagamento */}
+      <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          {sp && LABEL_PAGAMENTO[sp] && (
+            <Badge
+              label={`Pagamento: ${LABEL_PAGAMENTO[sp]}`}
+              className={COR_PAGAMENTO[sp]}
+            />
+          )}
+          {se && LABEL_ENTREGA[se] && (
+            <Badge
+              label={`Entrega: ${LABEL_ENTREGA[se]}`}
+              className={COR_ENTREGA[se]}
+            />
+          )}
+          {pedido.cupom_codigo && (
+            <Badge
+              label={`Cupom: ${pedido.cupom_codigo}`}
+              className="border-violet-400/40 bg-violet-50 text-violet-700"
+            />
+          )}
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <p className="text-gray-500">Forma de pagamento</p>
+            <p className="font-medium text-gray-900">
+              {pedido.forma_pagamento}
+            </p>
+          </div>
+          {pedido.shipping_prazo_dias != null && (
+            <div>
+              <p className="text-gray-500">Prazo de entrega</p>
+              <p className="font-medium text-gray-900">
+                {pedido.shipping_prazo_dias}{" "}
+                {pedido.shipping_prazo_dias === 1
+                  ? "dia útil"
+                  : "dias úteis"}
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
-      {/* Botão de retentativa de pagamento */}
-      {(pedido.status_pagamento === "falhou" || pedido.status_pagamento === "pendente") &&
-        !pedido.forma_pagamento.toLowerCase().includes("prazo") && (
-          <section className="mb-6">
-            <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
-              <p className="text-sm text-orange-800 mb-3">
-                {pedido.status_pagamento === "falhou"
-                  ? "O pagamento deste pedido não foi concluído. Você pode tentar novamente."
-                  : "Este pedido aguarda pagamento. Clique abaixo para pagar."}
-              </p>
-              {retryError && (
-                <p className="text-sm text-red-600 mb-2">{retryError}</p>
-              )}
-              <button
-                type="button"
-                onClick={handleRetryPayment}
-                disabled={retrying}
-                className="inline-flex items-center justify-center rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {retrying ? "Redirecionando..." : "Pagar novamente"}
-              </button>
-            </div>
-          </section>
-        )}
-
-      {/* Aviso de confirmação pendente para pedidos a prazo */}
-      {pedido.forma_pagamento.toLowerCase().includes("prazo") &&
-        pedido.status_pagamento === "pendente" && (
-          <section className="mb-6">
-            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm font-semibold text-blue-800 mb-1">
-                Pedido recebido — aguardando confirmação de pagamento
-              </p>
-              <p className="text-sm text-blue-700">
-                Seu pedido foi registrado com pagamento a prazo. Nossa equipe
-                entrará em contato para confirmar as condições e liberar o
-                pedido. Nenhuma ação é necessária da sua parte agora.
-              </p>
-            </div>
-          </section>
-        )}
-
-      {/* Endereço */}
-      {endereco && (
+      {/* Alerta: pagamento falhou ou pendente */}
+      {(sp === "falhou" || sp === "pendente") && !isPrazo && (
         <section className="mb-6">
-          <h2 className="font-semibold mb-2">Endereço de entrega</h2>
-          <div className="text-sm text-gray-800 space-y-0.5">
-            <p>
-              {endereco.rua}, {endereco.numero}
+          <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+            <p className="mb-3 text-sm text-orange-800">
+              {sp === "falhou"
+                ? "O pagamento deste pedido não foi concluído. Você pode tentar novamente."
+                : "Este pedido aguarda pagamento. Clique abaixo para pagar."}
             </p>
-            <p>
-              {endereco.bairro} - {endereco.cidade}/{endereco.estado}
+            {retryError && (
+              <p className="mb-2 text-sm text-red-600">{retryError}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleRetryPayment}
+              disabled={retrying}
+              className="inline-flex items-center justify-center rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {retrying ? "Redirecionando..." : "Pagar novamente"}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Alerta: pagamento a prazo pendente */}
+      {isPrazo && sp === "pendente" && (
+        <section className="mb-6">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <p className="mb-1 text-sm font-semibold text-blue-800">
+              Pedido recebido — aguardando confirmação de pagamento
             </p>
+            <p className="text-sm text-blue-700">
+              Seu pedido foi registrado com pagamento a prazo. Nossa equipe
+              entrará em contato para confirmar as condições e liberar o pedido.
+              Nenhuma ação é necessária da sua parte agora.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* Endereço de entrega */}
+      {endereco && (
+        <section className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+          <h2 className="mb-3 text-sm font-semibold text-gray-900">
+            Endereço de entrega
+          </h2>
+          <div className="space-y-0.5 text-sm text-gray-600">
+            <p>
+              {endereco.rua || endereco.endereco}
+              {endereco.numero ? `, ${endereco.numero}` : ""}
+            </p>
+            {endereco.bairro && (
+              <p>
+                {endereco.bairro} — {endereco.cidade}/{endereco.estado}
+              </p>
+            )}
             {endereco.complemento && <p>{endereco.complemento}</p>}
             {endereco.cep && <p>CEP: {endereco.cep}</p>}
           </div>
         </section>
       )}
 
-      {/* Itens */}
+      {/* Itens do pedido */}
       <section className="mb-6">
-        <h2 className="font-semibold mb-2">Itens do pedido</h2>
-        <div className="border rounded-lg divide-y bg-white">
-          {pedido.itens.map((item) => {
-            // tenta pegar o id do produto; se não tiver, cai pro id do item (fallback)
-            const productId =
-              item.produto_id ?? item.product_id ?? item.id_produto ?? item.id;
-
-            const rawImage =
-              item.imagem ?? item.image ?? item.product_image ?? null;
-
-            return (
-              <div
-                key={item.id}
-                className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 text-sm"
-              >
-                {/* Imagem */}
-                <div className="w-20 h-20 flex-shrink-0 rounded-lg bg-gray-100 overflow-hidden">
-                  <img
-                    src={rawImage ? absUrl(rawImage) : "/placeholder.png"}
-                    alt={item.nome}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/placeholder.png";
-                    }}
-                  />
-                </div>
-
-                {/* Infos */}
-                <div className="flex-1 min-w-0 self-stretch flex flex-col justify-center">
-                  <p className="font-medium truncate">{item.nome}</p>
-                  <p className="text-gray-500">
-                    {item.quantidade} x {formatCurrency(item.preco)}
-                  </p>
-                </div>
-
-                {/* Total + botão */}
-                <div className="flex flex-col items-end gap-2">
-                  <span className="font-semibold">
-                    {formatCurrency(item.preco * item.quantidade)}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/produtos/${productId}`)}
-                    className="px-4 py-2 rounded-lg bg-primary text-white font-semibold text-xs sm:text-sm hover:bg-primary-hover transition-colors"
-                  >
-                    Comprar novamente
-                  </button>
-                </div>
+        <h2 className="mb-3 text-sm font-semibold text-gray-900">
+          Itens do pedido ({pedido.itens.length})
+        </h2>
+        <div className="divide-y rounded-xl border border-gray-200 bg-white shadow-sm">
+          {pedido.itens.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-3 p-3 sm:gap-4 sm:p-4"
+            >
+              {/* Imagem */}
+              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 sm:h-20 sm:w-20">
+                <img
+                  src={item.imagem ? absUrl(item.imagem) : "/placeholder.png"}
+                  alt={item.nome}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.png";
+                  }}
+                />
               </div>
-            );
-          })}
+
+              {/* Info */}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-gray-900">
+                  {item.nome}
+                </p>
+                <p className="mt-0.5 text-sm text-gray-500">
+                  {item.quantidade} x {formatCurrency(item.preco)}
+                </p>
+              </div>
+
+              {/* Subtotal + ação */}
+              <div className="flex flex-col items-end gap-1.5">
+                <span className="text-sm font-semibold text-gray-900">
+                  {formatCurrency(item.preco * item.quantidade)}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    router.push(`/produtos/${item.produto_id}`);
+                  }}
+                  className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary-hover"
+                >
+                  Comprar novamente
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Frete e total geral */}
-      <section className="mt-4 space-y-2 text-sm text-gray-700">
-        {typeof pedido.shipping_price === "number" && pedido.shipping_price > 0 && (
-          <div className="flex items-center justify-between">
-            <span>Frete</span>
-            <span>{formatCurrency(pedido.shipping_price)}</span>
+      {/* Resumo financeiro */}
+      <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <h2 className="mb-3 text-sm font-semibold text-gray-900">
+          Resumo do pedido
+        </h2>
+        <div className="space-y-2 text-sm">
+          {/* Subtotal */}
+          <div className="flex items-center justify-between text-gray-600">
+            <span>Subtotal</span>
+            <span>{formatCurrency(pedido.subtotal)}</span>
           </div>
-        )}
-        <div className="flex items-center justify-between text-lg font-bold text-gray-900">
-          <span>Total</span>
-          <span className="text-accent">{formatCurrency(pedido.total)}</span>
+
+          {/* Desconto */}
+          {pedido.desconto > 0 && (
+            <div className="flex items-center justify-between text-emerald-600">
+              <span>
+                Desconto
+                {pedido.cupom_codigo ? ` (${pedido.cupom_codigo})` : ""}
+              </span>
+              <span>- {formatCurrency(pedido.desconto)}</span>
+            </div>
+          )}
+
+          {/* Frete */}
+          <div className="flex items-center justify-between text-gray-600">
+            <span>Frete</span>
+            <span>
+              {pedido.shipping_price > 0
+                ? formatCurrency(pedido.shipping_price)
+                : "Grátis"}
+            </span>
+          </div>
+
+          {/* Separador */}
+          <hr className="border-gray-200" />
+
+          {/* Total */}
+          <div className="flex items-center justify-between text-lg font-bold text-gray-900">
+            <span>Total</span>
+            <span className="text-accent">
+              {formatCurrency(pedido.total)}
+            </span>
+          </div>
         </div>
       </section>
 
-      {/* Botão voltar em mobile */}
+      {/* Botão voltar mobile */}
       <button
         type="button"
         onClick={() => router.push("/pedidos")}
-        className="mt-6 w-full sm:hidden px-4 py-3 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        className="mt-6 w-full rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:hidden"
       >
-        Voltar para minhas compras
+        Voltar para meus pedidos
       </button>
     </main>
   );
