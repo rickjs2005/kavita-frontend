@@ -51,6 +51,12 @@ const navItems: NavItem[] = [
     icon: "🧾",
     permission: "orders_view",
   },
+  {
+    label: "Ocorrências",
+    href: "/admin/ocorrencias",
+    icon: "📋",
+    permission: "orders_view",
+  },
   // Serviços / Clientes
   {
     label: "Serviços",
