@@ -169,6 +169,9 @@ function OcorrenciaDetail({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Endereço parseado (antes do addrForm para evitar referência antecipada)
+  const endereco = parseEndereco(oc.pedido_endereco);
+
   // Edição de endereço
   const [editingAddress, setEditingAddress] = useState(false);
   const [addrForm, setAddrForm] = useState({
@@ -190,7 +193,6 @@ function OcorrenciaDetail({
   const [sendingWa, setSendingWa] = useState(false);
   const [contactMsg, setContactMsg] = useState<string | null>(null);
 
-  const endereco = parseEndereco(oc.pedido_endereco);
   const whatsappNum = normalizeTelBr(oc.usuario_telefone);
 
   const handleSave = async () => {
