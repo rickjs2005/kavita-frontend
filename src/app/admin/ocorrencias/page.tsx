@@ -169,6 +169,21 @@ function OcorrenciaDetail({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Edição de endereço
+  const [editingAddress, setEditingAddress] = useState(false);
+  const [addrForm, setAddrForm] = useState({
+    cep: endereco?.cep?.replace(/\D/g, "") || "",
+    rua: endereco?.rua || endereco?.endereco || endereco?.logradouro || "",
+    numero: endereco?.numero || "",
+    bairro: endereco?.bairro || "",
+    cidade: endereco?.cidade || "",
+    estado: endereco?.estado || "",
+    complemento: endereco?.complemento || "",
+    ponto_referencia: endereco?.ponto_referencia || endereco?.referencia || "",
+  });
+  const [savingAddr, setSavingAddr] = useState(false);
+  const [addrMsg, setAddrMsg] = useState<string | null>(null);
+
   // Contato
   const [selectedTemplate, setSelectedTemplate] = useState<string>(CONTACT_TEMPLATES[0].id);
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -197,6 +212,23 @@ function OcorrenciaDetail({
       setError(err?.message || "Erro ao salvar.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveAddress = async () => {
+    setSavingAddr(true);
+    setAddrMsg(null);
+    try {
+      await apiClient.put(`/api/admin/pedidos/${oc.pedido_id}/endereco`, {
+        ...addrForm,
+        cep: addrForm.cep.replace(/\D/g, ""),
+      });
+      setAddrMsg("Endereço atualizado com sucesso.");
+      setEditingAddress(false);
+    } catch (err: any) {
+      setAddrMsg(`Erro: ${err?.message || "não foi possível atualizar."}`);
+    } finally {
+      setSavingAddr(false);
     }
   };
 
@@ -289,21 +321,89 @@ function OcorrenciaDetail({
             <p className="text-slate-400">Entrega: {oc.pedido_status_entrega}</p>
           </div>
 
-          {/* Endereço atual */}
+          {/* Endereço atual + edição */}
           <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3 sm:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Endereço atual do pedido</p>
-            {endereco ? (
-              <div className="mt-1 space-y-0.5 text-slate-300">
-                <p>{endereco.rua || endereco.endereco || endereco.logradouro}{endereco.numero ? `, ${endereco.numero}` : ""}</p>
-                {endereco.bairro && <p>{endereco.bairro} — {endereco.cidade}/{endereco.estado}</p>}
-                {endereco.complemento && <p>{endereco.complemento}</p>}
-                {endereco.cep && <p>CEP: {endereco.cep}</p>}
-                {(endereco.ponto_referencia || endereco.referencia) && (
-                  <p>Ref: {endereco.ponto_referencia || endereco.referencia}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                Endereço do pedido
+              </p>
+              {!editingAddress && (
+                <button
+                  type="button"
+                  onClick={() => setEditingAddress(true)}
+                  className="text-[11px] font-medium text-emerald-400 hover:text-emerald-300"
+                >
+                  Corrigir endereço
+                </button>
+              )}
+            </div>
+
+            {!editingAddress ? (
+              <>
+                {endereco ? (
+                  <div className="mt-1 space-y-0.5 text-slate-300">
+                    <p>{endereco.rua || endereco.endereco || endereco.logradouro}{endereco.numero ? `, ${endereco.numero}` : ""}</p>
+                    {endereco.bairro && <p>{endereco.bairro} — {endereco.cidade}/{endereco.estado}</p>}
+                    {endereco.complemento && <p>{endereco.complemento}</p>}
+                    {endereco.cep && <p>CEP: {endereco.cep}</p>}
+                    {(endereco.ponto_referencia || endereco.referencia) && (
+                      <p>Ref: {endereco.ponto_referencia || endereco.referencia}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-slate-500">Endereço não disponível</p>
                 )}
-              </div>
+                {addrMsg && (
+                  <p className={`mt-2 text-xs ${addrMsg.startsWith("Erro") ? "text-red-400" : "text-emerald-400"}`}>
+                    {addrMsg}
+                  </p>
+                )}
+              </>
             ) : (
-              <p className="mt-1 text-slate-500">Endereço não disponível</p>
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {([
+                  ["rua", "Rua / Logradouro", "sm:col-span-2"],
+                  ["numero", "Número", ""],
+                  ["complemento", "Complemento", ""],
+                  ["bairro", "Bairro", ""],
+                  ["cidade", "Cidade", ""],
+                  ["estado", "Estado (UF)", ""],
+                  ["cep", "CEP", ""],
+                  ["ponto_referencia", "Ponto de referência", "sm:col-span-2"],
+                ] as const).map(([field, label, span]) => (
+                  <div key={field} className={span}>
+                    <label className="block text-[11px] text-slate-400">{label}</label>
+                    <input
+                      type="text"
+                      value={addrForm[field]}
+                      onChange={(e) => setAddrForm((f) => ({ ...f, [field]: e.target.value }))}
+                      className="mt-0.5 w-full rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+                    />
+                  </div>
+                ))}
+                {addrMsg && (
+                  <p className={`sm:col-span-2 text-xs ${addrMsg.startsWith("Erro") ? "text-red-400" : "text-emerald-400"}`}>
+                    {addrMsg}
+                  </p>
+                )}
+                <div className="flex gap-2 sm:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => { setEditingAddress(false); setAddrMsg(null); }}
+                    className="rounded-md border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveAddress}
+                    disabled={savingAddr}
+                    className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {savingAddr ? "Salvando..." : "Salvar endereço corrigido"}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
