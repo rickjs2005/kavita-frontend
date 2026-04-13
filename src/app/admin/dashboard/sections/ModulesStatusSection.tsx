@@ -122,7 +122,7 @@ export function ModulesStatusSection({ status, loading }: Props) {
         <ModuleCard
           icon="🌦️"
           title="Clima"
-          href="/admin/kavita-news"
+          href="/admin/kavita-news?tab=clima"
           lines={[
             { label: "Cidades ativas", value: status.clima.cidadesAtivas },
             { label: "Última sync", value: timeAgo(status.clima.ultimaSync), dotColor: climaDotColor },
@@ -132,7 +132,7 @@ export function ModulesStatusSection({ status, loading }: Props) {
         <ModuleCard
           icon="📈"
           title="Cotações"
-          href="/admin/kavita-news"
+          href="/admin/kavita-news?tab=cotacoes"
           lines={[
             { label: "Ativas", value: status.cotacoes.ativas },
             { label: "Atualização", value: timeAgo(status.cotacoes.ultimaAtualizacao), dotColor: cotacoesDotColor },
@@ -156,6 +156,16 @@ export function ModulesStatusSection({ status, loading }: Props) {
           lines={[
             { label: "Corretoras", value: status.mercadoCafe.corretorasAtivas },
             { label: "Pendentes", value: status.mercadoCafe.solicitacoesPendentes, dotColor: status.mercadoCafe.solicitacoesPendentes > 0 ? "amber" : "green" },
+          ]}
+        />
+
+        <ModuleCard
+          icon="✉️"
+          title="Mensagens"
+          href="/admin/contato-mensagens"
+          lines={[
+            { label: "Não lidas", value: status.mensagens.naoLidas, dotColor: status.mensagens.naoLidas > 0 ? "amber" : "green" },
+            { label: "Total", value: status.mensagens.total },
           ]}
         />
       </div>

@@ -60,6 +60,7 @@ export type ModulesStatus = {
   cotacoes: { ativas: number; ultimaAtualizacao: string | null; statusSync: string | null };
   drones: { modelos: number; comentariosPendentes: number };
   mercadoCafe: { corretorasAtivas: number; solicitacoesPendentes: number };
+  mensagens: { naoLidas: number; total: number };
 };
 
 export type AlertNivel = "info" | "warning" | "danger";

@@ -114,9 +114,10 @@ export function AlertsAndMetricsSection({
           )}
 
           {topProdutos.map((prod, index) => (
-            <div
+            <Link
               key={prod.id}
-              className="rounded-xl border border-slate-800/70 bg-slate-900/80 px-3 py-2"
+              href={`/admin/produtos?highlight=${prod.id}`}
+              className="block rounded-xl border border-slate-800/70 bg-slate-900/80 px-3 py-2 transition hover:border-emerald-500/40 hover:bg-slate-900"
             >
               <p className="truncate text-xs font-medium text-slate-100">
                 {index + 1}. {prod.nome}
@@ -124,7 +125,7 @@ export function AlertsAndMetricsSection({
               <p className="text-[11px] text-slate-400">
                 {prod.total_vendido} un. · {formatMoney(prod.receita_total)}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -163,9 +164,10 @@ export function AlertsAndMetricsSection({
           )}
 
           {topServicos.map((serv, index) => (
-            <div
+            <Link
               key={serv.id}
-              className="rounded-xl border border-slate-800/70 bg-slate-900/80 px-3 py-2"
+              href={`/admin/servicos?highlight=${serv.id}`}
+              className="block rounded-xl border border-slate-800/70 bg-slate-900/80 px-3 py-2 transition hover:border-emerald-500/40 hover:bg-slate-900"
             >
               <p className="truncate text-xs font-medium text-slate-100">
                 {index + 1}. {serv.titulo}
@@ -179,7 +181,7 @@ export function AlertsAndMetricsSection({
                   {serv.nota_media.toFixed(1)} média
                 </p>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       </div>
