@@ -3,12 +3,28 @@
 // src/app/painel/corretora/perfil/ProfileClient.tsx
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { PanelCard } from "@/components/painel-corretora/PanelCard";
-import type { CorretoraAdmin } from "@/types/corretora";
+import type { CorretoraAdmin, PerfilCompra } from "@/types/corretora";
+import {
+  CIDADES_ZONA_DA_MATA,
+  TIPOS_CAFE,
+  type TipoCafe,
+} from "@/lib/regioes";
+
+// Tipos de café editáveis (exclui "ainda_nao_sei" que é só para lead público).
+const TIPOS_CAFE_EDITAVEIS = TIPOS_CAFE.filter(
+  (t) => t.value !== "ainda_nao_sei",
+);
+
+const PERFIS_COMPRA: { value: PerfilCompra; label: string; desc: string }[] = [
+  { value: "compra", label: "Só compra", desc: "Busca café para comprar" },
+  { value: "venda", label: "Só venda", desc: "Vende café do produtor" },
+  { value: "ambos", label: "Compra e venda", desc: "Atua nos dois lados" },
+];
 
 type ProfileFormData = {
   contact_name: string;
@@ -19,6 +35,12 @@ type ProfileFormData = {
   website: string;
   instagram: string;
   facebook: string;
+  // Regionalização (Sprint 2.3)
+  cidades_atendidas: string[];
+  tipos_cafe: TipoCafe[];
+  perfil_compra: PerfilCompra | "";
+  horario_atendimento: string;
+  anos_atuacao: string; // string no form, convertido para number no submit
 };
 
 const CONTACT_FIELDS = [
@@ -36,6 +58,26 @@ const labelClass =
   "mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-600";
 const errorClass = "mt-1.5 text-[11px] font-medium text-red-700";
 
+/**
+ * Normaliza o campo JSON do backend. Depending on MySQL driver, pode
+ * vir como array já parseado OU string JSON. Retorna array vazio em
+ * qualquer outro caso para simplificar uso no form.
+ */
+function parseJsonArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((v) => typeof v === "string");
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed)
+        ? parsed.filter((v) => typeof v === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export default function ProfileClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,6 +87,7 @@ export default function ProfileClient() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isDirty },
     setError,
   } = useForm<ProfileFormData>({
@@ -57,6 +100,11 @@ export default function ProfileClient() {
       website: "",
       instagram: "",
       facebook: "",
+      cidades_atendidas: [],
+      tipos_cafe: [],
+      perfil_compra: "",
+      horario_atendimento: "",
+      anos_atuacao: "",
     },
   });
 
@@ -69,6 +117,12 @@ export default function ProfileClient() {
         );
         if (ignore) return;
         setCorretora(data);
+
+        // Parse de JSON fields — backend retorna array OU string JSON
+        // (depende do driver MySQL). Normalizamos para array.
+        const cidadesAtendidas = parseJsonArray(data.cidades_atendidas);
+        const tiposCafe = parseJsonArray(data.tipos_cafe) as TipoCafe[];
+
         reset({
           contact_name: data.contact_name ?? "",
           description: data.description ?? "",
@@ -78,6 +132,12 @@ export default function ProfileClient() {
           website: data.website ?? "",
           instagram: data.instagram ?? "",
           facebook: data.facebook ?? "",
+          cidades_atendidas: cidadesAtendidas,
+          tipos_cafe: tiposCafe,
+          perfil_compra: data.perfil_compra ?? "",
+          horario_atendimento: data.horario_atendimento ?? "",
+          anos_atuacao:
+            data.anos_atuacao != null ? String(data.anos_atuacao) : "",
         });
       } catch (err) {
         toast.error(formatApiError(err, "Erro ao carregar perfil.").message);
@@ -102,10 +162,27 @@ export default function ProfileClient() {
 
     setSaving(true);
     try {
-      const payload: Record<string, string | null> = {};
-      for (const [k, v] of Object.entries(data)) {
-        payload[k] = v?.trim() ? v.trim() : null;
-      }
+      // Strings: trim + null-se-vazio. Arrays: passam direto.
+      // Anos_atuacao: converte para número ou null.
+      const payload: Record<string, unknown> = {
+        contact_name: data.contact_name?.trim() || null,
+        description: data.description?.trim() || null,
+        phone: data.phone?.trim() || null,
+        whatsapp: data.whatsapp?.trim() || null,
+        email: data.email?.trim() || null,
+        website: data.website?.trim() || null,
+        instagram: data.instagram?.trim() || null,
+        facebook: data.facebook?.trim() || null,
+        cidades_atendidas:
+          data.cidades_atendidas.length > 0 ? data.cidades_atendidas : null,
+        tipos_cafe: data.tipos_cafe.length > 0 ? data.tipos_cafe : null,
+        perfil_compra: data.perfil_compra || null,
+        horario_atendimento: data.horario_atendimento?.trim() || null,
+        anos_atuacao: data.anos_atuacao
+          ? Number(data.anos_atuacao)
+          : null,
+      };
+
       const updated = await apiClient.put<CorretoraAdmin>(
         "/api/corretora/profile",
         payload,
@@ -291,6 +368,202 @@ export default function ProfileClient() {
                 className={inputClass}
                 placeholder="https://facebook.com/..."
               />
+            </div>
+          </div>
+        </PanelCard>
+
+        {/* Seção: Atendimento regional (Sprint 2.3) */}
+        <PanelCard density="spacious">
+          <div className="mb-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+              Atendimento regional
+            </p>
+            <h2 className="mt-1 text-base font-semibold text-stone-900">
+              Onde e como você atua
+            </h2>
+            <p className="mt-1 text-[11px] text-stone-500">
+              Produtores filtram por cidade e tipo de café. Quanto mais
+              completo, melhor sua exposição na Zona da Mata.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {/* Cidades atendidas (multi-select checkboxes) */}
+            <div>
+              <label className={labelClass}>Cidades atendidas</label>
+              <p className="-mt-1 mb-2.5 text-[11px] text-stone-500">
+                Marque todas as cidades da Zona da Mata onde você compra ou
+                vende café.
+              </p>
+              <Controller
+                control={control}
+                name="cidades_atendidas"
+                render={({ field }) => (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {CIDADES_ZONA_DA_MATA.map((cidade) => {
+                      const checked = field.value.includes(cidade.slug);
+                      return (
+                        <label
+                          key={cidade.slug}
+                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm transition-colors hover:border-amber-400/40 hover:bg-amber-50/30 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                field.onChange([
+                                  ...field.value,
+                                  cidade.slug,
+                                ]);
+                              } else {
+                                field.onChange(
+                                  field.value.filter(
+                                    (v: string) => v !== cidade.slug,
+                                  ),
+                                );
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <span className="flex-1 text-stone-800">
+                            {cidade.nome}
+                          </span>
+                          {cidade.destaque && (
+                            <span
+                              aria-label="Cidade-bandeira"
+                              className="h-1.5 w-1.5 rounded-full bg-amber-500"
+                            />
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              />
+            </div>
+
+            {/* Tipos de café (chips multi-select) */}
+            <div>
+              <label className={labelClass}>Tipos de café que você trabalha</label>
+              <Controller
+                control={control}
+                name="tipos_cafe"
+                render={({ field }) => (
+                  <div className="flex flex-wrap gap-2">
+                    {TIPOS_CAFE_EDITAVEIS.map((tipo) => {
+                      const checked = field.value.includes(
+                        tipo.value as TipoCafe,
+                      );
+                      return (
+                        <label key={tipo.value} className="cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                field.onChange([
+                                  ...field.value,
+                                  tipo.value,
+                                ]);
+                              } else {
+                                field.onChange(
+                                  field.value.filter(
+                                    (v: TipoCafe) => v !== tipo.value,
+                                  ),
+                                );
+                              }
+                            }}
+                            className="peer sr-only"
+                          />
+                          <span className="inline-block rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-medium text-stone-700 transition-all hover:border-amber-400/40 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:text-amber-900">
+                            {tipo.label}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              />
+            </div>
+
+            {/* Perfil de compra (radio) */}
+            <div>
+              <label className={labelClass}>Perfil comercial</label>
+              <Controller
+                control={control}
+                name="perfil_compra"
+                render={({ field }) => (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {PERFIS_COMPRA.map((perfil) => {
+                      const checked = field.value === perfil.value;
+                      return (
+                        <label
+                          key={perfil.value}
+                          className="cursor-pointer"
+                        >
+                          <input
+                            type="radio"
+                            value={perfil.value}
+                            checked={checked}
+                            onChange={() => field.onChange(perfil.value)}
+                            className="peer sr-only"
+                          />
+                          <span className="block rounded-xl border border-stone-200 bg-white p-3 text-left transition-all hover:border-amber-400/40 peer-checked:border-amber-500 peer-checked:bg-amber-50">
+                            <span className="block text-sm font-semibold text-stone-900 peer-checked:text-amber-900">
+                              {perfil.label}
+                            </span>
+                            <span className="mt-0.5 block text-[11px] text-stone-500">
+                              {perfil.desc}
+                            </span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              />
+            </div>
+
+            {/* Horário + anos de atuação — 2 colunas */}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div>
+                <label className={labelClass}>Horário de atendimento</label>
+                <input
+                  {...register("horario_atendimento", {
+                    maxLength: {
+                      value: 120,
+                      message: "Máximo 120 caracteres.",
+                    },
+                  })}
+                  className={inputClass}
+                  placeholder="Seg a Sex · 7h às 17h"
+                />
+                {errors.horario_atendimento && (
+                  <p className={errorClass}>
+                    {errors.horario_atendimento.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className={labelClass}>Anos de atuação</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="120"
+                  {...register("anos_atuacao", {
+                    min: { value: 0, message: "Valor inválido." },
+                    max: { value: 120, message: "Valor inválido." },
+                  })}
+                  className={inputClass}
+                  placeholder="Ex: 12"
+                />
+                {errors.anos_atuacao && (
+                  <p className={errorClass}>
+                    {errors.anos_atuacao.message}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </PanelCard>

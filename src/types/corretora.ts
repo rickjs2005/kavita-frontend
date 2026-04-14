@@ -1,6 +1,11 @@
 // types/corretora.ts
 // Shared types for the Mercado do Café / Corretoras module.
 
+import type { TipoCafe } from "@/lib/regioes";
+
+/** Perfil comercial da corretora: compra, vende ou ambos. */
+export type PerfilCompra = "compra" | "venda" | "ambos";
+
 export type PublicCorretora = {
   id: number;
   name: string;
@@ -18,6 +23,15 @@ export type PublicCorretora = {
   instagram?: string | null;
   facebook?: string | null;
   is_featured: boolean | number;
+  // Regionalização (Sprint 2) — todos opcionais para compat com registros antigos.
+  // cidades_atendidas: array de slugs (não nomes); resolvidos no frontend via getCidadeBySlug.
+  // tipos_cafe: array de valores do catálogo TIPOS_CAFE.
+  cidades_atendidas?: string[] | null;
+  tipos_cafe?: TipoCafe[] | null;
+  perfil_compra?: PerfilCompra | null;
+  horario_atendimento?: string | null;
+  anos_atuacao?: number | null;
+  foto_responsavel_path?: string | null;
 };
 
 export type CorretoraAdmin = PublicCorretora & {
