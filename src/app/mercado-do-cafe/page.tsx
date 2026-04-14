@@ -20,11 +20,12 @@ import { CotacaoCard } from "@/components/news/CotacaoCard";
 import { MarketCotacaoPill } from "@/components/mercado-do-cafe/MarketCotacaoPill";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 import type { PublicCotacao } from "@/lib/newsPublicApi";
+import { CIDADES_DESTAQUE } from "@/lib/regioes";
 
 export const metadata = {
-  title: "Mercado do Café — Zona da Mata | Kavita",
+  title: "Mercado do Café · Matas de Minas | Kavita",
   description:
-    "Cotações, corretoras e oportunidades para o produtor de café da Zona da Mata mineira.",
+    "Corretoras de café da Zona da Mata Mineira — Manhuaçu, Manhumirim, Lajinha, Caparaó, Matipó, Reduto. Cotações, canais diretos e rede curada pela Kavita.",
 };
 
 function pickCoffeeCotacao(list: PublicCotacao[]): PublicCotacao | null {
@@ -125,17 +126,18 @@ export default async function MercadoDoCafePage() {
               </div>
 
               <h1 className="text-3xl font-semibold leading-[1.05] tracking-tight text-stone-50 md:text-4xl lg:text-5xl">
-                Mercado do Café —{" "}
+                Corretoras de café da{" "}
                 <span className="bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 bg-clip-text text-transparent">
                   Zona&nbsp;da&nbsp;Mata
-                </span>
+                </span>{" "}
+                Mineira
               </h1>
 
               <p className="mt-5 max-w-2xl text-sm leading-relaxed text-stone-300 md:text-base">
-                Cotações de referência, corretoras verificadas e
-                oportunidades para o produtor de café da região. Acompanhe os
-                preços, encontre quem compra e faça negócio com confiança —
-                tudo em um único hub curado pelo Kavita.
+                Encontre corretoras verificadas em Manhuaçu, Manhumirim,
+                Lajinha e toda a região das Matas de Minas. Cotação de
+                referência, contato direto via WhatsApp e uma rede curada
+                pela Kavita — para você negociar o seu café com confiança.
               </p>
             </div>
 
@@ -235,7 +237,43 @@ export default async function MercadoDoCafePage() {
           )}
         </section>
 
-        {/* ─── 03 / CTA Cadastro ────────────────────────────────── */}
+        {/* ─── 03 / Cidades da Zona da Mata ─────────────────────── */}
+        <section aria-label="Cidades da Zona da Mata" className="mt-16 md:mt-20">
+          <SectionHeader
+            kicker="03 · Região"
+            title="Corretoras por cidade"
+            hint="Encontre quem atua no seu município da Zona da Mata Mineira"
+          />
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+            {CIDADES_DESTAQUE.map((cidade) => (
+              <Link
+                key={cidade.slug}
+                href={`/mercado-do-cafe/cidade/${cidade.slug}`}
+                className="group relative overflow-hidden rounded-xl bg-white/[0.04] p-4 ring-1 ring-white/[0.08] backdrop-blur-sm transition-all hover:bg-white/[0.08] hover:ring-amber-400/30"
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
+                />
+                <p className="relative font-mono text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-300/70">
+                  {cidade.estado}
+                </p>
+                <p className="relative mt-1 text-sm font-semibold text-stone-100 transition-colors group-hover:text-amber-200">
+                  {cidade.nome}
+                </p>
+                <span
+                  aria-hidden
+                  className="relative mt-2 inline-flex items-center gap-1 text-[10px] text-stone-500 transition-colors group-hover:text-amber-300/80"
+                >
+                  Ver corretoras
+                  <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ─── 04 / CTA Cadastro ────────────────────────────────── */}
         <section
           aria-label="Cadastro de corretora"
           className="relative mt-16 overflow-hidden rounded-2xl bg-white/[0.04] p-7 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:mt-20 md:p-10"

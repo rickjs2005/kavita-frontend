@@ -31,8 +31,10 @@ import { fetchPublicCotacoes } from "@/server/data/cotacoes";
 import type { PublicCotacao } from "@/lib/newsPublicApi";
 import { CorretoraCard } from "@/components/mercado-do-cafe/CorretoraCard";
 import { CorretoraFilters } from "@/components/mercado-do-cafe/CorretoraFilters";
+import { CityChips } from "@/components/mercado-do-cafe/CityChips";
 import { MarketCotacaoPill } from "@/components/mercado-do-cafe/MarketCotacaoPill";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
+import { normalizeCityName, CIDADES_ZONA_DA_MATA } from "@/lib/regioes";
 
 function pickCoffeeCotacao(list: PublicCotacao[]): PublicCotacao | null {
   if (!Array.isArray(list) || list.length === 0) return null;
@@ -212,6 +214,20 @@ export default async function CorretorasListPage({ searchParams }: Props) {
 
       {/* ═══ CONTEÚDO ═══════════════════════════════════════════════ */}
       <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 md:px-6">
+        {/* Filtro regional por cidade — chips grandes acima dos filtros */}
+        <div className="mb-5">
+          <CityChips
+            active={
+              params.city
+                ? (CIDADES_ZONA_DA_MATA.find(
+                    (c) => normalizeCityName(c.nome) === normalizeCityName(params.city ?? ""),
+                  )?.slug ?? "all")
+                : "all"
+            }
+            tone="dark"
+          />
+        </div>
+
         {/* Filters em dark command bar */}
         <Suspense fallback={null}>
           <CorretoraFilters cities={cities} />

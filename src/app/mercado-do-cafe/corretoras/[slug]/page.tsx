@@ -25,6 +25,7 @@ import { fetchPublicCorretoraBySlug } from "@/server/data/corretoras";
 import { absUrl } from "@/utils/absUrl";
 import { CorretoraContactChannels } from "@/components/mercado-do-cafe/CorretoraContactChannels";
 import { LeadContactForm } from "@/components/mercado-do-cafe/LeadContactForm";
+import { WhatsAppDirectButton } from "@/components/mercado-do-cafe/WhatsAppDirectButton";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 
 type Props = {
@@ -287,6 +288,41 @@ export default async function CorretoraDetailPage({ params }: Props) {
             title="Canais diretos"
             subtitle="Converse pelos canais oficiais da corretora."
           />
+
+          {/* Botão WhatsApp direto em destaque — realidade regional
+              é WhatsApp-first. Produtor prefere 1 clique a formulário. */}
+          {corretora.whatsapp && (
+            <div className="mt-6 relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/40 via-stone-900/60 to-stone-950/80 p-5 ring-1 ring-emerald-500/20 backdrop-blur-sm md:p-6">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent"
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl"
+              />
+              <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">
+                    Mais rápido
+                  </p>
+                  <p className="mt-1 text-base font-semibold text-stone-50 md:text-lg">
+                    Fale agora com {corretora.name} no WhatsApp
+                  </p>
+                  <p className="mt-1 text-xs text-stone-400">
+                    Mensagem já vem preenchida. Basta editar se quiser.
+                  </p>
+                </div>
+                <WhatsAppDirectButton
+                  whatsapp={corretora.whatsapp}
+                  corretoraNome={corretora.name}
+                  variant="primary"
+                  className="shrink-0"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="mt-8">
             <CorretoraContactChannels corretora={corretora} variant="full" />
           </div>
