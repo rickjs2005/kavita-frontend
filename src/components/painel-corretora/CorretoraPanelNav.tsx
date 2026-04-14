@@ -13,13 +13,32 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCorretoraAuth } from "@/context/CorretoraAuthContext";
+import { can, type CorretoraRole } from "@/types/corretoraUser";
 import { PanelBrand } from "./PanelBrand";
 
-const navItems = [
+type NavItem = {
+  href: string;
+  label: string;
+  exact?: boolean;
+  requiresCapability?: Parameters<typeof can>[1];
+};
+
+const navItems: NavItem[] = [
   { href: "/painel/corretora", label: "Resumo", exact: true },
   { href: "/painel/corretora/leads", label: "Leads" },
   { href: "/painel/corretora/perfil", label: "Meu perfil" },
+  {
+    href: "/painel/corretora/equipe",
+    label: "Equipe",
+    requiresCapability: "team.view",
+  },
 ];
+
+function filterNav(role: CorretoraRole | null | undefined) {
+  return navItems.filter((item) =>
+    item.requiresCapability ? can(role, item.requiresCapability) : true,
+  );
+}
 
 function initialsFrom(name?: string | null): string {
   if (!name) return "··";
@@ -34,6 +53,7 @@ export function CorretoraPanelNav() {
   const { user, logout } = useCorretoraAuth();
 
   const initials = initialsFrom(user?.nome);
+  const items = filterNav(user?.role);
 
   return (
     <header
@@ -77,7 +97,7 @@ export function CorretoraPanelNav() {
               className="hidden md:flex md:items-center md:gap-1"
               aria-label="Seções do painel"
             >
-              {navItems.map((item) => {
+              {items.map((item) => {
                 const active = item.exact
                   ? pathname === item.href
                   : pathname?.startsWith(item.href);
@@ -141,7 +161,7 @@ export function CorretoraPanelNav() {
             className="flex items-center gap-1 overflow-x-auto"
             aria-label="Seções do painel (mobile)"
           >
-            {navItems.map((item) => {
+            {items.map((item) => {
               const active = item.exact
                 ? pathname === item.href
                 : pathname?.startsWith(item.href);
