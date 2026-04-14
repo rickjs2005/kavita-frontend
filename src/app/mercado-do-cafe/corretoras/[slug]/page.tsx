@@ -27,6 +27,7 @@ import { CorretoraContactChannels } from "@/components/mercado-do-cafe/Corretora
 import { LeadContactForm } from "@/components/mercado-do-cafe/LeadContactForm";
 import { WhatsAppDirectButton } from "@/components/mercado-do-cafe/WhatsAppDirectButton";
 import { CorretoraReviews } from "@/components/mercado-do-cafe/CorretoraReviews";
+import { FavoriteButton } from "@/components/mercado-do-cafe/FavoriteButton";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 
 type Props = {
@@ -159,10 +160,18 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 </p>
               </div>
 
-              {/* Display title */}
-              <h1 className="mt-8 text-4xl font-semibold leading-[0.95] tracking-[-0.02em] text-stone-50 md:text-5xl lg:text-6xl">
-                {corretora.name}
-              </h1>
+              {/* Display title + botão favoritar */}
+              <div className="mt-8 flex flex-wrap items-start justify-between gap-4">
+                <h1 className="text-4xl font-semibold leading-[0.95] tracking-[-0.02em] text-stone-50 md:text-5xl lg:text-6xl">
+                  {corretora.name}
+                </h1>
+                <div className="shrink-0 pt-2">
+                  <FavoriteButton
+                    corretoraId={corretora.id}
+                    corretoraSlug={corretora.slug}
+                  />
+                </div>
+              </div>
 
               {/* Location line */}
               <div className="mt-7 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-stone-300">
