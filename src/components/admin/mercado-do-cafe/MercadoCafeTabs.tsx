@@ -1,7 +1,7 @@
 // src/components/admin/mercado-do-cafe/MercadoCafeTabs.tsx
 "use client";
 
-export type MercadoTabKey = "corretoras" | "solicitacoes";
+export type MercadoTabKey = "regional" | "corretoras" | "solicitacoes";
 
 type Props = {
   active: MercadoTabKey;
@@ -10,6 +10,7 @@ type Props = {
 };
 
 const tabs: { key: MercadoTabKey; label: string; icon: string }[] = [
+  { key: "regional", label: "Regional", icon: "🗺️" },
   { key: "corretoras", label: "Corretoras", icon: "☕" },
   { key: "solicitacoes", label: "Solicitações", icon: "📋" },
 ];

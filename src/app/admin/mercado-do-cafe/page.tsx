@@ -10,6 +10,7 @@ import MercadoCafeTabs, {
 } from "@/components/admin/mercado-do-cafe/MercadoCafeTabs";
 import CorretorasTable from "@/components/admin/mercado-do-cafe/corretoras/CorretorasTable";
 import SubmissionsTable from "@/components/admin/mercado-do-cafe/solicitacoes/SubmissionsTable";
+import RegionalDashboard from "@/components/admin/mercado-do-cafe/regional/RegionalDashboard";
 import { useCorretorasAdmin } from "@/hooks/useCorretorasAdmin";
 import { useCorretoraSubmissions } from "@/hooks/useCorretoraSubmissions";
 
@@ -22,7 +23,7 @@ export default function AdminMercadoDoCafePage() {
     router.replace("/admin/login");
   }, [logout, router]);
 
-  const [activeTab, setActiveTab] = useState<MercadoTabKey>("corretoras");
+  const [activeTab, setActiveTab] = useState<MercadoTabKey>("regional");
 
   const corretoras = useCorretorasAdmin({ onUnauthorized: handleUnauthorized });
   const submissions = useCorretoraSubmissions({ onUnauthorized: handleUnauthorized });
@@ -64,6 +65,10 @@ export default function AdminMercadoDoCafePage() {
           />
 
           <div className="mt-4">
+            {activeTab === "regional" && (
+              <RegionalDashboard onUnauthorized={handleUnauthorized} />
+            )}
+
             {activeTab === "corretoras" && (
               <CorretorasTable
                 rows={corretoras.rows}
