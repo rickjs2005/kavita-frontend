@@ -273,7 +273,61 @@ export default async function MercadoDoCafePage() {
           </div>
         </section>
 
-        {/* ─── 04 / CTA Cadastro ────────────────────────────────── */}
+        {/* ─── 04 / Recursos (guia + verificação) ───────────────── */}
+        <section
+          aria-label="Recursos institucionais"
+          className="mt-16 grid gap-4 md:mt-20 md:grid-cols-2"
+        >
+          <Link
+            href="/mercado-do-cafe/guia"
+            className="group relative overflow-hidden rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/[0.08] backdrop-blur-sm transition-all hover:bg-white/[0.06] hover:ring-amber-400/30 md:p-7"
+          >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
+            />
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300/80">
+              Educacional
+            </p>
+            <h3 className="mt-2 text-lg font-semibold text-stone-50 md:text-xl">
+              Guia do produtor
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-stone-300">
+              O que faz uma corretora, como funciona a comissão, calendário da
+              safra da Zona da Mata e glossário do café.
+            </p>
+            <span className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 transition-colors group-hover:text-amber-200">
+              Ler o guia
+              <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
+            </span>
+          </Link>
+
+          <Link
+            href="/mercado-do-cafe/verificacao"
+            className="group relative overflow-hidden rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/[0.08] backdrop-blur-sm transition-all hover:bg-white/[0.06] hover:ring-amber-400/30 md:p-7"
+          >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
+            />
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300/80">
+              Confiança
+            </p>
+            <h3 className="mt-2 text-lg font-semibold text-stone-50 md:text-xl">
+              Como verificamos as corretoras
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-stone-300">
+              Os 5 critérios da análise Kavita — CNPJ, endereço, responsável,
+              canais ativos e histórico de atuação.
+            </p>
+            <span className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 transition-colors group-hover:text-amber-200">
+              Entender a verificação
+              <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
+            </span>
+          </Link>
+        </section>
+
+        {/* ─── 05 / CTA Cadastro ────────────────────────────────── */}
         <section
           aria-label="Cadastro de corretora"
           className="relative mt-16 overflow-hidden rounded-2xl bg-white/[0.04] p-7 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:mt-20 md:p-10"
