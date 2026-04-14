@@ -1,21 +1,32 @@
 // src/components/admin/mercado-do-cafe/MercadoCafeTabs.tsx
 "use client";
 
-export type MercadoTabKey = "regional" | "corretoras" | "solicitacoes";
+export type MercadoTabKey =
+  | "regional"
+  | "corretoras"
+  | "solicitacoes"
+  | "reviews";
 
 type Props = {
   active: MercadoTabKey;
   onChange: (k: MercadoTabKey) => void;
   pendingCount?: number;
+  reviewsPendingCount?: number;
 };
 
 const tabs: { key: MercadoTabKey; label: string; icon: string }[] = [
   { key: "regional", label: "Regional", icon: "🗺️" },
   { key: "corretoras", label: "Corretoras", icon: "☕" },
   { key: "solicitacoes", label: "Solicitações", icon: "📋" },
+  { key: "reviews", label: "Avaliações", icon: "⭐" },
 ];
 
-export default function MercadoCafeTabs({ active, onChange, pendingCount = 0 }: Props) {
+export default function MercadoCafeTabs({
+  active,
+  onChange,
+  pendingCount = 0,
+  reviewsPendingCount = 0,
+}: Props) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
@@ -33,7 +44,13 @@ export default function MercadoCafeTabs({ active, onChange, pendingCount = 0 }: 
       <div className="flex flex-wrap gap-2">
         {tabs.map((t) => {
           const isActive = t.key === active;
-          const showBadge = t.key === "solicitacoes" && pendingCount > 0;
+          const badgeCount =
+            t.key === "solicitacoes"
+              ? pendingCount
+              : t.key === "reviews"
+                ? reviewsPendingCount
+                : 0;
+          const showBadge = badgeCount > 0;
 
           const base =
             "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition";
@@ -53,7 +70,7 @@ export default function MercadoCafeTabs({ active, onChange, pendingCount = 0 }: 
               <span>{t.label}</span>
               {showBadge && (
                 <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
-                  {pendingCount}
+                  {badgeCount}
                 </span>
               )}
             </button>

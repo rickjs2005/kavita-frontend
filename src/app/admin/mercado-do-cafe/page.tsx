@@ -11,8 +11,10 @@ import MercadoCafeTabs, {
 import CorretorasTable from "@/components/admin/mercado-do-cafe/corretoras/CorretorasTable";
 import SubmissionsTable from "@/components/admin/mercado-do-cafe/solicitacoes/SubmissionsTable";
 import RegionalDashboard from "@/components/admin/mercado-do-cafe/regional/RegionalDashboard";
+import ReviewsModeration from "@/components/admin/mercado-do-cafe/reviews/ReviewsModeration";
 import { useCorretorasAdmin } from "@/hooks/useCorretorasAdmin";
 import { useCorretoraSubmissions } from "@/hooks/useCorretoraSubmissions";
+import { useCorretoraReviewsAdmin } from "@/hooks/useCorretoraReviewsAdmin";
 
 export default function AdminMercadoDoCafePage() {
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function AdminMercadoDoCafePage() {
 
   const corretoras = useCorretorasAdmin({ onUnauthorized: handleUnauthorized });
   const submissions = useCorretoraSubmissions({ onUnauthorized: handleUnauthorized });
+  const reviews = useCorretoraReviewsAdmin({ onUnauthorized: handleUnauthorized });
 
   return (
     <div className="relative min-h-screen w-full">
@@ -62,6 +65,7 @@ export default function AdminMercadoDoCafePage() {
             active={activeTab}
             onChange={setActiveTab}
             pendingCount={submissions.pendingCount}
+            reviewsPendingCount={reviews.pendingCount}
           />
 
           <div className="mt-4">
@@ -86,6 +90,10 @@ export default function AdminMercadoDoCafePage() {
                 statusFilter={submissions.statusFilter}
                 onStatusFilterChange={submissions.setStatusFilter}
               />
+            )}
+
+            {activeTab === "reviews" && (
+              <ReviewsModeration onUnauthorized={handleUnauthorized} />
             )}
           </div>
         </div>

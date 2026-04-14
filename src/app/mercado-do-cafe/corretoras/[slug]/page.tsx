@@ -26,6 +26,7 @@ import { absUrl } from "@/utils/absUrl";
 import { CorretoraContactChannels } from "@/components/mercado-do-cafe/CorretoraContactChannels";
 import { LeadContactForm } from "@/components/mercado-do-cafe/LeadContactForm";
 import { WhatsAppDirectButton } from "@/components/mercado-do-cafe/WhatsAppDirectButton";
+import { CorretoraReviews } from "@/components/mercado-do-cafe/CorretoraReviews";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 
 type Props = {
@@ -427,9 +428,24 @@ export default async function CorretoraDetailPage({ params }: Props) {
           </div>
         </section>
 
-        {/* ─── 04 / MERCADO — Link para cotações ─────────────────── */}
+        {/* ─── 04 / AVALIAÇÕES (Sprint 4) ────────────────────────── */}
         <section className="mt-20 md:mt-28">
-          <SectionLabel number="04" title="Mercado" />
+          <SectionLabel
+            number="04"
+            title="Avaliações"
+            subtitle="Experiências reais de produtores que usaram esta corretora."
+          />
+          <div className="mt-8">
+            <CorretoraReviews
+              corretoraSlug={corretora.slug}
+              corretoraName={corretora.name}
+            />
+          </div>
+        </section>
+
+        {/* ─── 05 / MERCADO — Link para cotações ─────────────────── */}
+        <section className="mt-20 md:mt-28">
+          <SectionLabel number="05" title="Mercado" />
           <Link
             href="/news/cotacoes"
             className="group relative mt-8 flex items-center justify-between gap-5 overflow-hidden rounded-2xl bg-white/[0.04] px-6 py-6 ring-1 ring-white/[0.08] shadow-xl shadow-black/40 backdrop-blur-sm transition-all hover:bg-white/[0.06] hover:ring-amber-400/30 md:px-10 md:py-7"
