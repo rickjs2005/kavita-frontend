@@ -18,6 +18,41 @@ import { PanelCard } from "./PanelCard";
 import { LeadStatusBadge } from "./LeadStatusBadge";
 import { PanelBrandMark } from "./PanelBrand";
 import type { CorretoraLead, LeadStatus } from "@/types/lead";
+import {
+  OBJETIVOS_CONTATO,
+  TIPOS_CAFE,
+  VOLUMES_LEAD,
+  CANAIS_CONTATO,
+} from "@/lib/regioes";
+
+// Lookup maps — evitam recomputar .find() em cada render do lead.
+const LABEL_OBJETIVO = Object.fromEntries(
+  OBJETIVOS_CONTATO.map((o) => [o.value, o.label]),
+) as Record<string, string>;
+const LABEL_TIPO_CAFE = Object.fromEntries(
+  TIPOS_CAFE.map((t) => [t.value, t.label]),
+) as Record<string, string>;
+const LABEL_VOLUME = Object.fromEntries(
+  VOLUMES_LEAD.map((v) => [v.value, v.label]),
+) as Record<string, string>;
+const LABEL_CANAL = Object.fromEntries(
+  CANAIS_CONTATO.map((c) => [c.value, c.label]),
+) as Record<string, string>;
+
+// Leads com volume >= 200 sacas são destacados visualmente no painel.
+const HIGH_PRIORITY_VOLUMES = new Set(["200_500", "500_mais"]);
+
+/** wa.me link com mensagem pré-formatada citando o contexto do lead. */
+function buildWhatsAppUrl(lead: CorretoraLead): string {
+  const digits = lead.telefone.replace(/\D/g, "").replace(/^0+/, "");
+  const phone = digits.startsWith("55") ? digits : `55${digits}`;
+  const cidadeStr = lead.cidade ? `de ${lead.cidade} ` : "";
+  const objetivoStr = lead.objetivo
+    ? ` sobre ${LABEL_OBJETIVO[lead.objetivo].toLowerCase()}`
+    : "";
+  const msg = `Olá ${lead.nome}, recebi seu contato ${cidadeStr}pelo Kavita · Mercado do Café${objetivoStr}. Como posso te ajudar?`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+}
 
 type Props = {
   leads: CorretoraLead[];
@@ -100,8 +135,15 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
           const isExpanded = expandedId === lead.id;
           const saving = savingId === lead.id;
 
+          const isHighPriority =
+            lead.volume_range && HIGH_PRIORITY_VOLUMES.has(lead.volume_range);
+          const waUrl = buildWhatsAppUrl(lead);
+
           return (
-            <li key={lead.id} className="px-5 py-4 md:px-6 md:py-5">
+            <li
+              key={lead.id}
+              className={`px-5 py-4 md:px-6 md:py-5 ${isHighPriority ? "bg-amber-50/40" : ""}`}
+            >
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
                 {/* LEFT — info principal */}
                 <div className="min-w-0 flex-1">
@@ -110,6 +152,12 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
                       {lead.nome}
                     </h3>
                     <LeadStatusBadge status={lead.status} />
+                    {isHighPriority && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 ring-1 ring-amber-500/40">
+                        <span aria-hidden className="h-1 w-1 rounded-full bg-amber-500" />
+                        Alta prioridade
+                      </span>
+                    )}
                   </div>
 
                   {/* Meta — telefone / cidade / data numa linha única */}
@@ -121,7 +169,7 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
                     {lead.cidade && (
                       <>
                         <span aria-hidden className="text-stone-300">·</span>
-                        <span>{lead.cidade}</span>
+                        <span className="font-semibold text-stone-700">{lead.cidade}</span>
                       </>
                     )}
                     <span aria-hidden className="text-stone-300">·</span>
@@ -129,6 +177,40 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
                       {formatDate(lead.created_at)}
                     </span>
                   </div>
+
+                  {/* Qualificação — chips com objetivo, tipo, volume, canal */}
+                  {(lead.objetivo || lead.tipo_cafe || lead.volume_range || lead.canal_preferido) && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {lead.objetivo && (
+                        <QualChip
+                          kicker="Objetivo"
+                          label={LABEL_OBJETIVO[lead.objetivo]}
+                          tone="amber"
+                        />
+                      )}
+                      {lead.volume_range && (
+                        <QualChip
+                          kicker="Volume"
+                          label={LABEL_VOLUME[lead.volume_range]}
+                          tone={isHighPriority ? "amber-strong" : "neutral"}
+                        />
+                      )}
+                      {lead.tipo_cafe && (
+                        <QualChip
+                          kicker="Café"
+                          label={LABEL_TIPO_CAFE[lead.tipo_cafe]}
+                          tone="neutral"
+                        />
+                      )}
+                      {lead.canal_preferido && (
+                        <QualChip
+                          kicker="Prefere"
+                          label={LABEL_CANAL[lead.canal_preferido]}
+                          tone="neutral"
+                        />
+                      )}
+                    </div>
+                  )}
 
                   {lead.mensagem && (
                     <p className="mt-3 whitespace-pre-line rounded-lg bg-stone-50 p-3 text-sm text-stone-700 ring-1 ring-stone-900/[0.04]">
@@ -139,7 +221,20 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
 
                 {/* RIGHT — ações */}
                 <div className="flex shrink-0 flex-col gap-2 md:items-end">
-                  <label className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  {/* WhatsApp direto com mensagem contextualizada */}
+                  <a
+                    href={waUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-emerald-600/30 transition-colors hover:from-emerald-400 hover:to-emerald-500"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5" aria-hidden>
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.84 12.84 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
+                    </svg>
+                    WhatsApp
+                  </a>
+
+                  <label className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                     Status
                   </label>
                   <select
@@ -186,6 +281,42 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
         })}
       </ul>
     </PanelCard>
+  );
+}
+
+/**
+ * QualChip — chip inline mostrando um dos atributos qualificados do
+ * lead (objetivo, volume, tipo de café, canal preferido). Kicker mono
+ * em amber, valor em stone. Variante "amber-strong" destaca o volume
+ * em leads de alta prioridade.
+ */
+function QualChip({
+  kicker,
+  label,
+  tone = "neutral",
+}: {
+  kicker: string;
+  label: string;
+  tone?: "neutral" | "amber" | "amber-strong";
+}) {
+  const toneClass: Record<typeof tone, string> = {
+    neutral:
+      "bg-white ring-stone-900/[0.06] text-stone-700",
+    amber:
+      "bg-amber-50 ring-amber-400/30 text-amber-900",
+    "amber-strong":
+      "bg-amber-100 ring-amber-500/50 text-amber-900 font-semibold",
+  };
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] ring-1 ${toneClass[tone]}`}
+    >
+      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-amber-700/80">
+        {kicker}
+      </span>
+      <span className="h-2 w-px bg-stone-300" aria-hidden />
+      <span>{label}</span>
+    </span>
   );
 }
 

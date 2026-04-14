@@ -1,5 +1,12 @@
 // src/types/lead.ts
 
+import type {
+  ObjetivoContato,
+  TipoCafe,
+  VolumeRange,
+  CanalContato,
+} from "@/lib/regioes";
+
 export type LeadStatus = "new" | "contacted" | "closed" | "lost";
 
 export type CorretoraLead = {
@@ -9,6 +16,11 @@ export type CorretoraLead = {
   telefone: string;
   cidade?: string | null;
   mensagem?: string | null;
+  // Qualificação regional (Sprint 2)
+  objetivo?: ObjetivoContato | null;
+  tipo_cafe?: TipoCafe | null;
+  volume_range?: VolumeRange | null;
+  canal_preferido?: CanalContato | null;
   status: LeadStatus;
   nota_interna?: string | null;
   created_at: string;
@@ -28,4 +40,9 @@ export type LeadFormData = {
   telefone: string;
   cidade?: string;
   mensagem?: string;
+  // Qualificação regional (Sprint 2) — opcionais
+  objetivo?: ObjetivoContato;
+  tipo_cafe?: TipoCafe;
+  volume_range?: VolumeRange;
+  canal_preferido?: CanalContato;
 };

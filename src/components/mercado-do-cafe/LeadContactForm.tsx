@@ -11,6 +11,13 @@ import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import type { LeadFormData } from "@/types/lead";
+import {
+  CIDADES_ZONA_DA_MATA,
+  OBJETIVOS_CONTATO,
+  TIPOS_CAFE,
+  VOLUMES_LEAD,
+  CANAIS_CONTATO,
+} from "@/lib/regioes";
 
 type Props = {
   corretoraSlug: string;
@@ -149,6 +156,10 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       telefone: "",
       cidade: "",
       mensagem: "",
+      objetivo: undefined,
+      tipo_cafe: undefined,
+      volume_range: undefined,
+      canal_preferido: "whatsapp",
     },
   });
 
@@ -166,6 +177,11 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       };
       if (data.cidade?.trim()) payload.cidade = data.cidade.trim();
       if (data.mensagem?.trim()) payload.mensagem = data.mensagem.trim();
+      // Qualificação regional (opcional mas transmitida quando preenchida)
+      if (data.objetivo) payload.objetivo = data.objetivo;
+      if (data.tipo_cafe) payload.tipo_cafe = data.tipo_cafe;
+      if (data.volume_range) payload.volume_range = data.volume_range;
+      if (data.canal_preferido) payload.canal_preferido = data.canal_preferido;
       if (turnstileEnabled && turnstileToken) {
         payload["cf-turnstile-response"] = turnstileToken;
       }
@@ -296,31 +312,124 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         )}
       </div>
 
+      {/* Cidade — select com catálogo da Zona da Mata + "Outra" para
+          permitir produtores de municípios fora do catálogo. */}
       <div>
         <label className={labelClass} htmlFor="lead-cidade">
-          Cidade
+          Sua cidade
         </label>
-        <input
+        <select
           id="lead-cidade"
           {...register("cidade")}
           className={inputClass}
-          placeholder="Onde você produz"
-        />
+          defaultValue=""
+        >
+          <option value="">Selecione sua cidade</option>
+          {CIDADES_ZONA_DA_MATA.map((c) => (
+            <option key={c.slug} value={c.nome}>
+              {c.nome} — {c.estado}
+            </option>
+          ))}
+          <option value="outra">Outra cidade</option>
+        </select>
+      </div>
+
+      {/* Objetivo do contato (qualificação 1 de 3) */}
+      <div>
+        <label className={labelClass}>Qual seu objetivo?</label>
+        <div className="flex flex-wrap gap-2">
+          {OBJETIVOS_CONTATO.map((opt) => (
+            <label
+              key={opt.value}
+              className="group relative cursor-pointer"
+            >
+              <input
+                type="radio"
+                value={opt.value}
+                {...register("objetivo")}
+                className="peer sr-only"
+              />
+              <span className="inline-block rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200">
+                {opt.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Tipo de café (qualificação 2 de 3) */}
+      <div>
+        <label className={labelClass}>Tipo de café</label>
+        <div className="flex flex-wrap gap-2">
+          {TIPOS_CAFE.map((opt) => (
+            <label key={opt.value} className="cursor-pointer">
+              <input
+                type="radio"
+                value={opt.value}
+                {...register("tipo_cafe")}
+                className="peer sr-only"
+              />
+              <span className="inline-block rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200">
+                {opt.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Volume estimado (qualificação 3 de 3) */}
+      <div>
+        <label className={labelClass}>Volume estimado (sacas de 60 kg)</label>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {VOLUMES_LEAD.map((opt) => (
+            <label key={opt.value} className="cursor-pointer">
+              <input
+                type="radio"
+                value={opt.value}
+                {...register("volume_range")}
+                className="peer sr-only"
+              />
+              <span className="block rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center text-xs font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200">
+                {opt.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Canal preferido de retorno */}
+      <div>
+        <label className={labelClass}>Prefere receber retorno por</label>
+        <div className="flex flex-wrap gap-2">
+          {CANAIS_CONTATO.map((opt) => (
+            <label key={opt.value} className="cursor-pointer">
+              <input
+                type="radio"
+                value={opt.value}
+                {...register("canal_preferido")}
+                className="peer sr-only"
+              />
+              <span className="inline-block rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200">
+                {opt.label}
+              </span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <div>
         <label className={labelClass} htmlFor="lead-mensagem">
-          Mensagem
+          Mensagem (opcional)
         </label>
         <textarea
           id="lead-mensagem"
-          rows={4}
+          rows={3}
           maxLength={1000}
           {...register("mensagem", {
             maxLength: { value: 1000, message: "Máximo 1000 caracteres." },
           })}
           className={inputClass}
-          placeholder="Conte brevemente sobre sua produção, volume, tipo de café..."
+          placeholder="Algum detalhe extra sobre sua produção ou necessidade..."
         />
         {errors.mensagem && (
           <p className={errorClass}>{errors.mensagem.message}</p>
