@@ -160,6 +160,9 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       tipo_cafe: undefined,
       volume_range: undefined,
       canal_preferido: "whatsapp",
+      // Sprint 7
+      corrego_localidade: "",
+      safra_tipo: undefined,
     },
   });
 
@@ -182,6 +185,11 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       if (data.tipo_cafe) payload.tipo_cafe = data.tipo_cafe;
       if (data.volume_range) payload.volume_range = data.volume_range;
       if (data.canal_preferido) payload.canal_preferido = data.canal_preferido;
+      // Operação física (Sprint 7)
+      if (data.corrego_localidade?.trim()) {
+        payload.corrego_localidade = data.corrego_localidade.trim();
+      }
+      if (data.safra_tipo) payload.safra_tipo = data.safra_tipo;
       if (turnstileEnabled && turnstileToken) {
         payload["cf-turnstile-response"] = turnstileToken;
       }
@@ -332,6 +340,61 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
           ))}
           <option value="outra">Outra cidade</option>
         </select>
+      </div>
+
+      {/* Sprint 7 — Córrego/localidade (hiper-localidade) */}
+      <div>
+        <label className={labelClass} htmlFor="lead-corrego">
+          Córrego ou localidade
+        </label>
+        <input
+          id="lead-corrego"
+          {...register("corrego_localidade", {
+            maxLength: { value: 120, message: "Máximo 120 caracteres." },
+          })}
+          className={inputClass}
+          placeholder="Ex: Córrego Pedra Bonita, Serra da Boa Vista..."
+        />
+        <p className="mt-1.5 text-[11px] leading-relaxed text-stone-400">
+          Ajuda a corretora a identificar a qualidade do café pela altitude e
+          microrregião onde foi cultivado.
+        </p>
+      </div>
+
+      {/* Sprint 7 — Safra atual ou estoque */}
+      <div>
+        <label className={labelClass}>Esse café é de qual safra?</label>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {[
+            {
+              value: "atual",
+              title: "Safra atual",
+              desc: "Colheita em andamento",
+            },
+            {
+              value: "remanescente",
+              title: "Estoque (remanescente)",
+              desc: "Café de safras anteriores",
+            },
+          ].map((opt) => (
+            <label key={opt.value} className="cursor-pointer">
+              <input
+                type="radio"
+                value={opt.value}
+                {...register("safra_tipo")}
+                className="peer sr-only"
+              />
+              <span className="block rounded-xl border border-white/10 bg-white/[0.04] p-3 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15">
+                <span className="block text-sm font-semibold text-stone-100 peer-checked:text-amber-200">
+                  {opt.title}
+                </span>
+                <span className="mt-0.5 block text-[11px] text-stone-400">
+                  {opt.desc}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
       </div>
 
       {/* Objetivo do contato (qualificação 1 de 3) */}

@@ -24,6 +24,20 @@ import {
   VOLUMES_LEAD,
   CANAIS_CONTATO,
 } from "@/lib/regioes";
+import type { AmostraStatus } from "@/types/lead";
+
+// Sprint 7 — fluxo de amostra física (kanban simplificado)
+const AMOSTRA_LABELS: Record<AmostraStatus, string> = {
+  nao_entregue: "Não entregue",
+  prometida: "Prometida",
+  recebida: "Recebida",
+  laudada: "Laudada",
+};
+const AMOSTRA_FLOW: { value: AmostraStatus; label: string; icon: string }[] = [
+  { value: "prometida", label: "Prometida", icon: "·" },
+  { value: "recebida", label: "Recebida", icon: "✓" },
+  { value: "laudada", label: "Laudada", icon: "★" },
+];
 
 // Lookup maps — evitam recomputar .find() em cada render do lead.
 const LABEL_OBJETIVO = Object.fromEntries(
@@ -86,7 +100,11 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
 
   async function updateLead(
     id: number,
-    patch: { status?: LeadStatus; nota_interna?: string },
+    patch: {
+      status?: LeadStatus;
+      nota_interna?: string;
+      amostra_status?: AmostraStatus;
+    },
   ) {
     setSavingId(id);
     try {
@@ -138,21 +156,36 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
           const isHighPriority =
             lead.volume_range && HIGH_PRIORITY_VOLUMES.has(lead.volume_range);
           const waUrl = buildWhatsAppUrl(lead);
+          const isLoteIndisponivel = lead.lote_disponivel === false;
 
           return (
             <li
               key={lead.id}
-              className={`px-5 py-4 md:px-6 md:py-5 ${isHighPriority ? "bg-amber-50/40" : ""}`}
+              className={`px-5 py-4 md:px-6 md:py-5 ${
+                isLoteIndisponivel
+                  ? "bg-stone-100/60 opacity-70"
+                  : isHighPriority
+                    ? "bg-amber-50/40"
+                    : ""
+              }`}
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
                 {/* LEFT — info principal */}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="truncate text-sm font-semibold text-stone-900">
+                    <h3
+                      className={`truncate text-sm font-semibold ${isLoteIndisponivel ? "text-stone-500 line-through" : "text-stone-900"}`}
+                    >
                       {lead.nome}
                     </h3>
                     <LeadStatusBadge status={lead.status} />
-                    {isHighPriority && (
+                    {isLoteIndisponivel && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-stone-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-stone-700">
+                        <span aria-hidden>🔒</span>
+                        Lote vendido
+                      </span>
+                    )}
+                    {!isLoteIndisponivel && isHighPriority && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 ring-1 ring-amber-500/40">
                         <span aria-hidden className="h-1 w-1 rounded-full bg-amber-500" />
                         Alta prioridade
@@ -178,14 +211,34 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
                     </span>
                   </div>
 
-                  {/* Qualificação — chips com objetivo, tipo, volume, canal */}
-                  {(lead.objetivo || lead.tipo_cafe || lead.volume_range || lead.canal_preferido) && (
+                  {/* Qualificação — chips com objetivo, tipo, volume, canal,
+                      córrego e safra (Sprint 7) */}
+                  {(lead.objetivo ||
+                    lead.tipo_cafe ||
+                    lead.volume_range ||
+                    lead.canal_preferido ||
+                    lead.corrego_localidade ||
+                    lead.safra_tipo) && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {lead.objetivo && (
                         <QualChip
                           kicker="Objetivo"
                           label={LABEL_OBJETIVO[lead.objetivo]}
                           tone="amber"
+                        />
+                      )}
+                      {lead.corrego_localidade && (
+                        <QualChip
+                          kicker="Córrego"
+                          label={lead.corrego_localidade}
+                          tone="amber-strong"
+                        />
+                      )}
+                      {lead.safra_tipo && (
+                        <QualChip
+                          kicker="Safra"
+                          label={lead.safra_tipo === "atual" ? "Atual" : "Estoque"}
+                          tone="neutral"
                         />
                       )}
                       {lead.volume_range && (
@@ -210,6 +263,19 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
                         />
                       )}
                     </div>
+                  )}
+
+                  {/* Sprint 7 — Fluxo de amostra física (kanban inline).
+                      Esconde quando lote vendido (não faz sentido cobrar
+                      amostra de quem já fechou). */}
+                  {!isLoteIndisponivel && (
+                    <AmostraFlow
+                      lead={lead}
+                      saving={saving}
+                      onUpdate={(next) =>
+                        updateLead(lead.id, { amostra_status: next })
+                      }
+                    />
                   )}
 
                   {lead.mensagem && (
@@ -281,6 +347,75 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
         })}
       </ul>
     </PanelCard>
+  );
+}
+
+/**
+ * AmostraFlow — kanban inline da amostra física (Sprint 7).
+ * 4 estados: nao_entregue (default), prometida, recebida, laudada.
+ *
+ * UX: barra de 3 botões avançando o fluxo + dropdown discreto para
+ * voltar ao estado anterior se a corretora errar o clique.
+ */
+function AmostraFlow({
+  lead,
+  saving,
+  onUpdate,
+}: {
+  lead: CorretoraLead;
+  saving: boolean;
+  onUpdate: (next: AmostraStatus) => void;
+}) {
+  const current: AmostraStatus = lead.amostra_status ?? "nao_entregue";
+  const currentIndex = AMOSTRA_FLOW.findIndex((s) => s.value === current);
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/50 p-2">
+      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-amber-800">
+        Amostra
+      </span>
+      <div className="flex items-center gap-0.5">
+        {AMOSTRA_FLOW.map((step, i) => {
+          const reached = currentIndex >= i;
+          const isCurrent = current === step.value;
+          return (
+            <button
+              key={step.value}
+              type="button"
+              disabled={saving || isCurrent}
+              onClick={() => onUpdate(step.value)}
+              className={[
+                "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                isCurrent
+                  ? "bg-amber-600 text-white shadow-sm"
+                  : reached
+                    ? "bg-amber-100 text-amber-900 hover:bg-amber-200"
+                    : "bg-white text-stone-500 ring-1 ring-stone-200 hover:bg-stone-50",
+                saving || isCurrent ? "cursor-default" : "",
+              ].join(" ")}
+              title={
+                isCurrent
+                  ? `Atual: ${step.label}`
+                  : `Marcar como ${step.label}`
+              }
+            >
+              <span aria-hidden>{step.icon}</span>
+              {step.label}
+            </button>
+          );
+        })}
+      </div>
+      {current !== "nao_entregue" && (
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => onUpdate("nao_entregue")}
+          className="ml-auto text-[10px] font-semibold text-stone-500 underline-offset-2 hover:text-stone-700 hover:underline"
+        >
+          Resetar
+        </button>
+      )}
+    </div>
   );
 }
 

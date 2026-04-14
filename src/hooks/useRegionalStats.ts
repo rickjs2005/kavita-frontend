@@ -60,6 +60,20 @@ export type LeadPenduradoRow = {
   };
 };
 
+// Sprint 7 — Córregos ativos
+export type CorregoAtivoRow = {
+  corrego: string;
+  total: number;
+  alta_prioridade: number;
+  corretoras_atingidas: number;
+  ultimo_lead: string | null;
+};
+
+export type CorregosAtivosResponse = {
+  days_back: number;
+  items: CorregoAtivoRow[];
+};
+
 type Props = {
   onUnauthorized?: () => void;
   daysBack?: number;
@@ -70,6 +84,7 @@ export function useRegionalStats({ onUnauthorized, daysBack = 30 }: Props = {}) 
   const [leadsPorCidade, setLeadsPorCidade] = useState<LeadsPorCidadeRow[]>([]);
   const [corretorasPerf, setCorretorasPerf] = useState<CorretoraPerfRow[]>([]);
   const [leadsPendurados, setLeadsPendurados] = useState<LeadPenduradoRow[]>([]);
+  const [corregosAtivos, setCorregosAtivos] = useState<CorregoAtivoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,7 +93,7 @@ export function useRegionalStats({ onUnauthorized, daysBack = 30 }: Props = {}) 
     setError(null);
     try {
       const qs = `?days=${daysBack}`;
-      const [kpisRes, porCidadeRes, perfRes, penduradosRes] =
+      const [kpisRes, porCidadeRes, perfRes, penduradosRes, corregosRes] =
         await Promise.allSettled([
           apiClient.get<RegionalKpis>(
             `/api/admin/mercado-do-cafe/stats/regional${qs}`,
@@ -92,10 +107,13 @@ export function useRegionalStats({ onUnauthorized, daysBack = 30 }: Props = {}) 
           apiClient.get<LeadPenduradoRow[]>(
             `/api/admin/mercado-do-cafe/stats/leads-pendurados?hours=24&limit=50`,
           ),
+          apiClient.get<CorregosAtivosResponse>(
+            `/api/admin/mercado-do-cafe/stats/corregos-ativos?days=7&limit=5`,
+          ),
         ]);
 
       // Unauthorized — redireciona se qualquer endpoint falhar com 401/403
-      for (const r of [kpisRes, porCidadeRes, perfRes, penduradosRes]) {
+      for (const r of [kpisRes, porCidadeRes, perfRes, penduradosRes, corregosRes]) {
         if (
           r.status === "rejected" &&
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -114,12 +132,15 @@ export function useRegionalStats({ onUnauthorized, daysBack = 30 }: Props = {}) 
       if (perfRes.status === "fulfilled") setCorretorasPerf(perfRes.value);
       if (penduradosRes.status === "fulfilled")
         setLeadsPendurados(penduradosRes.value);
+      if (corregosRes.status === "fulfilled")
+        setCorregosAtivos(corregosRes.value?.items ?? []);
 
       const allFailed =
         kpisRes.status === "rejected" &&
         porCidadeRes.status === "rejected" &&
         perfRes.status === "rejected" &&
-        penduradosRes.status === "rejected";
+        penduradosRes.status === "rejected" &&
+        corregosRes.status === "rejected";
       if (allFailed) {
         setError("Não foi possível carregar as estatísticas regionais.");
       }
@@ -140,6 +161,7 @@ export function useRegionalStats({ onUnauthorized, daysBack = 30 }: Props = {}) 
     leadsPorCidade,
     corretorasPerf,
     leadsPendurados,
+    corregosAtivos,
     loading,
     error,
     reload: load,

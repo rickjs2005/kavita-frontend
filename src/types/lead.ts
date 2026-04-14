@@ -9,6 +9,14 @@ import type {
 
 export type LeadStatus = "new" | "contacted" | "closed" | "lost";
 
+export type SafraTipo = "atual" | "remanescente";
+
+export type AmostraStatus =
+  | "nao_entregue"
+  | "prometida"
+  | "recebida"
+  | "laudada";
+
 export type CorretoraLead = {
   id: number;
   corretora_id: number;
@@ -21,6 +29,11 @@ export type CorretoraLead = {
   tipo_cafe?: TipoCafe | null;
   volume_range?: VolumeRange | null;
   canal_preferido?: CanalContato | null;
+  // Operação física (Sprint 7)
+  corrego_localidade?: string | null;
+  safra_tipo?: SafraTipo | null;
+  amostra_status?: AmostraStatus;
+  lote_disponivel?: boolean;
   status: LeadStatus;
   nota_interna?: string | null;
   created_at: string;
@@ -45,4 +58,7 @@ export type LeadFormData = {
   tipo_cafe?: TipoCafe;
   volume_range?: VolumeRange;
   canal_preferido?: CanalContato;
+  // Operação física (Sprint 7) — opcionais
+  corrego_localidade?: string;
+  safra_tipo?: SafraTipo;
 };

@@ -17,6 +17,7 @@ import {
   type LeadsPorCidadeRow,
   type CorretoraPerfRow,
   type LeadPenduradoRow,
+  type CorregoAtivoRow,
 } from "@/hooks/useRegionalStats";
 
 type Props = {
@@ -45,8 +46,16 @@ function slaColor(secs: number | null): string {
 }
 
 export default function RegionalDashboard({ onUnauthorized }: Props) {
-  const { kpis, leadsPorCidade, corretorasPerf, leadsPendurados, loading, error, reload } =
-    useRegionalStats({ onUnauthorized });
+  const {
+    kpis,
+    leadsPorCidade,
+    corretorasPerf,
+    leadsPendurados,
+    corregosAtivos,
+    loading,
+    error,
+    reload,
+  } = useRegionalStats({ onUnauthorized });
 
   if (loading && !kpis) {
     return (
@@ -84,8 +93,81 @@ export default function RegionalDashboard({ onUnauthorized }: Props) {
       {/* 3. Leads por cidade + Manhuaçu em destaque */}
       <LeadsPorCidadeSection rows={leadsPorCidade} />
 
+      {/* 3.5. Sprint 7 — Mapa de córregos ativos */}
+      {corregosAtivos.length > 0 && (
+        <CorregosAtivosSection rows={corregosAtivos} />
+      )}
+
       {/* 4. Performance de corretoras */}
       <CorretorasPerformanceSection rows={corretorasPerf} />
+    </div>
+  );
+}
+
+// ─── Córregos ativos (Sprint 7) ─────────────────────────────────────────────
+
+function CorregosAtivosSection({ rows }: { rows: CorregoAtivoRow[] }) {
+  const max = Math.max(...rows.map((r) => r.total), 1);
+  return (
+    <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/[0.04] to-stone-950/40 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <span aria-hidden className="text-base">☕</span>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300">
+            Inteligência de campo · últimos 7 dias
+          </p>
+          <h3 className="mt-0.5 text-base font-semibold text-slate-50">
+            Córregos com mais intenção de venda
+          </h3>
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            Onde a safra está mais ativa nesta semana — informação que vale
+            ouro para decisão comercial.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {rows.map((r, i) => {
+          const pct = (r.total / max) * 100;
+          return (
+            <div
+              key={r.corrego}
+              className="rounded-lg border border-amber-500/20 bg-slate-950/50 p-3"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="font-mono text-[10px] font-bold tabular-nums text-amber-300">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <p className="truncate text-sm font-semibold text-slate-100">
+                    {r.corrego}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3 text-[11px] tabular-nums">
+                  {r.alta_prioridade > 0 && (
+                    <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-semibold text-amber-200">
+                      {r.alta_prioridade} alta prior.
+                    </span>
+                  )}
+                  <span className="text-slate-400">
+                    {r.corretoras_atingidas}{" "}
+                    {r.corretoras_atingidas === 1 ? "corretora" : "corretoras"}
+                  </span>
+                  <span className="text-base font-semibold text-amber-200">
+                    {r.total}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
