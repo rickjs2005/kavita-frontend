@@ -365,23 +365,28 @@ function CorretorasPerformanceSection({ rows }: { rows: CorretoraPerfRow[] }) {
               {rows.slice(0, 30).map((r) => (
                 <tr
                   key={r.id}
-                  className={`text-slate-200 ${r.status === "inactive" ? "opacity-50" : ""}`}
+                  className={`text-slate-200 transition-colors hover:bg-slate-900/50 ${r.status === "inactive" ? "opacity-50" : ""}`}
                 >
                   <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <p className="min-w-0 truncate font-medium">
-                        {r.name}
+                    <Link
+                      href={`/admin/mercado-do-cafe/corretora/${r.id}`}
+                      className="group block"
+                    >
+                      <div className="flex items-center gap-2">
+                        <p className="min-w-0 truncate font-medium transition-colors group-hover:text-amber-200">
+                          {r.name}
+                        </p>
+                        {r.is_featured && (
+                          <span
+                            aria-label="Destaque"
+                            className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
+                          />
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-[10px] text-slate-500">
+                        {r.city} · {r.state}
                       </p>
-                      {r.is_featured && (
-                        <span
-                          aria-label="Destaque"
-                          className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
-                        />
-                      )}
-                    </div>
-                    <p className="mt-0.5 text-[10px] text-slate-500">
-                      {r.city} · {r.state}
-                    </p>
+                    </Link>
                   </td>
                   <td className="px-3 py-2.5 text-right font-mono tabular-nums">
                     {r.leads_total}
