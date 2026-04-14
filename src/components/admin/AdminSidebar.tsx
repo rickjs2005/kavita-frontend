@@ -71,6 +71,7 @@ const navGroups: NavGroup[] = [
       { label: "Papéis & Permissões", href: "/admin/configuracoes/usuarios", icon: "🛡️", permission: "roles_permissions_manage" },
       { label: "Equipe", href: "/admin/equipe", icon: "🧑‍🌾", permission: "admins_manage" },
       { label: "Logs", href: "/admin/logs", icon: "📜", permission: "logs_view" },
+      { label: "Auditoria Café", href: "/admin/auditoria", icon: "🔍", permission: "logs_view" },
     ],
   },
 ];
