@@ -15,6 +15,7 @@ import { usePathname } from "next/navigation";
 import { useCorretoraAuth } from "@/context/CorretoraAuthContext";
 import { can, type CorretoraRole } from "@/types/corretoraUser";
 import { PanelBrand } from "./PanelBrand";
+import { NotificationsBell } from "./NotificationsBell";
 
 type NavItem = {
   href: string;
@@ -127,6 +128,9 @@ export function CorretoraPanelNav() {
               aria-hidden
               className="mx-2 hidden h-6 w-px bg-stone-300 md:block"
             />
+
+            {/* Bell de notificações — visível em desktop e mobile */}
+            <NotificationsBell />
 
             {/* Avatar + nome — informação, não ação */}
             <div className="hidden items-center gap-2.5 md:flex">
