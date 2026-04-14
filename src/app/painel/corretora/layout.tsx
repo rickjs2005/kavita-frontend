@@ -82,13 +82,26 @@ function CorretoraPanelInner({ children }: { children: React.ReactNode }) {
       {/* Camada 1 — Warm ambient gradient no topo (cria atmosfera) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[500px] bg-gradient-to-b from-amber-100/50 via-orange-50/20 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[600px] bg-gradient-to-b from-amber-100/60 via-orange-50/25 to-transparent"
       />
 
-      {/* Camada 1b — Radial warm glow sutil (depth) */}
+      {/* Camada 1b — Atmospheric glows distribuídos pela página inteira
+          (igual à página pública do Mercado do Café, porém em light) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-32 top-16 h-72 w-72 rounded-full bg-amber-200/[0.06] blur-3xl"
+        className="pointer-events-none absolute -right-40 -top-20 h-96 w-[1100px] rounded-full bg-amber-300/[0.08] blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-32 top-[700px] h-80 w-[700px] rounded-full bg-orange-300/[0.06] blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-24 top-[1300px] h-72 w-[800px] rounded-full bg-amber-400/[0.05] blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-20 top-[2000px] h-64 w-[600px] rounded-full bg-amber-200/[0.06] blur-3xl"
       />
 
       {/* Camada 2 — Textura de grão, fixa na viewport (material) */}

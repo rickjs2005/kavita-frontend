@@ -12,7 +12,6 @@
 // stone-900/amber, brand mark decorativo, número gigante. Os 4 outros
 // ficam num grid 2×2 secundário à direita, com cards compactos.
 
-import { PanelCard } from "./PanelCard";
 import { PanelBrandMark } from "./PanelBrand";
 import type { LeadsSummary } from "@/types/lead";
 
@@ -124,7 +123,7 @@ export function StatsCards({ summary, loading }: Props) {
         </div>
       </div>
 
-      {/* SECONDARY GRID — 2×2 */}
+      {/* SECONDARY GRID — 2×2 com surface premium */}
       <div className="grid grid-cols-2 gap-3 md:col-span-2 md:gap-4">
         {secondaryCards.map((card, index) => {
           const value = summary[card.key] ?? 0;
@@ -132,35 +131,50 @@ export function StatsCards({ summary, loading }: Props) {
           const isZero = !loading && value === 0;
 
           return (
-            <PanelCard
+            <div
               key={card.key}
-              density="compact"
-              accent={isAttention ? "amber" : "none"}
-              className="kavita-rise-in group"
+              className={`kavita-rise-in group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-white to-stone-50/80 p-4 shadow-sm shadow-stone-900/[0.04] ring-1 transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                isAttention
+                  ? "ring-2 ring-amber-500/60"
+                  : "ring-stone-900/[0.06]"
+              }`}
               style={{ animationDelay: `${(index + 1) * STAGGER_STEP_MS}ms` }}
             >
-              <div className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className={`h-1.5 w-1.5 rounded-full ${card.dotClass}`}
-                />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-                  {card.label}
+              {/* Top amber highlight */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
+              />
+              {/* Subtle warm glow on hover */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-12 -top-12 h-24 w-24 rounded-full bg-amber-200/0 blur-2xl transition-all group-hover:bg-amber-200/20"
+              />
+
+              <div className="relative">
+                <div className="flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className={`h-1.5 w-1.5 rounded-full ${card.dotClass}`}
+                  />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                    {card.label}
+                  </p>
+                </div>
+                <p
+                  className={`mt-3 text-3xl font-semibold tracking-tight tabular-nums md:text-[2rem] ${
+                    isZero ? "text-stone-300" : "text-stone-900"
+                  }`}
+                >
+                  {loading ? (
+                    <span className="inline-block h-8 w-10 animate-pulse rounded bg-stone-100" />
+                  ) : (
+                    value
+                  )}
                 </p>
+                <p className="mt-1 text-[11px] text-stone-500">{card.hint}</p>
               </div>
-              <p
-                className={`mt-3 text-3xl font-semibold tracking-tight tabular-nums md:text-[2rem] ${
-                  isZero ? "text-stone-300" : "text-stone-900"
-                }`}
-              >
-                {loading ? (
-                  <span className="inline-block h-8 w-10 animate-pulse rounded bg-stone-100" />
-                ) : (
-                  value
-                )}
-              </p>
-              <p className="mt-1 text-[11px] text-stone-500">{card.hint}</p>
-            </PanelCard>
+            </div>
           );
         })}
       </div>

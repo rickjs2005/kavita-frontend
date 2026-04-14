@@ -2,16 +2,17 @@
 
 // src/app/painel/corretora/PanelClient.tsx
 //
-// Dashboard da Sala Reservada — versão redesenhada com mais contraste,
-// hierarquia e identidade. Composição:
+// Dashboard da Sala Reservada — v2 com continuidade visual premium.
 //
-//   1. HeroCommandCard — card dark com gradient + status de visibilidade
-//      pública (centro de comando)
-//   2. SetupPanel (condicional) — onboarding de 3 zonas quando a
-//      corretora ainda não recebeu leads
-//   3. StatsCards — hero card "Total" + 2×2 de secundários
-//   4. Activity — leads recentes OU empty state educacional ("como
-//      funciona quando chega um lead")
+// Mudanças-chave em relação à v1:
+//   - Editorial chapter numbers (01..04) em cada seção, como na
+//     página pública do Mercado do Café
+//   - Setup Panel mudou de amber pastel para dark committed (echo do
+//     hero), criando segunda âncora premium
+//   - Empty state da activity também virou dark, fechando a composição
+//     dark→light→dark→light (ritmo)
+//   - Hairline amber dividers entre blocos principais
+//   - Secondary KPI cards com gradient e amber highlights
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -19,7 +20,6 @@ import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { StatsCards } from "@/components/painel-corretora/StatsCards";
 import { LeadsTable } from "@/components/painel-corretora/LeadsTable";
-import { PanelCard } from "@/components/painel-corretora/PanelCard";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 import { useCorretoraAuth } from "@/context/CorretoraAuthContext";
 import type { CorretoraLead, LeadsSummary } from "@/types/lead";
@@ -43,6 +43,54 @@ function formatTodayPt() {
   } catch {
     return "";
   }
+}
+
+// ============================================================
+// ChapterHeader — cabeçalho editorial de seção no estilo da
+// página pública: número + kicker mono + título + hint opcional.
+// ============================================================
+function ChapterHeader({
+  number,
+  kicker,
+  title,
+  hint,
+  action,
+}: {
+  number: string;
+  kicker: string;
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      {/* Hairline amber no topo do bloco */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 -top-1 h-px bg-gradient-to-r from-amber-300/40 via-stone-300/20 to-transparent"
+      />
+      <div className="flex items-end justify-between gap-4 pt-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-amber-700">
+              {number}
+            </span>
+            <span aria-hidden className="h-px w-6 bg-amber-300/50" />
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+              {kicker}
+            </span>
+          </div>
+          <h2 className="mt-1.5 text-lg font-semibold tracking-tight text-stone-900 md:text-xl">
+            {title}
+          </h2>
+          {hint && (
+            <p className="mt-0.5 text-xs text-stone-500">{hint}</p>
+          )}
+        </div>
+        {action}
+      </div>
+    </div>
+  );
 }
 
 export default function PanelClient() {
@@ -76,6 +124,7 @@ export default function PanelClient() {
   }, [load]);
 
   const firstName = user?.nome?.split(" ")[0] ?? "bem-vinda";
+  const corretoraName = user?.corretora_name;
   const todayLabel = formatTodayPt();
   const corretoraSlug = user?.corretora_slug;
   const publicUrl = corretoraSlug
@@ -84,78 +133,92 @@ export default function PanelClient() {
   const showSetupPanel = !loading && summary.total === 0;
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-8 md:space-y-10">
       {/* ============================================================
-          1. HERO COMMAND CARD — dark premium centro de comando
+          01 — HERO COMMAND CARD
          ============================================================ */}
       <section
         aria-label="Centro de comando"
-        className="kavita-rise-in relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-950 via-stone-900 to-stone-900 p-6 shadow-xl shadow-stone-900/20 ring-1 ring-stone-900/40 md:p-8"
+        className="kavita-rise-in relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-950 via-stone-900 to-stone-900 p-7 shadow-2xl shadow-stone-900/30 ring-1 ring-stone-900/40 md:p-9"
       >
-        {/* Top highlight */}
+        {/* Top highlight amber */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/50 to-transparent"
+          className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/60 to-transparent"
         />
 
         {/* Atmospheric glows */}
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-amber-500/[0.08] blur-3xl"
+          className="pointer-events-none absolute -right-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-amber-500/[0.1] blur-3xl"
         />
         <span
           aria-hidden
-          className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-orange-700/[0.07] blur-3xl"
+          className="pointer-events-none absolute -bottom-24 left-1/4 h-72 w-72 rounded-full bg-orange-700/[0.08] blur-3xl"
         />
 
         {/* Large decorative brand mark */}
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-8 -bottom-12 text-stone-700/15"
+          className="pointer-events-none absolute -right-12 -bottom-16 text-stone-700/15"
         >
-          <PanelBrandMark className="h-56 w-56" />
+          <PanelBrandMark className="h-64 w-64" />
         </span>
 
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          {/* LEFT — saudação + data + status */}
+        <div className="relative flex flex-col gap-7 md:flex-row md:items-end md:justify-between">
+          {/* LEFT — editorial kicker + saudação + nameplate + status */}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.7)]"
-              />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-300/90">
+              <span className="font-mono text-[10px] font-bold tracking-[0.22em] text-amber-400/90">
+                01
+              </span>
+              <span aria-hidden className="h-px w-8 bg-amber-300/40" />
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-300/90">
                 Sala Reservada
-              </p>
+              </span>
             </div>
 
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-stone-50 md:text-4xl">
+            <h1 className="mt-4 text-3xl font-semibold leading-[1.05] tracking-tight text-stone-50 md:text-[2.75rem]">
               Olá,{" "}
               <span className="bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 bg-clip-text text-transparent">
                 {firstName}
               </span>
             </h1>
 
-            <p className="mt-1.5 text-sm text-stone-400 first-letter:uppercase">
-              {todayLabel}
-            </p>
+            {/* Corretora nameplate + date */}
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-stone-400">
+              {corretoraName && (
+                <>
+                  <span className="font-medium text-stone-200">
+                    {corretoraName}
+                  </span>
+                  <span aria-hidden className="h-3 w-px bg-stone-600" />
+                </>
+              )}
+              <span className="first-letter:uppercase">{todayLabel}</span>
+            </div>
 
-            {/* Status pill de visibilidade pública */}
-            <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px]">
+            {/* Status pills */}
+            <div className="mt-6 flex flex-wrap items-center gap-2 text-[11px]">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 font-semibold uppercase tracking-[0.14em] text-emerald-300 ring-1 ring-emerald-500/30">
-                <span
-                  aria-hidden
-                  className="relative flex h-1.5 w-1.5"
-                >
+                <span aria-hidden className="relative flex h-1.5 w-1.5">
                   <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/70" />
                   <span className="relative h-1.5 w-1.5 rounded-full bg-emerald-400" />
                 </span>
                 Ativa
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 font-medium text-stone-300 ring-1 ring-white/10">
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 font-medium text-stone-300 ring-1 ring-white/10 backdrop-blur-sm transition-colors hover:bg-white/[0.08] hover:text-amber-200"
+              >
                 <span aria-hidden>👁</span>
-                Visível no Mercado do Café
-              </span>
+                <span>Visível no Mercado do Café</span>
+                <span aria-hidden className="text-stone-500 transition-transform group-hover:translate-x-0.5 group-hover:text-amber-300">
+                  ↗
+                </span>
+              </a>
             </div>
           </div>
 
@@ -163,104 +226,107 @@ export default function PanelClient() {
           <div className="flex flex-col gap-2 sm:flex-row md:items-end md:self-end">
             <Link
               href="/painel/corretora/leads"
-              className="group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 px-5 py-2.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-600/30 transition-colors hover:from-amber-300 hover:to-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+              className="group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 py-2.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/30 transition-colors hover:from-amber-200 hover:to-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
             >
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
-              />
+              <span aria-hidden className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
               Abrir leads
               <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
-            <a
-              href={publicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/painel/corretora/perfil"
               className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-stone-200 backdrop-blur-sm transition-colors hover:bg-white/[0.08] hover:text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
             >
-              Página pública
-              <span aria-hidden>↗</span>
-            </a>
+              Editar perfil
+            </Link>
           </div>
         </div>
       </section>
 
       {/* ============================================================
-          2. SETUP PANEL — onboarding para corretoras sem leads ainda
+          02 — SETUP / ATIVAÇÃO (dark, echo do hero)
          ============================================================ */}
       {showSetupPanel && (
         <section
-          className="kavita-rise-in"
+          className="kavita-rise-in space-y-4"
           style={{ animationDelay: "120ms" }}
         >
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 via-orange-50/70 to-stone-50 p-5 ring-1 ring-amber-200/50 md:p-6">
+          <ChapterHeader
+            number="02"
+            kicker="Ativação"
+            title="Prepare sua sala para o primeiro lead"
+            hint="Enquanto o primeiro contato não chega, garanta que seu perfil está completo."
+          />
+
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-stone-900 to-stone-900 p-6 shadow-xl shadow-stone-900/25 ring-1 ring-stone-900/40 md:p-7">
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent"
+              className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
             />
             <span
               aria-hidden
-              className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-amber-300/15 blur-3xl"
+              className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-500/[0.08] blur-3xl"
             />
 
-            <div className="relative grid gap-5 md:grid-cols-[1fr_auto] md:items-center md:gap-8">
-              {/* LEFT — mensagem + checklist */}
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
-                  Primeiros passos
-                </p>
-                <h2 className="mt-1.5 text-lg font-semibold text-stone-900 md:text-xl">
-                  Prepare sua sala para receber o primeiro lead
-                </h2>
-                <p className="mt-1 text-sm leading-relaxed text-stone-600">
-                  Sua corretora já está ativa e visível. Enquanto o primeiro contato não chega, garanta que seu perfil está completo.
-                </p>
+            <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-center md:gap-10">
+              {/* Checklist */}
+              <ol className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <span
+                    aria-hidden
+                    className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[11px] font-bold text-emerald-300 ring-1 ring-emerald-500/40"
+                  >
+                    ✓
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-stone-100">
+                      Corretora cadastrada e publicada
+                    </p>
+                    <p className="text-[11px] text-stone-400">
+                      Você já aparece no Mercado do Café
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span
+                    aria-hidden
+                    className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-400/15 text-[10px] font-bold text-amber-300 ring-1 ring-amber-400/50"
+                  >
+                    2
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-stone-100">
+                      Complete descrição e canais de contato
+                    </p>
+                    <p className="text-[11px] text-stone-400">
+                      Perfis completos recebem mais contatos
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span
+                    aria-hidden
+                    className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-bold text-stone-400 ring-1 ring-white/15"
+                  >
+                    3
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-stone-300">
+                      Aguarde o primeiro lead
+                    </p>
+                    <p className="text-[11px] text-stone-500">
+                      Ele chegará em tempo real nesta sala
+                    </p>
+                  </div>
+                </li>
+              </ol>
 
-                {/* Checklist 3 passos */}
-                <ul className="mt-4 space-y-2">
-                  <li className="flex items-start gap-2.5 text-sm">
-                    <span
-                      aria-hidden
-                      className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-500/30"
-                    >
-                      ✓
-                    </span>
-                    <span className="text-stone-700">
-                      <strong className="font-semibold text-stone-900">Corretora cadastrada</strong> e publicada no Mercado do Café
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-sm">
-                    <span
-                      aria-hidden
-                      className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-[10px] font-bold text-amber-700 ring-1 ring-amber-500/30"
-                    >
-                      2
-                    </span>
-                    <span className="text-stone-700">
-                      Complete sua <strong className="font-semibold text-stone-900">descrição pública</strong> e canais de contato
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-sm">
-                    <span
-                      aria-hidden
-                      className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-stone-200 text-[10px] font-bold text-stone-600"
-                    >
-                      3
-                    </span>
-                    <span className="text-stone-600">
-                      Aguarde o primeiro lead chegar pela sua página pública
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* RIGHT — CTA principal */}
-              <div className="flex shrink-0 flex-col gap-2 md:items-end">
+              {/* CTAs */}
+              <div className="flex shrink-0 flex-col gap-2 md:items-end md:self-center">
                 <Link
                   href="/painel/corretora/perfil"
-                  className="group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-600/20 transition-colors hover:from-amber-400 hover:to-amber-500"
+                  className="group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 py-2.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/30 transition-colors hover:from-amber-200 hover:to-amber-400"
                 >
-                  <span aria-hidden className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                  <span aria-hidden className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
                   Completar perfil
                   <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
                 </Link>
@@ -268,9 +334,9 @@ export default function PanelClient() {
                   href={publicUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-200/80 bg-white px-4 py-2 text-xs font-semibold text-amber-800 shadow-sm transition-colors hover:bg-amber-50"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-2 text-xs font-semibold text-stone-200 backdrop-blur-sm transition-colors hover:bg-white/[0.08] hover:text-amber-200"
                 >
-                  Ver minha página
+                  Ver página pública
                   <span aria-hidden>↗</span>
                 </a>
               </div>
@@ -280,46 +346,48 @@ export default function PanelClient() {
       )}
 
       {/* ============================================================
-          3. STATS CARDS — hero "Total" + 4 secundários
+          03 — PIPELINE (stats)
          ============================================================ */}
-      <section aria-label="Resumo de leads">
+      <section aria-label="Pipeline" className="space-y-4">
+        <ChapterHeader
+          number={showSetupPanel ? "03" : "02"}
+          kicker="Pipeline"
+          title="Resumo de leads"
+          hint="Distribuição dos contatos recebidos pela sua página pública."
+        />
         <StatsCards summary={summary} loading={loading} />
       </section>
 
       {/* ============================================================
-          4. ACTIVITY — leads recentes ou empty state educacional
+          04 — ATIVIDADE RECENTE
          ============================================================ */}
       <section
-        className="kavita-rise-in"
+        className="kavita-rise-in space-y-4"
         style={{ animationDelay: "420ms" }}
       >
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
-              Atividade recente
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-stone-900">
-              Últimos leads recebidos
-            </h2>
-          </div>
-          <Link
-            href="/painel/corretora/leads"
-            className="text-xs font-semibold text-amber-700 underline-offset-4 hover:text-amber-800 hover:underline"
-          >
-            Ver todos →
-          </Link>
-        </div>
+        <ChapterHeader
+          number={showSetupPanel ? "04" : "03"}
+          kicker="Atividade"
+          title="Últimos leads recebidos"
+          action={
+            <Link
+              href="/painel/corretora/leads"
+              className="text-xs font-semibold text-amber-700 underline-offset-4 hover:text-amber-800 hover:underline"
+            >
+              Ver todos →
+            </Link>
+          }
+        />
 
         {error && (
           <div
             role="alert"
-            className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-800"
+            className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-800"
           >
             {error}
           </div>
         )}
 
-        {/* Se não há leads, mostra empty state educacional (mais rico) */}
         {!loading && recent.length === 0 ? (
           <EducationalEmptyState publicUrl={publicUrl} />
         ) : (
@@ -335,102 +403,111 @@ export default function PanelClient() {
 }
 
 // ===================================================================
-// Educational Empty State — substitui o empty state simples da
-// LeadsTable quando a corretora ainda não recebeu nenhum lead.
-// Explica o fluxo de como um lead chega, reduzindo a sensação de
-// "nada aqui" e virando onboarding informativo.
+// Educational Empty State — dark committed, echoa o hero. Mostra o
+// fluxo de como um lead chega em 3 steps. Fecha a composição da
+// página com mais uma âncora premium (antes o último bloco era um
+// card branco, agora é um painel dark com a mesma linguagem do hero).
 // ===================================================================
 function EducationalEmptyState({ publicUrl }: { publicUrl: string }) {
   const steps = [
     {
       n: "01",
       title: "Produtor visita sua página",
-      desc: "Sua corretora aparece listada no Mercado do Café, com perfil e canais de contato.",
+      desc: "Sua corretora aparece no Mercado do Café com perfil e canais de contato.",
     },
     {
       n: "02",
-      title: "Deixa um contato ou mensagem",
-      desc: "O produtor preenche o formulário da sua página ou usa seus canais diretos.",
+      title: "Deixa contato ou mensagem",
+      desc: "Preenche o formulário da sua página ou usa seus canais diretos.",
     },
     {
       n: "03",
-      title: "Lead chega aqui na sua sala",
-      desc: "Você recebe o lead em tempo real, com status, mensagem e possibilidade de notas internas.",
+      title: "Lead chega nesta sala",
+      desc: "Em tempo real, com status, mensagem e campo para notas internas.",
     },
   ];
 
   return (
-    <PanelCard density="spacious" className="relative overflow-hidden">
-      {/* Warm subtle glow */}
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-stone-900 to-stone-900 p-7 shadow-xl shadow-stone-900/25 ring-1 ring-stone-900/40 md:p-9">
+      {/* Top highlight */}
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-amber-200/20 blur-3xl"
+        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/50 to-transparent"
+      />
+
+      {/* Glows */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-amber-500/[0.08] blur-3xl"
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-orange-700/[0.07] blur-3xl"
       />
 
       <div className="relative">
-        {/* Header */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 ring-1 ring-amber-200/60">
-            <PanelBrandMark className="h-9 w-9 text-amber-700" />
+        {/* Header centered */}
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-600/10 text-amber-300 ring-1 ring-amber-400/30">
+            <PanelBrandMark className="h-9 w-9" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-stone-900 md:text-lg">
+            <h3 className="text-lg font-semibold tracking-tight text-stone-50 md:text-xl">
               Sua sala está pronta
             </h3>
-            <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-stone-600">
-              Os leads aparecerão aqui automaticamente. Veja como funciona o caminho até o primeiro contato chegar:
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-stone-400">
+              Leads aparecerão aqui em tempo real. Veja o caminho até o primeiro contato chegar.
             </p>
           </div>
         </div>
 
         {/* Flow 3 steps */}
-        <ol className="mt-7 grid gap-3 md:grid-cols-3 md:gap-4">
-          {steps.map((step, i) => (
+        <ol className="relative mt-8 grid gap-3 md:grid-cols-3 md:gap-4">
+          {steps.map((step) => (
             <li
               key={step.n}
-              className="relative rounded-xl bg-stone-50 p-4 ring-1 ring-stone-900/[0.05]"
+              className="relative overflow-hidden rounded-xl bg-white/[0.04] p-4 ring-1 ring-white/10 backdrop-blur-sm transition-colors hover:bg-white/[0.06]"
             >
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/20 to-transparent"
+              />
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">
+                <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-amber-400">
                   {step.n}
                 </span>
-                {i < steps.length - 1 && (
-                  <span
-                    aria-hidden
-                    className="hidden h-px flex-1 bg-gradient-to-r from-amber-300/50 to-transparent md:block"
-                  />
-                )}
+                <span aria-hidden className="h-px flex-1 bg-amber-300/20" />
               </div>
-              <p className="mt-2 text-sm font-semibold text-stone-900">
+              <p className="mt-2 text-sm font-semibold text-stone-100">
                 {step.title}
               </p>
-              <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+              <p className="mt-1 text-[11px] leading-relaxed text-stone-400">
                 {step.desc}
               </p>
             </li>
           ))}
         </ol>
 
-        {/* CTA row */}
-        <div className="mt-7 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+        {/* CTAs */}
+        <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
           <a
             href={publicUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-amber-600/20 transition-colors hover:from-amber-400 hover:to-amber-500"
+            className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 py-2.5 text-xs font-semibold text-stone-950 shadow-lg shadow-amber-500/30 transition-colors hover:from-amber-200 hover:to-amber-400"
           >
-            <span aria-hidden className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+            <span aria-hidden className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
             Visitar minha página pública
             <span aria-hidden className="transition-transform group-hover:translate-x-0.5">↗</span>
           </a>
           <Link
             href="/painel/corretora/perfil"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-100"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-stone-200 backdrop-blur-sm transition-colors hover:bg-white/[0.08] hover:text-amber-200"
           >
             Aprimorar perfil
           </Link>
         </div>
       </div>
-    </PanelCard>
+    </div>
   );
 }
