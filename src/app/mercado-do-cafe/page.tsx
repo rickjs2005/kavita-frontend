@@ -364,24 +364,29 @@ export default async function MercadoDoCafePage() {
                 gerenciar contatos.
               </p>
             </div>
-            <Link
-              href="/mercado-do-cafe/corretoras/cadastro"
-              className="group relative shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
-            >
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
-              />
-              <span className="relative flex items-center gap-2">
-                Cadastrar minha empresa
+            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+              <Link
+                href="/mercado-do-cafe/corretoras/cadastro"
+                className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+              >
                 <span
                   aria-hidden
-                  className="transition-transform duration-300 group-hover:translate-x-0.5"
-                >
-                  →
+                  className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
+                />
+                <span className="relative flex items-center gap-2">
+                  Cadastrar minha empresa
+                  <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-0.5">
+                    →
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] text-amber-200 backdrop-blur-sm transition-all hover:bg-white/[0.08] hover:ring-amber-400/30"
+              >
+                Ver planos
+              </Link>
+            </div>
           </div>
         </section>
       </div>

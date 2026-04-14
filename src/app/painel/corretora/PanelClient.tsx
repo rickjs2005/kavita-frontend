@@ -20,6 +20,7 @@ import { formatApiError } from "@/lib/formatApiError";
 import { StatsCards } from "@/components/painel-corretora/StatsCards";
 import { LeadsTable } from "@/components/painel-corretora/LeadsTable";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
+import { CurrentPlanBadge } from "@/components/painel-corretora/CurrentPlanBadge";
 import {
   BeanScatter,
   OrnamentalDivider,
@@ -255,6 +256,8 @@ export default function PanelClient() {
                   ↗
                 </span>
               </a>
+              {/* Lote 4 — badge do plano atual */}
+              <CurrentPlanBadge />
             </div>
 
             {/* CTAs */}
