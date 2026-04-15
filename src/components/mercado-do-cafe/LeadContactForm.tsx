@@ -135,6 +135,14 @@ const OPTION_STYLE: React.CSSProperties = {
   color: "#f5f5f4", // stone-100
 };
 
+// Tempo máximo (ms) que o usuário espera pelo Turnstile antes de
+// liberarmos o envio. Cobrimos o cenário de adblock / CSP / rede
+// flutuando na CDN da Cloudflare. Se o desafio nunca resolver, o
+// backend ainda vai rejeitar o lead (quando TURNSTILE_SECRET_KEY
+// estiver setado), mas pelo menos o usuário recebe feedback — em vez
+// de ficar com botão travado em disabled pra sempre.
+const TURNSTILE_MAX_WAIT_MS = 8000;
+
 export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -143,6 +151,9 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   // funciona como antes (útil em dev local sem credenciais Cloudflare).
   const turnstileEnabled = Boolean(TURNSTILE_SITE_KEY);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  // Sinaliza "desisti do Turnstile" — libera o submit para o backend
+  // decidir. Evita UX travada por bloqueio de CDN/adblock.
+  const [turnstileFailed, setTurnstileFailed] = useState(false);
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
   const turnstileWidgetIdRef = useRef<string | null>(null);
 
@@ -151,6 +162,22 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
     if (success) return; // form está escondido; widget será remontado
 
     let cancelled = false;
+    setTurnstileFailed(false);
+
+    // Watchdog: se em TURNSTILE_MAX_WAIT_MS o token ainda não chegou,
+    // marcamos como "failed" e liberamos o submit.
+    const watchdog = setTimeout(() => {
+      if (cancelled) return;
+      setTurnstileFailed((prev) => {
+        if (prev) return prev;
+        console.warn(
+          "[LeadContactForm] Turnstile não respondeu em tempo hábil. " +
+            "Liberando envio — o backend validará via fail-closed se " +
+            "TURNSTILE_SECRET_KEY estiver configurado.",
+        );
+        return true;
+      });
+    }, TURNSTILE_MAX_WAIT_MS);
 
     loadTurnstileScript()
       .then(() => {
@@ -163,20 +190,30 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         turnstileWidgetIdRef.current = window.turnstile.render(container, {
           sitekey: TURNSTILE_SITE_KEY,
           theme: "light",
-          callback: (token) => setTurnstileToken(token),
-          "error-callback": () => setTurnstileToken(null),
+          callback: (token) => {
+            setTurnstileToken(token);
+            setTurnstileFailed(false);
+          },
+          "error-callback": () => {
+            setTurnstileToken(null);
+            setTurnstileFailed(true);
+          },
           "expired-callback": () => setTurnstileToken(null),
         });
       })
-      .catch(() => {
-        // Script falhou em carregar (rede/adblock). Não trava UX — o
-        // backend ainda exige o token, então o usuário verá o erro ao
-        // tentar enviar. Em dev sem secret, passa direto.
-        console.warn("Turnstile: falha ao carregar o script");
+      .catch((err) => {
+        // Script falhou em carregar (rede/adblock/CSP). Libera o
+        // submit — backend fail-closed decide.
+        console.warn(
+          "[LeadContactForm] Turnstile: falha ao carregar o script.",
+          err,
+        );
+        if (!cancelled) setTurnstileFailed(true);
       });
 
     return () => {
       cancelled = true;
+      clearTimeout(watchdog);
       const id = turnstileWidgetIdRef.current;
       if (id && window.turnstile) {
         try {
@@ -217,7 +254,11 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   const cidadeValue = useWatch({ control, name: "cidade" });
 
   const onSubmit = async (data: LeadFormData) => {
-    if (turnstileEnabled && !turnstileToken) {
+    // Só bloqueia o envio se o Turnstile está habilitado E ainda não
+    // respondeu E também não desistiu (turnstileFailed). Com
+    // turnstileFailed=true, deixamos o backend decidir (fail-closed
+    // se ele tiver secret configurado; sucesso se estivermos em dev).
+    if (turnstileEnabled && !turnstileToken && !turnstileFailed) {
       toast.error("Aguarde a verificação anti-bot ser concluída.");
       return;
     }
@@ -262,7 +303,18 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         }
       }
     } catch (err) {
-      toast.error(formatApiError(err, "Erro ao enviar mensagem.").message);
+      const ui = formatApiError(err, "Erro ao enviar mensagem.");
+      // Log explícito para diagnóstico em produção: status, code e
+      // detalhes do ApiError ficam visíveis no DevTools do usuário
+      // (e em relatórios de suporte). Sem isso, só víamos o toast.
+      console.error("[LeadContactForm] envio falhou:", {
+        status: ui.status,
+        code: ui.code,
+        requestId: ui.requestId,
+        message: ui.message,
+        raw: err,
+      });
+      toast.error(ui.message);
       // Em erro (ex: token expirou), resetamos o widget para o usuário
       // obter um novo token sem precisar recarregar a página.
       setTurnstileToken(null);
@@ -620,9 +672,15 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
               className="flex justify-center"
               aria-label="Verificação anti-bot"
             />
-            {!turnstileToken && (
+            {!turnstileToken && !turnstileFailed && (
               <p className="text-[10px] uppercase tracking-[0.14em] text-stone-400">
                 Verificação de segurança em andamento…
+              </p>
+            )}
+            {turnstileFailed && (
+              <p className="text-[11px] leading-relaxed text-amber-200/80">
+                Verificação anti-bot indisponível (possível bloqueador).
+                Você ainda pode tentar enviar a mensagem.
               </p>
             )}
           </div>
@@ -630,7 +688,10 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
 
         <button
           type="submit"
-          disabled={submitting || (turnstileEnabled && !turnstileToken)}
+          disabled={
+            submitting ||
+            (turnstileEnabled && !turnstileToken && !turnstileFailed)
+          }
           className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-60 sm:h-[52px] sm:w-auto sm:px-10 lg:h-[56px] lg:px-12 lg:text-[12px]"
         >
           <span
