@@ -322,7 +322,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm sm:p-6 md:p-8"
+      className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm sm:p-6 md:p-8 lg:p-10"
       aria-label={`Formulário de contato com ${corretoraName}`}
     >
       {/* Top highlight catching amber light */}
@@ -331,50 +331,54 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
       />
 
-      <div className="relative space-y-8">
+      <div className="relative space-y-8 lg:space-y-10">
 
-      {/* ─── 1. Seus dados ───────────────────────────────────────── */}
-      <fieldset className="space-y-4 border-0 p-0">
+      {/* ─── 1. Seus dados ─────────────────────────────────────────
+          Em lg+, nome e telefone ficam lado a lado (pares naturais).
+          Mobile/tablet mantém stack vertical. */}
+      <fieldset className="space-y-4 border-0 p-0 lg:space-y-5">
         <legend className={fieldsetLegendClass}>
           <span>Seus dados</span>
           <span aria-hidden className={fieldsetHairlineClass} />
         </legend>
 
-        <div>
-          <label className={labelClass} htmlFor="lead-nome">
-            Seu nome *
-          </label>
-          <input
-            id="lead-nome"
-            autoComplete="name"
-            {...register("nome", {
-              required: "Nome é obrigatório.",
-              minLength: { value: 3, message: "Mínimo 3 caracteres." },
-            })}
-            className={inputClass}
-            placeholder="Seu nome completo"
-          />
-          {errors.nome && <p className={errorClass}>{errors.nome.message}</p>}
-        </div>
+        <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
+          <div>
+            <label className={labelClass} htmlFor="lead-nome">
+              Seu nome *
+            </label>
+            <input
+              id="lead-nome"
+              autoComplete="name"
+              {...register("nome", {
+                required: "Nome é obrigatório.",
+                minLength: { value: 3, message: "Mínimo 3 caracteres." },
+              })}
+              className={inputClass}
+              placeholder="Seu nome completo"
+            />
+            {errors.nome && <p className={errorClass}>{errors.nome.message}</p>}
+          </div>
 
-        <div>
-          <label className={labelClass} htmlFor="lead-telefone">
-            Telefone / WhatsApp *
-          </label>
-          <input
-            id="lead-telefone"
-            inputMode="tel"
-            autoComplete="tel"
-            {...register("telefone", {
-              required: "Telefone é obrigatório.",
-              minLength: { value: 8, message: "Telefone muito curto." },
-            })}
-            className={inputClass}
-            placeholder="(33) 9 9999-9999"
-          />
-          {errors.telefone && (
-            <p className={errorClass}>{errors.telefone.message}</p>
-          )}
+          <div>
+            <label className={labelClass} htmlFor="lead-telefone">
+              Telefone / WhatsApp *
+            </label>
+            <input
+              id="lead-telefone"
+              inputMode="tel"
+              autoComplete="tel"
+              {...register("telefone", {
+                required: "Telefone é obrigatório.",
+                minLength: { value: 8, message: "Telefone muito curto." },
+              })}
+              className={inputClass}
+              placeholder="(33) 9 9999-9999"
+            />
+            {errors.telefone && (
+              <p className={errorClass}>{errors.telefone.message}</p>
+            )}
+          </div>
         </div>
 
         {/* Cidade — select custom com chevron amber.
@@ -429,7 +433,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       </fieldset>
 
       {/* ─── 2. Seu café ─────────────────────────────────────────── */}
-      <fieldset className="space-y-4 border-0 p-0">
+      <fieldset className="space-y-4 border-0 p-0 lg:space-y-5">
         <legend className={fieldsetLegendClass}>
           <span>Seu café</span>
           <span aria-hidden className={fieldsetHairlineClass} />
@@ -453,10 +457,10 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
           </p>
         </div>
 
-        {/* Safra */}
+        {/* Safra — sempre 2 colunas (mesmo mobile) porque são só 2 opções */}
         <div>
           <label className={labelClass}>Esse café é de qual safra?</label>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 grid-cols-2">
             {[
               {
                 value: "atual",
@@ -542,10 +546,11 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
           </div>
         </div>
 
-        {/* Volume */}
+        {/* Volume — 2 colunas mobile → 4 colunas a partir de sm.
+            Em lg+ mantém 4 colunas com mais gap (respira mais). */}
         <div>
           <label className={labelClass}>Volume estimado (sacas de 60 kg)</label>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:gap-3">
             {VOLUMES_LEAD.map((opt) => (
               <label key={opt.value} className="cursor-pointer">
                 <input
@@ -562,7 +567,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       </fieldset>
 
       {/* ─── 3. Retorno ──────────────────────────────────────────── */}
-      <fieldset className="space-y-4 border-0 p-0">
+      <fieldset className="space-y-4 border-0 p-0 lg:space-y-5">
         <legend className={fieldsetLegendClass}>
           <span>Retorno</span>
           <span aria-hidden className={fieldsetHairlineClass} />
@@ -626,7 +631,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         <button
           type="submit"
           disabled={submitting || (turnstileEnabled && !turnstileToken)}
-          className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-60 sm:h-[52px] sm:w-auto sm:px-10"
+          className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-60 sm:h-[52px] sm:w-auto sm:px-10 lg:h-[56px] lg:px-12 lg:text-[12px]"
         >
           <span
             aria-hidden

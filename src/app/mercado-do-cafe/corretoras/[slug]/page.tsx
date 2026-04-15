@@ -84,7 +84,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
         className="pointer-events-none absolute -bottom-40 left-1/2 h-[500px] w-[1000px] -translate-x-1/2 rounded-[100%] bg-amber-500/[0.05] blur-3xl"
       />
 
-      <div className="relative mx-auto w-full max-w-4xl px-4 pb-24 pt-5 sm:px-5 md:px-8 md:pb-32 md:pt-10">
+      <div className="relative mx-auto w-full max-w-4xl px-4 pb-24 pt-5 sm:px-5 md:px-8 md:pb-32 md:pt-10 lg:max-w-5xl xl:max-w-6xl">
         {/* ─── Back link ──────────────────────────────────────────── */}
         <Link
           href="/mercado-do-cafe/corretoras"
@@ -422,9 +422,16 @@ export default async function CorretoraDetailPage({ params }: Props) {
               className="pointer-events-none absolute inset-x-14 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
             />
 
-            <div className="relative grid gap-8 px-5 py-10 sm:gap-10 sm:px-6 sm:py-12 md:grid-cols-12 md:gap-12 md:px-12 md:py-16 lg:px-14 lg:py-20">
-              {/* Left column: pitch editorial + trust signals */}
-              <div className="md:col-span-5">
+            {/* Desktop reequilibrado: no lg+, esquerda passa a ser 4/12
+                (mais compacta), direita 8/12 (respira + 2-col internas
+                quando útil). No md, mantemos 5/7 pra tablets; no mobile
+                stackado. Aligns=start pra a esquerda nao centralizar
+                verticalmente enquanto o form é longo. */}
+            <div className="relative grid items-start gap-8 px-5 py-10 sm:gap-10 sm:px-6 sm:py-12 md:grid-cols-12 md:gap-12 md:px-12 md:py-16 lg:gap-16 lg:px-14 lg:py-20 xl:gap-20">
+              {/* Left column: pitch editorial + trust signals.
+                  Sticky no desktop pro usuário sempre ver o pitch
+                  enquanto preenche o form longo. */}
+              <div className="md:col-span-5 lg:col-span-4 lg:sticky lg:top-28 lg:self-start">
                 <p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-300/90">
                   <span
                     aria-hidden
@@ -433,11 +440,11 @@ export default async function CorretoraDetailPage({ params }: Props) {
                   Contato direto
                 </p>
 
-                <h3 className="mt-5 text-[1.75rem] font-semibold leading-[1.08] tracking-tight text-stone-50 md:text-[2rem] lg:text-[2.25rem]">
+                <h3 className="mt-5 text-[1.75rem] font-semibold leading-[1.08] tracking-tight text-stone-50 md:text-[2rem] lg:text-[2.25rem] xl:text-[2.5rem]">
                   Deixe seu contato aqui
                 </h3>
 
-                <p className="mt-5 max-w-md text-[15px] leading-relaxed text-stone-300">
+                <p className="mt-5 max-w-md text-[15px] leading-relaxed text-stone-300 lg:text-[15.5px] lg:leading-[1.7]">
                   Sua mensagem vai direto para o painel privado da{" "}
                   <span className="font-semibold text-stone-100">
                     {corretora.name}
@@ -447,7 +454,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 </p>
 
                 {/* Trust signals */}
-                <ul className="mt-8 space-y-3.5 text-[13px] leading-relaxed text-stone-300">
+                <ul className="mt-8 space-y-3.5 text-[13px] leading-relaxed text-stone-300 lg:mt-10 lg:space-y-4 lg:text-[13.5px]">
                   {[
                     "Seus dados chegam apenas à corretora selecionada",
                     "Resposta pelos canais oficiais dela",
@@ -475,10 +482,16 @@ export default async function CorretoraDetailPage({ params }: Props) {
                     </li>
                   ))}
                 </ul>
+
+                {/* Hairline amber separando esquerda/direita em lg+ */}
+                <div
+                  aria-hidden
+                  className="mt-10 hidden h-px bg-gradient-to-r from-amber-400/30 via-amber-400/10 to-transparent lg:block"
+                />
               </div>
 
               {/* Right column: formulário dark glass */}
-              <div className="md:col-span-7">
+              <div className="md:col-span-7 lg:col-span-8">
                 <LeadContactForm
                   corretoraSlug={corretora.slug}
                   corretoraName={corretora.name}
