@@ -501,10 +501,20 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
 
         {turnstileEnabled && (
           <div
-            ref={turnstileContainerRef}
-            className="flex justify-center"
-            aria-label="Verificação anti-bot"
-          />
+            className="flex flex-col items-center gap-1"
+            aria-live="polite"
+          >
+            <div
+              ref={turnstileContainerRef}
+              className="flex justify-center"
+              aria-label="Verificação anti-bot"
+            />
+            {!turnstileToken && (
+              <p className="text-[10px] uppercase tracking-[0.14em] text-stone-400">
+                Verificação de segurança em andamento…
+              </p>
+            )}
+          </div>
         )}
 
         <button

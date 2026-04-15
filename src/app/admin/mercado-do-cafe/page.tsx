@@ -12,6 +12,7 @@ import CorretorasTable from "@/components/admin/mercado-do-cafe/corretoras/Corre
 import SubmissionsTable from "@/components/admin/mercado-do-cafe/solicitacoes/SubmissionsTable";
 import RegionalDashboard from "@/components/admin/mercado-do-cafe/regional/RegionalDashboard";
 import ReviewsModeration from "@/components/admin/mercado-do-cafe/reviews/ReviewsModeration";
+import PlansAdmin from "@/components/admin/mercado-do-cafe/planos/PlansAdmin";
 import { useCorretorasAdmin } from "@/hooks/useCorretorasAdmin";
 import { useCorretoraSubmissions } from "@/hooks/useCorretoraSubmissions";
 import { useCorretoraReviewsAdmin } from "@/hooks/useCorretoraReviewsAdmin";
@@ -94,6 +95,10 @@ export default function AdminMercadoDoCafePage() {
 
             {activeTab === "reviews" && (
               <ReviewsModeration onUnauthorized={handleUnauthorized} />
+            )}
+
+            {activeTab === "planos" && (
+              <PlansAdmin onUnauthorized={handleUnauthorized} />
             )}
           </div>
         </div>

@@ -5,7 +5,8 @@ export type MercadoTabKey =
   | "regional"
   | "corretoras"
   | "solicitacoes"
-  | "reviews";
+  | "reviews"
+  | "planos";
 
 type Props = {
   active: MercadoTabKey;
@@ -19,6 +20,7 @@ const tabs: { key: MercadoTabKey; label: string; icon: string }[] = [
   { key: "corretoras", label: "Corretoras", icon: "☕" },
   { key: "solicitacoes", label: "Solicitações", icon: "📋" },
   { key: "reviews", label: "Avaliações", icon: "⭐" },
+  { key: "planos", label: "Planos", icon: "💳" },
 ];
 
 export default function MercadoCafeTabs({

@@ -16,6 +16,9 @@ type PlanContext = {
     price_cents: number;
   };
   status: string;
+  usage?: {
+    users?: { used: number; limit: number | null };
+  };
 };
 
 export function CurrentPlanBadge() {
@@ -35,6 +38,10 @@ export function CurrentPlanBadge() {
   if (!ctx) return null;
 
   const isFree = ctx.plan.slug === "free";
+  const users = ctx.usage?.users;
+  const showUsage =
+    users && typeof users.limit === "number" && users.limit > 0;
+  const atLimit = showUsage && users.used >= (users.limit ?? 0);
 
   return (
     <Link
@@ -44,11 +51,28 @@ export function CurrentPlanBadge() {
           ? "bg-white/[0.04] text-stone-300 ring-1 ring-white/10 hover:bg-white/[0.08] hover:text-amber-200"
           : "bg-amber-500/15 text-amber-200 ring-1 ring-amber-500/40 hover:bg-amber-500/20"
       }`}
-      title={isFree ? "Ver planos pagos" : "Gerenciar assinatura"}
+      title={
+        showUsage
+          ? `Usuários ${users.used}/${users.limit}${atLimit ? " — limite atingido" : ""}`
+          : isFree
+            ? "Ver planos pagos"
+            : "Gerenciar assinatura"
+      }
     >
       <span aria-hidden>{isFree ? "☕" : "⭐"}</span>
       Plano {ctx.plan.name}
-      {isFree && <span className="ml-0.5 opacity-70">· Upgrade</span>}
+      {showUsage && (
+        <span
+          className={`ml-1 rounded-full px-1.5 py-[1px] text-[9px] tracking-normal ${
+            atLimit
+              ? "bg-rose-500/20 text-rose-200 ring-1 ring-rose-500/40"
+              : "bg-white/5 text-stone-300 ring-1 ring-white/10"
+          }`}
+        >
+          {users.used}/{users.limit}
+        </span>
+      )}
+      {isFree && !showUsage && <span className="ml-0.5 opacity-70">· Upgrade</span>}
     </Link>
   );
 }
