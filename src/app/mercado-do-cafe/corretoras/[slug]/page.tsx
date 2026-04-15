@@ -84,7 +84,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
         className="pointer-events-none absolute -bottom-40 left-1/2 h-[500px] w-[1000px] -translate-x-1/2 rounded-[100%] bg-amber-500/[0.05] blur-3xl"
       />
 
-      <div className="relative mx-auto w-full max-w-4xl px-5 pb-24 pt-6 md:px-8 md:pb-32 md:pt-10">
+      <div className="relative mx-auto w-full max-w-4xl px-4 pb-24 pt-5 sm:px-5 md:px-8 md:pb-32 md:pt-10">
         {/* ─── Back link ──────────────────────────────────────────── */}
         <Link
           href="/mercado-do-cafe/corretoras"
@@ -113,7 +113,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
             o elemento mais dramático da página, mas agora integrado
             ao dark committed da página inteira. */}
         <header
-          className="relative mt-10 overflow-hidden rounded-3xl bg-stone-900/60 px-6 py-14 ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 backdrop-blur-sm md:mt-14 md:px-14 md:py-20"
+          className="relative mt-6 overflow-hidden rounded-[1.75rem] bg-stone-900/60 px-5 py-10 ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 backdrop-blur-sm sm:mt-8 sm:rounded-3xl sm:px-6 sm:py-12 md:mt-14 md:px-14 md:py-20"
           aria-label={`Identidade da corretora ${corretora.name}`}
         >
           {/* Layer 1 — Base gradient dark coffee */}
@@ -146,26 +146,57 @@ export default async function CorretoraDetailPage({ params }: Props) {
             className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-950/40 via-transparent to-transparent"
           />
 
-          <div className="relative grid gap-10 md:grid-cols-12 md:gap-10">
-            {/* Main: kicker + title + location */}
+          {/* Mobile: logo + favoritar flutuando acima do título.
+              Desktop: grid 8/4 mantido com logo/factsheet à direita. */}
+          <div className="relative grid gap-8 md:grid-cols-12 md:gap-10">
+            {/* Main column: kicker + title + location */}
             <div className="md:col-span-8">
+              {/* Linha topo mobile: logo + favoritar. Logo menor (64px)
+                  para não brigar com o título. No desktop some (aparece
+                  na aside à direita). */}
+              <div className="mb-6 flex items-center justify-between gap-3 md:hidden">
+                <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 ring-1 ring-white/10">
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-2 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
+                  />
+                  {corretora.logo_path ? (
+                    <Image
+                      src={absUrl(corretora.logo_path)}
+                      alt={`Logo ${corretora.name}`}
+                      width={96}
+                      height={96}
+                      className="relative h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="relative text-amber-200/60">
+                      <PanelBrandMark className="h-8 w-8" />
+                    </div>
+                  )}
+                </div>
+                <FavoriteButton
+                  corretoraId={corretora.id}
+                  corretoraSlug={corretora.slug}
+                />
+              </div>
+
               {/* Kicker com brand mark inline */}
               <div className="flex items-center gap-3">
-                <div className="h-6 w-6 shrink-0 text-amber-200">
+                <div className="h-5 w-5 shrink-0 text-amber-200 sm:h-6 sm:w-6">
                   <PanelBrandMark className="h-full w-full" />
                 </div>
                 <span aria-hidden className="h-4 w-px bg-white/15" />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-200/90">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200/90 sm:tracking-[0.24em]">
                   Corretora verificada
                 </p>
               </div>
 
-              {/* Display title + botão favoritar */}
-              <div className="mt-8 flex flex-wrap items-start justify-between gap-4">
-                <h1 className="text-4xl font-semibold leading-[0.95] tracking-[-0.02em] text-stone-50 md:text-5xl lg:text-6xl">
+              {/* Display title — desktop mantém FavoriteButton inline */}
+              <div className="mt-5 flex items-start justify-between gap-4 md:mt-8">
+                <h1 className="text-[2rem] font-semibold leading-[1] tracking-[-0.02em] text-stone-50 sm:text-[2.5rem] md:text-5xl md:leading-[0.95] lg:text-6xl">
                   {corretora.name}
                 </h1>
-                <div className="shrink-0 pt-2">
+                <div className="hidden shrink-0 pt-2 md:block">
                   <FavoriteButton
                     corretoraId={corretora.id}
                     corretoraSlug={corretora.slug}
@@ -174,8 +205,8 @@ export default async function CorretoraDetailPage({ params }: Props) {
               </div>
 
               {/* Location line */}
-              <div className="mt-7 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-stone-300">
-                <span className="inline-flex items-baseline gap-2 text-lg font-medium tracking-tight md:text-xl">
+              <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-stone-300 md:mt-7 md:gap-x-4">
+                <span className="inline-flex items-baseline gap-2 text-base font-medium tracking-tight sm:text-lg md:text-xl">
                   <svg
                     width="14"
                     height="14"
@@ -198,7 +229,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                     <span aria-hidden className="text-stone-600">
                       ·
                     </span>
-                    <span className="text-sm font-semibold uppercase tracking-[0.14em] text-stone-400">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400 sm:text-sm">
                       {corretora.region}
                     </span>
                   </>
@@ -206,7 +237,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
               </div>
 
               {isFeatured && (
-                <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1 ring-1 ring-amber-400/30 backdrop-blur-sm">
+                <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1 ring-1 ring-amber-400/30 backdrop-blur-sm md:mt-6">
                   <svg
                     width="11"
                     height="11"
@@ -222,13 +253,33 @@ export default async function CorretoraDetailPage({ params }: Props) {
                   </span>
                 </div>
               )}
+
+              {/* Fact sheet MOBILE — grid 2 colunas compacto abaixo da
+                  location. No desktop, vai pra aside à direita. */}
+              <dl className="mt-7 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-white/[0.08] pt-5 md:hidden">
+                <div>
+                  <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-300/70">
+                    Responsável
+                  </dt>
+                  <dd className="mt-1 text-sm font-semibold text-stone-100">
+                    {corretora.contact_name}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-300/70">
+                    Atuação
+                  </dt>
+                  <dd className="mt-1 text-sm font-semibold text-stone-100">
+                    Compra e venda de café
+                  </dd>
+                </div>
+              </dl>
             </div>
 
-            {/* Aside: logo + fact sheet */}
-            <aside className="md:col-span-4">
-              <div className="flex items-start gap-5 md:flex-col md:items-stretch">
-                {/* Logo frame */}
-                <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 ring-1 ring-white/10 md:h-32 md:w-32 md:self-end">
+            {/* Aside DESKTOP: logo + fact sheet à direita */}
+            <aside className="hidden md:col-span-4 md:block">
+              <div className="flex flex-col items-stretch gap-6">
+                <div className="relative flex h-32 w-32 shrink-0 items-center justify-center self-end overflow-hidden rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 ring-1 ring-white/10">
                   <span
                     aria-hidden
                     className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
@@ -248,8 +299,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                   )}
                 </div>
 
-                {/* Fact sheet */}
-                <dl className="flex-1 divide-y divide-white/[0.08] border-y border-white/[0.08] md:mt-6 md:text-right">
+                <dl className="divide-y divide-white/[0.08] border-y border-white/[0.08] text-right">
                   <div className="py-3">
                     <dt className="text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-300/70">
                       Responsável
@@ -274,16 +324,16 @@ export default async function CorretoraDetailPage({ params }: Props) {
 
         {/* ─── 01 / SOBRE A CORRETORA ───────────────────────────── */}
         {corretora.description && (
-          <section className="mt-20 md:mt-28">
+          <section className="mt-14 sm:mt-20 md:mt-28">
             <SectionLabel number="01" title="Sobre a corretora" />
-            <div className="mt-8 max-w-2xl">
+            <div className="mt-6 max-w-2xl md:mt-8">
               {/* Pull-quote editorial com barra amber vertical */}
-              <div className="relative pl-7">
+              <div className="relative pl-5 sm:pl-7">
                 <span
                   aria-hidden
                   className="absolute left-0 top-1 h-[calc(100%-0.5rem)] w-[2px] rounded-full bg-gradient-to-b from-amber-400/80 via-amber-500/40 to-transparent"
                 />
-                <p className="whitespace-pre-line text-lg leading-[1.55] text-stone-300 md:text-xl md:leading-[1.5]">
+                <p className="whitespace-pre-line text-[17px] leading-[1.6] text-stone-300 sm:text-lg sm:leading-[1.55] md:text-xl md:leading-[1.5]">
                   {corretora.description}
                 </p>
               </div>
@@ -292,7 +342,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
         )}
 
         {/* ─── 02 / CANAIS DIRETOS ──────────────────────────────── */}
-        <section className="mt-20 md:mt-28">
+        <section className="mt-14 sm:mt-20 md:mt-28">
           <SectionLabel
             number="02"
             title="Canais diretos"
@@ -300,9 +350,10 @@ export default async function CorretoraDetailPage({ params }: Props) {
           />
 
           {/* Botão WhatsApp direto em destaque — realidade regional
-              é WhatsApp-first. Produtor prefere 1 clique a formulário. */}
+              é WhatsApp-first. Produtor prefere 1 clique a formulário.
+              Mobile: CTA full-width pra ser o alvo de toque dominante. */}
           {corretora.whatsapp && (
-            <div className="mt-6 relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/40 via-stone-900/60 to-stone-950/80 p-5 ring-1 ring-emerald-500/20 backdrop-blur-sm md:p-6">
+            <div className="relative mt-6 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/40 via-stone-900/60 to-stone-950/80 p-5 ring-1 ring-emerald-500/20 backdrop-blur-sm md:p-6">
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent"
@@ -316,7 +367,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                   <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">
                     Mais rápido
                   </p>
-                  <p className="mt-1 text-base font-semibold text-stone-50 md:text-lg">
+                  <p className="mt-1 text-[15px] font-semibold leading-snug text-stone-50 md:text-lg">
                     Fale agora com {corretora.name} no WhatsApp
                   </p>
                   <p className="mt-1 text-xs text-stone-400">
@@ -327,13 +378,13 @@ export default async function CorretoraDetailPage({ params }: Props) {
                   whatsapp={corretora.whatsapp}
                   corretoraNome={corretora.name}
                   variant="primary"
-                  className="shrink-0"
+                  className="w-full justify-center shrink-0 sm:w-auto"
                 />
               </div>
             </div>
           )}
 
-          <div className="mt-8">
+          <div className="mt-6 md:mt-8">
             <CorretoraContactChannels corretora={corretora} variant="full" />
           </div>
         </section>
@@ -342,14 +393,14 @@ export default async function CorretoraDetailPage({ params }: Props) {
             Card atmosférico dark com duas luzes amber nas bordas.
             Grid 5/7 interno: pitch editorial à esquerda, form à direita.
             Tudo alinhado pelo mesmo grid. */}
-        <section className="mt-20 md:mt-28">
+        <section className="mt-14 sm:mt-20 md:mt-28">
           <SectionLabel
             number="03"
             title="Envie uma mensagem"
             subtitle="Alternativa ao contato direto. O lead cai no painel privado da corretora em segundos."
           />
 
-          <div className="relative mt-10 overflow-hidden rounded-3xl bg-stone-900/60 ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 backdrop-blur-sm">
+          <div className="relative mt-8 overflow-hidden rounded-[1.75rem] bg-stone-900/60 ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 backdrop-blur-sm sm:rounded-3xl md:mt-10">
             {/* Base gradient dark — mesma DNA do hero para coerência */}
             <div
               aria-hidden
@@ -371,7 +422,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
               className="pointer-events-none absolute inset-x-14 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
             />
 
-            <div className="relative grid gap-10 px-6 py-12 md:grid-cols-12 md:gap-12 md:px-12 md:py-16 lg:px-14 lg:py-20">
+            <div className="relative grid gap-8 px-5 py-10 sm:gap-10 sm:px-6 sm:py-12 md:grid-cols-12 md:gap-12 md:px-12 md:py-16 lg:px-14 lg:py-20">
               {/* Left column: pitch editorial + trust signals */}
               <div className="md:col-span-5">
                 <p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-300/90">
@@ -438,7 +489,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
         </section>
 
         {/* ─── 04 / AVALIAÇÕES (Sprint 4) ────────────────────────── */}
-        <section className="mt-20 md:mt-28">
+        <section className="mt-14 sm:mt-20 md:mt-28">
           <SectionLabel
             number="04"
             title="Avaliações"
@@ -453,11 +504,11 @@ export default async function CorretoraDetailPage({ params }: Props) {
         </section>
 
         {/* ─── 05 / MERCADO — Link para cotações ─────────────────── */}
-        <section className="mt-20 md:mt-28">
+        <section className="mt-14 sm:mt-20 md:mt-28">
           <SectionLabel number="05" title="Mercado" />
           <Link
             href="/news/cotacoes"
-            className="group relative mt-8 flex items-center justify-between gap-5 overflow-hidden rounded-2xl bg-white/[0.04] px-6 py-6 ring-1 ring-white/[0.08] shadow-xl shadow-black/40 backdrop-blur-sm transition-all hover:bg-white/[0.06] hover:ring-amber-400/30 md:px-10 md:py-7"
+            className="group relative mt-6 flex items-center justify-between gap-4 overflow-hidden rounded-2xl bg-white/[0.04] px-5 py-5 ring-1 ring-white/[0.08] shadow-xl shadow-black/40 backdrop-blur-sm transition-all hover:bg-white/[0.06] hover:ring-amber-400/30 sm:px-6 sm:py-6 md:mt-8 md:gap-5 md:px-10 md:py-7"
           >
             {/* Mini glow top-right */}
             <div
@@ -474,16 +525,16 @@ export default async function CorretoraDetailPage({ params }: Props) {
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300">
                 Cotação do café arábica
               </p>
-              <p className="mt-1.5 text-base font-semibold tracking-tight text-stone-100 md:text-lg">
-                Acompanhe o preço em R$/saca 60kg antes de negociar
+              <p className="mt-1.5 text-[15px] font-semibold leading-snug tracking-tight text-stone-100 md:text-lg">
+                Preço em R$/saca 60kg antes de negociar
               </p>
-              <p className="mt-1 text-[11px] text-stone-400">
+              <p className="mt-1 hidden text-[11px] text-stone-400 sm:block">
                 Dados atualizados do mercado internacional
               </p>
             </div>
             <span
               aria-hidden
-              className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-stone-950 shadow-lg shadow-amber-500/30 transition-transform group-hover:translate-x-0.5"
+              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-stone-950 shadow-lg shadow-amber-500/30 transition-transform group-hover:translate-x-0.5 sm:h-11 sm:w-11"
             >
               <svg
                 width="16"

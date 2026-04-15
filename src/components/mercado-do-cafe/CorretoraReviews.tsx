@@ -108,45 +108,99 @@ export function CorretoraReviews({ corretoraSlug, corretoraName }: Props) {
   const aggregate = data?.aggregate ?? { total: 0, average: null };
   const reviews = data?.reviews ?? [];
 
+  const hasReviews = aggregate.average != null && aggregate.total > 0;
+
   return (
     <div className="space-y-6">
-      {/* Header com agregado */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          {aggregate.average != null && aggregate.total > 0 ? (
-            <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-amber-400/10 ring-1 ring-amber-400/30">
-                <span className="text-2xl font-semibold tabular-nums text-amber-200">
-                  {aggregate.average.toFixed(1)}
-                </span>
-              </div>
-              <div>
-                <Stars value={aggregate.average} size="md" />
-                <p className="mt-1 text-xs text-stone-400">
-                  {aggregate.total}{" "}
-                  {aggregate.total === 1
-                    ? "avaliação aprovada"
-                    : "avaliações aprovadas"}
-                </p>
-              </div>
+      {/* Header com agregado. Quando não há reviews, o empty state
+          vira um card completo (não um texto solto) — com ícone
+          amber, frase curta e CTA claro. */}
+      {hasReviews ? (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-amber-400/10 ring-1 ring-amber-400/30">
+              <span className="text-2xl font-semibold tabular-nums text-amber-200">
+                {aggregate.average!.toFixed(1)}
+              </span>
             </div>
-          ) : (
-            <p className="text-sm text-stone-400">
-              Ainda sem avaliações públicas. Seja o primeiro a deixar sua
-              experiência.
-            </p>
-          )}
-        </div>
+            <div>
+              <Stars value={aggregate.average!} size="md" />
+              <p className="mt-1 text-xs text-stone-400">
+                {aggregate.total}{" "}
+                {aggregate.total === 1
+                  ? "avaliação aprovada"
+                  : "avaliações aprovadas"}
+              </p>
+            </div>
+          </div>
 
-        <button
-          type="button"
-          onClick={() => setShowForm((v) => !v)}
-          className="group inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-white/[0.05] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-200 ring-1 ring-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.08] hover:ring-amber-400/30"
-        >
-          {showForm ? "Fechar formulário" : "Deixar avaliação"}
-          <span aria-hidden>{showForm ? "×" : "→"}</span>
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => setShowForm((v) => !v)}
+            className="group inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-xl bg-white/[0.05] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-200 ring-1 ring-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.08] hover:ring-amber-400/30"
+          >
+            {showForm ? "Fechar formulário" : "Deixar avaliação"}
+            <span aria-hidden>{showForm ? "×" : "→"}</span>
+          </button>
+        </div>
+      ) : (
+        !showForm && (
+          <div className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/[0.08] backdrop-blur-sm sm:p-8">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
+            />
+            <div className="relative flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-4">
+                <div
+                  aria-hidden
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-300 ring-1 ring-amber-400/30"
+                >
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="h-5 w-5"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.163c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.175 0l-3.37 2.448c-.784.57-1.838-.197-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.05 9.384c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.957z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[15px] font-semibold text-stone-100">
+                    Ainda sem avaliações públicas
+                  </p>
+                  <p className="mt-1 max-w-md text-[13px] leading-relaxed text-stone-400">
+                    Seja o primeiro a contar sua experiência. Sua avaliação
+                    passa por moderação da equipe Kavita antes de ser
+                    publicada.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="group inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-stone-950 shadow-lg shadow-amber-500/25 transition-all hover:from-amber-200 hover:to-amber-400 sm:w-auto"
+              >
+                Deixar avaliação
+                <span aria-hidden>→</span>
+              </button>
+            </div>
+          </div>
+        )
+      )}
+
+      {/* Quando o form está aberto no cenário vazio, ainda mostra um
+          botão discreto para fechar acima do form */}
+      {!hasReviews && showForm && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-white/[0.05] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-300 ring-1 ring-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.08]"
+          >
+            Fechar formulário <span aria-hidden>×</span>
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <ReviewForm

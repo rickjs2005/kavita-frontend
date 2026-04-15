@@ -70,8 +70,10 @@ export function WhatsAppDirectButton({
   const href = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 
   const variantClass: Record<Variant, string> = {
+    // Primary: altura mínima 44px (alvo de toque mobile), respeita
+    // w-full quando o caller passar (ex: CTA full-width no mobile).
     primary:
-      "group relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition-all hover:from-emerald-400 hover:to-emerald-500",
+      "group relative inline-flex min-h-[44px] items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition-all hover:from-emerald-400 hover:to-emerald-500",
     secondary:
       "inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-500/20",
     inline:
@@ -92,7 +94,7 @@ export function WhatsAppDirectButton({
           className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
         />
       )}
-      <span className={variant === "primary" ? "relative flex items-center gap-1.5" : ""}>
+      <span className={variant === "primary" ? "relative flex items-center gap-2" : ""}>
         <WhatsAppIcon className="h-4 w-4 shrink-0" />
         <span>{label}</span>
       </span>

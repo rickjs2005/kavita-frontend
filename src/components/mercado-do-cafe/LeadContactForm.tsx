@@ -85,11 +85,25 @@ function loadTurnstileScript(): Promise<void> {
 // texto stone-100, placeholder stone-500, focus ring amber-400/50.
 // O hover/focus puxa a luz amber-400 que é o accent de assinatura
 // da página dark committed.
+//
+// Altura mínima 48px no mobile (py-3.5) para alvo de toque confortável.
 const inputClass =
-  "w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-[15px] text-stone-100 placeholder:text-stone-500 transition-colors focus:border-amber-400/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-amber-400/25";
+  "w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3.5 text-[15px] text-stone-100 placeholder:text-stone-500 transition-colors focus:border-amber-400/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-amber-400/25";
+// Select: mesmo chassi do input + padding-right para o chevron custom,
+// appearance-none para remover seta nativa (substituída via ::after
+// posicionado no wrapper). Mantém consistência visual com o resto.
+const selectClass =
+  "w-full appearance-none rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3.5 pr-10 text-[15px] text-stone-100 transition-colors focus:border-amber-400/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-amber-400/25";
 const labelClass =
   "mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300/80";
 const errorClass = "mt-1.5 text-[11px] font-medium text-red-300";
+
+// Subtítulo de fieldset — hierarquia leve pra agrupar o form em blocos
+// temáticos ("Seus dados" / "Seu café" / "Retorno") sem poluir visual.
+const fieldsetLegendClass =
+  "mb-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400";
+const fieldsetHairlineClass =
+  "h-px flex-1 bg-gradient-to-r from-white/15 to-transparent";
 
 export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   const [submitting, setSubmitting] = useState(false);
@@ -272,7 +286,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:p-8"
+      className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm sm:p-6 md:p-8"
       aria-label={`Formulário de contato com ${corretoraName}`}
     >
       {/* Top highlight catching amber light */}
@@ -281,223 +295,263 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
       />
 
-      <div className="relative space-y-5">
+      <div className="relative space-y-7">
 
-      <div>
-        <label className={labelClass} htmlFor="lead-nome">
-          Seu nome *
-        </label>
-        <input
-          id="lead-nome"
-          autoComplete="name"
-          {...register("nome", {
-            required: "Nome é obrigatório.",
-            minLength: { value: 3, message: "Mínimo 3 caracteres." },
-          })}
-          className={inputClass}
-          placeholder="Seu nome completo"
-        />
-        {errors.nome && <p className={errorClass}>{errors.nome.message}</p>}
-      </div>
+      {/* ─── 1. Seus dados ───────────────────────────────────────── */}
+      <fieldset className="space-y-4 border-0 p-0">
+        <legend className={fieldsetLegendClass}>
+          <span>Seus dados</span>
+          <span aria-hidden className={fieldsetHairlineClass} />
+        </legend>
 
-      <div>
-        <label className={labelClass} htmlFor="lead-telefone">
-          Telefone / WhatsApp *
-        </label>
-        <input
-          id="lead-telefone"
-          inputMode="tel"
-          autoComplete="tel"
-          {...register("telefone", {
-            required: "Telefone é obrigatório.",
-            minLength: { value: 8, message: "Telefone muito curto." },
-          })}
-          className={inputClass}
-          placeholder="(33) 9 9999-9999"
-        />
-        {errors.telefone && (
-          <p className={errorClass}>{errors.telefone.message}</p>
-        )}
-      </div>
-
-      {/* Cidade — select com catálogo da Zona da Mata + "Outra" para
-          permitir produtores de municípios fora do catálogo. */}
-      <div>
-        <label className={labelClass} htmlFor="lead-cidade">
-          Sua cidade
-        </label>
-        <select
-          id="lead-cidade"
-          {...register("cidade")}
-          className={inputClass}
-          defaultValue=""
-        >
-          <option value="">Selecione sua cidade</option>
-          {CIDADES_ZONA_DA_MATA.map((c) => (
-            <option key={c.slug} value={c.nome}>
-              {c.nome} — {c.estado}
-            </option>
-          ))}
-          <option value="outra">Outra cidade</option>
-        </select>
-      </div>
-
-      {/* Sprint 7 — Córrego/localidade (hiper-localidade) */}
-      <div>
-        <label className={labelClass} htmlFor="lead-corrego">
-          Córrego ou localidade
-        </label>
-        <input
-          id="lead-corrego"
-          {...register("corrego_localidade", {
-            maxLength: { value: 120, message: "Máximo 120 caracteres." },
-          })}
-          className={inputClass}
-          placeholder="Ex: Córrego Pedra Bonita, Serra da Boa Vista..."
-        />
-        <p className="mt-1.5 text-[11px] leading-relaxed text-stone-400">
-          Ajuda a corretora a identificar a qualidade do café pela altitude e
-          microrregião onde foi cultivado.
-        </p>
-      </div>
-
-      {/* Sprint 7 — Safra atual ou estoque */}
-      <div>
-        <label className={labelClass}>Esse café é de qual safra?</label>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {[
-            {
-              value: "atual",
-              title: "Safra atual",
-              desc: "Colheita em andamento",
-            },
-            {
-              value: "remanescente",
-              title: "Estoque (remanescente)",
-              desc: "Café de safras anteriores",
-            },
-          ].map((opt) => (
-            <label key={opt.value} className="cursor-pointer">
-              <input
-                type="radio"
-                value={opt.value}
-                {...register("safra_tipo")}
-                className="peer sr-only"
-              />
-              <span className="block rounded-xl border border-white/10 bg-white/[0.04] p-3 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15">
-                <span className="block text-sm font-semibold text-stone-100 peer-checked:text-amber-200">
-                  {opt.title}
-                </span>
-                <span className="mt-0.5 block text-[11px] text-stone-400">
-                  {opt.desc}
-                </span>
-              </span>
-            </label>
-          ))}
+        <div>
+          <label className={labelClass} htmlFor="lead-nome">
+            Seu nome *
+          </label>
+          <input
+            id="lead-nome"
+            autoComplete="name"
+            {...register("nome", {
+              required: "Nome é obrigatório.",
+              minLength: { value: 3, message: "Mínimo 3 caracteres." },
+            })}
+            className={inputClass}
+            placeholder="Seu nome completo"
+          />
+          {errors.nome && <p className={errorClass}>{errors.nome.message}</p>}
         </div>
-      </div>
 
-      {/* Objetivo do contato (qualificação 1 de 3) */}
-      <div>
-        <label className={labelClass}>Qual seu objetivo?</label>
-        <div className="flex flex-wrap gap-2">
-          {OBJETIVOS_CONTATO.map((opt) => (
-            <label
-              key={opt.value}
-              className="group relative cursor-pointer"
+        <div>
+          <label className={labelClass} htmlFor="lead-telefone">
+            Telefone / WhatsApp *
+          </label>
+          <input
+            id="lead-telefone"
+            inputMode="tel"
+            autoComplete="tel"
+            {...register("telefone", {
+              required: "Telefone é obrigatório.",
+              minLength: { value: 8, message: "Telefone muito curto." },
+            })}
+            className={inputClass}
+            placeholder="(33) 9 9999-9999"
+          />
+          {errors.telefone && (
+            <p className={errorClass}>{errors.telefone.message}</p>
+          )}
+        </div>
+
+        {/* Cidade — select custom com chevron amber */}
+        <div>
+          <label className={labelClass} htmlFor="lead-cidade">
+            Sua cidade
+          </label>
+          <div className="relative">
+            <select
+              id="lead-cidade"
+              {...register("cidade")}
+              className={selectClass}
+              defaultValue=""
             >
-              <input
-                type="radio"
-                value={opt.value}
-                {...register("objetivo")}
-                className="peer sr-only"
-              />
-              <span className="inline-block rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200">
-                {opt.label}
-              </span>
-            </label>
-          ))}
+              <option value="">Selecione sua cidade</option>
+              {CIDADES_ZONA_DA_MATA.map((c) => (
+                <option key={c.slug} value={c.nome}>
+                  {c.nome} — {c.estado}
+                </option>
+              ))}
+              <option value="outra">Outra cidade</option>
+            </select>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute right-3.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-amber-300/70"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </span>
+          </div>
         </div>
-      </div>
+      </fieldset>
 
-      {/* Tipo de café (qualificação 2 de 3) */}
-      <div>
-        <label className={labelClass}>Tipo de café</label>
-        <div className="flex flex-wrap gap-2">
-          {TIPOS_CAFE.map((opt) => (
-            <label key={opt.value} className="cursor-pointer">
-              <input
-                type="radio"
-                value={opt.value}
-                {...register("tipo_cafe")}
-                className="peer sr-only"
-              />
-              <span className="inline-block rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200">
-                {opt.label}
-              </span>
-            </label>
-          ))}
+      {/* ─── 2. Seu café ─────────────────────────────────────────── */}
+      <fieldset className="space-y-4 border-0 p-0">
+        <legend className={fieldsetLegendClass}>
+          <span>Seu café</span>
+          <span aria-hidden className={fieldsetHairlineClass} />
+        </legend>
+
+        {/* Córrego/localidade */}
+        <div>
+          <label className={labelClass} htmlFor="lead-corrego">
+            Córrego ou localidade
+          </label>
+          <input
+            id="lead-corrego"
+            {...register("corrego_localidade", {
+              maxLength: { value: 120, message: "Máximo 120 caracteres." },
+            })}
+            className={inputClass}
+            placeholder="Ex: Córrego Pedra Bonita"
+          />
+          <p className="mt-1.5 text-[11px] leading-relaxed text-stone-400">
+            Ajuda a identificar a qualidade pela altitude e microrregião.
+          </p>
         </div>
-      </div>
 
-      {/* Volume estimado (qualificação 3 de 3) */}
-      <div>
-        <label className={labelClass}>Volume estimado (sacas de 60 kg)</label>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {VOLUMES_LEAD.map((opt) => (
-            <label key={opt.value} className="cursor-pointer">
-              <input
-                type="radio"
-                value={opt.value}
-                {...register("volume_range")}
-                className="peer sr-only"
-              />
-              <span className="block rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center text-xs font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200">
-                {opt.label}
-              </span>
-            </label>
-          ))}
+        {/* Safra */}
+        <div>
+          <label className={labelClass}>Esse café é de qual safra?</label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[
+              {
+                value: "atual",
+                title: "Safra atual",
+                desc: "Colheita em andamento",
+              },
+              {
+                value: "remanescente",
+                title: "Estoque",
+                desc: "Safras anteriores",
+              },
+            ].map((opt) => (
+              <label key={opt.value} className="cursor-pointer">
+                <input
+                  type="radio"
+                  value={opt.value}
+                  {...register("safra_tipo")}
+                  className="peer sr-only"
+                />
+                <span className="block min-h-[60px] rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/50">
+                  <span className="block text-sm font-semibold text-stone-100 peer-checked:text-amber-200">
+                    {opt.title}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-stone-400">
+                    {opt.desc}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Canal preferido de retorno */}
-      <div>
-        <label className={labelClass}>Prefere receber retorno por</label>
-        <div className="flex flex-wrap gap-2">
-          {CANAIS_CONTATO.map((opt) => (
-            <label key={opt.value} className="cursor-pointer">
-              <input
-                type="radio"
-                value={opt.value}
-                {...register("canal_preferido")}
-                className="peer sr-only"
-              />
-              <span className="inline-block rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200">
-                {opt.label}
-              </span>
-            </label>
-          ))}
+        {/* Objetivo */}
+        <div>
+          <label className={labelClass}>Qual seu objetivo?</label>
+          <div className="flex flex-wrap gap-2">
+            {OBJETIVOS_CONTATO.map((opt) => (
+              <label
+                key={opt.value}
+                className="group relative cursor-pointer"
+              >
+                <input
+                  type="radio"
+                  value={opt.value}
+                  {...register("objetivo")}
+                  className="peer sr-only"
+                />
+                <span className="inline-flex min-h-[36px] items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/50">
+                  {opt.label}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div>
-        <label className={labelClass} htmlFor="lead-mensagem">
-          Mensagem (opcional)
-        </label>
-        <textarea
-          id="lead-mensagem"
-          rows={3}
-          maxLength={1000}
-          {...register("mensagem", {
-            maxLength: { value: 1000, message: "Máximo 1000 caracteres." },
-          })}
-          className={inputClass}
-          placeholder="Algum detalhe extra sobre sua produção ou necessidade..."
-        />
-        {errors.mensagem && (
-          <p className={errorClass}>{errors.mensagem.message}</p>
-        )}
-      </div>
+        {/* Tipo de café */}
+        <div>
+          <label className={labelClass}>Tipo de café</label>
+          <div className="flex flex-wrap gap-2">
+            {TIPOS_CAFE.map((opt) => (
+              <label key={opt.value} className="cursor-pointer">
+                <input
+                  type="radio"
+                  value={opt.value}
+                  {...register("tipo_cafe")}
+                  className="peer sr-only"
+                />
+                <span className="inline-flex min-h-[36px] items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/50">
+                  {opt.label}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Volume */}
+        <div>
+          <label className={labelClass}>Volume estimado (sacas de 60 kg)</label>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {VOLUMES_LEAD.map((opt) => (
+              <label key={opt.value} className="cursor-pointer">
+                <input
+                  type="radio"
+                  value={opt.value}
+                  {...register("volume_range")}
+                  className="peer sr-only"
+                />
+                <span className="flex min-h-[44px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center text-[13px] font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/50">
+                  {opt.label}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </fieldset>
+
+      {/* ─── 3. Retorno ──────────────────────────────────────────── */}
+      <fieldset className="space-y-4 border-0 p-0">
+        <legend className={fieldsetLegendClass}>
+          <span>Retorno</span>
+          <span aria-hidden className={fieldsetHairlineClass} />
+        </legend>
+
+        <div>
+          <label className={labelClass}>Prefere receber retorno por</label>
+          <div className="flex flex-wrap gap-2">
+            {CANAIS_CONTATO.map((opt) => (
+              <label key={opt.value} className="cursor-pointer">
+                <input
+                  type="radio"
+                  value={opt.value}
+                  {...register("canal_preferido")}
+                  className="peer sr-only"
+                />
+                <span className="inline-flex min-h-[36px] items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/50">
+                  {opt.label}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className={labelClass} htmlFor="lead-mensagem">
+            Mensagem (opcional)
+          </label>
+          <textarea
+            id="lead-mensagem"
+            rows={3}
+            maxLength={1000}
+            {...register("mensagem", {
+              maxLength: { value: 1000, message: "Máximo 1000 caracteres." },
+            })}
+            className={inputClass}
+            placeholder="Algum detalhe extra sobre sua produção ou necessidade..."
+          />
+          {errors.mensagem && (
+            <p className={errorClass}>{errors.mensagem.message}</p>
+          )}
+        </div>
+      </fieldset>
 
         {turnstileEnabled && (
           <div
@@ -520,7 +574,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         <button
           type="submit"
           disabled={submitting || (turnstileEnabled && !turnstileToken)}
-          className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-10"
+          className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-60 sm:h-[52px] sm:w-auto sm:px-10"
         >
           <span
             aria-hidden

@@ -222,14 +222,16 @@ export function CorretoraContactChannels({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${ch.actionLabel} — ${corretora.name}`}
-                className={`group flex items-center gap-4 px-5 py-4 transition-colors focus:outline-none focus-visible:bg-white/[0.06] md:gap-5 md:px-6 md:py-5 ${
+                className={`group flex items-center gap-3 px-4 py-3.5 transition-colors focus:outline-none focus-visible:bg-white/[0.06] sm:gap-4 sm:px-5 sm:py-4 md:gap-5 md:px-6 md:py-5 ${
                   isPrimary ? "bg-amber-400/[0.04]" : ""
                 } hover:bg-white/[0.06]`}
               >
-                {/* Number — editorial chapter mark */}
+                {/* Number — editorial chapter mark. Oculto em telas <sm
+                    pra liberar largura ao texto do canal. Em primary,
+                    o micro-ponto amber migra pro kicker mobile. */}
                 <span
                   aria-hidden
-                  className="flex shrink-0 items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-stone-500"
+                  className="hidden shrink-0 items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-stone-500 sm:flex"
                 >
                   {isPrimary && (
                     <span className="h-1 w-1 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
@@ -237,23 +239,32 @@ export function CorretoraContactChannels({
                   {number}
                 </span>
 
-                {/* Icon box — dark glass, hover vira amber */}
+                {/* Icon box — dark glass, hover vira amber.
+                    Mobile 36px (alvo bom), desktop 40px. */}
                 <span
                   aria-hidden
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-stone-300 ring-1 ring-white/10 transition-all group-hover:bg-amber-400 group-hover:text-stone-950 group-hover:ring-amber-300/50"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-stone-300 ring-1 ring-white/10 transition-all group-hover:bg-amber-400 group-hover:text-stone-950 group-hover:ring-amber-300/50 sm:h-10 sm:w-10"
                 >
                   {ICONS[ch.key](16)}
                 </span>
 
                 {/* Textos */}
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/80">
-                    {ch.label}
+                  <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/80">
+                    {/* Micro-ponto amber no mobile pro canal primário
+                        (compensa a numeração oculta). */}
                     {isPrimary && (
-                      <span className="ml-2 text-amber-200">· Primário</span>
+                      <span
+                        aria-hidden
+                        className="h-1 w-1 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)] sm:hidden"
+                      />
+                    )}
+                    <span>{ch.label}</span>
+                    {isPrimary && (
+                      <span className="text-amber-200">· Primário</span>
                     )}
                   </p>
-                  <p className="mt-0.5 truncate text-sm font-medium text-stone-100">
+                  <p className="mt-0.5 truncate text-[13px] font-medium text-stone-100 sm:text-sm">
                     {ch.detail}
                   </p>
                 </div>
