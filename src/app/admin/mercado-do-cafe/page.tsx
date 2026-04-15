@@ -52,22 +52,24 @@ export default function AdminMercadoDoCafePage() {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            {/* Link discreto para o drill-down de auditoria — deixa
-                claro que o histórico de ações pertence a este módulo
-                e não é um recurso separado de sistema. */}
+            {/* Link para o drill-down de auditoria — deixa claro que o
+                histórico de ações pertence a este módulo e não é um
+                recurso separado de sistema. No mobile vira ícone-only
+                para economizar espaço sem sumir. */}
             <Link
               href="/admin/auditoria"
-              className="hidden rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:inline-flex"
+              aria-label="Abrir auditoria do Mercado do Café"
+              className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
               title="Histórico de ações sobre corretoras, reviews e planos"
             >
-              <span aria-hidden className="mr-1.5">
+              <span aria-hidden className="text-sm sm:mr-1.5">
                 🔍
               </span>
-              Auditoria
+              <span className="hidden sm:inline">Auditoria</span>
             </Link>
             <Link
               href="/admin/mercado-do-cafe/corretoras/nova"
-              className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+              className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:px-4"
             >
               + Nova Corretora
             </Link>

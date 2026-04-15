@@ -40,6 +40,26 @@ const ACTION_LABELS: Record<string, string> = {
   "plan.assigned": "Plano atribuído",
 };
 
+/**
+ * Gera link de drill-down para o registro-alvo dentro do módulo
+ * Mercado do Café quando target_type for conhecido. Reforça que o
+ * audit log NÃO é um sistema isolado — cada linha aponta de volta
+ * para a entidade operada.
+ */
+function targetHref(
+  targetType: string | null,
+  targetId: number | null,
+): string | null {
+  if (!targetType || !targetId) return null;
+  if (targetType === "corretora") {
+    return `/admin/mercado-do-cafe/corretora/${targetId}`;
+  }
+  if (targetType === "submission") {
+    return `/admin/mercado-do-cafe/solicitacoes/${targetId}`;
+  }
+  return null;
+}
+
 function formatDate(iso: string) {
   try {
     return new Date(iso).toLocaleString("pt-BR", {
@@ -126,9 +146,17 @@ export default function AuditClient() {
               </span>
               <span className="text-amber-200">Auditoria</span>
             </nav>
-            <h1 className="mt-1 text-base font-semibold text-slate-50 sm:text-lg">
-              Auditoria — Mercado do Café
-            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <h1 className="text-base font-semibold text-slate-50 sm:text-lg">
+                Auditoria — Mercado do Café
+              </h1>
+              {/* Marcador inequívoco de escopo — esta tela é parte do
+                  módulo, não um sistema paralelo. */}
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200">
+                <span aria-hidden>☕</span>
+                Drill-down do módulo
+              </span>
+            </div>
             <p className="text-[11px] text-slate-400">
               Histórico de ações do admin sobre corretoras, reviews e planos.
               Para logs gerais de sistema, veja{" "}
@@ -217,7 +245,24 @@ export default function AuditClient() {
                       </span>
                     </div>
                     <p className="mt-1 text-[11px] text-slate-500">
-                      {r.target_type ? `${r.target_type} #${r.target_id}` : "—"}
+                      {r.target_type ? (
+                        (() => {
+                          const href = targetHref(r.target_type, r.target_id);
+                          const label = `${r.target_type} #${r.target_id}`;
+                          return href ? (
+                            <Link
+                              href={href}
+                              className="font-medium text-slate-300 underline-offset-2 hover:text-amber-300 hover:underline"
+                            >
+                              {label}
+                            </Link>
+                          ) : (
+                            <span>{label}</span>
+                          );
+                        })()
+                      ) : (
+                        "—"
+                      )}
                       {r.ip ? ` · ${r.ip}` : ""}
                     </p>
                     {r.meta && Object.keys(r.meta).length > 0 && (
