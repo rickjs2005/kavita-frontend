@@ -6,7 +6,7 @@
 // Envia para POST /api/public/corretoras/:slug/leads.
 
 import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
@@ -81,21 +81,32 @@ function loadTurnstileScript(): Promise<void> {
   return turnstileScriptPromise;
 }
 
-// Dark glass inputs: superfície white/[0.05] com ring white/10,
-// texto stone-100, placeholder stone-500, focus ring amber-400/50.
-// O hover/focus puxa a luz amber-400 que é o accent de assinatura
-// da página dark committed.
+// Dark glass inputs — superfície white/[0.05] com ring white/10,
+// texto stone-100, placeholder stone-400 (contraste >= 4.5:1 sobre
+// o fundo glass), focus ring amber-400. Accent amber-400 é a luz
+// de assinatura da página.
 //
 // Altura mínima 48px no mobile (py-3.5) para alvo de toque confortável.
 const inputClass =
-  "w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3.5 text-[15px] text-stone-100 placeholder:text-stone-500 transition-colors focus:border-amber-400/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-amber-400/25";
-// Select: mesmo chassi do input + padding-right para o chevron custom,
-// appearance-none para remover seta nativa (substituída via ::after
-// posicionado no wrapper). Mantém consistência visual com o resto.
+  "w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3.5 text-[15px] text-stone-100 placeholder:text-stone-400 transition-colors hover:bg-white/[0.06] focus:border-amber-400/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-amber-400/25";
+
+// Select trigger — mesmo chassi do input + pr-11 pra acomodar o
+// chevron custom posicionado à direita. appearance-none remove a
+// seta nativa em Firefox/Chrome; color-scheme:dark força o popup
+// nativo a adotar tema escuro em iOS/Android (evita o bug de
+// "texto branco sobre fundo branco" no popup do select).
 const selectClass =
-  "w-full appearance-none rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3.5 pr-10 text-[15px] text-stone-100 transition-colors focus:border-amber-400/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-amber-400/25";
+  "w-full appearance-none rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3.5 pr-11 text-[15px] text-stone-100 transition-colors hover:bg-white/[0.06] focus:border-amber-400/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-amber-400/25 [color-scheme:dark]";
+
+// Quando o value é vazio (placeholder "Selecione..."), o texto fica
+// em stone-400 (mesmo nível dos placeholders dos inputs). Assim que
+// uma opção é escolhida, o JS remove este className e o texto vira
+// stone-100. Implementado via `aria-selected` + atributo custom.
+const selectPlaceholderClass = "!text-stone-400";
+
 const labelClass =
-  "mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300/80";
+  "mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300/90";
+const helperClass = "mt-1.5 text-[12px] leading-relaxed text-stone-300";
 const errorClass = "mt-1.5 text-[11px] font-medium text-red-300";
 
 // Subtítulo de fieldset — hierarquia leve pra agrupar o form em blocos
@@ -104,6 +115,25 @@ const fieldsetLegendClass =
   "mb-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400";
 const fieldsetHairlineClass =
   "h-px flex-1 bg-gradient-to-r from-white/15 to-transparent";
+
+// Classes compartilhadas pelos chips (radio pill) e cards de opção.
+// Alvo de toque mínimo 40px mobile / 44px desktop. Check visual
+// discreto via dot amber que aparece no :checked.
+const chipClass =
+  "inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-[13px] font-medium text-stone-200 transition-all hover:bg-white/[0.09] hover:text-stone-50 peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-100 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/60 sm:min-h-[44px]";
+
+const volumeCardClass =
+  "flex min-h-[48px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-center text-[13px] font-medium text-stone-200 transition-all hover:bg-white/[0.09] hover:text-stone-50 peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-100 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/60";
+
+// Style inline para <option>. O popup nativo do <select> em iOS/Android
+// ignora Tailwind e herda estilo do SO — por isso forçamos via inline
+// style. Sem isso, em alguns browsers o texto da lista fica branco
+// sobre fundo branco (bug de contraste grave). Com este style, o popup
+// nativo vira cinza escuro com texto claro, consistente com o tema.
+const OPTION_STYLE: React.CSSProperties = {
+  backgroundColor: "#0c0a09", // stone-950
+  color: "#f5f5f4", // stone-100
+};
 
 export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   const [submitting, setSubmitting] = useState(false);
@@ -163,6 +193,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<LeadFormData>({
     defaultValues: {
@@ -179,6 +210,11 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       safra_tipo: undefined,
     },
   });
+
+  // Watch do select de cidade — quando vazio, aplicamos a cor de
+  // placeholder (stone-400) para manter hierarquia visual igual aos
+  // inputs text.
+  const cidadeValue = useWatch({ control, name: "cidade" });
 
   const onSubmit = async (data: LeadFormData) => {
     if (turnstileEnabled && !turnstileToken) {
@@ -295,7 +331,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
       />
 
-      <div className="relative space-y-7">
+      <div className="relative space-y-8">
 
       {/* ─── 1. Seus dados ───────────────────────────────────────── */}
       <fieldset className="space-y-4 border-0 p-0">
@@ -341,7 +377,13 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
           )}
         </div>
 
-        {/* Cidade — select custom com chevron amber */}
+        {/* Cidade — select custom com chevron amber.
+            As <option> recebem style inline forçando bg stone-950 +
+            texto stone-100. Isso resolve o bug do popup nativo em
+            iOS/Chrome onde o SO pinta o dropdown em branco e deixa o
+            texto invisível. O atributo color-scheme:dark no trigger
+            ajuda browsers modernos a adotarem o tema escuro no popup
+            também (iOS 15+, Chromium). */}
         <div>
           <label className={labelClass} htmlFor="lead-cidade">
             Sua cidade
@@ -350,20 +392,24 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
             <select
               id="lead-cidade"
               {...register("cidade")}
-              className={selectClass}
+              className={`${selectClass} ${!cidadeValue ? selectPlaceholderClass : ""}`}
               defaultValue=""
             >
-              <option value="">Selecione sua cidade</option>
+              <option value="" style={OPTION_STYLE}>
+                Selecione sua cidade
+              </option>
               {CIDADES_ZONA_DA_MATA.map((c) => (
-                <option key={c.slug} value={c.nome}>
+                <option key={c.slug} value={c.nome} style={OPTION_STYLE}>
                   {c.nome} — {c.estado}
                 </option>
               ))}
-              <option value="outra">Outra cidade</option>
+              <option value="outra" style={OPTION_STYLE}>
+                Outra cidade
+              </option>
             </select>
             <span
               aria-hidden
-              className="pointer-events-none absolute right-3.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-amber-300/70"
+              className="pointer-events-none absolute right-3.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center text-amber-300/80"
             >
               <svg
                 width="14"
@@ -402,7 +448,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
             className={inputClass}
             placeholder="Ex: Córrego Pedra Bonita"
           />
-          <p className="mt-1.5 text-[11px] leading-relaxed text-stone-400">
+          <p className={helperClass}>
             Ajuda a identificar a qualidade pela altitude e microrregião.
           </p>
         </div>
@@ -430,12 +476,26 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
                   {...register("safra_tipo")}
                   className="peer sr-only"
                 />
-                <span className="block min-h-[60px] rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/50">
-                  <span className="block text-sm font-semibold text-stone-100 peer-checked:text-amber-200">
-                    {opt.title}
+                <span className="safra-card relative flex min-h-[64px] items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 transition-all hover:bg-white/[0.09] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/60 peer-checked:[&_.safra-title]:text-amber-100 peer-checked:[&_.safra-check]:border-amber-400 peer-checked:[&_.safra-check]:bg-amber-400 peer-checked:[&_.safra-check]:text-stone-950">
+                  <span className="min-w-0">
+                    <span className="safra-title block text-sm font-semibold text-stone-50">
+                      {opt.title}
+                    </span>
+                    <span className="mt-0.5 block text-[12px] text-stone-300">
+                      {opt.desc}
+                    </span>
                   </span>
-                  <span className="mt-0.5 block text-[11px] text-stone-400">
-                    {opt.desc}
+                  <span
+                    aria-hidden
+                    className="safra-check flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/[0.03] text-transparent transition-all"
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 011.42-1.42L8.5 12.09l6.79-6.8a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
                   </span>
                 </span>
               </label>
@@ -458,9 +518,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
                   {...register("objetivo")}
                   className="peer sr-only"
                 />
-                <span className="inline-flex min-h-[36px] items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/50">
-                  {opt.label}
-                </span>
+                <span className={chipClass}>{opt.label}</span>
               </label>
             ))}
           </div>
@@ -478,9 +536,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
                   {...register("tipo_cafe")}
                   className="peer sr-only"
                 />
-                <span className="inline-flex min-h-[36px] items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/50">
-                  {opt.label}
-                </span>
+                <span className={chipClass}>{opt.label}</span>
               </label>
             ))}
           </div>
@@ -498,9 +554,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
                   {...register("volume_range")}
                   className="peer sr-only"
                 />
-                <span className="flex min-h-[44px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center text-[13px] font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/50">
-                  {opt.label}
-                </span>
+                <span className={volumeCardClass}>{opt.label}</span>
               </label>
             ))}
           </div>
@@ -525,9 +579,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
                   {...register("canal_preferido")}
                   className="peer sr-only"
                 />
-                <span className="inline-flex min-h-[36px] items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-stone-300 transition-all hover:bg-white/[0.08] peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-400/50">
-                  {opt.label}
-                </span>
+                <span className={chipClass}>{opt.label}</span>
               </label>
             ))}
           </div>
@@ -596,3 +648,4 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
     </form>
   );
 }
+
