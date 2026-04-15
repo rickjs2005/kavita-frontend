@@ -53,6 +53,12 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Kavita News", href: "/admin/kavita-news", icon: "📰", permission: "news_view" },
       { label: "Mercado do Café", href: "/admin/mercado-do-cafe", icon: "☕", permission: "mercado_cafe_manage" },
+      // Auditoria do módulo café — vive ao lado do módulo principal
+      // para deixar claro que é um drill-down operacional (quem fez o
+      // quê sobre corretoras/reviews/planos), não uma auditoria global
+      // do sistema. Rota mantida em /admin/auditoria para preservar
+      // compatibilidade de deeplinks existentes.
+      { label: "Auditoria — Mercado do Café", href: "/admin/auditoria", icon: "🔍", permission: "logs_view" },
       { label: "Kavita Drones", href: "/admin/drones", icon: "🚁", permission: "drones_manage" },
     ],
   },
@@ -71,7 +77,6 @@ const navGroups: NavGroup[] = [
       { label: "Papéis & Permissões", href: "/admin/configuracoes/usuarios", icon: "🛡️", permission: "roles_permissions_manage" },
       { label: "Equipe", href: "/admin/equipe", icon: "🧑‍🌾", permission: "admins_manage" },
       { label: "Logs", href: "/admin/logs", icon: "📜", permission: "logs_view" },
-      { label: "Auditoria Café", href: "/admin/auditoria", icon: "🔍", permission: "logs_view" },
     ],
   },
 ];

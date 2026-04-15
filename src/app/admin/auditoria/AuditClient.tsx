@@ -99,19 +99,46 @@ export default function AuditClient() {
     <div className="relative min-h-screen w-full">
       <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-3 py-3 sm:px-4">
-          <div>
-            <Link
-              href="/admin/mercado-do-cafe"
-              className="text-[11px] font-semibold text-slate-400 hover:text-amber-300"
+          <div className="min-w-0">
+            {/* Breadcrumb explícito — esta área é um drill-down do
+                módulo Mercado do Café, não uma auditoria global. */}
+            <nav
+              aria-label="Breadcrumb"
+              className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold"
             >
-              ← Mercado do Café
-            </Link>
+              <Link
+                href="/admin"
+                className="text-slate-500 transition-colors hover:text-amber-300"
+              >
+                Admin
+              </Link>
+              <span aria-hidden className="text-slate-700">
+                ›
+              </span>
+              <Link
+                href="/admin/mercado-do-cafe"
+                className="text-slate-400 transition-colors hover:text-amber-300"
+              >
+                Mercado do Café
+              </Link>
+              <span aria-hidden className="text-slate-700">
+                ›
+              </span>
+              <span className="text-amber-200">Auditoria</span>
+            </nav>
             <h1 className="mt-1 text-base font-semibold text-slate-50 sm:text-lg">
-              Auditoria administrativa
+              Auditoria — Mercado do Café
             </h1>
             <p className="text-[11px] text-slate-400">
-              Histórico de ações sensíveis do admin sobre corretoras, reviews
-              e planos.
+              Histórico de ações do admin sobre corretoras, reviews e planos.
+              Para logs gerais de sistema, veja{" "}
+              <Link
+                href="/admin/logs"
+                className="font-semibold text-slate-300 hover:text-amber-300"
+              >
+                Logs
+              </Link>
+              .
             </p>
           </div>
         </div>

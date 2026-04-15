@@ -51,12 +51,27 @@ export default function AdminMercadoDoCafePage() {
             </p>
           </div>
 
-          <Link
-            href="/admin/mercado-do-cafe/corretoras/nova"
-            className="shrink-0 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors"
-          >
-            + Nova Corretora
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Link discreto para o drill-down de auditoria — deixa
+                claro que o histórico de ações pertence a este módulo
+                e não é um recurso separado de sistema. */}
+            <Link
+              href="/admin/auditoria"
+              className="hidden rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:inline-flex"
+              title="Histórico de ações sobre corretoras, reviews e planos"
+            >
+              <span aria-hidden className="mr-1.5">
+                🔍
+              </span>
+              Auditoria
+            </Link>
+            <Link
+              href="/admin/mercado-do-cafe/corretoras/nova"
+              className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+            >
+              + Nova Corretora
+            </Link>
+          </div>
         </div>
       </header>
 
