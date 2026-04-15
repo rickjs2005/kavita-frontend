@@ -16,6 +16,7 @@ import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { PanelCard } from "./PanelCard";
 import { LeadStatusBadge } from "./LeadStatusBadge";
+import { NextActionChip } from "./NextActionChip";
 import { PanelBrandMark } from "./PanelBrand";
 import type { CorretoraLead, LeadStatus } from "@/types/lead";
 import {
@@ -179,6 +180,17 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
                       {lead.nome}
                     </h3>
                     <LeadStatusBadge status={lead.status} />
+                    {/* Próxima ação sugerida — converte (status, idade,
+                        amostra) em uma dica humana acionável. Só aparece
+                        quando há sugestão real. */}
+                    {!isLoteIndisponivel && (
+                      <NextActionChip
+                        status={lead.status}
+                        createdAt={lead.created_at}
+                        updatedAt={lead.updated_at}
+                        amostraStatus={lead.amostra_status}
+                      />
+                    )}
                     {isLoteIndisponivel && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-stone-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-stone-700">
                         <span aria-hidden>🔒</span>

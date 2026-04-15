@@ -169,9 +169,10 @@ export function CorretoraReviews({ corretoraSlug, corretoraName }: Props) {
                     Ainda sem avaliações públicas
                   </p>
                   <p className="mt-1 max-w-md text-[13px] leading-relaxed text-stone-400">
-                    Seja o primeiro a contar sua experiência. Sua avaliação
-                    passa por moderação da equipe Kavita antes de ser
-                    publicada.
+                    Já negociou com esta corretora? Conte como foi — sua
+                    avaliação passa pela moderação da equipe Kavita antes
+                    de ser publicada, e ajuda outros produtores da região
+                    a decidirem com segurança.
                   </p>
                 </div>
               </div>

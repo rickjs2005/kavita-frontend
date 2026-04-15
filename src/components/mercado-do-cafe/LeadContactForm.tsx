@@ -289,7 +289,9 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         `/api/public/corretoras/${encodeURIComponent(corretoraSlug)}/leads`,
         payload,
       );
-      toast.success("Mensagem enviada! A corretora receberá seu contato.");
+      toast.success(
+        "Mensagem enviada — a corretora já foi avisada e retorna em breve.",
+      );
       setSuccess(true);
       reset();
       // Token Turnstile é single-use; reset para o caso do usuário reabrir
@@ -352,12 +354,13 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
           </svg>
         </div>
         <h3 className="relative mt-5 text-xl font-semibold tracking-tight text-stone-50 md:text-2xl">
-          Mensagem enviada
+          Contato enviado
         </h3>
         <p className="relative mt-2 max-w-md text-[15px] leading-relaxed text-stone-300">
-          A <strong className="font-semibold text-stone-100">{corretoraName}</strong>{" "}
-          vai receber seu contato por e-mail e pelo painel privado dela.
-          Aguarde o retorno ou use os canais diretos listados acima.
+          A{" "}
+          <strong className="font-semibold text-stone-100">{corretoraName}</strong>{" "}
+          já foi avisada e retorna pelo canal que você escolheu. Se tiver
+          pressa, chame direto no WhatsApp pelos canais acima.
         </p>
         <button
           type="button"
@@ -699,7 +702,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
             className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
           />
           <span className="relative flex items-center gap-2">
-            {submitting ? "Enviando..." : "Enviar mensagem"}
+            {submitting ? "Enviando..." : "Falar com a corretora"}
             {!submitting && (
               <span
                 aria-hidden

@@ -24,6 +24,7 @@ import { notFound } from "next/navigation";
 import { fetchPublicCorretoraBySlug } from "@/server/data/corretoras";
 import { absUrl } from "@/utils/absUrl";
 import { CorretoraContactChannels } from "@/components/mercado-do-cafe/CorretoraContactChannels";
+import { CorretoraRegionalTrust } from "@/components/mercado-do-cafe/CorretoraRegionalTrust";
 import { LeadContactForm } from "@/components/mercado-do-cafe/LeadContactForm";
 import { WhatsAppDirectButton } from "@/components/mercado-do-cafe/WhatsAppDirectButton";
 import { CorretoraReviews } from "@/components/mercado-do-cafe/CorretoraReviews";
@@ -180,14 +181,14 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 />
               </div>
 
-              {/* Kicker com brand mark inline */}
+              {/* Kicker com brand mark inline — vocabulário regional */}
               <div className="flex items-center gap-3">
                 <div className="h-5 w-5 shrink-0 text-amber-200 sm:h-6 sm:w-6">
                   <PanelBrandMark className="h-full w-full" />
                 </div>
                 <span aria-hidden className="h-4 w-px bg-white/15" />
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200/90 sm:tracking-[0.24em]">
-                  Corretora verificada
+                  Corretora verificada · Matas de Minas
                 </p>
               </div>
 
@@ -313,7 +314,11 @@ export default async function CorretoraDetailPage({ params }: Props) {
                       Atuação
                     </dt>
                     <dd className="mt-1 text-sm font-semibold text-stone-100">
-                      Compra e venda de café
+                      {corretora.perfil_compra === "compra"
+                        ? "Compra de café na região"
+                        : corretora.perfil_compra === "venda"
+                          ? "Venda de café da região"
+                          : "Compra e venda de café"}
                     </dd>
                   </div>
                 </dl>
@@ -321,6 +326,15 @@ export default async function CorretoraDetailPage({ params }: Props) {
             </aside>
           </div>
         </header>
+
+        {/* ─── TRUST REGIONAL — aparece logo após o hero ───────────
+            Prova social compacta: responsável, cidades atendidas,
+            resposta média e verificação Kavita. Reduz a sensação de
+            risco do primeiro contato (importante na realidade de
+            Manhuaçu, onde palavra vale e confiança pesa). */}
+        <section className="mt-8 md:mt-10">
+          <CorretoraRegionalTrust corretora={corretora} />
+        </section>
 
         {/* ─── 01 / SOBRE A CORRETORA ───────────────────────────── */}
         {corretora.description && (
@@ -396,8 +410,8 @@ export default async function CorretoraDetailPage({ params }: Props) {
         <section className="mt-14 sm:mt-20 md:mt-28">
           <SectionLabel
             number="03"
-            title="Envie uma mensagem"
-            subtitle="Alternativa ao contato direto. O lead cai no painel privado da corretora em segundos."
+            title="Fale sobre seu café"
+            subtitle="Conte o que você tem na tulha. A corretora recebe na hora e retorna pelo canal que você preferir."
           />
 
           <div className="relative mt-8 overflow-hidden rounded-[1.75rem] bg-stone-900/60 ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 backdrop-blur-sm sm:rounded-3xl md:mt-10">
@@ -441,24 +455,25 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 </p>
 
                 <h3 className="mt-5 text-[1.75rem] font-semibold leading-[1.08] tracking-tight text-stone-50 md:text-[2rem] lg:text-[2.25rem] xl:text-[2.5rem]">
-                  Deixe seu contato aqui
+                  Quero falar com a corretora
                 </h3>
 
                 <p className="mt-5 max-w-md text-[15px] leading-relaxed text-stone-300 lg:text-[15.5px] lg:leading-[1.7]">
-                  Sua mensagem vai direto para o painel privado da{" "}
+                  Informe o café que você tem — córrego, safra, volume — e a{" "}
                   <span className="font-semibold text-stone-100">
                     {corretora.name}
-                  </span>
-                  . A resposta chega pelos canais oficiais dela — você mantém
-                  controle total da negociação.
+                  </span>{" "}
+                  retorna pelo seu canal preferido (WhatsApp, ligação ou e-mail).
+                  Sem intermediário, sem taxa: o contato é direto com quem compra.
                 </p>
 
-                {/* Trust signals */}
+                {/* Trust signals — linguagem regional */}
                 <ul className="mt-8 space-y-3.5 text-[13px] leading-relaxed text-stone-300 lg:mt-10 lg:space-y-4 lg:text-[13.5px]">
                   {[
-                    "Seus dados chegam apenas à corretora selecionada",
-                    "Resposta pelos canais oficiais dela",
-                    "Protegido por verificação anti-bot",
+                    "Sua mensagem vai só para a corretora escolhida",
+                    "Retorno pelo canal que você preferir",
+                    "Cadastro rápido: menos de 1 minuto pelo celular",
+                    "Verificação anti-bot da Cloudflare",
                   ].map((text) => (
                     <li key={text} className="flex items-start gap-3">
                       <span

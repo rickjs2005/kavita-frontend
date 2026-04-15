@@ -187,9 +187,9 @@ export type VolumeRange = (typeof VOLUMES_LEAD)[number]["value"];
  * Objetivos de contato — o que o produtor quer com a corretora.
  */
 export const OBJETIVOS_CONTATO = [
-  { value: "vender", label: "Vender café" },
-  { value: "comprar", label: "Comprar café" },
-  { value: "cotacao", label: "Consultar cotação" },
+  { value: "vender", label: "Vender meu café" },
+  { value: "comprar", label: "Quero comprar" },
+  { value: "cotacao", label: "Saber o preço da saca" },
   { value: "outro", label: "Outro assunto" },
 ] as const;
 
