@@ -89,16 +89,16 @@ export function OrnamentalDivider({
       className="flex items-center justify-center gap-3 py-1"
     >
       <span className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-300 to-stone-300" />
-      <span className="flex items-center gap-2.5">
-        <span className="h-1 w-1 rounded-full bg-amber-500/50" />
-        <PanelBrandMark className="h-3.5 w-3.5 text-amber-700/70" />
+      <span className="flex items-center gap-2">
+        <span className="h-0.5 w-0.5 rounded-full bg-amber-500/40" />
+        <PanelBrandMark className="h-2.5 w-2.5 text-amber-700/50" />
         {label && (
           <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-stone-500">
             {label}
           </span>
         )}
-        <PanelBrandMark className="h-3.5 w-3.5 -scale-x-100 text-amber-700/70" />
-        <span className="h-1 w-1 rounded-full bg-amber-500/50" />
+        <PanelBrandMark className="h-2.5 w-2.5 -scale-x-100 text-amber-700/50" />
+        <span className="h-0.5 w-0.5 rounded-full bg-amber-500/40" />
       </span>
       <span className="h-px flex-1 bg-gradient-to-l from-transparent via-stone-300 to-stone-300" />
     </div>

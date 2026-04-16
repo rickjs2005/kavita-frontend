@@ -183,6 +183,18 @@
   will-change: transform, opacity;
 }
 
+/* Border-beam — luz amber que desliza verticalmente na borda
+   esquerda de leads que precisam de ação urgente. Atrai o olho
+   do corretor para onde ele está perdendo dinheiro. */
+@keyframes borderBeam {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(calc(100% + 100vh));
+  }
+}
+
 /* Scroll-padding para compensar header fixo em anchor links */
 html {
   scroll-padding-top: 80px;

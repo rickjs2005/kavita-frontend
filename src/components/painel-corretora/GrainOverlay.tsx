@@ -45,7 +45,7 @@ export function GrainOverlay({ tone = "light" }: Props) {
       : {
           backgroundImage: GRAIN_URL,
           backgroundSize: "240px 240px",
-          opacity: 0.12,
+          opacity: 0.04,
           mixBlendMode: "screen" as const,
         };
 

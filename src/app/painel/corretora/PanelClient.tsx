@@ -190,8 +190,7 @@ export default function PanelClient() {
           className="pointer-events-none absolute -bottom-32 left-1/4 h-80 w-80 rounded-full bg-orange-700/[0.1] blur-3xl"
         />
 
-        {/* Bean scatter texture */}
-        <BeanScatter tone="dark" density="heavy" />
+        {/* Glow sutil em vez de partículas — profundidade limpa */}
 
         <div className="relative grid gap-7 md:grid-cols-[1fr_auto] md:items-center md:gap-10">
           {/* LEFT — editorial masthead + saudação */}
@@ -356,7 +355,7 @@ export default function PanelClient() {
                 aria-hidden
                 className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-amber-500/[0.1] blur-3xl"
               />
-              <BeanScatter tone="dark" density="medium" />
+              {/* Glow sutil — sem partículas */}
 
               <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-center md:gap-10">
                 <ol className="space-y-3">

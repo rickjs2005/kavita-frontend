@@ -114,7 +114,7 @@ export function StatsCards({ summary, loading }: Props) {
           {/* Mega number with serif */}
           <p
             className={`mt-6 font-serif text-7xl font-semibold leading-[0.85] tracking-tight tabular-nums md:text-[7rem] ${
-              totalIsZero ? "text-stone-600" : "text-stone-50"
+              totalIsZero ? "text-stone-500" : "text-stone-50"
             }`}
           >
             {loading ? (
@@ -197,7 +197,7 @@ export function StatsCards({ summary, loading }: Props) {
                 </div>
                 <p
                   className={`mt-3 font-serif text-3xl font-semibold tracking-tight tabular-nums md:text-[2.25rem] ${
-                    isZero ? "text-stone-600" : "text-stone-50"
+                    isZero ? "text-stone-400" : "text-stone-50"
                   }`}
                 >
                   {loading ? (

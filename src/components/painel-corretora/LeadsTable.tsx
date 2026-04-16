@@ -175,17 +175,42 @@ export function LeadsTable({
           const waUrl = buildWhatsAppUrl(lead);
           const isLoteIndisponivel = lead.lote_disponivel === false;
 
+          // Lead precisa de ação urgente? Se sim, a row ganha borda
+          // animada (border-beam) para chamar atenção do corretor.
+          const ageH = (() => {
+            const t = new Date(lead.created_at).getTime();
+            return Number.isNaN(t) ? 0 : (Date.now() - t) / 3600000;
+          })();
+          const needsUrgentAction =
+            !isLoteIndisponivel &&
+            ((lead.status === "new" && ageH >= 2) ||
+              lead.amostra_status === "prometida" ||
+              lead.amostra_status === "recebida");
+
           return (
             <li
               key={lead.id}
-              className={`px-5 py-4 transition-colors md:px-6 md:py-5 ${
+              className={`relative px-5 py-4 transition-colors md:px-6 md:py-5 ${
                 isLoteIndisponivel
                   ? "bg-stone-950/60 opacity-60"
-                  : isHighPriority
-                    ? "bg-amber-500/[0.04]"
-                    : "hover:bg-white/[0.02]"
+                  : needsUrgentAction
+                    ? "bg-amber-500/[0.03]"
+                    : isHighPriority
+                      ? "bg-amber-500/[0.04]"
+                      : "hover:bg-white/[0.02]"
               }`}
             >
+              {/* Border-beam animado — só em leads que precisam de ação
+                  urgente. Uma luz amber desliza na borda esquerda para
+                  chamar o olho do corretor sem gritar. */}
+              {needsUrgentAction && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute left-0 top-0 h-full w-[2px] overflow-hidden"
+                >
+                  <span className="absolute inset-x-0 h-8 animate-[borderBeam_2.5s_ease-in-out_infinite] bg-gradient-to-b from-transparent via-amber-400 to-transparent" />
+                </span>
+              )}
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
                 {/* LEFT — info principal */}
                 <div className="min-w-0 flex-1">
