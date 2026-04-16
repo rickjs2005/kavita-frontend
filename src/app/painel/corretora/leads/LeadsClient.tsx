@@ -71,7 +71,7 @@ export default function LeadsClient() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300">
           Pipeline
         </p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
@@ -91,7 +91,7 @@ export default function LeadsClient() {
       </div>
 
       {/* Filter chips — bloco inset com fundo diferenciado */}
-      <div className="rounded-2xl bg-stone-100 p-1.5 ring-1 ring-stone-900/[0.04]">
+      <div className="rounded-2xl bg-stone-900/60 p-1.5 ring-1 ring-white/[0.06]">
         <div className="flex flex-wrap items-center gap-1">
           {FILTERS.map((f) => {
             const active = filter === f.value;
@@ -102,8 +102,8 @@ export default function LeadsClient() {
                 onClick={() => setFilter(f.value)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                   active
-                    ? "bg-white text-stone-900 shadow-sm shadow-stone-900/[0.06] ring-1 ring-stone-900/[0.05]"
-                    : "text-stone-500 hover:text-stone-900"
+                    ? "bg-amber-400/15 text-amber-200 shadow-sm ring-1 ring-amber-400/30"
+                    : "text-stone-400 hover:text-stone-100"
                 }`}
               >
                 {f.label}
@@ -116,7 +116,7 @@ export default function LeadsClient() {
       {error && (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-800"
+          className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-xs font-medium text-rose-200"
         >
           {error}
         </div>
@@ -136,7 +136,7 @@ export default function LeadsClient() {
             type="button"
             disabled={page === 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-600 shadow-sm shadow-stone-900/[0.03] transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-300 shadow-sm transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             ← Anterior
           </button>
@@ -147,7 +147,7 @@ export default function LeadsClient() {
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-600 shadow-sm shadow-stone-900/[0.03] transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-300 shadow-sm transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Próxima →
           </button>
@@ -176,17 +176,37 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
       const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
       const url = `${apiBase}/api/corretora/leads/export${qs}`;
 
+      // Fetch manual com credenciais (cookie HttpOnly). Não usa
+      // apiClient porque precisa do blob cru, não do JSON envelope.
       const res = await fetch(url, {
         credentials: "include",
         headers: { Accept: "text/csv" },
       });
 
       if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          // Dispara evento para o layout redirecionar ao login.
+        // 401 = sessão expirada → redirect para login (correto).
+        if (res.status === 401) {
           window.dispatchEvent(new CustomEvent("auth:expired"));
           return;
         }
+
+        // 403 = plano insuficiente OU role sem permissão. NÃO é
+        // sessão expirada — redirecionar para login seria bug.
+        // Tenta extrair a mensagem do backend para exibir toast
+        // contextual (ex: "Esta funcionalidade requer um plano
+        // superior.").
+        if (res.status === 403) {
+          let msg = "Exportação não permitida no seu plano atual.";
+          try {
+            const body = await res.json();
+            if (body?.message) msg = body.message;
+          } catch {
+            // body não era JSON — usa fallback
+          }
+          toast.error(msg);
+          return;
+        }
+
         throw new Error(`HTTP ${res.status}`);
       }
 
@@ -220,7 +240,7 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
       type="button"
       onClick={handleExport}
       disabled={downloading}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-stone-700 shadow-sm shadow-stone-900/[0.03] transition-colors hover:border-amber-400/40 hover:text-amber-800 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-stone-300 shadow-sm transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
       title={
         statusFilter === "all"
           ? "Exportar todos os leads"
