@@ -189,20 +189,28 @@ export function LeadsTable({
           return (
             <li
               key={lead.id}
-              className={`group relative overflow-hidden rounded-xl border bg-stone-900 transition-colors ${
+              className={`group relative overflow-hidden rounded-2xl border transition-all ${
                 isLoteIndisponivel
-                  ? "border-white/[0.04] opacity-60"
+                  ? "border-white/[0.04] bg-stone-950/60 opacity-60"
                   : needsUrgentAction
-                    ? "border-amber-400/25"
+                    ? "border-amber-400/25 bg-stone-900"
                     : lead.bebida_classificacao === "especial"
-                      ? "border-emerald-500/25"
+                      ? "border-emerald-500/20 bg-stone-900"
                       : lead.bebida_classificacao === "dura"
-                        ? "border-amber-400/20"
+                        ? "border-amber-400/15 bg-stone-900"
                         : lead.bebida_classificacao === "rio" || lead.bebida_classificacao === "riado"
-                          ? "border-orange-600/20"
-                          : "border-white/[0.06] hover:border-white/[0.1]"
+                          ? "border-orange-600/15 bg-stone-900"
+                          : "border-white/[0.06] bg-stone-900 hover:border-white/[0.1]"
               }`}
             >
+              {/* Hairline amber sutil no topo para cards laudados */}
+              {lead.bebida_classificacao && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/30 to-transparent"
+                />
+              )}
+
               {/* Border-beam animado — leads urgentes */}
               {needsUrgentAction && (
                 <span
@@ -213,134 +221,144 @@ export function LeadsTable({
                 </span>
               )}
 
-              {/* ═══ Layout principal — grid 3 colunas no desktop ═══ */}
-              <div className="grid gap-3 p-4 md:grid-cols-[1fr_auto_auto] md:items-start md:gap-5 md:p-5">
+              {/* ═══ SEÇÃO PRINCIPAL ═══ */}
+              <div className="p-4 sm:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
 
-                {/* COL 1: Identidade (nome, córrego, telefone, data) */}
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <h3
-                      className={`text-sm font-semibold ${isLoteIndisponivel ? "text-stone-500 line-through" : "text-stone-50"}`}
-                    >
-                      {lead.nome}
-                    </h3>
-                    <LeadStatusBadge status={lead.status} />
-                    {!isLoteIndisponivel && (
-                      <NextActionChip
-                        status={lead.status}
-                        createdAt={lead.created_at}
-                        updatedAt={lead.updated_at}
-                        amostraStatus={lead.amostra_status}
-                      />
-                    )}
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-stone-400">
-                    {lead.corrego_localidade && (
-                      <span className="font-semibold text-amber-200/90">
-                        ⛰ {lead.corrego_localidade}
+                  {/* ── Bloco esquerdo: identidade + origem ── */}
+                  <div className="min-w-0 flex-1">
+                    {/* Nome + badges */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3
+                        className={`text-[15px] font-bold tracking-tight ${isLoteIndisponivel ? "text-stone-500 line-through" : "text-stone-50"}`}
+                      >
+                        {lead.nome}
+                      </h3>
+                      <LeadStatusBadge status={lead.status} />
+                      {!isLoteIndisponivel && (
+                        <NextActionChip
+                          status={lead.status}
+                          createdAt={lead.created_at}
+                          updatedAt={lead.updated_at}
+                          amostraStatus={lead.amostra_status}
+                        />
+                      )}
+                      {isLoteIndisponivel && (
+                        <span className="rounded-full bg-stone-800 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400 ring-1 ring-white/[0.06]">
+                          Lote vendido
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Origem — córrego em destaque */}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px]">
+                      {lead.corrego_localidade && (
+                        <span className="font-semibold text-amber-200">
+                          ⛰ {lead.corrego_localidade}
+                        </span>
+                      )}
+                      {lead.cidade && (
+                        <span className="text-stone-300">{lead.cidade}</span>
+                      )}
+                      <span className="font-mono tabular-nums text-stone-500">
+                        {formatDate(lead.created_at)}
                       </span>
-                    )}
-                    {lead.cidade && (
-                      <span className="text-stone-300">{lead.cidade}</span>
-                    )}
-                    <span className="font-mono tabular-nums text-stone-500">
-                      {formatDate(lead.created_at)}
-                    </span>
-                  </div>
-                  {/* Contato rápido inline */}
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <a
-                      href={`tel:+55${lead.telefone.replace(/\D/g, "")}`}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-300 transition-colors hover:text-amber-200"
-                      title="Ligar"
-                    >
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3" aria-hidden>
-                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                      </svg>
-                      <span className="font-mono tabular-nums">{lead.telefone}</span>
-                    </a>
-                    {lead.canal_preferido && (
-                      <>
-                        <span className="text-stone-700">·</span>
+                    </div>
+
+                    {/* Contato */}
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <a
+                        href={`tel:+55${lead.telefone.replace(/\D/g, "")}`}
+                        className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.03] px-2 py-1 text-[11px] font-medium text-stone-300 ring-1 ring-white/[0.06] transition-colors hover:text-amber-200 hover:ring-amber-400/30"
+                        title="Ligar"
+                      >
+                        <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3" aria-hidden>
+                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                        </svg>
+                        <span className="font-mono tabular-nums">{lead.telefone}</span>
+                      </a>
+                      {lead.canal_preferido && (
                         <span className="text-[10px] text-stone-500">
                           Prefere {LABEL_CANAL[lead.canal_preferido]}
                         </span>
-                      </>
+                      )}
+                    </div>
+
+                    {/* Tags comerciais */}
+                    {(lead.volume_range || lead.tipo_cafe || lead.safra_tipo || lead.objetivo) && (
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        {lead.objetivo && (
+                          <span className="rounded-md bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200 ring-1 ring-amber-400/20">
+                            {LABEL_OBJETIVO[lead.objetivo]}
+                          </span>
+                        )}
+                        {lead.volume_range && (
+                          <span className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-semibold tabular-nums ring-1 ${
+                            isHighPriority
+                              ? "bg-amber-400/10 text-amber-200 ring-amber-400/30"
+                              : "bg-stone-800/80 text-stone-200 ring-white/[0.06]"
+                          }`}>
+                            {LABEL_VOLUME[lead.volume_range]}
+                          </span>
+                        )}
+                        {lead.tipo_cafe && (
+                          <span className="rounded-md bg-stone-800/80 px-2 py-0.5 text-[10px] font-medium text-stone-300 ring-1 ring-white/[0.06]">
+                            {LABEL_TIPO_CAFE[lead.tipo_cafe]}
+                          </span>
+                        )}
+                        {lead.safra_tipo && (
+                          <span className="rounded-md bg-stone-800/80 px-2 py-0.5 text-[10px] font-medium text-stone-400 ring-1 ring-white/[0.06]">
+                            {lead.safra_tipo === "atual" ? "Safra atual" : "Estoque"}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* COL 2: Especificações do café (volume, safra, tipo) */}
-                <div className="flex flex-wrap items-start gap-1.5 md:flex-col md:items-end md:gap-1">
-                  {lead.volume_range && (
-                    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ring-1 ${
-                      isHighPriority
-                        ? "bg-amber-400/10 text-amber-200 ring-amber-400/30"
-                        : "bg-stone-800 text-stone-200 ring-white/[0.06]"
-                    }`}>
-                      {LABEL_VOLUME[lead.volume_range]}
-                    </span>
-                  )}
-                  {lead.tipo_cafe && (
-                    <span className="rounded-md bg-stone-800 px-2 py-0.5 text-[10px] font-semibold text-stone-300 ring-1 ring-white/[0.06]">
-                      {LABEL_TIPO_CAFE[lead.tipo_cafe]}
-                    </span>
-                  )}
-                  {lead.safra_tipo && (
-                    <span className="rounded-md bg-stone-800 px-2 py-0.5 text-[10px] font-medium text-stone-400 ring-1 ring-white/[0.06]">
-                      {lead.safra_tipo === "atual" ? "Safra atual" : "Estoque"}
-                    </span>
-                  )}
-                  {lead.objetivo && (
-                    <span className="rounded-md bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200 ring-1 ring-amber-400/20">
-                      {LABEL_OBJETIVO[lead.objetivo]}
-                    </span>
-                  )}
-                </div>
-
-                {/* COL 3: Ações rápidas */}
-                <div className="flex items-center gap-1.5 md:flex-col md:items-end md:gap-1.5">
-                  <a
-                    href={waUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-500"
-                    title="WhatsApp"
-                  >
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5" aria-hidden>
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.84 12.84 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
-                    </svg>
-                    <span className="hidden sm:inline">Zap</span>
-                  </a>
-                  <a
-                    href={`tel:+55${lead.telefone.replace(/\D/g, "")}`}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200"
-                    title="Ligar"
-                  >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden>
-                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                    </svg>
-                    <span className="hidden sm:inline">Ligar</span>
-                  </a>
-                  <select
-                    value={lead.status}
-                    disabled={saving}
-                    onChange={(e) => updateLead(lead.id, { status: e.target.value as LeadStatus })}
-                    className="h-8 rounded-lg border border-white/10 bg-stone-800 px-2 text-[11px] font-medium text-stone-100 focus:border-amber-400/60 focus:outline-none focus:ring-1 focus:ring-amber-400/25 disabled:opacity-60 [color-scheme:dark]"
-                  >
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value} style={{ backgroundColor: "#1c1917", color: "#f5f5f4" }}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                  {/* ── Bloco direito: ações ── */}
+                  <div className="flex shrink-0 flex-wrap items-center gap-2 lg:flex-col lg:items-end lg:gap-2">
+                    <a
+                      href={waUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-9 items-center gap-2 rounded-xl bg-emerald-600 px-3.5 text-[12px] font-semibold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-500"
+                      title="WhatsApp"
+                    >
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden>
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.84 12.84 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
+                      </svg>
+                      WhatsApp
+                    </a>
+                    <a
+                      href={`tel:+55${lead.telefone.replace(/\D/g, "")}`}
+                      className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 text-[12px] font-semibold text-stone-200 transition-colors hover:border-amber-400/30 hover:text-amber-200"
+                      title="Ligar"
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden>
+                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                      </svg>
+                      Ligar
+                    </a>
+                    <select
+                      value={lead.status}
+                      disabled={saving}
+                      onChange={(e) => updateLead(lead.id, { status: e.target.value as LeadStatus })}
+                      className="h-9 rounded-xl border border-white/10 bg-stone-800 px-3 text-[12px] font-medium text-stone-100 focus:border-amber-400/60 focus:outline-none focus:ring-1 focus:ring-amber-400/25 disabled:opacity-60 [color-scheme:dark]"
+                    >
+                      {STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value} style={{ backgroundColor: "#1c1917", color: "#f5f5f4" }}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              {/* ═══ Resultado + Amostra (abaixo do grid principal) ═══ */}
+              {/* ═══ SEÇÃO AMOSTRA + LAUDO ═══ */}
               {(lead.bebida_classificacao || !isLoteIndisponivel) && (
-                <div className="space-y-2 border-t border-white/[0.04] px-4 pb-3 pt-2.5 md:px-5">
-                  {/* AmostraFlow como barra de progresso */}
+                <div className="border-t border-white/[0.05] bg-stone-950/30 px-4 py-3 sm:px-5">
+                  {/* Amostra */}
                   {!isLoteIndisponivel && (
                     <AmostraFlow
                       lead={lead}
@@ -349,66 +367,81 @@ export function LeadsTable({
                     />
                   )}
 
-                  {/* Resultado da análise — bloco com fundo diferenciado */}
+                  {/* Resultado do laudo */}
                   {lead.bebida_classificacao && (
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg bg-white/[0.02] px-3 py-2 ring-1 ring-white/[0.04]">
-                      <BebidaBadge classificacao={lead.bebida_classificacao} />
-                      <PotencialBadge lead={lead} />
-                      {lead.pontuacao_sca != null && (
-                        <ResultDatum label="SCA" value={`${lead.pontuacao_sca}`} mono />
-                      )}
-                      {lead.umidade_pct != null && (
-                        <ResultDatum label="Umid" value={`${lead.umidade_pct}%`} mono />
-                      )}
-                      {lead.peneira && (
-                        <ResultDatum label="Pen" value={lead.peneira} mono />
-                      )}
-                      {lead.altitude_origem != null && (
-                        <ResultDatum label="Alt" value={`${lead.altitude_origem}m`} mono />
-                      )}
-                      {lead.preco_referencia_saca != null && (
-                        <ResultDatum label="R$/sc" value={`${lead.preco_referencia_saca}`} mono highlight />
-                      )}
-                      {lead.mercado_indicado && (
-                        <ResultDatum
-                          label="Mercado"
-                          value={{ exportacao: "Export", mercado_interno: "Interno", cafeteria: "Café", commodity: "Cmdt", indefinido: "—" }[lead.mercado_indicado] ?? "—"}
-                        />
-                      )}
-                      {lead.aptidao_oferta === "sim" && (
-                        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-emerald-300 ring-1 ring-emerald-500/30">
-                          Apto
-                        </span>
+                    <div className="mt-2.5 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 sm:p-4">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <BebidaBadge classificacao={lead.bebida_classificacao} />
+                        <PotencialBadge lead={lead} />
+
+                        {/* Dados-chave em font-mono */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                          {lead.pontuacao_sca != null && (
+                            <ResultDatum label="SCA" value={`${lead.pontuacao_sca}`} mono />
+                          )}
+                          {lead.umidade_pct != null && (
+                            <ResultDatum label="Umid" value={`${lead.umidade_pct}%`} mono />
+                          )}
+                          {lead.peneira && (
+                            <ResultDatum label="Pen" value={lead.peneira} mono />
+                          )}
+                          {lead.altitude_origem != null && (
+                            <ResultDatum label="Alt" value={`${lead.altitude_origem}m`} mono />
+                          )}
+                          {lead.preco_referencia_saca != null && (
+                            <ResultDatum label="R$/sc" value={`${lead.preco_referencia_saca}`} mono highlight />
+                          )}
+                          {lead.mercado_indicado && (
+                            <ResultDatum
+                              label="Mercado"
+                              value={{ exportacao: "Export", mercado_interno: "Interno", cafeteria: "Café", commodity: "Cmdt", indefinido: "—" }[lead.mercado_indicado] ?? "—"}
+                            />
+                          )}
+                        </div>
+
+                        {lead.aptidao_oferta === "sim" && (
+                          <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-emerald-300 ring-1 ring-emerald-500/30">
+                            ✓ Apto
+                          </span>
+                        )}
+                      </div>
+                      {lead.obs_sensoriais && (
+                        <p className="mt-2 text-[11px] italic leading-relaxed text-stone-400">
+                          {lead.obs_sensoriais}
+                        </p>
                       )}
                     </div>
                   )}
 
                   {/* Mensagem do produtor */}
                   {lead.mensagem && (
-                    <p className="whitespace-pre-line rounded-lg bg-white/[0.03] px-3 py-2 text-[12px] text-stone-400 ring-1 ring-white/[0.04]">
+                    <p className="mt-2 whitespace-pre-line rounded-lg bg-white/[0.02] px-3 py-2 text-[12px] text-stone-400 ring-1 ring-white/[0.04]">
                       {lead.mensagem}
                     </p>
                   )}
 
-                  {/* Ação expandir */}
-                  <button
-                    type="button"
-                    onClick={() => setExpandedId(isExpanded ? null : lead.id)}
-                    className="text-[11px] font-semibold text-amber-300/80 transition-colors hover:text-amber-200"
-                  >
-                    {isExpanded
-                      ? "✕ Fechar"
-                      : lead.amostra_status === "recebida" ||
-                          lead.amostra_status === "laudada" ||
-                          lead.bebida_classificacao
-                        ? "☕ Editar laudo"
-                        : "📝 Nota interna"}
-                  </button>
+                  {/* Ação expandir — CTA claro */}
+                  <div className="mt-3 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(isExpanded ? null : lead.id)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/20 bg-amber-400/[0.05] px-3 py-1.5 text-[11px] font-semibold text-amber-200 transition-colors hover:bg-amber-400/10"
+                    >
+                      {isExpanded
+                        ? "✕ Fechar"
+                        : lead.amostra_status === "recebida" ||
+                            lead.amostra_status === "laudada" ||
+                            lead.bebida_classificacao
+                          ? "☕ Editar laudo"
+                          : "📝 Nota interna"}
+                    </button>
+                  </div>
                 </div>
               )}
 
+              {/* ═══ EXPANDIDO ═══ */}
               {isExpanded && (
-                <div className="mt-3 space-y-4 border-t border-white/[0.06] pt-4">
+                <div className="space-y-4 border-t border-white/[0.06] bg-stone-950/20 px-4 py-4 sm:px-5">
                   {(lead.amostra_status === "recebida" ||
                     lead.amostra_status === "laudada" ||
                     lead.bebida_classificacao) && (
