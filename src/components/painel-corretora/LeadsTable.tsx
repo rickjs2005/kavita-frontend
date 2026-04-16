@@ -164,7 +164,7 @@ export function LeadsTable({
   }
 
   return (
-    <ul role="list" className="space-y-3">
+    <ul role="list" className="space-y-2">
       {leads.map((lead) => {
           const isExpanded = expandedId === lead.id;
           const saving = savingId === lead.id;
@@ -189,24 +189,20 @@ export function LeadsTable({
           return (
             <li
               key={lead.id}
-              className={`relative overflow-hidden rounded-2xl border bg-stone-900 px-5 py-4 transition-colors md:px-6 md:py-5 ${
+              className={`group relative overflow-hidden rounded-xl border bg-stone-900 transition-colors ${
                 isLoteIndisponivel
                   ? "border-white/[0.04] opacity-60"
                   : needsUrgentAction
-                    ? "border-amber-400/20 bg-amber-500/[0.03]"
-                    : isHighPriority
-                      ? "border-amber-400/15 bg-amber-500/[0.03]"
-                      : "border-white/[0.06] hover:border-white/[0.1]"
+                    ? "border-amber-400/25"
+                    : lead.bebida_classificacao === "especial"
+                      ? "border-emerald-500/25"
+                      : lead.bebida_classificacao === "dura"
+                        ? "border-amber-400/20"
+                        : lead.bebida_classificacao === "rio" || lead.bebida_classificacao === "riado"
+                          ? "border-orange-600/20"
+                          : "border-white/[0.06] hover:border-white/[0.1]"
               }`}
             >
-              {/* Hairline amber no topo — cards com resultado de amostra */}
-              {lead.bebida_classificacao && (
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent"
-                />
-              )}
-
               {/* Border-beam animado — leads urgentes */}
               {needsUrgentAction && (
                 <span
@@ -216,13 +212,15 @@ export function LeadsTable({
                   <span className="absolute inset-x-0 h-8 animate-[borderBeam_2.5s_ease-in-out_infinite] bg-gradient-to-b from-transparent via-amber-400 to-transparent" />
                 </span>
               )}
-              {/* ═══ ZONA 1: Cabeçalho (nome + meta + status) ═══ */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                <div className="min-w-0 flex-1">
-                  {/* Linha 1: nome + status + próxima ação */}
-                  <div className="flex flex-wrap items-center gap-2">
+
+              {/* ═══ Layout principal — grid 3 colunas no desktop ═══ */}
+              <div className="grid gap-3 p-4 md:grid-cols-[1fr_auto_auto] md:items-start md:gap-5 md:p-5">
+
+                {/* COL 1: Identidade (nome, córrego, telefone, data) */}
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <h3
-                      className={`text-[15px] font-semibold ${isLoteIndisponivel ? "text-stone-500 line-through" : "text-stone-50"}`}
+                      className={`text-sm font-semibold ${isLoteIndisponivel ? "text-stone-500 line-through" : "text-stone-50"}`}
                     >
                       {lead.nome}
                     </h3>
@@ -235,80 +233,100 @@ export function LeadsTable({
                         amostraStatus={lead.amostra_status}
                       />
                     )}
-                    {isLoteIndisponivel && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-stone-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-stone-400 ring-1 ring-white/[0.06]">
-                        🔒 Lote vendido
-                      </span>
-                    )}
-                    {!isLoteIndisponivel && isHighPriority && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-200 ring-1 ring-amber-400/30">
-                        <span aria-hidden className="h-1 w-1 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
-                        Alta prioridade
-                      </span>
-                    )}
                   </div>
-
-                  {/* Linha 2: telefone · cidade/córrego · data */}
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-stone-400">
-                    <span className="inline-flex items-center gap-1 text-stone-300">
-                      ☏ <span className="tabular-nums">{lead.telefone}</span>
-                    </span>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-stone-400">
                     {lead.corrego_localidade && (
-                      <>
-                        <span className="text-stone-600">·</span>
-                        <span className="font-semibold text-amber-200/90">
-                          ⛰ {lead.corrego_localidade}
-                        </span>
-                      </>
+                      <span className="font-semibold text-amber-200/90">
+                        ⛰ {lead.corrego_localidade}
+                      </span>
                     )}
                     {lead.cidade && (
-                      <>
-                        <span className="text-stone-600">·</span>
-                        <span className="text-stone-200">{lead.cidade}</span>
-                      </>
+                      <span className="text-stone-300">{lead.cidade}</span>
                     )}
-                    <span className="text-stone-600">·</span>
-                    <span className="tabular-nums">{formatDate(lead.created_at)}</span>
+                    <span className="font-mono tabular-nums text-stone-500">
+                      {formatDate(lead.created_at)}
+                    </span>
                   </div>
-
-                  {/* Linha 3: chips compactos (só os mais relevantes) */}
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {lead.objetivo && (
-                      <QualChip kicker="Objetivo" label={LABEL_OBJETIVO[lead.objetivo]} tone="amber" />
-                    )}
-                    {lead.volume_range && (
-                      <QualChip kicker="Volume" label={LABEL_VOLUME[lead.volume_range]} tone={isHighPriority ? "amber-strong" : "neutral"} />
-                    )}
-                    {lead.tipo_cafe && (
-                      <QualChip kicker="Café" label={LABEL_TIPO_CAFE[lead.tipo_cafe]} tone="neutral" />
-                    )}
-                    {lead.safra_tipo && (
-                      <QualChip kicker="Safra" label={lead.safra_tipo === "atual" ? "Atual" : "Estoque"} tone="neutral" />
-                    )}
+                  {/* Contato rápido inline */}
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <a
+                      href={`tel:+55${lead.telefone.replace(/\D/g, "")}`}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-300 transition-colors hover:text-amber-200"
+                      title="Ligar"
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3" aria-hidden>
+                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                      </svg>
+                      <span className="font-mono tabular-nums">{lead.telefone}</span>
+                    </a>
                     {lead.canal_preferido && (
-                      <QualChip kicker="Retorno" label={LABEL_CANAL[lead.canal_preferido]} tone="neutral" />
+                      <>
+                        <span className="text-stone-700">·</span>
+                        <span className="text-[10px] text-stone-500">
+                          Prefere {LABEL_CANAL[lead.canal_preferido]}
+                        </span>
+                      </>
                     )}
                   </div>
                 </div>
 
-                {/* Ações rápidas (canto direito) */}
-                <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-end sm:gap-2">
+                {/* COL 2: Especificações do café (volume, safra, tipo) */}
+                <div className="flex flex-wrap items-start gap-1.5 md:flex-col md:items-end md:gap-1">
+                  {lead.volume_range && (
+                    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ring-1 ${
+                      isHighPriority
+                        ? "bg-amber-400/10 text-amber-200 ring-amber-400/30"
+                        : "bg-stone-800 text-stone-200 ring-white/[0.06]"
+                    }`}>
+                      {LABEL_VOLUME[lead.volume_range]}
+                    </span>
+                  )}
+                  {lead.tipo_cafe && (
+                    <span className="rounded-md bg-stone-800 px-2 py-0.5 text-[10px] font-semibold text-stone-300 ring-1 ring-white/[0.06]">
+                      {LABEL_TIPO_CAFE[lead.tipo_cafe]}
+                    </span>
+                  )}
+                  {lead.safra_tipo && (
+                    <span className="rounded-md bg-stone-800 px-2 py-0.5 text-[10px] font-medium text-stone-400 ring-1 ring-white/[0.06]">
+                      {lead.safra_tipo === "atual" ? "Safra atual" : "Estoque"}
+                    </span>
+                  )}
+                  {lead.objetivo && (
+                    <span className="rounded-md bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200 ring-1 ring-amber-400/20">
+                      {LABEL_OBJETIVO[lead.objetivo]}
+                    </span>
+                  )}
+                </div>
+
+                {/* COL 3: Ações rápidas */}
+                <div className="flex items-center gap-1.5 md:flex-col md:items-end md:gap-1.5">
                   <a
                     href={waUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-emerald-600/30 hover:from-emerald-400 hover:to-emerald-500"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-500"
+                    title="WhatsApp"
                   >
                     <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5" aria-hidden>
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.84 12.84 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
                     </svg>
-                    WhatsApp
+                    <span className="hidden sm:inline">Zap</span>
+                  </a>
+                  <a
+                    href={`tel:+55${lead.telefone.replace(/\D/g, "")}`}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200"
+                    title="Ligar"
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden>
+                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                    </svg>
+                    <span className="hidden sm:inline">Ligar</span>
                   </a>
                   <select
                     value={lead.status}
                     disabled={saving}
                     onChange={(e) => updateLead(lead.id, { status: e.target.value as LeadStatus })}
-                    className="rounded-lg border border-white/10 bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-stone-100 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/25 disabled:opacity-60 [color-scheme:dark]"
+                    className="h-8 rounded-lg border border-white/10 bg-stone-800 px-2 text-[11px] font-medium text-stone-100 focus:border-amber-400/60 focus:outline-none focus:ring-1 focus:ring-amber-400/25 disabled:opacity-60 [color-scheme:dark]"
                   >
                     {STATUS_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value} style={{ backgroundColor: "#1c1917", color: "#f5f5f4" }}>
@@ -319,92 +337,75 @@ export function LeadsTable({
                 </div>
               </div>
 
-              {/* ═══ ZONA 2: Amostra + Resultado ═══ */}
-              <div className="mt-3 space-y-3">
-                {/* Kanban de amostra */}
-                {!isLoteIndisponivel && (
-                  <AmostraFlow
-                    lead={lead}
-                    saving={saving}
-                    onUpdate={(next) => updateLead(lead.id, { amostra_status: next })}
-                  />
-                )}
+              {/* ═══ Resultado + Amostra (abaixo do grid principal) ═══ */}
+              {(lead.bebida_classificacao || !isLoteIndisponivel) && (
+                <div className="space-y-2 border-t border-white/[0.04] px-4 pb-3 pt-2.5 md:px-5">
+                  {/* AmostraFlow como barra de progresso */}
+                  {!isLoteIndisponivel && (
+                    <AmostraFlow
+                      lead={lead}
+                      saving={saving}
+                      onUpdate={(next) => updateLead(lead.id, { amostra_status: next })}
+                    />
+                  )}
 
-                {/* Bloco de resultado — aparece quando há qualquer dado
-                    de classificação. Área própria com fundo diferenciado,
-                    sem se misturar com chips genéricos. */}
-                {lead.bebida_classificacao && (
-                  <div className="rounded-xl border border-amber-400/15 bg-amber-400/[0.03] p-3 sm:p-4">
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                      {/* Badge principal — bebida */}
+                  {/* Resultado da análise — bloco com fundo diferenciado */}
+                  {lead.bebida_classificacao && (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg bg-white/[0.02] px-3 py-2 ring-1 ring-white/[0.04]">
                       <BebidaBadge classificacao={lead.bebida_classificacao} />
-
-                      {/* Potencial comercial */}
                       <PotencialBadge lead={lead} />
-
-                      {/* Dados-chave inline */}
                       {lead.pontuacao_sca != null && (
-                        <ResultDatum label="SCA" value={`${lead.pontuacao_sca} pts`} />
+                        <ResultDatum label="SCA" value={`${lead.pontuacao_sca}`} mono />
                       )}
                       {lead.umidade_pct != null && (
-                        <ResultDatum label="Umidade" value={`${lead.umidade_pct}%`} />
+                        <ResultDatum label="Umid" value={`${lead.umidade_pct}%`} mono />
                       )}
                       {lead.peneira && (
-                        <ResultDatum label="Peneira" value={lead.peneira} />
+                        <ResultDatum label="Pen" value={lead.peneira} mono />
                       )}
                       {lead.altitude_origem != null && (
-                        <ResultDatum label="Altitude" value={`${lead.altitude_origem}m`} />
+                        <ResultDatum label="Alt" value={`${lead.altitude_origem}m`} mono />
+                      )}
+                      {lead.preco_referencia_saca != null && (
+                        <ResultDatum label="R$/sc" value={`${lead.preco_referencia_saca}`} mono highlight />
                       )}
                       {lead.mercado_indicado && (
                         <ResultDatum
                           label="Mercado"
-                          value={
-                            { exportacao: "Exportação", mercado_interno: "Interno", cafeteria: "Cafeteria", commodity: "Commodity", indefinido: "—" }[lead.mercado_indicado] ?? "—"
-                          }
+                          value={{ exportacao: "Export", mercado_interno: "Interno", cafeteria: "Café", commodity: "Cmdt", indefinido: "—" }[lead.mercado_indicado] ?? "—"}
                         />
                       )}
-                      {lead.aptidao_oferta && (
-                        <ResultDatum
-                          label="Oferta"
-                          value={
-                            { sim: "Apto", nao: "Não", parcial: "Parcial" }[lead.aptidao_oferta] ?? "—"
-                          }
-                          highlight={lead.aptidao_oferta === "sim"}
-                        />
+                      {lead.aptidao_oferta === "sim" && (
+                        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-emerald-300 ring-1 ring-emerald-500/30">
+                          Apto
+                        </span>
                       )}
                     </div>
-                    {lead.obs_sensoriais && (
-                      <p className="mt-2 text-[12px] italic leading-relaxed text-stone-400">
-                        {lead.obs_sensoriais}
-                      </p>
-                    )}
-                  </div>
-                )}
+                  )}
 
-                {/* Mensagem do produtor */}
-                {lead.mensagem && (
-                  <p className="whitespace-pre-line rounded-lg bg-white/[0.04] p-3 text-sm text-stone-300 ring-1 ring-white/[0.06]">
-                    {lead.mensagem}
-                  </p>
-                )}
-              </div>
+                  {/* Mensagem do produtor */}
+                  {lead.mensagem && (
+                    <p className="whitespace-pre-line rounded-lg bg-white/[0.03] px-3 py-2 text-[12px] text-stone-400 ring-1 ring-white/[0.04]">
+                      {lead.mensagem}
+                    </p>
+                  )}
 
-              {/* ═══ ZONA 3: Ações expandíveis ═══ */}
-              <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-white/[0.04] pt-3">
-                <button
-                  type="button"
-                  onClick={() => setExpandedId(isExpanded ? null : lead.id)}
-                  className="text-[11px] font-semibold text-amber-300 underline-offset-2 hover:text-amber-200 hover:underline"
-                >
-                  {isExpanded
-                    ? "Fechar"
-                    : lead.amostra_status === "recebida" ||
-                        lead.amostra_status === "laudada" ||
-                        lead.bebida_classificacao
-                      ? "☕ Editar laudo"
-                      : "📝 Nota interna"}
-                </button>
-              </div>
+                  {/* Ação expandir */}
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(isExpanded ? null : lead.id)}
+                    className="text-[11px] font-semibold text-amber-300/80 transition-colors hover:text-amber-200"
+                  >
+                    {isExpanded
+                      ? "✕ Fechar"
+                      : lead.amostra_status === "recebida" ||
+                          lead.amostra_status === "laudada" ||
+                          lead.bebida_classificacao
+                        ? "☕ Editar laudo"
+                        : "📝 Nota interna"}
+                  </button>
+                </div>
+              )}
 
               {isExpanded && (
                 <div className="mt-3 space-y-4 border-t border-white/[0.06] pt-4">
@@ -547,18 +548,20 @@ function ResultDatum({
   label,
   value,
   highlight = false,
+  mono = false,
 }: {
   label: string;
   value: string;
   highlight?: boolean;
+  mono?: boolean;
 }) {
   return (
-    <span className="inline-flex items-baseline gap-1.5 text-[11px]">
-      <span className="font-semibold uppercase tracking-[0.1em] text-stone-500">
+    <span className="inline-flex items-baseline gap-1 text-[11px]">
+      <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-stone-500">
         {label}
       </span>
       <span
-        className={`font-semibold tabular-nums ${
+        className={`font-semibold tabular-nums ${mono ? "font-mono" : ""} ${
           highlight ? "text-amber-200" : "text-stone-100"
         }`}
       >
