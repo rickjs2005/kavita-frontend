@@ -49,6 +49,7 @@ export default function CorretorasTable({
           <tr className="border-b border-slate-800 bg-slate-900/60 text-left text-xs uppercase tracking-wider text-slate-400">
             <th className="px-4 py-3">Nome</th>
             <th className="px-4 py-3">Cidade</th>
+            <th className="px-4 py-3">Plano</th>
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Destaque</th>
             <th className="px-4 py-3 text-right">Ações</th>
@@ -70,6 +71,36 @@ export default function CorretorasTable({
                 </td>
                 <td className="px-4 py-3 text-slate-300">
                   {c.city}, {c.state}
+                </td>
+                <td className="px-4 py-3">
+                  {(c as any).plan_name ? (
+                    <div>
+                      <span className="text-xs font-semibold text-emerald-200">
+                        {(c as any).plan_name}
+                      </span>
+                      <span className={`ml-1.5 text-[10px] font-medium ${
+                        (c as any).sub_status === "trialing"
+                          ? "text-amber-300"
+                          : (c as any).sub_status === "active"
+                            ? "text-emerald-300"
+                            : (c as any).sub_status === "expired"
+                              ? "text-rose-300"
+                              : "text-slate-400"
+                      }`}>
+                        {(c as any).sub_status === "trialing"
+                          ? "Teste"
+                          : (c as any).sub_status === "active"
+                            ? "Ativa"
+                            : (c as any).sub_status === "past_due"
+                              ? "Vencida"
+                              : (c as any).sub_status === "expired"
+                                ? "Expirada"
+                                : (c as any).sub_status ?? ""}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-500">Sem plano</span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <span
