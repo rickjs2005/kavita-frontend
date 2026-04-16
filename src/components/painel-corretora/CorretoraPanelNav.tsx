@@ -33,6 +33,7 @@ const navItems: NavItem[] = [
     label: "Equipe",
     requiresCapability: "team.view",
   },
+  { href: "/painel/corretora/planos", label: "Meu plano" },
 ];
 
 function filterNav(role: CorretoraRole | null | undefined) {

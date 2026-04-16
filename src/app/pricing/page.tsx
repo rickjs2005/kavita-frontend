@@ -226,10 +226,19 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* ─── Confiança ─────────────────────────────────────── */}
-        <div className="mt-10 text-center">
+        {/* ─── Confiança + link para conta existente ──────────── */}
+        <div className="mt-10 space-y-3 text-center">
           <p className="text-[13px] text-stone-400">
             Sem pegadinha. Sem cartão para começar. Cancele quando quiser.
+          </p>
+          <p className="text-[13px] text-stone-500">
+            Já tem conta?{" "}
+            <Link
+              href="/painel/corretora/planos"
+              className="font-semibold text-amber-300 underline-offset-2 hover:text-amber-200 hover:underline"
+            >
+              Entre no painel para mudar de plano →
+            </Link>
           </p>
         </div>
 

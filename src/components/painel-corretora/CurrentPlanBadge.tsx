@@ -64,7 +64,7 @@ export function CurrentPlanBadge() {
     <div className="space-y-2">
       {/* Badge principal */}
       <Link
-        href="/pricing"
+        href="/painel/corretora/planos"
         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
           isExpired
             ? "bg-rose-500/15 text-rose-200 ring-1 ring-rose-500/30"
@@ -100,7 +100,7 @@ export function CurrentPlanBadge() {
             </strong>
             .{" "}
             <Link
-              href="/pricing"
+              href="/painel/corretora/planos"
               className="font-semibold underline underline-offset-2 hover:text-amber-100"
             >
               Ver planos
@@ -116,7 +116,7 @@ export function CurrentPlanBadge() {
             ⚠ Seu período de teste expirou. Assine um plano para continuar
             usando a plataforma.{" "}
             <Link
-              href="/pricing"
+              href="/painel/corretora/planos"
               className="font-semibold underline underline-offset-2 hover:text-rose-100"
             >
               Ver planos
