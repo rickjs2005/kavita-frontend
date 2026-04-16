@@ -17,6 +17,13 @@ export type AmostraStatus =
   | "recebida"
   | "laudada";
 
+export type BebidaClassificacao =
+  | "especial"
+  | "dura"
+  | "riado"
+  | "rio"
+  | "escolha";
+
 export type CorretoraLead = {
   id: number;
   corretora_id: number;
@@ -34,6 +41,9 @@ export type CorretoraLead = {
   safra_tipo?: SafraTipo | null;
   amostra_status?: AmostraStatus;
   lote_disponivel?: boolean;
+  bebida_classificacao?: BebidaClassificacao | null;
+  pontuacao_sca?: number | null;
+  preco_referencia_saca?: number | null;
   status: LeadStatus;
   nota_interna?: string | null;
   created_at: string;

@@ -18,14 +18,19 @@ import { PanelCard } from "./PanelCard";
 import { LeadStatusBadge } from "./LeadStatusBadge";
 import { NextActionChip } from "./NextActionChip";
 import { PanelBrandMark } from "./PanelBrand";
-import type { CorretoraLead, LeadStatus } from "@/types/lead";
+import type {
+  CorretoraLead,
+  LeadStatus,
+  AmostraStatus,
+  BebidaClassificacao,
+} from "@/types/lead";
 import {
   OBJETIVOS_CONTATO,
   TIPOS_CAFE,
   VOLUMES_LEAD,
   CANAIS_CONTATO,
 } from "@/lib/regioes";
-import type { AmostraStatus } from "@/types/lead";
+import { BebidaBadge, LaudoPanel } from "./LaudoPanel";
 
 // Sprint 7 — fluxo de amostra física (kanban simplificado)
 const AMOSTRA_LABELS: Record<AmostraStatus, string> = {
@@ -73,6 +78,8 @@ type Props = {
   leads: CorretoraLead[];
   onChanged?: () => void;
   emptyMessage?: string;
+  corretoraNome?: string;
+  corretoraNomeEmpresa?: string;
 };
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
@@ -95,7 +102,13 @@ function formatDate(iso: string) {
   }
 }
 
-export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
+export function LeadsTable({
+  leads,
+  onChanged,
+  emptyMessage,
+  corretoraNome = "",
+  corretoraNomeEmpresa = "",
+}: Props) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [savingId, setSavingId] = useState<number | null>(null);
 
@@ -105,6 +118,9 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
       status?: LeadStatus;
       nota_interna?: string;
       amostra_status?: AmostraStatus;
+      bebida_classificacao?: BebidaClassificacao | null;
+      pontuacao_sca?: number | null;
+      preco_referencia_saca?: number | null;
     },
   ) {
     setSavingId(id);
@@ -203,6 +219,12 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
                         Alta prioridade
                       </span>
                     )}
+                    {lead.bebida_classificacao && (
+                      <BebidaBadge
+                        classificacao={lead.bebida_classificacao}
+                        compact
+                      />
+                    )}
                   </div>
 
                   {/* Meta — telefone / cidade / data numa linha única */}
@@ -241,7 +263,7 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
                       )}
                       {lead.corrego_localidade && (
                         <QualChip
-                          kicker="Córrego"
+                          kicker="⛰ Córrego"
                           label={lead.corrego_localidade}
                           tone="amber-strong"
                         />
@@ -344,7 +366,22 @@ export function LeadsTable({ leads, onChanged, emptyMessage }: Props) {
               </div>
 
               {isExpanded && (
-                <div className="mt-4 border-t border-stone-900/[0.06] pt-4">
+                <div className="mt-4 space-y-4 border-t border-stone-900/[0.06] pt-4">
+                  {/* Laudo de classificação — aparece quando amostra
+                      está recebida ou laudada (o corretor já tem o
+                      café na mesa pra bater). */}
+                  {(lead.amostra_status === "recebida" ||
+                    lead.amostra_status === "laudada" ||
+                    lead.bebida_classificacao) && (
+                    <LaudoPanel
+                      lead={lead}
+                      saving={saving}
+                      corretoraNome={corretoraNome}
+                      corretoraNomeEmpresa={corretoraNomeEmpresa}
+                      onUpdate={(patch) => updateLead(lead.id, patch)}
+                    />
+                  )}
+
                   <NoteEditor
                     initial={lead.nota_interna ?? ""}
                     saving={saving}
