@@ -75,7 +75,7 @@ export default function LeadsClient() {
           Pipeline
         </p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-900 md:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-stone-100 md:text-3xl">
             Leads recebidos
           </h1>
           <div className="flex items-center gap-3">
