@@ -1,9 +1,8 @@
 // src/components/painel-corretora/LeadStatusBadge.tsx
 //
-// Badge monocromático disciplinado: cada status tem um "dot" colorido
-// + texto em stone-700, sobre fundo stone-50 cercado por hairline.
-// A cor do dot é o único acento — o resto é escala neutra. Isso dá
-// coerência visual e evita a impressão de "alarme" em status negativos.
+// Badge de status do lead — dark mode operacional.
+// Cada status tem dot colorido + texto stone-200 sobre fundo stone-800.
+// O dot é o único acento — leitura rápida em ambiente escuro.
 
 import type { LeadStatus } from "@/types/lead";
 
@@ -13,7 +12,7 @@ const STYLES: Record<
 > = {
   new: {
     label: "Novo",
-    dot: "bg-amber-500",
+    dot: "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.6)]",
   },
   contacted: {
     label: "Em contato",
@@ -21,18 +20,18 @@ const STYLES: Record<
   },
   closed: {
     label: "Fechado",
-    dot: "bg-stone-700",
+    dot: "bg-emerald-400",
   },
   lost: {
     label: "Perdido",
-    dot: "bg-stone-400",
+    dot: "bg-stone-500",
   },
 };
 
 export function LeadStatusBadge({ status }: { status: LeadStatus }) {
   const s = STYLES[status];
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-50 px-2 py-0.5 text-[11px] font-semibold text-stone-700 ring-1 ring-stone-900/[0.06]">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-800 px-2.5 py-0.5 text-[11px] font-semibold text-stone-200 ring-1 ring-white/[0.06]">
       <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
       {s.label}
     </span>

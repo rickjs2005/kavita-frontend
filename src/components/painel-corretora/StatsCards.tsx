@@ -167,10 +167,10 @@ export function StatsCards({ summary, loading }: Props) {
           return (
             <div
               key={card.key}
-              className={`kavita-rise-in group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50/30 via-white to-white p-4 shadow-sm shadow-stone-900/[0.04] ring-1 transition-all hover:-translate-y-0.5 hover:shadow-md md:p-5 ${
+              className={`kavita-rise-in group relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-900 via-stone-900 to-stone-950 p-4 shadow-sm shadow-black/20 ring-1 transition-all hover:-translate-y-0.5 hover:shadow-md md:p-5 ${
                 isAttention
                   ? "ring-2 ring-amber-500/60"
-                  : "ring-stone-900/[0.06]"
+                  : "ring-white/[0.06]"
               }`}
               style={{ animationDelay: `${(index + 1) * STAGGER_STEP_MS}ms` }}
             >
@@ -182,7 +182,7 @@ export function StatsCards({ summary, loading }: Props) {
               {/* Warm glow on hover */}
               <span
                 aria-hidden
-                className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-amber-200/0 blur-2xl transition-all group-hover:bg-amber-300/30"
+                className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-amber-500/0 blur-2xl transition-all group-hover:bg-amber-500/15"
               />
 
               <div className="relative">
@@ -191,22 +191,22 @@ export function StatsCards({ summary, loading }: Props) {
                     aria-hidden
                     className={`h-1.5 w-1.5 rounded-full ${card.dotClass}`}
                   />
-                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
                     {card.label}
                   </p>
                 </div>
                 <p
                   className={`mt-3 font-serif text-3xl font-semibold tracking-tight tabular-nums md:text-[2.25rem] ${
-                    isZero ? "text-stone-300" : "text-stone-900"
+                    isZero ? "text-stone-600" : "text-stone-50"
                   }`}
                 >
                   {loading ? (
-                    <span className="inline-block h-8 w-10 animate-pulse rounded bg-stone-100" />
+                    <span className="inline-block h-8 w-10 animate-pulse rounded bg-stone-700/60" />
                   ) : (
                     value
                   )}
                 </p>
-                <p className="mt-1 text-[11px] text-stone-500">{card.hint}</p>
+                <p className="mt-1 text-[11px] text-stone-400">{card.hint}</p>
               </div>
             </div>
           );

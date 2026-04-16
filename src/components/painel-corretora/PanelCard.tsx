@@ -44,11 +44,11 @@ export function PanelCard({
   ...rest
 }: Props) {
   const ring = elevated
-    ? "ring-1 ring-stone-900/[0.08]"
-    : "ring-1 ring-stone-900/[0.06]";
+    ? "ring-1 ring-white/[0.08]"
+    : "ring-1 ring-white/[0.06]";
   const shadow = elevated
-    ? "shadow-lg shadow-stone-900/[0.05]"
-    : "shadow-sm shadow-stone-900/[0.04]";
+    ? "shadow-lg shadow-black/30"
+    : "shadow-sm shadow-black/20";
   const accentRing =
     accent === "amber"
       ? "ring-2 ring-amber-500/60"
@@ -57,13 +57,13 @@ export function PanelCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl bg-white ${ring} ${shadow} ${accentRing} ${padding} ${className}`}
+      className={`relative overflow-hidden rounded-2xl bg-stone-900 ${ring} ${shadow} ${accentRing} ${padding} ${className}`}
       {...rest}
     >
       {/* Highlight de topo — luz caindo sobre a superfície */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/30 to-transparent"
+        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
       />
       {children}
     </div>

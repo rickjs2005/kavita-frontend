@@ -67,7 +67,7 @@ function pickSuggestion(p: Props): Suggestion | null {
 
 const TONE_CLASSES: Record<Suggestion["tone"], string> = {
   urgent:
-    "border-rose-400/40 bg-rose-500/15 text-rose-200",
+    "border-orange-500/50 bg-orange-600/20 text-orange-200 shadow-[0_0_12px_rgba(234,88,12,0.15)]",
   active:
     "border-amber-400/40 bg-amber-400/10 text-amber-200",
   hint:

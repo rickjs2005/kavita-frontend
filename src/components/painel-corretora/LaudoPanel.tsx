@@ -64,12 +64,12 @@ const CLASSIFICACOES: Record<BebidaClassificacao, ClassificacaoMeta> = {
 };
 
 const TONE_CLASSES: Record<ClassificacaoMeta["tone"], string> = {
-  gold: "border-amber-400/60 bg-amber-400/15 text-amber-800 shadow-[0_0_12px_rgba(251,191,36,0.15)]",
+  gold: "border-amber-400/60 bg-amber-400/15 text-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.2)]",
   forest:
-    "border-emerald-500/40 bg-emerald-500/10 text-emerald-800",
+    "border-emerald-500/40 bg-emerald-500/10 text-emerald-200",
   terracotta:
-    "border-orange-600/40 bg-orange-600/10 text-orange-800",
-  stone: "border-stone-400/40 bg-stone-200/60 text-stone-600",
+    "border-orange-600/40 bg-orange-600/10 text-orange-200",
+  stone: "border-stone-600/40 bg-stone-800 text-stone-300",
 };
 
 // ─── Badge de classificação (usado inline no card principal) ───────
@@ -211,14 +211,14 @@ export function LaudoPanel({
     : null;
 
   const inputClass =
-    "w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 shadow-sm focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40";
+    "w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-stone-100 placeholder:text-stone-500 shadow-sm focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/25 [color-scheme:dark]";
   const labelClass =
-    "mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500";
+    "mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400";
 
   return (
-    <div className="rounded-xl border border-amber-200/60 bg-amber-50/40 p-4">
+    <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.04] p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-800">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-300">
           ☕ Laudo de classificação
         </p>
         {canSendLaudo && laudoUrl && (
@@ -305,7 +305,7 @@ export function LaudoPanel({
             type="button"
             disabled={saving}
             onClick={save}
-            className="rounded-lg bg-stone-900 px-3 py-1.5 text-[11px] font-semibold text-stone-50 shadow-sm transition-colors hover:bg-stone-800 disabled:opacity-60"
+            className="rounded-lg bg-amber-400 px-3 py-1.5 text-[11px] font-semibold text-stone-950 shadow-sm shadow-amber-400/20 transition-colors hover:bg-amber-300 disabled:opacity-60"
           >
             {saving ? "Salvando..." : "Salvar laudo"}
           </button>

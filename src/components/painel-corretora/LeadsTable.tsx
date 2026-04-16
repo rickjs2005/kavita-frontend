@@ -138,13 +138,13 @@ export function LeadsTable({
   if (leads.length === 0) {
     return (
       <PanelCard density="spacious" className="text-center">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 ring-1 ring-amber-200/60">
-          <PanelBrandMark className="h-8 w-8 text-amber-600" />
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-400/10 ring-1 ring-amber-400/30">
+          <PanelBrandMark className="h-8 w-8 text-amber-300" />
         </div>
-        <h3 className="text-base font-semibold text-stone-900">
+        <h3 className="text-base font-semibold text-stone-100">
           Sua sala está pronta
         </h3>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-stone-500">
+        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-stone-400">
           {emptyMessage ??
             "Leads aparecerão aqui em tempo real assim que visitantes entrarem em contato pela sua página no Mercado do Café."}
         </p>
@@ -153,7 +153,7 @@ export function LeadsTable({
             href="/mercado-do-cafe/corretoras"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-amber-600/20 transition-colors hover:from-amber-400 hover:to-amber-500"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 px-4 py-2 text-xs font-semibold text-stone-950 shadow-lg shadow-amber-500/20 transition-colors hover:from-amber-300 hover:to-amber-400"
           >
             Ver minha página pública
             <span aria-hidden>↗</span>
@@ -165,7 +165,7 @@ export function LeadsTable({
 
   return (
     <PanelCard flush>
-      <ul role="list" className="divide-y divide-stone-900/[0.06]">
+      <ul role="list" className="divide-y divide-white/[0.06]">
         {leads.map((lead) => {
           const isExpanded = expandedId === lead.id;
           const saving = savingId === lead.id;
@@ -178,12 +178,12 @@ export function LeadsTable({
           return (
             <li
               key={lead.id}
-              className={`px-5 py-4 md:px-6 md:py-5 ${
+              className={`px-5 py-4 transition-colors md:px-6 md:py-5 ${
                 isLoteIndisponivel
-                  ? "bg-stone-100/60 opacity-70"
+                  ? "bg-stone-950/60 opacity-60"
                   : isHighPriority
-                    ? "bg-amber-50/40"
-                    : ""
+                    ? "bg-amber-500/[0.04]"
+                    : "hover:bg-white/[0.02]"
               }`}
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
@@ -191,7 +191,7 @@ export function LeadsTable({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3
-                      className={`truncate text-sm font-semibold ${isLoteIndisponivel ? "text-stone-500 line-through" : "text-stone-900"}`}
+                      className={`truncate text-sm font-semibold ${isLoteIndisponivel ? "text-stone-500 line-through" : "text-stone-100"}`}
                     >
                       {lead.nome}
                     </h3>
@@ -208,14 +208,14 @@ export function LeadsTable({
                       />
                     )}
                     {isLoteIndisponivel && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-stone-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-stone-700">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-stone-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-stone-400 ring-1 ring-white/[0.06]">
                         <span aria-hidden>🔒</span>
                         Lote vendido
                       </span>
                     )}
                     {!isLoteIndisponivel && isHighPriority && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800 ring-1 ring-amber-500/40">
-                        <span aria-hidden className="h-1 w-1 rounded-full bg-amber-500" />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-200 ring-1 ring-amber-400/30">
+                        <span aria-hidden className="h-1 w-1 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
                         Alta prioridade
                       </span>
                     )}
@@ -228,18 +228,18 @@ export function LeadsTable({
                   </div>
 
                   {/* Meta — telefone / cidade / data numa linha única */}
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-stone-500">
-                    <span className="inline-flex items-center gap-1 text-stone-700">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-stone-400">
+                    <span className="inline-flex items-center gap-1 text-stone-300">
                       <span aria-hidden>☏</span>
                       <span className="tabular-nums">{lead.telefone}</span>
                     </span>
                     {lead.cidade && (
                       <>
-                        <span aria-hidden className="text-stone-300">·</span>
-                        <span className="font-semibold text-stone-700">{lead.cidade}</span>
+                        <span aria-hidden className="text-stone-600">·</span>
+                        <span className="font-semibold text-stone-200">{lead.cidade}</span>
                       </>
                     )}
-                    <span aria-hidden className="text-stone-300">·</span>
+                    <span aria-hidden className="text-stone-600">·</span>
                     <span className="tabular-nums">
                       {formatDate(lead.created_at)}
                     </span>
@@ -313,7 +313,7 @@ export function LeadsTable({
                   )}
 
                   {lead.mensagem && (
-                    <p className="mt-3 whitespace-pre-line rounded-lg bg-stone-50 p-3 text-sm text-stone-700 ring-1 ring-stone-900/[0.04]">
+                    <p className="mt-3 whitespace-pre-line rounded-lg bg-white/[0.04] p-3 text-sm text-stone-300 ring-1 ring-white/[0.06]">
                       {lead.mensagem}
                     </p>
                   )}
@@ -334,7 +334,7 @@ export function LeadsTable({
                     WhatsApp
                   </a>
 
-                  <label className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  <label className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">
                     Status
                   </label>
                   <select
@@ -345,10 +345,10 @@ export function LeadsTable({
                         status: e.target.value as LeadStatus,
                       })
                     }
-                    className="rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 shadow-sm shadow-stone-900/[0.02] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40 disabled:opacity-60"
+                    className="rounded-lg border border-white/10 bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-stone-100 shadow-sm transition-colors focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/25 disabled:opacity-60 [color-scheme:dark]"
                   >
                     {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
+                      <option key={opt.value} value={opt.value} style={{ backgroundColor: "#1c1917", color: "#f5f5f4" }}>
                         {opt.label}
                       </option>
                     ))}
@@ -358,7 +358,7 @@ export function LeadsTable({
                     onClick={() =>
                       setExpandedId(isExpanded ? null : lead.id)
                     }
-                    className="text-[11px] font-semibold text-amber-700 underline-offset-2 hover:underline"
+                    className="text-[11px] font-semibold text-amber-300 underline-offset-2 hover:text-amber-200 hover:underline"
                   >
                     {isExpanded ? "Fechar nota" : "Nota interna"}
                   </button>
@@ -366,7 +366,7 @@ export function LeadsTable({
               </div>
 
               {isExpanded && (
-                <div className="mt-4 space-y-4 border-t border-stone-900/[0.06] pt-4">
+                <div className="mt-4 space-y-4 border-t border-white/[0.06] pt-4">
                   {/* Laudo de classificação — aparece quando amostra
                       está recebida ou laudada (o corretor já tem o
                       café na mesa pra bater). */}
@@ -419,8 +419,8 @@ function AmostraFlow({
   const currentIndex = AMOSTRA_FLOW.findIndex((s) => s.value === current);
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/50 p-2">
-      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-amber-800">
+    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-400/20 bg-amber-400/[0.05] p-2">
+      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-amber-300">
         Amostra
       </span>
       <div className="flex items-center gap-0.5">
@@ -436,10 +436,10 @@ function AmostraFlow({
               className={[
                 "inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors",
                 isCurrent
-                  ? "bg-amber-600 text-white shadow-sm"
+                  ? "bg-amber-400 text-stone-950 shadow-sm shadow-amber-400/30"
                   : reached
-                    ? "bg-amber-100 text-amber-900 hover:bg-amber-200"
-                    : "bg-white text-stone-500 ring-1 ring-stone-200 hover:bg-stone-50",
+                    ? "bg-amber-400/15 text-amber-200 hover:bg-amber-400/25"
+                    : "bg-stone-800 text-stone-400 ring-1 ring-white/[0.06] hover:bg-stone-700 hover:text-stone-200",
                 saving || isCurrent ? "cursor-default" : "",
               ].join(" ")}
               title={
@@ -459,7 +459,7 @@ function AmostraFlow({
           type="button"
           disabled={saving}
           onClick={() => onUpdate("nao_entregue")}
-          className="ml-auto text-[10px] font-semibold text-stone-500 underline-offset-2 hover:text-stone-700 hover:underline"
+          className="ml-auto text-[10px] font-semibold text-stone-400 underline-offset-2 hover:text-stone-200 hover:underline"
         >
           Resetar
         </button>
@@ -485,20 +485,20 @@ function QualChip({
 }) {
   const toneClass: Record<typeof tone, string> = {
     neutral:
-      "bg-white ring-stone-900/[0.06] text-stone-700",
+      "bg-stone-800 ring-white/[0.06] text-stone-200",
     amber:
-      "bg-amber-50 ring-amber-400/30 text-amber-900",
+      "bg-amber-400/10 ring-amber-400/30 text-amber-200",
     "amber-strong":
-      "bg-amber-100 ring-amber-500/50 text-amber-900 font-semibold",
+      "bg-amber-400/15 ring-amber-400/40 text-amber-100 font-semibold",
   };
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] ring-1 ${toneClass[tone]}`}
     >
-      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-amber-700/80">
+      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-amber-300/80">
         {kicker}
       </span>
-      <span className="h-2 w-px bg-stone-300" aria-hidden />
+      <span className="h-2 w-px bg-stone-600" aria-hidden />
       <span>{label}</span>
     </span>
   );
@@ -516,7 +516,7 @@ function NoteEditor({
   const [value, setValue] = useState(initial);
   return (
     <div className="space-y-2">
-      <label className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+      <label className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">
         Nota interna
       </label>
       <textarea
@@ -525,14 +525,14 @@ function NoteEditor({
         rows={3}
         maxLength={2000}
         placeholder="Ex: Ligou em 10/04, vai mandar amostra na próxima semana..."
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.02] focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+        className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-stone-100 placeholder:text-stone-500 shadow-sm focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/25"
       />
       <div className="flex justify-end">
         <button
           type="button"
           disabled={saving || value === initial}
           onClick={() => onSave(value)}
-          className="rounded-lg bg-stone-900 px-3 py-1.5 text-[11px] font-semibold text-stone-50 shadow-sm shadow-stone-900/20 transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-amber-400 px-3 py-1.5 text-[11px] font-semibold text-stone-950 shadow-sm shadow-amber-400/20 transition-colors hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "Salvando..." : "Salvar nota"}
         </button>
