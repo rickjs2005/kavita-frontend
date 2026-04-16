@@ -8,6 +8,7 @@ import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import type { CorretoraAdmin } from "@/types/corretora";
+import { SubscriptionManager } from "@/components/admin/mercado-do-cafe/corretoras/SubscriptionManager";
 
 type Dossie = {
   leads: {
@@ -201,6 +202,12 @@ export default function CorretoraDrillDownPage() {
       <main className="mx-auto w-full max-w-6xl space-y-6 px-3 pb-10 pt-4 sm:px-4">
         {/* Stats principais */}
         {dossie && <LeadsStatsBlock dossie={dossie} />}
+
+        {/* Plano e assinatura */}
+        <SubscriptionManager
+          corretoraId={corretora.id}
+          onUnauthorized={handleUnauthorized}
+        />
 
         {/* 2 colunas: perfil + SLA */}
         <div className="grid gap-5 lg:grid-cols-2">
