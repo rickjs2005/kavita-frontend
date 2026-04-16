@@ -58,7 +58,7 @@ export function CorretoraPanelNav() {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b border-stone-900/[0.06] bg-stone-50/80 backdrop-blur-md"
+      className="sticky top-0 z-40 border-b border-white/[0.06] bg-stone-950/90 backdrop-blur-md"
       aria-label="Navegação da Sala Reservada"
     >
       <div className="mx-auto w-full max-w-6xl px-4 md:px-8">
@@ -68,23 +68,23 @@ export function CorretoraPanelNav() {
           <div className="flex min-w-0 items-center gap-5">
             <Link
               href="/painel/corretora"
-              className="shrink-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
+              className="shrink-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
               aria-label="Ir para o resumo"
             >
-              <PanelBrand tone="dark" />
+              <PanelBrand tone="light" />
             </Link>
 
             {user?.corretora_name && (
               <>
                 <span
                   aria-hidden
-                  className="hidden h-6 w-px bg-stone-300 md:block"
+                  className="hidden h-6 w-px bg-white/15 md:block"
                 />
                 <div className="hidden min-w-0 md:block">
-                  <p className="truncate text-sm font-semibold text-stone-900">
+                  <p className="truncate text-sm font-semibold text-stone-100">
                     {user.corretora_name}
                   </p>
-                  <p className="truncate text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">
+                  <p className="truncate text-[11px] font-medium uppercase tracking-[0.14em] text-stone-400">
                     Corretora
                   </p>
                 </div>
@@ -106,17 +106,17 @@ export function CorretoraPanelNav() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`relative rounded-lg px-3 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 ${
+                    className={`relative rounded-lg px-3 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 ${
                       active
-                        ? "text-stone-900"
-                        : "text-stone-500 hover:text-stone-900"
+                        ? "text-amber-200"
+                        : "text-stone-400 hover:text-stone-100"
                     }`}
                   >
                     {item.label}
                     {active && (
                       <span
                         aria-hidden
-                        className="absolute inset-x-3 -bottom-[17px] h-[2px] rounded-full bg-amber-500"
+                        className="absolute inset-x-3 -bottom-[17px] h-[2px] rounded-full bg-amber-400"
                       />
                     )}
                   </Link>
@@ -136,11 +136,11 @@ export function CorretoraPanelNav() {
             <div className="hidden items-center gap-2.5 md:flex">
               <div
                 aria-hidden
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-900 text-[11px] font-semibold text-stone-50"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-400/15 text-[11px] font-semibold text-amber-200 ring-1 ring-amber-400/30"
               >
                 {initials}
               </div>
-              <span className="max-w-[120px] truncate text-xs font-medium text-stone-600">
+              <span className="max-w-[120px] truncate text-xs font-medium text-stone-300">
                 {user?.nome?.split(" ")[0] ?? ""}
               </span>
             </div>
@@ -151,7 +151,7 @@ export function CorretoraPanelNav() {
               onClick={() =>
                 logout({ redirectTo: "/painel/corretora/login" })
               }
-              className="ml-1 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm shadow-stone-900/[0.03] transition-colors hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
+              className="ml-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-300 transition-colors hover:bg-white/[0.08] hover:text-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
               aria-label="Encerrar sessão"
             >
               Sair
@@ -160,7 +160,7 @@ export function CorretoraPanelNav() {
         </div>
 
         {/* LINHA 2 (mobile only): nav pills + corretora name compacto */}
-        <div className="flex items-center justify-between gap-3 border-t border-stone-900/[0.04] py-2.5 md:hidden">
+        <div className="flex items-center justify-between gap-3 border-t border-white/[0.04] py-2.5 md:hidden">
           <nav
             className="flex items-center gap-1 overflow-x-auto"
             aria-label="Seções do painel (mobile)"
@@ -175,8 +175,8 @@ export function CorretoraPanelNav() {
                   href={item.href}
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                     active
-                      ? "bg-stone-900 text-stone-50"
-                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                      ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30"
+                      : "bg-white/[0.04] text-stone-400 ring-1 ring-white/[0.06] hover:text-stone-200"
                   }`}
                 >
                   {item.label}
@@ -186,7 +186,7 @@ export function CorretoraPanelNav() {
           </nav>
 
           {user?.corretora_name && (
-            <span className="shrink-0 truncate max-w-[120px] text-[11px] font-medium text-stone-500">
+            <span className="shrink-0 truncate max-w-[120px] text-[11px] font-medium text-stone-400">
               {user.corretora_name}
             </span>
           )}

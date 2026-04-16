@@ -78,34 +78,23 @@ function CorretoraPanelInner({ children }: { children: React.ReactNode }) {
   if (loading || !user) return null;
 
   return (
-    <div className="relative min-h-screen bg-stone-50 text-stone-900">
-      {/* Camada 1 — Warm ambient gradient no topo (cria atmosfera) */}
+    <div className="relative min-h-screen bg-stone-950 text-stone-100">
+      {/* Camada 1 — Atmospheric glows (dark — amber quente sobre stone-950) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[600px] bg-gradient-to-b from-amber-100/60 via-orange-50/25 to-transparent"
+        className="pointer-events-none absolute -right-40 -top-20 h-96 w-[1100px] rounded-full bg-amber-500/[0.06] blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-32 top-[700px] h-80 w-[700px] rounded-full bg-amber-700/[0.06] blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-24 top-[1300px] h-72 w-[800px] rounded-full bg-orange-700/[0.05] blur-3xl"
       />
 
-      {/* Camada 1b — Atmospheric glows distribuídos pela página inteira
-          (igual à página pública do Mercado do Café, porém em light) */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-40 -top-20 h-96 w-[1100px] rounded-full bg-amber-300/[0.08] blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-32 top-[700px] h-80 w-[700px] rounded-full bg-orange-300/[0.06] blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-24 top-[1300px] h-72 w-[800px] rounded-full bg-amber-400/[0.05] blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-20 top-[2000px] h-64 w-[600px] rounded-full bg-amber-200/[0.06] blur-3xl"
-      />
-
-      {/* Camada 2 — Textura de grão, fixa na viewport (material) */}
-      <GrainOverlay tone="light" />
+      {/* Camada 2 — Textura de grão, fixa na viewport */}
+      <GrainOverlay tone="dark" />
 
       <CorretoraPanelNav />
 
