@@ -58,7 +58,7 @@ const navGroups: NavGroup[] = [
       // quê sobre corretoras/reviews/planos), não uma auditoria global
       // do sistema. Rota mantida em /admin/auditoria para preservar
       // compatibilidade de deeplinks existentes.
-      { label: "Auditoria — Mercado do Café", href: "/admin/auditoria", icon: "🔍", permission: "logs_view" },
+      { label: "Histórico do Mercado do Café", href: "/admin/auditoria", icon: "🕒", permission: "logs_view" },
       { label: "Kavita Drones", href: "/admin/drones", icon: "🚁", permission: "drones_manage" },
     ],
   },

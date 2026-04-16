@@ -11,7 +11,7 @@
 import AuditClient from "./AuditClient";
 
 export const metadata = {
-  title: "Auditoria — Mercado do Café · Admin | Kavita",
+  title: "Histórico do Mercado do Café · Admin | Kavita",
 };
 
 export default function AuditoriaPage() {

@@ -58,14 +58,14 @@ export default function AdminMercadoDoCafePage() {
                 para economizar espaço sem sumir. */}
             <Link
               href="/admin/auditoria"
-              aria-label="Abrir auditoria do Mercado do Café"
+              aria-label="Abrir histórico do Mercado do Café"
               className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
-              title="Histórico de ações sobre corretoras, reviews e planos"
+              title="Ver tudo que a equipe já fez neste módulo"
             >
               <span aria-hidden className="text-sm sm:mr-1.5">
-                🔍
+                🕒
               </span>
-              <span className="hidden sm:inline">Auditoria</span>
+              <span className="hidden sm:inline">Histórico</span>
             </Link>
             <Link
               href="/admin/mercado-do-cafe/corretoras/nova"
