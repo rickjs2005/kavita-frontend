@@ -131,11 +131,14 @@ export default function PricingPage() {
         </header>
 
         {/* ─── Plans grid ────────────────────────────────────── */}
-        <div className="grid gap-5 md:grid-cols-3">
+        {/* Grid com items-stretch garante altura igual entre cards.
+            Cada card é flex-col com o CTA empurrado para o fundo via
+            mt-auto — independente da quantidade de features. */}
+        <div className="grid items-stretch gap-5 md:grid-cols-3">
           {PLANS.map((plan) => (
             <div
               key={plan.slug}
-              className={`relative overflow-hidden rounded-2xl p-6 ring-1 backdrop-blur-sm md:p-7 ${
+              className={`relative flex flex-col overflow-hidden rounded-2xl p-6 ring-1 backdrop-blur-sm md:p-7 ${
                 plan.featured
                   ? "bg-gradient-to-br from-amber-500/[0.08] to-stone-900/60 ring-amber-400/30 shadow-[0_0_40px_rgba(251,191,36,0.08)]"
                   : "bg-white/[0.04] ring-white/[0.08]"
@@ -154,32 +157,30 @@ export default function PricingPage() {
                 </>
               )}
 
-              {/* Nome do plano */}
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300/80">
-                {plan.name}
-              </p>
-
-              {/* Preço */}
-              <div className="mt-4">
-                <span className="text-3xl font-bold tabular-nums text-stone-50 md:text-4xl">
-                  {plan.price}
-                </span>
-                <span className="ml-1.5 text-sm text-stone-400">
-                  {plan.priceNote}
-                </span>
+              {/* ── Topo fixo: nome + preço + descrição ── */}
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300/80">
+                  {plan.name}
+                </p>
+                <div className="mt-4 flex items-baseline gap-1.5">
+                  <span className="text-3xl font-bold tabular-nums text-stone-50 md:text-4xl">
+                    {plan.price}
+                  </span>
+                  <span className="text-sm text-stone-400">
+                    {plan.priceNote}
+                  </span>
+                </div>
+                <p className="mt-3 min-h-[3.5rem] text-[13px] leading-relaxed text-stone-400">
+                  {plan.description}
+                </p>
               </div>
 
-              {/* Descrição */}
-              <p className="mt-3 text-[13px] leading-relaxed text-stone-400">
-                {plan.description}
-              </p>
-
-              {/* Features */}
-              <ul className="mt-6 space-y-2.5">
+              {/* ── Meio flexível: lista de features ── */}
+              <ul className="mt-6 flex-1 space-y-2.5">
                 {plan.features.map((f) => (
                   <li
                     key={f.text}
-                    className="flex items-start gap-2 text-[13px]"
+                    className="flex items-start gap-2.5 text-[13px]"
                   >
                     {f.included ? (
                       <svg
@@ -217,33 +218,9 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              {/* CTA */}
-              <div className="mt-8">
-                {plan.ctaHref.startsWith("http") ? (
-                  <a
-                    href={plan.ctaHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`block w-full rounded-xl px-4 py-3 text-center text-[12px] font-bold uppercase tracking-[0.14em] transition-all ${
-                      plan.featured
-                        ? "bg-gradient-to-br from-amber-300 to-amber-500 text-stone-950 shadow-lg shadow-amber-500/30 hover:from-amber-200 hover:to-amber-400"
-                        : "bg-white/[0.05] text-amber-200 ring-1 ring-white/10 hover:bg-white/[0.08] hover:ring-amber-400/30"
-                    }`}
-                  >
-                    {plan.cta}
-                  </a>
-                ) : (
-                  <Link
-                    href={plan.ctaHref}
-                    className={`block w-full rounded-xl px-4 py-3 text-center text-[12px] font-bold uppercase tracking-[0.14em] transition-all ${
-                      plan.featured
-                        ? "bg-gradient-to-br from-amber-300 to-amber-500 text-stone-950 shadow-lg shadow-amber-500/30 hover:from-amber-200 hover:to-amber-400"
-                        : "bg-white/[0.05] text-amber-200 ring-1 ring-white/10 hover:bg-white/[0.08] hover:ring-amber-400/30"
-                    }`}
-                  >
-                    {plan.cta}
-                  </Link>
-                )}
+              {/* ── Rodapé fixo: CTA ancorado no fundo ── */}
+              <div className="mt-8 pt-2">
+                <CtaButton plan={plan} />
               </div>
             </div>
           ))}
@@ -277,6 +254,27 @@ export default function PricingPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+const ctaBase =
+  "block w-full rounded-xl px-4 py-3 text-center text-[12px] font-bold uppercase tracking-[0.14em] transition-all";
+const ctaFeatured = `${ctaBase} bg-gradient-to-br from-amber-300 to-amber-500 text-stone-950 shadow-lg shadow-amber-500/30 hover:from-amber-200 hover:to-amber-400`;
+const ctaDefault = `${ctaBase} bg-white/[0.05] text-amber-200 ring-1 ring-white/10 hover:bg-white/[0.08] hover:ring-amber-400/30`;
+
+function CtaButton({ plan }: { plan: PlanDisplay }) {
+  const cls = plan.featured ? ctaFeatured : ctaDefault;
+  if (plan.ctaHref.startsWith("http")) {
+    return (
+      <a href={plan.ctaHref} target="_blank" rel="noopener noreferrer" className={cls}>
+        {plan.cta}
+      </a>
+    );
+  }
+  return (
+    <Link href={plan.ctaHref} className={cls}>
+      {plan.cta}
+    </Link>
   );
 }
 
