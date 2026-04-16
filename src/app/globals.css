@@ -200,6 +200,12 @@ html {
   scroll-padding-top: 80px;
   scroll-behavior: smooth;
 }
+
+/* Quando o body recebe bg-stone-950 (painel da corretora dark mode),
+   garantir que o overscroll no iOS/Android não revele fundo branco. */
+body.bg-stone-950 {
+  background-color: #0c0a09 !important;
+}
 @media (min-width: 768px) {
   html {
     scroll-padding-top: 136px;

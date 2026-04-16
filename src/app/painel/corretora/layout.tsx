@@ -39,6 +39,19 @@ function CorretoraPanelInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading, loadSession } = useCorretoraAuth();
 
+  // Força fundo stone-950 no <body> enquanto o painel dark está
+  // montado. Remove ao desmontar para não contaminar a loja (light).
+  // Isso elimina o "vão branco" no overscroll e entre conteúdo curto
+  // e o bottom da viewport.
+  useEffect(() => {
+    document.body.classList.add("bg-stone-950");
+    document.documentElement.style.backgroundColor = "#0c0a09";
+    return () => {
+      document.body.classList.remove("bg-stone-950");
+      document.documentElement.style.backgroundColor = "";
+    };
+  }, []);
+
   const isFullscreen = isFullscreenRoute(pathname);
 
   const fromUrl = useMemo(
@@ -78,7 +91,7 @@ function CorretoraPanelInner({ children }: { children: React.ReactNode }) {
   if (loading || !user) return null;
 
   return (
-    <div className="relative min-h-screen bg-stone-950 text-stone-100">
+    <div className="relative flex min-h-screen flex-col bg-stone-950 text-stone-100">
       {/* Camada 1 — Atmospheric glows (dark — amber quente sobre stone-950) */}
       <div
         aria-hidden
@@ -98,7 +111,7 @@ function CorretoraPanelInner({ children }: { children: React.ReactNode }) {
 
       <CorretoraPanelNav />
 
-      <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-16 pt-6 md:px-8 md:pb-20 md:pt-8">
+      <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-6 md:px-8 md:pb-20 md:pt-8">
         {children}
       </main>
     </div>
