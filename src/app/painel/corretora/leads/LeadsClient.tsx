@@ -8,16 +8,39 @@ import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { LeadsTable } from "@/components/painel-corretora/LeadsTable";
 import { PanelCard } from "@/components/painel-corretora/PanelCard";
-import type { CorretoraLead, LeadStatus } from "@/types/lead";
+import type {
+  CorretoraLead,
+  LeadStatus,
+  AmostraStatus,
+  BebidaClassificacao,
+} from "@/types/lead";
 
 type StatusFilter = LeadStatus | "all";
+type AmostraFilter = AmostraStatus | "all";
+type BebidaFilter = BebidaClassificacao | "all";
 
-const FILTERS: { value: StatusFilter; label: string }[] = [
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Todos" },
   { value: "new", label: "Novos" },
   { value: "contacted", label: "Em contato" },
   { value: "closed", label: "Fechados" },
   { value: "lost", label: "Perdidos" },
+];
+
+const AMOSTRA_FILTERS: { value: AmostraFilter; label: string }[] = [
+  { value: "all", label: "Todas" },
+  { value: "prometida", label: "Prometida" },
+  { value: "recebida", label: "Recebida" },
+  { value: "laudada", label: "Laudada" },
+];
+
+const BEBIDA_FILTERS: { value: BebidaFilter; label: string }[] = [
+  { value: "all", label: "Todas" },
+  { value: "especial", label: "Especial" },
+  { value: "dura", label: "Dura" },
+  { value: "riado", label: "Riado" },
+  { value: "rio", label: "Rio" },
+  { value: "escolha", label: "Escolha" },
 ];
 
 type ListResponse = {
@@ -33,6 +56,8 @@ export default function LeadsClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [amostraFilter, setAmostraFilter] = useState<AmostraFilter>("all");
+  const [bebidaFilter, setBebidaFilter] = useState<BebidaFilter>("all");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -43,6 +68,9 @@ export default function LeadsClient() {
     try {
       const qs = new URLSearchParams();
       if (filter !== "all") qs.set("status", filter);
+      if (amostraFilter !== "all") qs.set("amostra_status", amostraFilter);
+      if (bebidaFilter !== "all")
+        qs.set("bebida_classificacao", bebidaFilter);
       qs.set("page", String(page));
       qs.set("limit", "20");
 
@@ -57,7 +85,7 @@ export default function LeadsClient() {
     } finally {
       setLoading(false);
     }
-  }, [filter, page]);
+  }, [filter, amostraFilter, bebidaFilter, page]);
 
   useEffect(() => {
     load();
@@ -65,7 +93,7 @@ export default function LeadsClient() {
 
   useEffect(() => {
     setPage(1);
-  }, [filter]);
+  }, [filter, amostraFilter, bebidaFilter]);
 
   return (
     <div className="space-y-6">
@@ -91,26 +119,26 @@ export default function LeadsClient() {
       </div>
 
       {/* Filter chips — bloco inset com fundo diferenciado */}
-      <div className="rounded-2xl bg-stone-900/60 p-1.5 ring-1 ring-white/[0.06]">
-        <div className="flex flex-wrap items-center gap-1">
-          {FILTERS.map((f) => {
-            const active = filter === f.value;
-            return (
-              <button
-                key={f.value}
-                type="button"
-                onClick={() => setFilter(f.value)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                  active
-                    ? "bg-amber-400/15 text-amber-200 shadow-sm ring-1 ring-amber-400/30"
-                    : "text-stone-400 hover:text-stone-100"
-                }`}
-              >
-                {f.label}
-              </button>
-            );
-          })}
-        </div>
+      {/* Filtros — 3 linhas: status, amostra, bebida */}
+      <div className="space-y-2">
+        <FilterRow
+          label="Status"
+          items={STATUS_FILTERS}
+          value={filter}
+          onChange={(v) => setFilter(v as StatusFilter)}
+        />
+        <FilterRow
+          label="Amostra"
+          items={AMOSTRA_FILTERS}
+          value={amostraFilter}
+          onChange={(v) => setAmostraFilter(v as AmostraFilter)}
+        />
+        <FilterRow
+          label="Bebida"
+          items={BEBIDA_FILTERS}
+          value={bebidaFilter}
+          onChange={(v) => setBebidaFilter(v as BebidaFilter)}
+        />
       </div>
 
       {error && (
@@ -256,5 +284,44 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
       </svg>
       {downloading ? "Exportando..." : "Exportar CSV"}
     </button>
+  );
+}
+
+function FilterRow({
+  label,
+  items,
+  value,
+  onChange,
+}: {
+  label: string;
+  items: { value: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-16 shrink-0 text-right text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+        {label}
+      </span>
+      <div className="flex flex-wrap items-center gap-1 rounded-xl bg-stone-900/60 p-1 ring-1 ring-white/[0.06]">
+        {items.map((f) => {
+          const active = value === f.value;
+          return (
+            <button
+              key={f.value}
+              type="button"
+              onClick={() => onChange(f.value)}
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                active
+                  ? "bg-amber-400/15 text-amber-200 shadow-sm ring-1 ring-amber-400/30"
+                  : "text-stone-400 hover:text-stone-100"
+              }`}
+            >
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

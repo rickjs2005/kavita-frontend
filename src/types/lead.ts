@@ -24,6 +24,16 @@ export type BebidaClassificacao =
   | "rio"
   | "escolha";
 
+export type MercadoIndicado =
+  | "exportacao"
+  | "mercado_interno"
+  | "cafeteria"
+  | "commodity"
+  | "indefinido";
+
+export type AptidaoOferta = "sim" | "nao" | "parcial";
+export type PrioridadeComercial = "alta" | "media" | "baixa";
+
 export type CorretoraLead = {
   id: number;
   corretora_id: number;
@@ -44,6 +54,18 @@ export type CorretoraLead = {
   bebida_classificacao?: BebidaClassificacao | null;
   pontuacao_sca?: number | null;
   preco_referencia_saca?: number | null;
+  // Classificação expandida
+  umidade_pct?: number | null;
+  peneira?: string | null;
+  catacao_defeitos?: string | null;
+  aspecto_lote?: string | null;
+  obs_sensoriais?: string | null;
+  obs_comerciais?: string | null;
+  mercado_indicado?: MercadoIndicado | null;
+  aptidao_oferta?: AptidaoOferta | null;
+  prioridade_comercial?: PrioridadeComercial | null;
+  altitude_origem?: number | null;
+  variedade_cultivar?: string | null;
   status: LeadStatus;
   nota_interna?: string | null;
   created_at: string;

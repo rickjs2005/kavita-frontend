@@ -30,7 +30,7 @@ import {
   VOLUMES_LEAD,
   CANAIS_CONTATO,
 } from "@/lib/regioes";
-import { BebidaBadge, LaudoPanel } from "./LaudoPanel";
+import { BebidaBadge, PotencialBadge, LaudoPanel } from "./LaudoPanel";
 
 // Sprint 7 — fluxo de amostra física (kanban simplificado)
 const AMOSTRA_LABELS: Record<AmostraStatus, string> = {
@@ -250,6 +250,7 @@ export function LeadsTable({
                         compact
                       />
                     )}
+                    <PotencialBadge lead={lead} />
                   </div>
 
                   {/* Meta — telefone / cidade / data numa linha única */}
