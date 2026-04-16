@@ -62,6 +62,9 @@ export default function LeadsClient() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
+  const hasActiveFilter =
+    filter !== "all" || amostraFilter !== "all" || bebidaFilter !== "all";
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -95,89 +98,118 @@ export default function LeadsClient() {
     setPage(1);
   }, [filter, amostraFilter, bebidaFilter]);
 
+  const clearFilters = () => {
+    setFilter("all");
+    setAmostraFilter("all");
+    setBebidaFilter("all");
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300">
-          Pipeline
-        </p>
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-100 md:text-3xl">
+    <div className="space-y-5">
+      {/* ─── Header ──────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300/80">
+            Pipeline
+          </p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-stone-50 md:text-3xl">
             Leads recebidos
           </h1>
-          <div className="flex items-center gap-3">
-            {!loading && (
-              <span className="pb-1 text-xs font-medium text-stone-500">
-                <span className="tabular-nums">{total}</span>{" "}
-                {total === 1 ? "registro" : "registros"}
-              </span>
-            )}
-            <ExportCsvButton statusFilter={filter} />
-          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {!loading && (
+            <span className="text-[11px] font-medium tabular-nums text-stone-500">
+              {total} {total === 1 ? "registro" : "registros"}
+            </span>
+          )}
+          <ExportCsvButton statusFilter={filter} />
         </div>
       </div>
 
-      {/* Filter chips — bloco inset com fundo diferenciado */}
-      {/* Filtros — 3 linhas: status, amostra, bebida */}
-      <div className="space-y-2">
-        <FilterRow
-          label="Status"
-          items={STATUS_FILTERS}
-          value={filter}
-          onChange={(v) => setFilter(v as StatusFilter)}
-        />
-        <FilterRow
-          label="Amostra"
-          items={AMOSTRA_FILTERS}
-          value={amostraFilter}
-          onChange={(v) => setAmostraFilter(v as AmostraFilter)}
-        />
-        <FilterRow
-          label="Bebida"
-          items={BEBIDA_FILTERS}
-          value={bebidaFilter}
-          onChange={(v) => setBebidaFilter(v as BebidaFilter)}
-        />
+      {/* ─── Filtros ─────────────────────────────────────────── */}
+      <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-stone-900/40">
+        <div className="border-b border-white/[0.04] px-4 py-2.5 sm:px-5">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+              Filtros
+            </p>
+            {hasActiveFilter && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-[10px] font-semibold text-amber-300/70 transition-colors hover:text-amber-200"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="space-y-1 p-2 sm:p-3">
+          <FilterRow
+            label="Status"
+            items={STATUS_FILTERS}
+            value={filter}
+            onChange={(v) => setFilter(v as StatusFilter)}
+          />
+          <FilterRow
+            label="Amostra"
+            items={AMOSTRA_FILTERS}
+            value={amostraFilter}
+            onChange={(v) => setAmostraFilter(v as AmostraFilter)}
+          />
+          <FilterRow
+            label="Bebida"
+            items={BEBIDA_FILTERS}
+            value={bebidaFilter}
+            onChange={(v) => setBebidaFilter(v as BebidaFilter)}
+          />
+        </div>
       </div>
 
+      {/* ─── Conteúdo ────────────────────────────────────────── */}
       {error && (
         <div
           role="alert"
-          className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-xs font-medium text-rose-200"
+          className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs font-medium text-rose-200"
         >
           {error}
         </div>
       )}
 
       {loading ? (
-        <PanelCard density="spacious" className="text-center">
-          <p className="text-xs font-medium text-stone-500">Carregando...</p>
-        </PanelCard>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-32 animate-pulse rounded-2xl border border-white/[0.04] bg-stone-900/40"
+            />
+          ))}
+        </div>
       ) : (
         <LeadsTable leads={leads} onChanged={load} />
       )}
 
+      {/* ─── Paginação ───────────────────────────────────────── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-2">
+        <div className="flex items-center justify-center gap-4 pt-1">
           <button
             type="button"
             disabled={page === 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-300 shadow-sm transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-[36px] items-center rounded-lg border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            ← Anterior
+            ← Mais recentes
           </button>
-          <span className="text-xs font-medium text-stone-500 tabular-nums">
-            Página {page} de {totalPages}
+          <span className="text-[11px] font-medium tabular-nums text-stone-500">
+            {page} / {totalPages}
           </span>
           <button
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-300 shadow-sm transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-[36px] items-center rounded-lg border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Próxima →
+            Anteriores →
           </button>
         </div>
       )}
@@ -185,14 +217,7 @@ export default function LeadsClient() {
   );
 }
 
-// ─── ExportCsvButton ────────────────────────────────────────────────────────
-// Baixa o CSV direto do endpoint protegido usando o apiClient (cookie
-// HttpOnly + CSRF token). Precisa buscar o blob via fetch manual —
-// apiClient trabalha com JSON por padrão. Abordagem: fetch com credenciais
-// + download via Blob URL temporária.
-//
-// statusFilter: se "all", não envia filtro (export completo). Caso
-// contrário, envia ?status= para exportar só o subset.
+// ─── ExportCsvButton ──────────────────────────────────────────────
 
 function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
   const [downloading, setDownloading] = useState(false);
@@ -204,37 +229,27 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
       const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
       const url = `${apiBase}/api/corretora/leads/export${qs}`;
 
-      // Fetch manual com credenciais (cookie HttpOnly). Não usa
-      // apiClient porque precisa do blob cru, não do JSON envelope.
       const res = await fetch(url, {
         credentials: "include",
         headers: { Accept: "text/csv" },
       });
 
       if (!res.ok) {
-        // 401 = sessão expirada → redirect para login (correto).
         if (res.status === 401) {
           window.dispatchEvent(new CustomEvent("auth:expired"));
           return;
         }
-
-        // 403 = plano insuficiente OU role sem permissão. NÃO é
-        // sessão expirada — redirecionar para login seria bug.
-        // Tenta extrair a mensagem do backend para exibir toast
-        // contextual (ex: "Esta funcionalidade requer um plano
-        // superior.").
         if (res.status === 403) {
           let msg = "Exportação não permitida no seu plano atual.";
           try {
             const body = await res.json();
             if (body?.message) msg = body.message;
           } catch {
-            // body não era JSON — usa fallback
+            // fallback
           }
           toast.error(msg);
           return;
         }
-
         throw new Error(`HTTP ${res.status}`);
       }
 
@@ -242,19 +257,15 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = objectUrl;
-
-      // Tenta extrair filename do Content-Disposition; fallback timestamp.
       const disposition = res.headers.get("content-disposition") ?? "";
       const match = /filename="?([^";]+)"?/i.exec(disposition);
       a.download =
         match?.[1] ??
         `leads-kavita-${new Date().toISOString().slice(0, 10)}.csv`;
-
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(objectUrl);
-
       toast.success("CSV exportado.");
     } catch (err) {
       toast.error(formatApiError(err, "Erro ao exportar.").message);
@@ -268,24 +279,31 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
       type="button"
       onClick={handleExport}
       disabled={downloading}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-stone-300 shadow-sm transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
       title={
         statusFilter === "all"
           ? "Exportar todos os leads"
-          : `Exportar leads com status "${statusFilter}"`
+          : `Exportar leads "${statusFilter}"`
       }
     >
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden>
+      <svg
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        className="h-3.5 w-3.5"
+        aria-hidden
+      >
         <path
           fillRule="evenodd"
           d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L9 11.586V4a1 1 0 011-1zM4 15a1 1 0 011 1v1h10v-1a1 1 0 112 0v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2a1 1 0 011-1z"
           clipRule="evenodd"
         />
       </svg>
-      {downloading ? "Exportando..." : "Exportar CSV"}
+      {downloading ? "Exportando..." : "CSV"}
     </button>
   );
 }
+
+// ─── FilterRow ────────────────────────────────────────────────────
 
 function FilterRow({
   label,
@@ -299,11 +317,11 @@ function FilterRow({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-16 shrink-0 text-right text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+    <div className="flex items-center gap-2 sm:gap-3">
+      <span className="w-14 shrink-0 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-500 sm:w-16">
         {label}
       </span>
-      <div className="flex flex-wrap items-center gap-1 rounded-xl bg-stone-900/60 p-1 ring-1 ring-white/[0.06]">
+      <div className="flex flex-wrap items-center gap-1">
         {items.map((f) => {
           const active = value === f.value;
           return (
@@ -311,10 +329,10 @@ function FilterRow({
               key={f.value}
               type="button"
               onClick={() => onChange(f.value)}
-              className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
                 active
-                  ? "bg-amber-400/15 text-amber-200 shadow-sm ring-1 ring-amber-400/30"
-                  : "text-stone-400 hover:text-stone-100"
+                  ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30"
+                  : "text-stone-400 hover:bg-white/[0.04] hover:text-stone-200"
               }`}
             >
               {f.label}

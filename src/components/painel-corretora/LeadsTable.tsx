@@ -164,9 +164,8 @@ export function LeadsTable({
   }
 
   return (
-    <PanelCard flush>
-      <ul role="list" className="divide-y divide-white/[0.06]">
-        {leads.map((lead) => {
+    <ul role="list" className="space-y-3">
+      {leads.map((lead) => {
           const isExpanded = expandedId === lead.id;
           const saving = savingId === lead.id;
 
@@ -190,19 +189,25 @@ export function LeadsTable({
           return (
             <li
               key={lead.id}
-              className={`relative px-5 py-4 transition-colors md:px-6 md:py-5 ${
+              className={`relative overflow-hidden rounded-2xl border bg-stone-900 px-5 py-4 transition-colors md:px-6 md:py-5 ${
                 isLoteIndisponivel
-                  ? "bg-stone-950/60 opacity-60"
+                  ? "border-white/[0.04] opacity-60"
                   : needsUrgentAction
-                    ? "bg-amber-500/[0.03]"
+                    ? "border-amber-400/20 bg-amber-500/[0.03]"
                     : isHighPriority
-                      ? "bg-amber-500/[0.04]"
-                      : "hover:bg-white/[0.02]"
+                      ? "border-amber-400/15 bg-amber-500/[0.03]"
+                      : "border-white/[0.06] hover:border-white/[0.1]"
               }`}
             >
-              {/* Border-beam animado — só em leads que precisam de ação
-                  urgente. Uma luz amber desliza na borda esquerda para
-                  chamar o olho do corretor sem gritar. */}
+              {/* Hairline amber no topo — cards com resultado de amostra */}
+              {lead.bebida_classificacao && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent"
+                />
+              )}
+
+              {/* Border-beam animado — leads urgentes */}
               {needsUrgentAction && (
                 <span
                   aria-hidden
@@ -424,8 +429,7 @@ export function LeadsTable({
             </li>
           );
         })}
-      </ul>
-    </PanelCard>
+    </ul>
   );
 }
 
