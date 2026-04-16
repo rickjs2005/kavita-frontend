@@ -222,13 +222,13 @@ export function LeadsTable({
               )}
 
               {/* ═══ SEÇÃO PRINCIPAL ═══ */}
-              <div className="p-4 sm:p-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
+              <div className="px-4 pb-3 pt-4 sm:px-5 sm:pb-4 sm:pt-5">
+                <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-start md:gap-5">
 
-                  {/* ── Bloco esquerdo: identidade + origem ── */}
-                  <div className="min-w-0 flex-1">
-                    {/* Nome + badges */}
-                    <div className="flex flex-wrap items-center gap-2">
+                  {/* ── Identidade + origem + contato + tags ── */}
+                  <div className="min-w-0 flex-1 space-y-2">
+                    {/* L1: nome + badges (max 3) */}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <h3
                         className={`text-[15px] font-bold tracking-tight ${isLoteIndisponivel ? "text-stone-500 line-through" : "text-stone-50"}`}
                       >
@@ -250,91 +250,77 @@ export function LeadsTable({
                       )}
                     </div>
 
-                    {/* Origem — córrego em destaque */}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px]">
+                    {/* L2: origem + data */}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-stone-400">
                       {lead.corrego_localidade && (
-                        <span className="font-semibold text-amber-200">
-                          ⛰ {lead.corrego_localidade}
-                        </span>
+                        <span className="font-semibold text-amber-200">⛰ {lead.corrego_localidade}</span>
                       )}
-                      {lead.cidade && (
-                        <span className="text-stone-300">{lead.cidade}</span>
-                      )}
-                      <span className="font-mono tabular-nums text-stone-500">
-                        {formatDate(lead.created_at)}
-                      </span>
+                      {lead.cidade && <span className="text-stone-300">{lead.cidade}</span>}
+                      <span className="font-mono tabular-nums text-stone-500">{formatDate(lead.created_at)}</span>
                     </div>
 
-                    {/* Contato */}
-                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                    {/* L3: contato pill + tags em uma mesma faixa */}
+                    <div className="flex flex-wrap items-center gap-2">
                       <a
                         href={`tel:+55${lead.telefone.replace(/\D/g, "")}`}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.03] px-2 py-1 text-[11px] font-medium text-stone-300 ring-1 ring-white/[0.06] transition-colors hover:text-amber-200 hover:ring-amber-400/30"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-stone-800/60 px-2.5 py-1 text-[11px] font-medium text-stone-300 ring-1 ring-white/[0.06] transition-colors hover:text-amber-200 hover:ring-amber-400/30"
                         title="Ligar"
                       >
-                        <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3" aria-hidden>
+                        <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3 shrink-0" aria-hidden>
                           <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                         </svg>
                         <span className="font-mono tabular-nums">{lead.telefone}</span>
                       </a>
+                      {lead.objetivo && (
+                        <span className="rounded-lg bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200 ring-1 ring-amber-400/20">
+                          {LABEL_OBJETIVO[lead.objetivo]}
+                        </span>
+                      )}
+                      {lead.volume_range && (
+                        <span className={`rounded-lg px-2 py-0.5 font-mono text-[10px] font-semibold tabular-nums ring-1 ${
+                          isHighPriority
+                            ? "bg-amber-400/10 text-amber-200 ring-amber-400/30"
+                            : "bg-stone-800/60 text-stone-200 ring-white/[0.06]"
+                        }`}>
+                          {LABEL_VOLUME[lead.volume_range]}
+                        </span>
+                      )}
+                      {lead.tipo_cafe && (
+                        <span className="rounded-lg bg-stone-800/60 px-2 py-0.5 text-[10px] font-medium text-stone-300 ring-1 ring-white/[0.06]">
+                          {LABEL_TIPO_CAFE[lead.tipo_cafe]}
+                        </span>
+                      )}
+                      {lead.safra_tipo && (
+                        <span className="hidden rounded-lg bg-stone-800/60 px-2 py-0.5 text-[10px] font-medium text-stone-400 ring-1 ring-white/[0.06] sm:inline-flex">
+                          {lead.safra_tipo === "atual" ? "Safra atual" : "Estoque"}
+                        </span>
+                      )}
                       {lead.canal_preferido && (
-                        <span className="text-[10px] text-stone-500">
-                          Prefere {LABEL_CANAL[lead.canal_preferido]}
+                        <span className="hidden text-[10px] text-stone-500 sm:inline">
+                          · {LABEL_CANAL[lead.canal_preferido]}
                         </span>
                       )}
                     </div>
-
-                    {/* Tags comerciais */}
-                    {(lead.volume_range || lead.tipo_cafe || lead.safra_tipo || lead.objetivo) && (
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
-                        {lead.objetivo && (
-                          <span className="rounded-md bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200 ring-1 ring-amber-400/20">
-                            {LABEL_OBJETIVO[lead.objetivo]}
-                          </span>
-                        )}
-                        {lead.volume_range && (
-                          <span className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-semibold tabular-nums ring-1 ${
-                            isHighPriority
-                              ? "bg-amber-400/10 text-amber-200 ring-amber-400/30"
-                              : "bg-stone-800/80 text-stone-200 ring-white/[0.06]"
-                          }`}>
-                            {LABEL_VOLUME[lead.volume_range]}
-                          </span>
-                        )}
-                        {lead.tipo_cafe && (
-                          <span className="rounded-md bg-stone-800/80 px-2 py-0.5 text-[10px] font-medium text-stone-300 ring-1 ring-white/[0.06]">
-                            {LABEL_TIPO_CAFE[lead.tipo_cafe]}
-                          </span>
-                        )}
-                        {lead.safra_tipo && (
-                          <span className="rounded-md bg-stone-800/80 px-2 py-0.5 text-[10px] font-medium text-stone-400 ring-1 ring-white/[0.06]">
-                            {lead.safra_tipo === "atual" ? "Safra atual" : "Estoque"}
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </div>
 
-                  {/* ── Bloco direito: ações ── */}
-                  <div className="flex shrink-0 flex-wrap items-center gap-2 lg:flex-col lg:items-end lg:gap-2">
+                  {/* ── Ações (canto direito no desktop, inline no mobile) ── */}
+                  <div className="flex shrink-0 items-center gap-2 md:flex-col md:items-stretch md:gap-1.5">
                     <a
                       href={waUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex h-9 items-center gap-2 rounded-xl bg-emerald-600 px-3.5 text-[12px] font-semibold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-500"
-                      title="WhatsApp"
+                      className="inline-flex h-9 min-w-[100px] items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-[12px] font-semibold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-500"
                     >
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden>
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 shrink-0" aria-hidden>
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.84 12.84 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
                       </svg>
                       WhatsApp
                     </a>
                     <a
                       href={`tel:+55${lead.telefone.replace(/\D/g, "")}`}
-                      className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 text-[12px] font-semibold text-stone-200 transition-colors hover:border-amber-400/30 hover:text-amber-200"
-                      title="Ligar"
+                      className="inline-flex h-9 min-w-[100px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[12px] font-semibold text-stone-200 transition-colors hover:border-amber-400/30 hover:text-amber-200"
                     >
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden>
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0" aria-hidden>
                         <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                       </svg>
                       Ligar
@@ -343,7 +329,7 @@ export function LeadsTable({
                       value={lead.status}
                       disabled={saving}
                       onChange={(e) => updateLead(lead.id, { status: e.target.value as LeadStatus })}
-                      className="h-9 rounded-xl border border-white/10 bg-stone-800 px-3 text-[12px] font-medium text-stone-100 focus:border-amber-400/60 focus:outline-none focus:ring-1 focus:ring-amber-400/25 disabled:opacity-60 [color-scheme:dark]"
+                      className="h-9 min-w-[100px] rounded-xl border border-white/10 bg-stone-800 px-3 text-center text-[12px] font-medium text-stone-100 focus:border-amber-400/60 focus:outline-none focus:ring-1 focus:ring-amber-400/25 disabled:opacity-60 [color-scheme:dark]"
                     >
                       {STATUS_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value} style={{ backgroundColor: "#1c1917", color: "#f5f5f4" }}>
@@ -357,8 +343,8 @@ export function LeadsTable({
 
               {/* ═══ SEÇÃO AMOSTRA + LAUDO ═══ */}
               {(lead.bebida_classificacao || !isLoteIndisponivel) && (
-                <div className="border-t border-white/[0.05] bg-stone-950/30 px-4 py-3 sm:px-5">
-                  {/* Amostra */}
+                <div className="border-t border-white/[0.05] bg-stone-950/30 px-4 py-3 sm:px-5 sm:py-4">
+                  {/* Barra de progresso da amostra */}
                   {!isLoteIndisponivel && (
                     <AmostraFlow
                       lead={lead}
@@ -367,46 +353,34 @@ export function LeadsTable({
                     />
                   )}
 
-                  {/* Resultado do laudo */}
+                  {/* Resultado do laudo — bloco premium */}
                   {lead.bebida_classificacao && (
-                    <div className="mt-2.5 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 sm:p-4">
-                      <div className="flex flex-wrap items-center gap-3">
+                    <div className="mt-3 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 sm:p-4">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <BebidaBadge classificacao={lead.bebida_classificacao} />
                         <PotencialBadge lead={lead} />
-
-                        {/* Dados-chave em font-mono */}
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                          {lead.pontuacao_sca != null && (
-                            <ResultDatum label="SCA" value={`${lead.pontuacao_sca}`} mono />
-                          )}
-                          {lead.umidade_pct != null && (
-                            <ResultDatum label="Umid" value={`${lead.umidade_pct}%`} mono />
-                          )}
-                          {lead.peneira && (
-                            <ResultDatum label="Pen" value={lead.peneira} mono />
-                          )}
-                          {lead.altitude_origem != null && (
-                            <ResultDatum label="Alt" value={`${lead.altitude_origem}m`} mono />
-                          )}
-                          {lead.preco_referencia_saca != null && (
-                            <ResultDatum label="R$/sc" value={`${lead.preco_referencia_saca}`} mono highlight />
-                          )}
-                          {lead.mercado_indicado && (
-                            <ResultDatum
-                              label="Mercado"
-                              value={{ exportacao: "Export", mercado_interno: "Interno", cafeteria: "Café", commodity: "Cmdt", indefinido: "—" }[lead.mercado_indicado] ?? "—"}
-                            />
-                          )}
-                        </div>
-
                         {lead.aptidao_oferta === "sim" && (
                           <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-emerald-300 ring-1 ring-emerald-500/30">
                             ✓ Apto
                           </span>
                         )}
                       </div>
+                      {/* Dados numéricos em grid responsivo */}
+                      <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
+                        {lead.pontuacao_sca != null && <ResultDatum label="SCA" value={`${lead.pontuacao_sca}`} mono />}
+                        {lead.umidade_pct != null && <ResultDatum label="Umidade" value={`${lead.umidade_pct}%`} mono />}
+                        {lead.peneira && <ResultDatum label="Peneira" value={lead.peneira} mono />}
+                        {lead.altitude_origem != null && <ResultDatum label="Altitude" value={`${lead.altitude_origem}m`} mono />}
+                        {lead.preco_referencia_saca != null && <ResultDatum label="R$/saca" value={`${lead.preco_referencia_saca}`} mono highlight />}
+                        {lead.mercado_indicado && (
+                          <ResultDatum
+                            label="Mercado"
+                            value={{ exportacao: "Exportação", mercado_interno: "Interno", cafeteria: "Cafeteria", commodity: "Commodity", indefinido: "—" }[lead.mercado_indicado] ?? "—"}
+                          />
+                        )}
+                      </div>
                       {lead.obs_sensoriais && (
-                        <p className="mt-2 text-[11px] italic leading-relaxed text-stone-400">
+                        <p className="mt-2 border-t border-white/[0.04] pt-2 text-[11px] italic leading-relaxed text-stone-400">
                           {lead.obs_sensoriais}
                         </p>
                       )}
@@ -415,17 +389,17 @@ export function LeadsTable({
 
                   {/* Mensagem do produtor */}
                   {lead.mensagem && (
-                    <p className="mt-2 whitespace-pre-line rounded-lg bg-white/[0.02] px-3 py-2 text-[12px] text-stone-400 ring-1 ring-white/[0.04]">
+                    <p className="mt-2.5 whitespace-pre-line rounded-lg bg-white/[0.02] px-3 py-2 text-[12px] leading-relaxed text-stone-400 ring-1 ring-white/[0.04]">
                       {lead.mensagem}
                     </p>
                   )}
 
-                  {/* Ação expandir — CTA claro */}
-                  <div className="mt-3 flex items-center gap-3">
+                  {/* CTA editar laudo / nota */}
+                  <div className="mt-3">
                     <button
                       type="button"
                       onClick={() => setExpandedId(isExpanded ? null : lead.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/20 bg-amber-400/[0.05] px-3 py-1.5 text-[11px] font-semibold text-amber-200 transition-colors hover:bg-amber-400/10"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-4 text-[11px] font-semibold text-amber-200 transition-colors hover:bg-amber-400/10 hover:border-amber-400/30"
                     >
                       {isExpanded
                         ? "✕ Fechar"
@@ -441,7 +415,7 @@ export function LeadsTable({
 
               {/* ═══ EXPANDIDO ═══ */}
               {isExpanded && (
-                <div className="space-y-4 border-t border-white/[0.06] bg-stone-950/20 px-4 py-4 sm:px-5">
+                <div className="space-y-4 border-t border-white/[0.06] bg-stone-950/20 px-4 py-4 sm:px-5 sm:py-5">
                   {(lead.amostra_status === "recebida" ||
                     lead.amostra_status === "laudada" ||
                     lead.bebida_classificacao) && (
