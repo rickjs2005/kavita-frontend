@@ -1,13 +1,15 @@
 "use client";
 
 // src/app/painel/corretora/leads/LeadsClient.tsx
+//
+// Tela de leads com layout operacional premium — inspirado em
+// terminal de corretagem mas com refinamento de produto SaaS.
 
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { LeadsTable } from "@/components/painel-corretora/LeadsTable";
-import { PanelCard } from "@/components/painel-corretora/PanelCard";
 import type {
   CorretoraLead,
   LeadStatus,
@@ -22,7 +24,7 @@ type BebidaFilter = BebidaClassificacao | "all";
 const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Todos" },
   { value: "new", label: "Novos" },
-  { value: "contacted", label: "Em contato" },
+  { value: "contacted", label: "Contato" },
   { value: "closed", label: "Fechados" },
   { value: "lost", label: "Perdidos" },
 ];
@@ -40,7 +42,6 @@ const BEBIDA_FILTERS: { value: BebidaFilter; label: string }[] = [
   { value: "dura", label: "Dura" },
   { value: "riado", label: "Riado" },
   { value: "rio", label: "Rio" },
-  { value: "escolha", label: "Escolha" },
 ];
 
 type ListResponse = {
@@ -51,6 +52,12 @@ type ListResponse = {
   pages: number;
 };
 
+function currentSafra(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  return now.getMonth() >= 3 ? `${y}/${y + 1}` : `${y - 1}/${y}`;
+}
+
 export default function LeadsClient() {
   const [leads, setLeads] = useState<CorretoraLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,12 +65,16 @@ export default function LeadsClient() {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [amostraFilter, setAmostraFilter] = useState<AmostraFilter>("all");
   const [bebidaFilter, setBebidaFilter] = useState<BebidaFilter>("all");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
   const hasActiveFilter =
-    filter !== "all" || amostraFilter !== "all" || bebidaFilter !== "all";
+    filter !== "all" ||
+    amostraFilter !== "all" ||
+    bebidaFilter !== "all" ||
+    search.trim().length > 0;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -102,67 +113,99 @@ export default function LeadsClient() {
     setFilter("all");
     setAmostraFilter("all");
     setBebidaFilter("all");
+    setSearch("");
   };
 
+  // Filtro local por texto (nome/córrego) — evita round-trip ao backend
+  // para busca simples. Aplica sobre os leads já carregados da página.
+  const filteredLeads =
+    search.trim().length >= 2
+      ? leads.filter((l) => {
+          const q = search.toLowerCase();
+          return (
+            l.nome.toLowerCase().includes(q) ||
+            (l.corrego_localidade ?? "").toLowerCase().includes(q) ||
+            (l.cidade ?? "").toLowerCase().includes(q)
+          );
+        })
+      : leads;
+
+  const todayShort = new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      {/* ─── Ticker de contexto ──────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-white/[0.04] pb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inset-0 animate-ping rounded-full bg-amber-500/60" />
+            <span className="relative h-1.5 w-1.5 rounded-full bg-amber-500" />
+          </span>
+          <span className="text-stone-300">{todayShort}</span>
+        </span>
+        <span className="text-stone-600">·</span>
+        <span className="text-amber-300/80">Safra {currentSafra()}</span>
+        <span className="text-stone-600">·</span>
+        <span>Zona da Mata · Matas de Minas</span>
+        <span className="text-stone-600">·</span>
+        <span>
+          <span className="text-stone-400">{total}</span>{" "}
+          {total === 1 ? "lead" : "leads"}
+        </span>
+      </div>
+
       {/* ─── Header ──────────────────────────────────────────── */}
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300/80">
-            Pipeline
-          </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-stone-50 md:text-3xl">
-            Leads recebidos
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          {!loading && (
-            <span className="text-[11px] font-medium tabular-nums text-stone-500">
-              {total} {total === 1 ? "registro" : "registros"}
-            </span>
-          )}
-          <ExportCsvButton statusFilter={filter} />
-        </div>
+        <h1 className="text-xl font-bold tracking-tight text-stone-50 md:text-2xl">
+          Mesa de operação
+        </h1>
+        <ExportCsvButton statusFilter={filter} />
       </div>
 
       {/* ─── Filtros ─────────────────────────────────────────── */}
-      <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-stone-900/40">
-        <div className="border-b border-white/[0.04] px-4 py-2.5 sm:px-5">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-400">
-              Filtros
-            </p>
-            {hasActiveFilter && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="text-[10px] font-semibold text-amber-300/70 transition-colors hover:text-amber-200"
-              >
-                Limpar filtros
-              </button>
-            )}
+      <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-stone-900/50">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 p-3 sm:p-4">
+          {/* Busca */}
+          <div className="relative w-full sm:w-auto sm:min-w-[200px]">
+            <svg
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-500"
+              aria-hidden
+            >
+              <path
+                fillRule="evenodd"
+                d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar nome ou córrego..."
+              className="h-8 w-full rounded-lg border border-white/10 bg-white/[0.04] pl-8 pr-3 text-[12px] text-stone-100 placeholder:text-stone-500 focus:border-amber-400/50 focus:outline-none focus:ring-1 focus:ring-amber-400/25 [color-scheme:dark]"
+            />
           </div>
-        </div>
-        <div className="space-y-1 p-2 sm:p-3">
-          <FilterRow
-            label="Status"
-            items={STATUS_FILTERS}
-            value={filter}
-            onChange={(v) => setFilter(v as StatusFilter)}
-          />
-          <FilterRow
-            label="Amostra"
-            items={AMOSTRA_FILTERS}
-            value={amostraFilter}
-            onChange={(v) => setAmostraFilter(v as AmostraFilter)}
-          />
-          <FilterRow
-            label="Bebida"
-            items={BEBIDA_FILTERS}
-            value={bebidaFilter}
-            onChange={(v) => setBebidaFilter(v as BebidaFilter)}
-          />
+
+          {/* Filtros em linha */}
+          <FilterGroup label="Status" items={STATUS_FILTERS} value={filter} onChange={(v) => setFilter(v as StatusFilter)} />
+          <FilterGroup label="Amostra" items={AMOSTRA_FILTERS} value={amostraFilter} onChange={(v) => setAmostraFilter(v as AmostraFilter)} />
+          <FilterGroup label="Bebida" items={BEBIDA_FILTERS} value={bebidaFilter} onChange={(v) => setBebidaFilter(v as BebidaFilter)} />
+
+          {hasActiveFilter && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-[10px] font-semibold text-amber-300/70 transition-colors hover:text-amber-200"
+            >
+              ✕ Limpar
+            </button>
+          )}
         </div>
       </div>
 
@@ -177,16 +220,16 @@ export default function LeadsClient() {
       )}
 
       {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-32 animate-pulse rounded-2xl border border-white/[0.04] bg-stone-900/40"
+              className="h-20 animate-pulse rounded-xl border border-white/[0.04] bg-stone-900/50"
             />
           ))}
         </div>
       ) : (
-        <LeadsTable leads={leads} onChanged={load} />
+        <LeadsTable leads={filteredLeads} onChanged={load} />
       )}
 
       {/* ─── Paginação ───────────────────────────────────────── */}
@@ -196,20 +239,20 @@ export default function LeadsClient() {
             type="button"
             disabled={page === 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="inline-flex min-h-[36px] items-center rounded-lg border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-8 items-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            ← Mais recentes
+            ←
           </button>
-          <span className="text-[11px] font-medium tabular-nums text-stone-500">
+          <span className="font-mono text-[11px] font-medium tabular-nums text-stone-500">
             {page} / {totalPages}
           </span>
           <button
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="inline-flex min-h-[36px] items-center rounded-lg border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-8 items-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Anteriores →
+            →
           </button>
         </div>
       )}
@@ -228,12 +271,10 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
       const qs = statusFilter !== "all" ? `?status=${statusFilter}` : "";
       const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
       const url = `${apiBase}/api/corretora/leads/export${qs}`;
-
       const res = await fetch(url, {
         credentials: "include",
         headers: { Accept: "text/csv" },
       });
-
       if (!res.ok) {
         if (res.status === 401) {
           window.dispatchEvent(new CustomEvent("auth:expired"));
@@ -245,14 +286,13 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
             const body = await res.json();
             if (body?.message) msg = body.message;
           } catch {
-            // fallback
+            /* fallback */
           }
           toast.error(msg);
           return;
         }
         throw new Error(`HTTP ${res.status}`);
       }
-
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -279,33 +319,24 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
       type="button"
       onClick={handleExport}
       disabled={downloading}
-      className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
-      title={
-        statusFilter === "all"
-          ? "Exportar todos os leads"
-          : `Exportar leads "${statusFilter}"`
-      }
+      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
+      title="Exportar CSV"
     >
-      <svg
-        viewBox="0 0 20 20"
-        fill="currentColor"
-        className="h-3.5 w-3.5"
-        aria-hidden
-      >
+      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden>
         <path
           fillRule="evenodd"
           d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L9 11.586V4a1 1 0 011-1zM4 15a1 1 0 011 1v1h10v-1a1 1 0 112 0v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2a1 1 0 011-1z"
           clipRule="evenodd"
         />
       </svg>
-      {downloading ? "Exportando..." : "CSV"}
+      {downloading ? "..." : "CSV"}
     </button>
   );
 }
 
-// ─── FilterRow ────────────────────────────────────────────────────
+// ─── FilterGroup (compact) ──────────────────────────────────────
 
-function FilterRow({
+function FilterGroup({
   label,
   items,
   value,
@@ -317,29 +348,27 @@ function FilterRow({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-2 sm:gap-3">
-      <span className="w-14 shrink-0 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-500 sm:w-16">
+    <div className="flex items-center gap-1.5">
+      <span className="text-[9px] font-semibold uppercase tracking-[0.1em] text-stone-500">
         {label}
       </span>
-      <div className="flex flex-wrap items-center gap-1">
-        {items.map((f) => {
-          const active = value === f.value;
-          return (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => onChange(f.value)}
-              className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
-                active
-                  ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30"
-                  : "text-stone-400 hover:bg-white/[0.04] hover:text-stone-200"
-              }`}
-            >
-              {f.label}
-            </button>
-          );
-        })}
-      </div>
+      {items.map((f) => {
+        const active = value === f.value;
+        return (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => onChange(f.value)}
+            className={`rounded-md px-2 py-0.5 text-[11px] font-semibold transition-all ${
+              active
+                ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30"
+                : "text-stone-500 hover:text-stone-200"
+            }`}
+          >
+            {f.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
