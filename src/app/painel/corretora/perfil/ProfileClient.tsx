@@ -53,10 +53,10 @@ const CONTACT_FIELDS = [
 ] as const;
 
 const inputClass =
-  "w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 shadow-sm shadow-stone-900/[0.02] transition-colors focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/40";
+  "w-full rounded-xl border border-white/10 bg-stone-950 px-3.5 py-2.5 text-sm text-stone-100 placeholder:text-stone-500 shadow-sm transition-colors hover:bg-stone-950/80 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/25 [color-scheme:dark]";
 const labelClass =
-  "mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-600";
-const errorClass = "mt-1.5 text-[11px] font-medium text-red-700";
+  "mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400";
+const errorClass = "mt-1.5 text-[11px] font-medium text-red-300";
 
 /**
  * Normaliza o campo JSON do backend. Depending on MySQL driver, pode
@@ -211,35 +211,35 @@ export default function ProfileClient() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300">
           Identidade
         </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 md:text-3xl">
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-50 md:text-3xl">
           Meu perfil
         </h1>
-        <p className="mt-1 text-sm text-stone-500">
+        <p className="mt-1 text-sm text-stone-400">
           Edite os canais de contato e a descrição pública da sua corretora.
         </p>
       </div>
 
       {/* Context banner */}
       {corretora && (
-        <PanelCard density="compact" className="bg-amber-50/40">
+        <PanelCard density="compact" className="!bg-amber-950/30 !ring-amber-900/50">
           <div className="flex items-start gap-3">
             <span
               aria-hidden
-              className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-800"
+              className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-400/15 text-xs font-bold text-amber-300 ring-1 ring-amber-400/30"
             >
-              i
+              ☕
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-stone-900">
+              <p className="text-sm font-semibold text-stone-100">
                 {corretora.name}{" "}
-                <span className="font-normal text-stone-500">
+                <span className="font-normal text-amber-200/80">
                   · {corretora.city}, {corretora.state}
                 </span>
               </p>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-stone-600">
+              <p className="mt-0.5 text-[11px] leading-relaxed text-stone-400">
                 Para alterar o nome da empresa, cidade ou a logo, entre em
                 contato com o administrador do Kavita.
               </p>
@@ -252,10 +252,10 @@ export default function ProfileClient() {
         {/* Seção: Informações principais */}
         <PanelCard density="spacious">
           <div className="mb-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400">
               Informações principais
             </p>
-            <h2 className="mt-1 text-base font-semibold text-stone-900">
+            <h2 className="mt-1 text-base font-semibold text-stone-100">
               Como você aparece para o produtor
             </h2>
           </div>
@@ -299,13 +299,13 @@ export default function ProfileClient() {
         {/* Seção: Canais de contato */}
         <PanelCard density="spacious">
           <div className="mb-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400">
               Canais de contato
             </p>
-            <h2 className="mt-1 text-base font-semibold text-stone-900">
+            <h2 className="mt-1 text-base font-semibold text-stone-100">
               Como o produtor pode te encontrar
             </h2>
-            <p className="mt-1 text-[11px] text-stone-500">
+            <p className="mt-1 text-[11px] text-stone-400">
               Informe pelo menos um canal. Deixe em branco os que você não usa.
             </p>
           </div>
@@ -375,13 +375,13 @@ export default function ProfileClient() {
         {/* Seção: Atendimento regional (Sprint 2.3) */}
         <PanelCard density="spacious">
           <div className="mb-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400">
               Atendimento regional
             </p>
-            <h2 className="mt-1 text-base font-semibold text-stone-900">
+            <h2 className="mt-1 text-base font-semibold text-stone-100">
               Onde e como você atua
             </h2>
-            <p className="mt-1 text-[11px] text-stone-500">
+            <p className="mt-1 text-[11px] text-stone-400">
               Produtores filtram por cidade e tipo de café. Quanto mais
               completo, melhor sua exposição na Zona da Mata.
             </p>
@@ -391,7 +391,7 @@ export default function ProfileClient() {
             {/* Cidades atendidas (multi-select checkboxes) */}
             <div>
               <label className={labelClass}>Cidades atendidas</label>
-              <p className="-mt-1 mb-2.5 text-[11px] text-stone-500">
+              <p className="-mt-1 mb-2.5 text-[11px] text-stone-400">
                 Marque todas as cidades da Zona da Mata onde você compra ou
                 vende café.
               </p>
@@ -405,7 +405,7 @@ export default function ProfileClient() {
                       return (
                         <label
                           key={cidade.slug}
-                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm transition-colors hover:border-amber-400/40 hover:bg-amber-50/30 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50"
+                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-stone-950 px-3 py-2 text-sm transition-colors hover:border-amber-400/30 hover:bg-stone-950/80 has-[:checked]:border-amber-400/60 has-[:checked]:bg-amber-400/10"
                         >
                           <input
                             type="checkbox"
@@ -424,9 +424,9 @@ export default function ProfileClient() {
                                 );
                               }
                             }}
-                            className="h-4 w-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500"
+                            className="h-4 w-4 rounded border-stone-600 bg-stone-800 text-amber-400 focus:ring-amber-400"
                           />
-                          <span className="flex-1 text-stone-800">
+                          <span className="flex-1 text-stone-200">
                             {cidade.nome}
                           </span>
                           {cidade.destaque && (
@@ -476,7 +476,7 @@ export default function ProfileClient() {
                             }}
                             className="peer sr-only"
                           />
-                          <span className="inline-block rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-medium text-stone-700 transition-all hover:border-amber-400/40 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:text-amber-900">
+                          <span className="inline-block rounded-full border border-white/10 bg-stone-950 px-3.5 py-1.5 text-xs font-medium text-stone-300 transition-all hover:border-amber-400/30 peer-checked:border-amber-400/60 peer-checked:bg-amber-400/15 peer-checked:text-amber-200">
                             {tipo.label}
                           </span>
                         </label>
@@ -509,11 +509,11 @@ export default function ProfileClient() {
                             onChange={() => field.onChange(perfil.value)}
                             className="peer sr-only"
                           />
-                          <span className="block rounded-xl border border-stone-200 bg-white p-3 text-left transition-all hover:border-amber-400/40 peer-checked:border-amber-500 peer-checked:bg-amber-50">
-                            <span className="block text-sm font-semibold text-stone-900 peer-checked:text-amber-900">
+                          <span className="block rounded-xl border border-white/10 bg-stone-950 p-3 text-left transition-all hover:border-amber-400/30 peer-checked:border-amber-400/60 peer-checked:bg-amber-400/10">
+                            <span className="block text-sm font-semibold text-stone-100">
                               {perfil.label}
                             </span>
-                            <span className="mt-0.5 block text-[11px] text-stone-500">
+                            <span className="mt-0.5 block text-[11px] text-stone-400">
                               {perfil.desc}
                             </span>
                           </span>
@@ -578,7 +578,7 @@ export default function ProfileClient() {
           <button
             type="submit"
             disabled={saving || !isDirty}
-            className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-600/20 transition-colors hover:from-amber-400 hover:to-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 px-5 py-2.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/20 transition-colors hover:from-amber-300 hover:to-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span
               aria-hidden
