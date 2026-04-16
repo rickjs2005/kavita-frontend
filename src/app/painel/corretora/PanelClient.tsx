@@ -22,7 +22,6 @@ import { LeadsTable } from "@/components/painel-corretora/LeadsTable";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 import { CurrentPlanBadge } from "@/components/painel-corretora/CurrentPlanBadge";
 import {
-  BeanScatter,
   OrnamentalDivider,
   MarketStrip,
   MarketStripItem,
@@ -92,18 +91,18 @@ function ChapterHeader({
     <div className="flex items-end justify-between gap-4">
       <div className="min-w-0">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-700/10 font-mono text-[10px] font-bold text-amber-800 ring-1 ring-amber-700/20">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400/10 font-mono text-[10px] font-bold text-amber-300 ring-1 ring-amber-400/30">
             {number}
           </span>
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-400">
             {kicker}
           </span>
         </div>
-        <h2 className="mt-2 font-serif text-xl font-semibold tracking-tight text-stone-900 md:text-2xl">
+        <h2 className="mt-2 text-xl font-bold tracking-tight text-stone-100 md:text-2xl">
           {title}
         </h2>
         {hint && (
-          <p className="mt-0.5 text-xs text-stone-500">{hint}</p>
+          <p className="mt-0.5 text-xs text-stone-400">{hint}</p>
         )}
       </div>
       {action}
@@ -533,8 +532,6 @@ function EducationalEmptyState({ publicUrl }: { publicUrl: string }) {
         aria-hidden
         className="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-orange-700/[0.08] blur-3xl"
       />
-      <BeanScatter tone="dark" density="heavy" />
-
       <div className="relative">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-amber-400/25 to-amber-600/10 text-amber-300 ring-1 ring-amber-400/40">

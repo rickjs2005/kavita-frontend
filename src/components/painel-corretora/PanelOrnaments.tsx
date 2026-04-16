@@ -88,19 +88,19 @@ export function OrnamentalDivider({
       aria-hidden
       className="flex items-center justify-center gap-3 py-1"
     >
-      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-300 to-stone-300" />
+      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-700 to-stone-700" />
       <span className="flex items-center gap-2">
         <span className="h-0.5 w-0.5 rounded-full bg-amber-500/40" />
-        <PanelBrandMark className="h-2.5 w-2.5 text-amber-700/50" />
+        <PanelBrandMark className="h-2.5 w-2.5 text-amber-500/40" />
         {label && (
           <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-stone-500">
             {label}
           </span>
         )}
-        <PanelBrandMark className="h-2.5 w-2.5 -scale-x-100 text-amber-700/50" />
+        <PanelBrandMark className="h-2.5 w-2.5 -scale-x-100 text-amber-500/40" />
         <span className="h-0.5 w-0.5 rounded-full bg-amber-500/40" />
       </span>
-      <span className="h-px flex-1 bg-gradient-to-l from-transparent via-stone-300 to-stone-300" />
+      <span className="h-px flex-1 bg-gradient-to-l from-transparent via-stone-700 to-stone-700" />
     </div>
   );
 }
@@ -112,7 +112,7 @@ export function OrnamentalDivider({
 // ===================================================================
 export function MarketStrip({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-stone-900/[0.08] pb-3 text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-stone-500">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/[0.06] pb-3 text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-stone-400">
       {children}
     </div>
   );
@@ -130,7 +130,7 @@ export function MarketStripItem({
   return (
     <span
       className={`inline-flex items-center gap-1.5 ${
-        accent ? "text-amber-700" : ""
+        accent ? "text-amber-300" : ""
       }`}
     >
       {pulse && (
@@ -146,7 +146,7 @@ export function MarketStripItem({
 
 export function MarketStripDivider() {
   return (
-    <span aria-hidden className="text-stone-300">
+    <span aria-hidden className="text-stone-600">
       ·
     </span>
   );
