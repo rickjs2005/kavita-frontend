@@ -36,6 +36,12 @@ export type PublicCorretora = {
   // SELECT da camada pública; null quando ainda não há reviews.
   reviews_count?: number | null;
   reviews_avg?: number | null;
+  // SLA médio de primeira resposta em segundos, baseado em leads
+  // efetivamente respondidos (first_response_seconds não-null).
+  // Exibido como "Responde em média Xh" no detalhe quando a amostra
+  // é confiável (>= 5 leads respondidos — controlado via UI).
+  sla_avg_seconds?: number | null;
+  sla_sample_count?: number | null;
 };
 
 export type CorretoraAdmin = PublicCorretora & {

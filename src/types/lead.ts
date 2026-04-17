@@ -70,6 +70,11 @@ export type CorretoraLead = {
   nota_interna?: string | null;
   created_at: string;
   updated_at: string;
+  // Sprint 5 — dedupe por telefone_normalizado dentro da mesma
+  // corretora. Sinaliza "este produtor já te procurou antes" no
+  // painel. Vem do backend como COUNT(*); 0 quando é o primeiro
+  // contato. Isolado por corretora (não vaza entre tenants).
+  previous_contacts_count?: number;
 };
 
 export type LeadsSummary = {

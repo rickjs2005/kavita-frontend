@@ -27,11 +27,37 @@ type Props = {
   };
 };
 
+// Mínimo de amostra para divulgar SLA no público. Abaixo disso o
+// número oscila demais — 2 leads muito rápidos distorceriam para a
+// corretora, 2 leads travados a prejudicariam injustamente.
+const SLA_MIN_SAMPLE = 5;
+
 function formatSlaHoras(h: number): string {
   if (h < 1) return "< 1h";
   if (h < 24) return `${Math.round(h)}h`;
   const d = Math.round(h / 24);
   return `${d}d`;
+}
+
+/**
+ * Resolve a hora média de resposta a partir dos dois caminhos
+ * possíveis: o agregado novo (`sla_avg_seconds` + `sla_sample_count`
+ * — Sprint 5) com piso de amostra, ou a prop legada `sla_medio_horas`.
+ * Retorna null se nenhum dado confiável estiver disponível.
+ */
+function resolveSlaHoras(c: Props["corretora"]): number | null {
+  if (
+    typeof c.sla_avg_seconds === "number" &&
+    c.sla_avg_seconds > 0 &&
+    typeof c.sla_sample_count === "number" &&
+    c.sla_sample_count >= SLA_MIN_SAMPLE
+  ) {
+    return c.sla_avg_seconds / 3600;
+  }
+  if (typeof c.sla_medio_horas === "number" && c.sla_medio_horas > 0) {
+    return c.sla_medio_horas;
+  }
+  return null;
 }
 
 type Card = {
@@ -77,11 +103,15 @@ function buildCards(c: Props["corretora"]): Card[] {
   }
 
   // 3. Tempo médio de resposta — usa SLA quando existe, senão promessa
-  if (typeof c.sla_medio_horas === "number" && c.sla_medio_horas > 0) {
+  const slaHoras = resolveSlaHoras(c);
+  if (slaHoras != null) {
+    const sample = c.sla_sample_count ?? null;
     cards.push({
       kicker: "Resposta média",
-      value: formatSlaHoras(c.sla_medio_horas),
-      hint: "últimos 30 dias",
+      value: formatSlaHoras(slaHoras),
+      hint: sample
+        ? `base de ${sample} ${sample === 1 ? "lead respondido" : "leads respondidos"}`
+        : "últimos 30 dias",
     });
   } else {
     cards.push({

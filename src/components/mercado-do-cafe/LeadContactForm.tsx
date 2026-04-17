@@ -5,7 +5,7 @@
 // Formulário público "Fale com esta corretora" — exibido no detalhe.
 // Envia para POST /api/public/corretoras/:slug/leads.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
@@ -18,6 +18,13 @@ import {
   VOLUMES_LEAD,
   CANAIS_CONTATO,
 } from "@/lib/regioes";
+import { getCurrentSafraTipo } from "@/lib/safra";
+import { getCorregosSugeridos } from "@/lib/corregos";
+import {
+  loadLeadDraft,
+  saveLeadDraft,
+  clearLeadDraft,
+} from "@/lib/leadDraft";
 
 type Props = {
   corretoraSlug: string;
@@ -214,10 +221,15 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
     };
   }, [turnstileEnabled, success]);
 
+  // Flag para indicar que rehidratamos com draft do localStorage —
+  // habilita o botão "limpar meus dados" no final do form.
+  const [hasDraft, setHasDraft] = useState(false);
+
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     control,
     formState: { errors },
   } = useForm<LeadFormData>({
@@ -233,14 +245,39 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       canal_preferido: "whatsapp",
       // Sprint 7
       corrego_localidade: "",
-      safra_tipo: undefined,
+      // Safra pré-selecionada pelo calendário (mai–set = atual). Produtor
+      // troca com 1 clique se tiver estoque fora da janela. Reduz fricção
+      // sem forçar — segue editável.
+      safra_tipo: getCurrentSafraTipo(),
     },
   });
 
+  // Rehidrata draft salvo do último envio (mesmo browser/produtor).
+  // Roda em useEffect — localStorage é client-only. Se houver draft,
+  // cada campo é aplicado individualmente via setValue para não
+  // sobrescrever o default do safra_tipo calculado pelo calendário.
+  useEffect(() => {
+    const draft = loadLeadDraft();
+    if (!draft) return;
+    if (draft.nome) setValue("nome", draft.nome);
+    if (draft.telefone) setValue("telefone", draft.telefone);
+    if (draft.email) setValue("email", draft.email);
+    if (draft.cidade) setValue("cidade", draft.cidade);
+    if (draft.canal_preferido) setValue("canal_preferido", draft.canal_preferido);
+    setHasDraft(true);
+  }, [setValue]);
+
   // Watch do select de cidade — quando vazio, aplicamos a cor de
   // placeholder (stone-400) para manter hierarquia visual igual aos
-  // inputs text.
+  // inputs text. Também alimenta o datalist de córregos sugeridos.
   const cidadeValue = useWatch({ control, name: "cidade" });
+  const corregosSugeridos = useMemo(
+    () =>
+      cidadeValue && cidadeValue !== "outra"
+        ? getCorregosSugeridos(cidadeValue)
+        : [],
+    [cidadeValue],
+  );
 
   const onSubmit = async (data: LeadFormData) => {
     // Fail-closed: sem token válido, não envia. Se o widget ficou
@@ -282,6 +319,16 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       toast.success(
         "Mensagem enviada — a corretora já foi avisada e retorna em breve.",
       );
+      // Persist draft só no sucesso. Mantém só o que faz sentido
+      // reusar em outra corretora (identidade + canal preferido).
+      saveLeadDraft({
+        nome: data.nome,
+        telefone: data.telefone,
+        email: data.email,
+        cidade: data.cidade,
+        canal_preferido: data.canal_preferido,
+      });
+      setHasDraft(true);
       setSuccess(true);
       reset();
       // Token Turnstile é single-use; reset para o caso do usuário reabrir
@@ -514,19 +561,32 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
           <span aria-hidden className={fieldsetHairlineClass} />
         </legend>
 
-        {/* Córrego/localidade */}
+        {/* Córrego/localidade — com sugestões via <datalist>.
+            Sugestões gerais de café especial (Serra do Brigadeiro,
+            Pedra Bonita etc.) + cidade-específicas (Alto Manhuaçu
+            quando cidade = Manhuaçu). Não restringe o input: é só
+            autocomplete — produtor digita livremente. */}
         <div>
           <label className={labelClass} htmlFor="lead-corrego">
             Córrego ou localidade
           </label>
           <input
             id="lead-corrego"
+            list="lead-corrego-sugestoes"
             {...register("corrego_localidade", {
               maxLength: { value: 120, message: "Máximo 120 caracteres." },
             })}
             className={inputClass}
             placeholder="Ex: Córrego Pedra Bonita"
+            autoComplete="off"
           />
+          {corregosSugeridos.length > 0 && (
+            <datalist id="lead-corrego-sugestoes">
+              {corregosSugeridos.map((termo) => (
+                <option key={termo} value={termo} />
+              ))}
+            </datalist>
+          )}
           <p className={helperClass}>
             Ajuda a identificar a qualidade pela altitude e microrregião.
           </p>
@@ -731,6 +791,38 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
             )}
           </span>
         </button>
+
+        {/* Limpar dados salvos. Aparece apenas quando de fato existe
+            um draft — evita ruído em usuários novos. Limpar é só
+            client-side (não toca no lead já enviado). */}
+        {hasDraft && (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                clearLeadDraft();
+                reset({
+                  nome: "",
+                  telefone: "",
+                  email: "",
+                  cidade: "",
+                  mensagem: "",
+                  objetivo: undefined,
+                  tipo_cafe: undefined,
+                  volume_range: undefined,
+                  canal_preferido: "whatsapp",
+                  corrego_localidade: "",
+                  safra_tipo: getCurrentSafraTipo(),
+                });
+                setHasDraft(false);
+                toast.success("Dados salvos no navegador removidos.");
+              }}
+              className="text-[10px] font-medium uppercase tracking-[0.12em] text-stone-500 transition-colors hover:text-stone-300"
+            >
+              Limpar meus dados salvos
+            </button>
+          </div>
+        )}
       </div>
     </form>
   );

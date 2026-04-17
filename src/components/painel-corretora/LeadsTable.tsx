@@ -243,6 +243,19 @@ export function LeadsTable({
                           amostraStatus={lead.amostra_status}
                         />
                       )}
+                      {/* Sprint 5 — dedupe: sinaliza que este produtor
+                          já entrou em contato antes com esta corretora.
+                          Escopo restrito ao tenant atual (sem leak entre
+                          corretoras). Só aparece quando count > 0. */}
+                      {lead.previous_contacts_count != null &&
+                        lead.previous_contacts_count > 0 && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-amber-200 ring-1 ring-amber-400/30"
+                            title={`Este produtor já enviou ${lead.previous_contacts_count} contato(s) anteriores com a corretora.`}
+                          >
+                            ↺ Já te procurou {lead.previous_contacts_count}×
+                          </span>
+                        )}
                       {isLoteIndisponivel && (
                         <span className="rounded-full bg-stone-800 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400 ring-1 ring-white/[0.06]">
                           Lote vendido
