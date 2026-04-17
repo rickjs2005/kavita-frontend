@@ -32,6 +32,11 @@ import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import type { CorretoraSubmissionFormData } from "@/types/corretora";
+import {
+  TurnstileWidget,
+  TURNSTILE_ENABLED,
+  type TurnstileHandle,
+} from "@/components/painel-corretora/TurnstileWidget";
 
 // ─── Configuração ────────────────────────────────────────────────
 
@@ -93,6 +98,13 @@ export function CorretoraSubmissionForm() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Turnstile — fail-closed. Submit só libera com token válido quando
+  // a feature está configurada (NEXT_PUBLIC_TURNSTILE_SITE_KEY). Em dev
+  // sem key, o submit procede normalmente.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
 
   const {
     register,
@@ -187,6 +199,13 @@ export function CorretoraSubmissionForm() {
       return;
     }
 
+    if (TURNSTILE_ENABLED && !turnstileToken) {
+      toast.error(
+        turnstileError ?? "Aguarde a verificação anti-bot ser concluída.",
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
       const formData = new FormData();
@@ -197,7 +216,17 @@ export function CorretoraSubmissionForm() {
       });
       if (logoFile) formData.append("logo", logoFile);
 
-      await apiClient.post("/api/public/corretoras/submit", formData);
+      // Token vai no header (não no body) para que o middleware
+      // verifyTurnstile possa validar antes do multer — assim, em
+      // caso de fail-closed, o logo nem chega a ser persistido.
+      const headers: Record<string, string> =
+        TURNSTILE_ENABLED && turnstileToken
+          ? { "X-Turnstile-Token": turnstileToken }
+          : {};
+
+      await apiClient.post("/api/public/corretoras/submit", formData, {
+        headers,
+      });
       toast.success("Cadastro enviado com sucesso!");
       router.push("/mercado-do-cafe/corretoras/cadastro/sucesso");
     } catch (err) {
@@ -205,6 +234,9 @@ export function CorretoraSubmissionForm() {
         formatApiError(err, "Erro ao enviar cadastro. Tente novamente.")
           .message,
       );
+      // Token é single-use; reset para permitir retry sem reload.
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     } finally {
       setSubmitting(false);
     }
@@ -598,6 +630,34 @@ export function CorretoraSubmissionForm() {
         </div>
       </SectionPanel>
 
+      {/* ═══ Turnstile anti-bot ═══════════════════════════════════════
+          Fail-closed: sem token, o submit não habilita. Em dev sem
+          TURNSTILE_SITE_KEY o bloco inteiro some. Theme dark combina
+          com o restante do form. */}
+      {TURNSTILE_ENABLED && (
+        <div
+          className="flex flex-col items-center gap-2 rounded-2xl bg-white/[0.02] p-4 ring-1 ring-white/[0.06]"
+          aria-live="polite"
+        >
+          <TurnstileWidget
+            ref={turnstileRef}
+            theme="dark"
+            onToken={setTurnstileToken}
+            onError={setTurnstileError}
+          />
+          {!turnstileToken && !turnstileError && (
+            <p className="text-[10px] uppercase tracking-[0.14em] text-stone-400">
+              Verificação de segurança em andamento…
+            </p>
+          )}
+          {turnstileError && (
+            <p className="max-w-md text-center text-[12px] leading-relaxed text-rose-300">
+              {turnstileError}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* ═══ Submit row ═══════════════════════════════════════════════ */}
       <div className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:p-8">
         <span
@@ -626,7 +686,7 @@ export function CorretoraSubmissionForm() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || (TURNSTILE_ENABLED && !turnstileToken)}
             aria-label={
               submitting ? "Enviando cadastro" : "Enviar cadastro"
             }

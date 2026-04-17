@@ -11,7 +11,7 @@
 // (evita render desnecessário + Turnstile eager para quem não vai
 // avaliar).
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
@@ -22,6 +22,11 @@ import type {
 } from "@/types/review";
 import { CIDADES_ZONA_DA_MATA } from "@/lib/regioes";
 import { useForm } from "react-hook-form";
+import {
+  TurnstileWidget,
+  TURNSTILE_ENABLED,
+  type TurnstileHandle,
+} from "@/components/painel-corretora/TurnstileWidget";
 
 type Props = {
   corretoraSlug: string;
@@ -290,6 +295,13 @@ function ReviewForm({
   const [submitting, setSubmitting] = useState(false);
   const [selectedRating, setSelectedRating] = useState<number>(0);
 
+  // Turnstile — bug ativo até Sprint 2: o backend já aplica
+  // verifyTurnstile nesta rota, então sem token o POST retornava 403.
+  // Fail-closed: sem token válido, submit fica travado.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
+
   const {
     register,
     handleSubmit,
@@ -311,6 +323,13 @@ function ReviewForm({
       return;
     }
 
+    if (TURNSTILE_ENABLED && !turnstileToken) {
+      toast.error(
+        turnstileError ?? "Aguarde a verificação anti-bot ser concluída.",
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload: Record<string, unknown> = {
@@ -319,6 +338,9 @@ function ReviewForm({
       };
       if (data.cidade_autor?.trim()) payload.cidade_autor = data.cidade_autor.trim();
       if (data.comentario?.trim()) payload.comentario = data.comentario.trim();
+      if (TURNSTILE_ENABLED && turnstileToken) {
+        payload["cf-turnstile-response"] = turnstileToken;
+      }
 
       await apiClient.post(
         `/api/public/corretoras/${encodeURIComponent(corretoraSlug)}/reviews`,
@@ -332,6 +354,9 @@ function ReviewForm({
       onSuccess();
     } catch (err) {
       toast.error(formatApiError(err, "Erro ao enviar avaliação.").message);
+      // Token é single-use — reset para permitir retry imediato.
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     } finally {
       setSubmitting(false);
     }
@@ -442,9 +467,37 @@ function ReviewForm({
           publicada.
         </p>
 
+        {TURNSTILE_ENABLED && (
+          <div
+            className="flex flex-col items-center gap-2"
+            aria-live="polite"
+          >
+            <TurnstileWidget
+              ref={turnstileRef}
+              theme="dark"
+              onToken={setTurnstileToken}
+              onError={setTurnstileError}
+            />
+            {!turnstileToken && !turnstileError && (
+              <p className="text-[10px] uppercase tracking-[0.14em] text-stone-400">
+                Verificação de segurança em andamento…
+              </p>
+            )}
+            {turnstileError && (
+              <p className="max-w-md text-center text-[12px] leading-relaxed text-rose-300">
+                {turnstileError}
+              </p>
+            )}
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={submitting || selectedRating === 0}
+          disabled={
+            submitting ||
+            selectedRating === 0 ||
+            (TURNSTILE_ENABLED && !turnstileToken)
+          }
           className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-10"
         >
           <span
