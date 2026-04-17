@@ -19,10 +19,30 @@ import Link from "next/link";
 import Image from "next/image";
 import type { PublicCorretora } from "@/types/corretora";
 import { absUrl } from "@/utils/absUrl";
+import { getCidadeBySlug } from "@/lib/regioes";
 
 type Props = {
   corretora: PublicCorretora;
 };
+
+// Resolve até N nomes de cidades atendidas a partir dos slugs.
+// Retorna string "Manhuaçu · Reduto · Simonésia +2" quando há excesso.
+// Slug desconhecido é ignorado silenciosamente (defensivo: admin
+// pode ter slug fora do catálogo canônico).
+function formatCidadesAtendidas(
+  slugs: string[] | null | undefined,
+  max = 3,
+): { preview: string; total: number } | null {
+  if (!slugs || slugs.length === 0) return null;
+  const nomes = slugs
+    .map((s) => getCidadeBySlug(s)?.nome ?? null)
+    .filter((v): v is string => Boolean(v));
+  if (nomes.length === 0) return null;
+  const shown = nomes.slice(0, max);
+  const rest = nomes.length - shown.length;
+  const preview = rest > 0 ? `${shown.join(" · ")} +${rest}` : shown.join(" · ");
+  return { preview, total: nomes.length };
+}
 
 // ─── Ícones SVG inline (estilo Lucide, 14x14, stroke 1.8) ──────────────
 // Emoji seria mais fácil mas destrói a percepção premium do card.
@@ -121,6 +141,25 @@ export function CorretoraCard({ corretora }: Props) {
 
   const detailHref = `/mercado-do-cafe/corretoras/${corretora.slug}`;
   const channels = buildChannels(corretora);
+
+  // Signals de confiança (Sprint 1 — vitrine rica). Calculados antes
+  // do render para decidir se a faixa "stats" vale a pena. Se todos
+  // forem null, não renderizamos a faixa — evita espaço visual vazio
+  // para registros antigos sem esses campos preenchidos.
+  const reviewsCount = Number(corretora.reviews_count ?? 0);
+  const reviewsAvg =
+    corretora.reviews_avg != null ? Number(corretora.reviews_avg) : null;
+  const hasReviews = reviewsCount > 0 && reviewsAvg != null;
+  const anosAtuacao =
+    typeof corretora.anos_atuacao === "number" && corretora.anos_atuacao > 0
+      ? corretora.anos_atuacao
+      : null;
+  const horario = corretora.horario_atendimento?.trim() || null;
+  const cidadesAtendidas = formatCidadesAtendidas(
+    corretora.cidades_atendidas,
+    3,
+  );
+  const hasStats = hasReviews || anosAtuacao != null || horario != null;
 
   return (
     <article
@@ -258,6 +297,125 @@ export function CorretoraCard({ corretora }: Props) {
           <p className="mt-4 line-clamp-2 text-sm leading-relaxed text-stone-300">
             {corretora.description}
           </p>
+        )}
+
+        {/* ── STATS DE CONFIANÇA ──────────────────────────────────────
+            Faixa editorial com sinais que o produtor usa pra decidir
+            antes de abrir o detalhe: rating, tempo de atuação, horário.
+            Renderizada apenas quando algum dos sinais existe. */}
+        {hasStats && (
+          <dl className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px]">
+            {hasReviews && (
+              <div className="inline-flex items-center gap-1.5">
+                <dt className="sr-only">Avaliação</dt>
+                <dd className="inline-flex items-center gap-1">
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="h-3.5 w-3.5 text-amber-400"
+                    aria-hidden
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.163c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.175 0l-3.37 2.448c-.784.57-1.838-.197-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.05 9.384c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.957z" />
+                  </svg>
+                  <span className="font-semibold tabular-nums text-amber-200">
+                    {reviewsAvg!.toFixed(1)}
+                  </span>
+                  <span className="text-stone-400">
+                    ({reviewsCount}{" "}
+                    {reviewsCount === 1 ? "avaliação" : "avaliações"})
+                  </span>
+                </dd>
+              </div>
+            )}
+
+            {anosAtuacao != null && (
+              <div className="inline-flex items-center gap-1.5">
+                <dt className="sr-only">Anos de atuação</dt>
+                <dd className="inline-flex items-center gap-1 text-stone-300">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3.5 w-3.5 text-amber-300/80"
+                    aria-hidden
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                  <span className="font-semibold text-stone-200 tabular-nums">
+                    {anosAtuacao}
+                  </span>
+                  <span className="text-stone-400">
+                    {anosAtuacao === 1 ? "ano no mercado" : "anos no mercado"}
+                  </span>
+                </dd>
+              </div>
+            )}
+
+            {horario && (
+              <div className="inline-flex min-w-0 items-center gap-1.5">
+                <dt className="sr-only">Horário de atendimento</dt>
+                <dd className="inline-flex min-w-0 items-center gap-1 text-stone-300">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3.5 w-3.5 shrink-0 text-amber-300/80"
+                    aria-hidden
+                  >
+                    <rect x="3" y="5" width="18" height="16" rx="2" />
+                    <path d="M16 3v4M8 3v4M3 11h18" />
+                  </svg>
+                  <span className="truncate text-stone-200">{horario}</span>
+                </dd>
+              </div>
+            )}
+          </dl>
+        )}
+
+        {/* ── CIDADES ATENDIDAS ───────────────────────────────────────
+            Diferencial regional: em marketplace B2B de café da Zona da
+            Mata, saber de onde a corretora compra é sinal concreto de
+            alcance. Renderiza só se há slugs válidos no catálogo. */}
+        {cidadesAtendidas && (
+          <div className="mt-3 flex items-start gap-2 text-[11px] leading-relaxed">
+            <span
+              aria-hidden
+              className="mt-0.5 text-amber-300/70"
+              title="Cidades atendidas"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 21h18M4 21V7l8-4v18M20 21V11l-8-4" />
+                <path d="M9 9h0M9 13h0M9 17h0M15 13h0M15 17h0" />
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-300/70">
+                Atende{" "}
+                {cidadesAtendidas.total === 1
+                  ? "1 cidade"
+                  : `${cidadesAtendidas.total} cidades`}
+              </span>
+              <p className="truncate text-stone-300">
+                {cidadesAtendidas.preview}
+              </p>
+            </div>
+          </div>
         )}
 
         {/* ── CHANNELS ROW ──────────────────────────────────────────── */}

@@ -217,6 +217,17 @@ export function NotificationsBell() {
               ))}
             </ul>
           </div>
+
+          <div className="border-t border-stone-200 bg-stone-50/60 px-4 py-2.5 text-center">
+            <Link
+              href="/painel/corretora/notificacoes"
+              onClick={() => setOpen(false)}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700 transition-colors hover:text-amber-800"
+            >
+              Ver todas as notificações
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
         </div>
       )}
     </div>

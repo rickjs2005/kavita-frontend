@@ -83,6 +83,7 @@ export type LeadsSummary = {
 export type LeadFormData = {
   nome: string;
   telefone: string;
+  email?: string;
   cidade?: string;
   mensagem?: string;
   // Qualificação regional (Sprint 2) — opcionais

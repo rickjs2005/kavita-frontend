@@ -224,6 +224,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
     defaultValues: {
       nome: "",
       telefone: "",
+      email: "",
       cidade: "",
       mensagem: "",
       objetivo: undefined,
@@ -257,6 +258,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         nome: data.nome.trim(),
         telefone: data.telefone.trim(),
       };
+      if (data.email?.trim()) payload.email = data.email.trim();
       if (data.cidade?.trim()) payload.cidade = data.cidade.trim();
       if (data.mensagem?.trim()) payload.mensagem = data.mensagem.trim();
       // Qualificação regional (opcional mas transmitida quando preenchida)
@@ -422,6 +424,36 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
               <p className={errorClass}>{errors.telefone.message}</p>
             )}
           </div>
+        </div>
+
+        {/* E-mail opcional — fecha o loop do produtor. Quando preenchido,
+            enviamos confirmação "seu interesse foi enviado para X" por
+            e-mail. Explicitamente opcional para não afastar quem só quer
+            WhatsApp. */}
+        <div>
+          <label className={labelClass} htmlFor="lead-email">
+            E-mail (opcional)
+          </label>
+          <input
+            id="lead-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            {...register("email", {
+              maxLength: { value: 200, message: "Máximo 200 caracteres." },
+              pattern: {
+                value: /^$|^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                message: "E-mail inválido.",
+              },
+            })}
+            className={inputClass}
+            placeholder="voce@email.com"
+          />
+          <p className={helperClass}>
+            Se preencher, mandamos uma confirmação de que seu contato chegou
+            na corretora.
+          </p>
+          {errors.email && <p className={errorClass}>{errors.email.message}</p>}
         </div>
 
         {/* Cidade — select custom com chevron amber.
