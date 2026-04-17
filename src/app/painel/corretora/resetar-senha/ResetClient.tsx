@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { AuthShell } from "@/components/painel-corretora/AuthShell";
+import {
+  TurnstileWidget,
+  TURNSTILE_ENABLED,
+  type TurnstileHandle,
+} from "@/components/painel-corretora/TurnstileWidget";
 
 export default function ResetClient() {
   const router = useRouter();
@@ -17,6 +22,10 @@ export default function ResetClient() {
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
 
   useEffect(() => {
     if (!token) {
@@ -36,17 +45,29 @@ export default function ResetClient() {
       setErrMsg("As senhas não coincidem.");
       return;
     }
+    if (TURNSTILE_ENABLED && !turnstileToken) {
+      setErrMsg(
+        turnstileError ?? "Aguarde a verificação anti-bot ser concluída.",
+      );
+      return;
+    }
 
     setLoading(true);
     setErrMsg(null);
     try {
-      await apiClient.post("/api/corretora/reset-password", { token, senha });
+      const payload: Record<string, string> = { token, senha };
+      if (TURNSTILE_ENABLED && turnstileToken) {
+        payload["cf-turnstile-response"] = turnstileToken;
+      }
+      await apiClient.post("/api/corretora/reset-password", payload);
       setDone(true);
       setTimeout(() => {
         router.replace("/painel/corretora/login");
       }, 2000);
     } catch (err) {
       setErrMsg(formatApiError(err, "Não foi possível redefinir.").message);
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     } finally {
       setLoading(false);
     }
@@ -141,9 +162,31 @@ export default function ResetClient() {
               />
             </div>
 
+            {TURNSTILE_ENABLED && token && (
+              <div className="flex flex-col items-center gap-2" aria-live="polite">
+                <TurnstileWidget
+                  ref={turnstileRef}
+                  theme="light"
+                  onToken={setTurnstileToken}
+                  onError={setTurnstileError}
+                />
+                {turnstileError && (
+                  <p className="max-w-xs text-center text-[11px] leading-relaxed text-red-700">
+                    {turnstileError}
+                  </p>
+                )}
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={loading || !token || !senha || !confirmacao}
+              disabled={
+                loading ||
+                !token ||
+                !senha ||
+                !confirmacao ||
+                (TURNSTILE_ENABLED && !turnstileToken)
+              }
               className="group relative h-11 w-full overflow-hidden rounded-xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-lg shadow-stone-900/20 transition-all hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span

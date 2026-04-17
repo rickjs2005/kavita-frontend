@@ -135,13 +135,11 @@ const OPTION_STYLE: React.CSSProperties = {
   color: "#f5f5f4", // stone-100
 };
 
-// Tempo máximo (ms) que o usuário espera pelo Turnstile antes de
-// liberarmos o envio. Cobrimos o cenário de adblock / CSP / rede
-// flutuando na CDN da Cloudflare. Se o desafio nunca resolver, o
-// backend ainda vai rejeitar o lead (quando TURNSTILE_SECRET_KEY
-// estiver setado), mas pelo menos o usuário recebe feedback — em vez
-// de ficar com botão travado em disabled pra sempre.
-const TURNSTILE_MAX_WAIT_MS = 8000;
+// Fail-closed: se o widget não carregar ou falhar, o submit permanece
+// travado e o usuário vê orientação para desabilitar bloqueadores. O
+// backend (middleware/verifyTurnstile.js) também é fail-closed — não
+// queremos brecha acidental em ataque combinado (CDN indisponível +
+// spam no form).
 
 export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   const [submitting, setSubmitting] = useState(false);
@@ -151,9 +149,9 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   // funciona como antes (útil em dev local sem credenciais Cloudflare).
   const turnstileEnabled = Boolean(TURNSTILE_SITE_KEY);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  // Sinaliza "desisti do Turnstile" — libera o submit para o backend
-  // decidir. Evita UX travada por bloqueio de CDN/adblock.
-  const [turnstileFailed, setTurnstileFailed] = useState(false);
+  // Mensagem amigável quando a verificação fica indisponível (adblock,
+  // CSP, rede). Quando setada, o submit permanece travado.
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
   const turnstileWidgetIdRef = useRef<string | null>(null);
 
@@ -162,22 +160,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
     if (success) return; // form está escondido; widget será remontado
 
     let cancelled = false;
-    setTurnstileFailed(false);
-
-    // Watchdog: se em TURNSTILE_MAX_WAIT_MS o token ainda não chegou,
-    // marcamos como "failed" e liberamos o submit.
-    const watchdog = setTimeout(() => {
-      if (cancelled) return;
-      setTurnstileFailed((prev) => {
-        if (prev) return prev;
-        console.warn(
-          "[LeadContactForm] Turnstile não respondeu em tempo hábil. " +
-            "Liberando envio — o backend validará via fail-closed se " +
-            "TURNSTILE_SECRET_KEY estiver configurado.",
-        );
-        return true;
-      });
-    }, TURNSTILE_MAX_WAIT_MS);
+    setTurnstileError(null);
 
     loadTurnstileScript()
       .then(() => {
@@ -192,28 +175,33 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
           theme: "light",
           callback: (token) => {
             setTurnstileToken(token);
-            setTurnstileFailed(false);
+            setTurnstileError(null);
           },
           "error-callback": () => {
             setTurnstileToken(null);
-            setTurnstileFailed(true);
+            setTurnstileError(
+              "A verificação anti-bot falhou. Recarregue a página e tente novamente.",
+            );
           },
           "expired-callback": () => setTurnstileToken(null),
         });
       })
       .catch((err) => {
-        // Script falhou em carregar (rede/adblock/CSP). Libera o
-        // submit — backend fail-closed decide.
+        // Script não carregou (rede/adblock/CSP). Fail-closed: submit
+        // permanece travado. Mensagem orienta o usuário a agir.
         console.warn(
           "[LeadContactForm] Turnstile: falha ao carregar o script.",
           err,
         );
-        if (!cancelled) setTurnstileFailed(true);
+        if (!cancelled) {
+          setTurnstileError(
+            "Para sua segurança, pedimos que desative bloqueadores de script nesta página e recarregue — a verificação anti-bot precisa carregar para concluir o envio.",
+          );
+        }
       });
 
     return () => {
       cancelled = true;
-      clearTimeout(watchdog);
       const id = turnstileWidgetIdRef.current;
       if (id && window.turnstile) {
         try {
@@ -254,12 +242,12 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   const cidadeValue = useWatch({ control, name: "cidade" });
 
   const onSubmit = async (data: LeadFormData) => {
-    // Só bloqueia o envio se o Turnstile está habilitado E ainda não
-    // respondeu E também não desistiu (turnstileFailed). Com
-    // turnstileFailed=true, deixamos o backend decidir (fail-closed
-    // se ele tiver secret configurado; sucesso se estivermos em dev).
-    if (turnstileEnabled && !turnstileToken && !turnstileFailed) {
-      toast.error("Aguarde a verificação anti-bot ser concluída.");
+    // Fail-closed: sem token válido, não envia. Se o widget ficou
+    // indisponível, a mensagem amigável abaixo já orienta o usuário.
+    if (turnstileEnabled && !turnstileToken) {
+      toast.error(
+        turnstileError ?? "Aguarde a verificação anti-bot ser concluída.",
+      );
       return;
     }
 
@@ -667,7 +655,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
 
         {turnstileEnabled && (
           <div
-            className="flex flex-col items-center gap-1"
+            className="flex flex-col items-center gap-2"
             aria-live="polite"
           >
             <div
@@ -675,15 +663,14 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
               className="flex justify-center"
               aria-label="Verificação anti-bot"
             />
-            {!turnstileToken && !turnstileFailed && (
+            {!turnstileToken && !turnstileError && (
               <p className="text-[10px] uppercase tracking-[0.14em] text-stone-400">
                 Verificação de segurança em andamento…
               </p>
             )}
-            {turnstileFailed && (
-              <p className="text-[11px] leading-relaxed text-amber-200/80">
-                Verificação anti-bot indisponível (possível bloqueador).
-                Você ainda pode tentar enviar a mensagem.
+            {turnstileError && (
+              <p className="max-w-md text-center text-[12px] leading-relaxed text-rose-300">
+                {turnstileError}
               </p>
             )}
           </div>
@@ -692,8 +679,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         <button
           type="submit"
           disabled={
-            submitting ||
-            (turnstileEnabled && !turnstileToken && !turnstileFailed)
+            submitting || (turnstileEnabled && !turnstileToken)
           }
           className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-60 sm:h-[52px] sm:w-auto sm:px-10 lg:h-[56px] lg:px-12 lg:text-[12px]"
         >

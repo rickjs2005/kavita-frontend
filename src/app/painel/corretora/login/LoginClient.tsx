@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import apiClient from "@/lib/apiClient";
@@ -8,6 +8,11 @@ import { formatApiError } from "@/lib/formatApiError";
 import { safeInternalRedirect } from "@/utils/safeInternalRedirect";
 import { useCorretoraAuth } from "@/context/CorretoraAuthContext";
 import { AuthShell } from "@/components/painel-corretora/AuthShell";
+import {
+  TurnstileWidget,
+  TURNSTILE_ENABLED,
+  type TurnstileHandle,
+} from "@/components/painel-corretora/TurnstileWidget";
 import type { CorretoraUser } from "@/types/corretoraUser";
 
 type LoginResponse = {
@@ -24,6 +29,10 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
+
   const redirectTo = useMemo(
     () => safeInternalRedirect(search.get("from"), "/painel/corretora"),
     [search],
@@ -31,12 +40,22 @@ export default function LoginClient() {
 
   const handleLogin = useCallback(async () => {
     if (loading) return;
+    if (TURNSTILE_ENABLED && !turnstileToken) {
+      setErrMsg(
+        turnstileError ?? "Aguarde a verificação anti-bot ser concluída.",
+      );
+      return;
+    }
     setLoading(true);
     setErrMsg(null);
     try {
+      const payload: Record<string, string> = { email, senha };
+      if (TURNSTILE_ENABLED && turnstileToken) {
+        payload["cf-turnstile-response"] = turnstileToken;
+      }
       const data = await apiClient.post<LoginResponse>(
         "/api/corretora/login",
-        { email, senha },
+        payload,
       );
       markLoggedIn(data.user);
       router.replace(redirectTo);
@@ -44,8 +63,20 @@ export default function LoginClient() {
       const ui = formatApiError(err, "Credenciais inválidas.");
       setErrMsg(ui.message);
       setLoading(false);
+      // Token é single-use — reset para o usuário obter um novo sem reload.
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     }
-  }, [email, senha, loading, redirectTo, router, markLoggedIn]);
+  }, [
+    email,
+    senha,
+    loading,
+    redirectTo,
+    router,
+    markLoggedIn,
+    turnstileToken,
+    turnstileError,
+  ]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleLogin();
@@ -115,10 +146,31 @@ export default function LoginClient() {
             />
           </div>
 
+          {TURNSTILE_ENABLED && (
+            <div className="flex flex-col items-center gap-2" aria-live="polite">
+              <TurnstileWidget
+                ref={turnstileRef}
+                theme="light"
+                onToken={setTurnstileToken}
+                onError={setTurnstileError}
+              />
+              {turnstileError && (
+                <p className="max-w-xs text-center text-[11px] leading-relaxed text-red-700">
+                  {turnstileError}
+                </p>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleLogin}
-            disabled={loading || !email || !senha}
+            disabled={
+              loading ||
+              !email ||
+              !senha ||
+              (TURNSTILE_ENABLED && !turnstileToken)
+            }
             className="group relative h-11 w-full overflow-hidden rounded-xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-lg shadow-stone-900/20 transition-all hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {/* Highlight top */}
