@@ -59,9 +59,14 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<Partial<Plan> | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  // Fase 5.4 — opt-in para propagar novas capabilities a assinaturas
+  // ativas existentes. Padrão seguro é false: editar um plano NÃO
+  // muda contratos vigentes a menos que admin marque explicitamente.
+  const [applyToActive, setApplyToActive] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,16 +96,21 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
   const startNew = () => {
     setEditingId(null);
     setDraft(emptyDraft());
+    setApplyToActive(false);
+    setSuccessMsg(null);
   };
 
   const startEdit = (p: Plan) => {
     setEditingId(p.id);
     setDraft({ ...p });
+    setApplyToActive(false);
+    setSuccessMsg(null);
   };
 
   const cancel = () => {
     setEditingId(null);
     setDraft(null);
+    setApplyToActive(false);
   };
 
   const updateField = <K extends keyof Plan>(key: K, value: Plan[K]) => {
@@ -123,23 +133,39 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
 
   const save = async () => {
     if (!draft) return;
-    const payload = {
+    const payload: Record<string, unknown> = {
       ...draft,
       capabilities: draft.capabilities ?? {},
     };
+    if (editingId && applyToActive) {
+      payload.apply_to_active_subscriptions = true;
+    }
     setSaving(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       if (editingId) {
-        await apiClient.put(
-          `/api/admin/monetization/plans/${editingId}`,
-          payload,
-        );
+        const res = await apiClient.put<{
+          data?: { broadcast?: { affected: number } | null };
+          message?: string;
+        }>(`/api/admin/monetization/plans/${editingId}`, payload);
+        const affected = res?.data?.broadcast?.affected ?? null;
+        if (applyToActive && affected !== null) {
+          setSuccessMsg(
+            `Plano atualizado. ${affected} assinatura(s) receberam as novas capabilities.`,
+          );
+        } else {
+          setSuccessMsg(
+            "Plano atualizado. Assinaturas existentes continuam com a versão anterior.",
+          );
+        }
       } else {
         await apiClient.post("/api/admin/monetization/plans", payload);
+        setSuccessMsg("Plano criado.");
       }
       setDraft(null);
       setEditingId(null);
+      setApplyToActive(false);
       await load();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -178,6 +204,12 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
       {error && (
         <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
           {error}
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+          {successMsg}
         </div>
       )}
 
@@ -374,6 +406,26 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
               onChange={(v) => updateField("is_active", v as Plan["is_active"])}
             />
           </div>
+
+          {editingId !== null && (
+            <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
+              <label className="flex cursor-pointer items-start gap-2 text-xs font-semibold text-amber-100">
+                <input
+                  type="checkbox"
+                  checked={applyToActive}
+                  onChange={(e) => setApplyToActive(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-amber-500/50 bg-slate-950 text-amber-400 focus:ring-amber-500"
+                />
+                Aplicar a assinaturas ativas existentes
+              </label>
+              <p className="mt-1 pl-6 text-[11px] text-amber-200/80">
+                Por padrão, assinaturas ativas mantêm as capabilities que
+                estavam no momento da contratação (snapshot). Marque para
+                propagar as novas capabilities a todas as assinaturas ativas
+                deste plano — ação auditada e irreversível.
+              </p>
+            </div>
+          )}
 
           <div className="mt-4 flex justify-end gap-2">
             <button
