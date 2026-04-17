@@ -272,6 +272,26 @@ function ReviewItem({ review }: { review: PublicCorretoraReview }) {
           {review.comentario}
         </p>
       )}
+
+      {/* Sprint 8 — resposta pública da corretora. Aparece indentada
+          abaixo do comentário original, com kicker "Resposta da
+          corretora" + data. Contraste suave para ficar claro que é
+          voz oficial, não uma review adicional. */}
+      {review.corretora_reply && (
+        <div className="mt-4 border-l-2 border-amber-400/40 bg-amber-400/[0.04] py-2 pl-4 pr-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/90">
+            Resposta da corretora
+            {review.replied_at && (
+              <span className="ml-2 font-normal text-stone-500">
+                · {formatDate(review.replied_at)}
+              </span>
+            )}
+          </p>
+          <p className="mt-1.5 whitespace-pre-line text-[13px] leading-relaxed text-stone-200">
+            {review.corretora_reply}
+          </p>
+        </div>
+      )}
     </li>
   );
 }

@@ -11,6 +11,16 @@ export type PublicCorretoraReview = {
   comentario: string | null;
   verified_lead: boolean;
   created_at: string;
+  // Sprint 8 — resposta pública da corretora (opcional, texto livre).
+  // Aparece abaixo da review original quando presente. replied_by não
+  // é exposto no público para evitar expor operação interna do tenant.
+  corretora_reply: string | null;
+  replied_at: string | null;
+};
+
+/** Review no painel da própria corretora (gestão de reply). */
+export type PanelCorretoraReview = PublicCorretoraReview & {
+  replied_by: number | null;
 };
 
 export type PublicReviewsResponse = {

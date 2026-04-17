@@ -57,6 +57,17 @@ export default function AdminMercadoDoCafePage() {
                 recurso separado de sistema. No mobile vira ícone-only
                 para economizar espaço sem sumir. */}
             <Link
+              href="/admin/mercado-do-cafe/metricas"
+              aria-label="Abrir dashboard de métricas do Mercado do Café"
+              className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
+              title="Leads, SLA, reviews e planos — visão 7/30/90 dias"
+            >
+              <span aria-hidden className="text-sm sm:mr-1.5">
+                📈
+              </span>
+              <span className="hidden sm:inline">Métricas</span>
+            </Link>
+            <Link
               href="/admin/auditoria"
               aria-label="Abrir histórico do Mercado do Café"
               className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
