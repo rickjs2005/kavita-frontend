@@ -19,6 +19,7 @@ import {
 } from "@/context/CorretoraAuthContext";
 import { CorretoraPanelNav } from "@/components/painel-corretora/CorretoraPanelNav";
 import { GrainOverlay } from "@/components/painel-corretora/GrainOverlay";
+import { ImpersonationBanner } from "@/components/painel-corretora/ImpersonationBanner";
 
 const FULLSCREEN_ROUTES = [
   "/painel/corretora/login",
@@ -108,6 +109,10 @@ function CorretoraPanelInner({ children }: { children: React.ReactNode }) {
 
       {/* Camada 2 — Textura de grão, fixa na viewport */}
       <GrainOverlay tone="dark" />
+
+      {/* Banner rose acima de tudo quando a sessão é impersonada — o
+          admin precisa saber o tempo todo que está em modo suporte. */}
+      <ImpersonationBanner />
 
       <CorretoraPanelNav />
 

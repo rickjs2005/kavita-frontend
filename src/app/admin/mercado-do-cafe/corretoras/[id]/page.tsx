@@ -7,6 +7,8 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import CorretoraForm from "@/components/admin/mercado-do-cafe/corretoras/CorretoraForm";
+import CorretoraAuditLog from "@/components/admin/mercado-do-cafe/corretoras/CorretoraAuditLog";
+import ImpersonateCorretoraButton from "@/components/admin/mercado-do-cafe/corretoras/ImpersonateCorretoraButton";
 import type { CorretoraAdmin } from "@/types/corretora";
 
 export default function EditCorretoraPage() {
@@ -42,13 +44,23 @@ export default function EditCorretoraPage() {
           >
             ← Voltar
           </Link>
-          <h1 className="text-base font-semibold text-slate-50 sm:text-lg">
-            Editar Corretora
-          </h1>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-base font-semibold text-slate-50 sm:text-lg">
+              Editar Corretora
+            </h1>
+            {corretora && (
+              <ImpersonateCorretoraButton
+                corretoraId={corretora.id}
+                corretoraName={corretora.name}
+                disabled={corretora.status !== "active"}
+                disabledHint="Só corretoras ativas podem ser impersonadas."
+              />
+            )}
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-4xl px-3 pb-10 pt-4 sm:px-4">
+      <main className="mx-auto w-full max-w-4xl space-y-6 px-3 pb-10 pt-4 sm:px-4">
         <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6">
           {loading && (
             <div className="flex items-center justify-center py-12">
@@ -62,6 +74,10 @@ export default function EditCorretoraPage() {
           )}
           {!loading && corretora && <CorretoraForm existing={corretora} />}
         </div>
+
+        {!loading && corretora && (
+          <CorretoraAuditLog corretoraId={corretora.id} />
+        )}
       </main>
     </div>
   );

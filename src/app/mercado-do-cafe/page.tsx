@@ -21,12 +21,14 @@ import { MarketCotacaoPill } from "@/components/mercado-do-cafe/MarketCotacaoPil
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 import type { PublicCotacao } from "@/lib/newsPublicApi";
 import { CIDADES_DESTAQUE } from "@/lib/regioes";
+import { buildCoffeeMetadata } from "@/lib/coffeeMetadata";
 
-export const metadata = {
+export const metadata = buildCoffeeMetadata({
+  path: "/mercado-do-cafe",
   title: "Mercado do Café · Matas de Minas | Kavita",
   description:
     "Corretoras de café da Zona da Mata Mineira — Manhuaçu, Manhumirim, Lajinha, Caparaó, Matipó, Reduto. Cotações, canais diretos e rede curada pela Kavita.",
-};
+});
 
 function pickCoffeeCotacao(list: PublicCotacao[]): PublicCotacao | null {
   if (!Array.isArray(list) || list.length === 0) return null;

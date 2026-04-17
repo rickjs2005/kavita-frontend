@@ -35,6 +35,7 @@ import { CityChips } from "@/components/mercado-do-cafe/CityChips";
 import { MarketCotacaoPill } from "@/components/mercado-do-cafe/MarketCotacaoPill";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 import { normalizeCityName, CIDADES_ZONA_DA_MATA } from "@/lib/regioes";
+import { buildCoffeeMetadata } from "@/lib/coffeeMetadata";
 
 function pickCoffeeCotacao(list: PublicCotacao[]): PublicCotacao | null {
   if (!Array.isArray(list) || list.length === 0) return null;
@@ -49,15 +50,40 @@ function pickCoffeeCotacao(list: PublicCotacao[]): PublicCotacao | null {
   );
 }
 
-export const metadata = {
-  title: "Corretoras de Café — Zona da Mata | Kavita",
-  description:
-    "Encontre corretoras de café verificadas que atuam na Zona da Mata mineira. Manhuaçu, Reduto, Simonésia e região.",
-};
-
 type Props = {
   searchParams: Promise<{ city?: string; search?: string; page?: string }>;
 };
+
+// Metadata dinâmica para ajustar canonical por filtro. Page numbers
+// NÃO entram no canonical — /corretoras?page=2 aponta para
+// /corretoras?city=Manhuaçu (versão filtrada sem paginação), evitando
+// duplicate content indexado.
+export async function generateMetadata({ searchParams }: Props) {
+  const params = await searchParams;
+  const city = params.city?.trim();
+  const search = params.search?.trim();
+
+  let path = "/mercado-do-cafe/corretoras";
+  let title = "Corretoras de Café — Zona da Mata | Kavita";
+  let description =
+    "Encontre corretoras de café verificadas que atuam na Zona da Mata mineira. Manhuaçu, Reduto, Simonésia e região.";
+
+  if (city) {
+    path = `/mercado-do-cafe/corretoras?city=${encodeURIComponent(city)}`;
+    title = `Corretoras de café em ${city} | Kavita`;
+    description = `Corretoras de café verificadas atuando em ${city} e região da Zona da Mata mineira.`;
+  } else if (search) {
+    // Filtros só de busca não entram no canonical — são muito voláteis.
+    title = `Buscar corretoras: ${search} | Kavita`;
+  }
+
+  return buildCoffeeMetadata({
+    path: "/mercado-do-cafe/corretoras",
+    canonical: path,
+    title,
+    description,
+  });
+}
 
 export default async function CorretorasListPage({ searchParams }: Props) {
   const params = await searchParams;

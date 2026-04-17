@@ -2,6 +2,16 @@
 
 export type CorretoraRole = "owner" | "manager" | "sales" | "viewer";
 
+/**
+ * Presente quando o painel está sendo acessado por um admin em modo
+ * impersonação (Sprint 2 P1). Propagado pelo backend via claim no JWT.
+ */
+export type ImpersonationInfo = {
+  admin_id: number | null;
+  admin_nome: string | null;
+  started_at: string;
+};
+
 export type CorretoraUser = {
   id: number;
   nome: string;
@@ -10,6 +20,7 @@ export type CorretoraUser = {
   corretora_id: number;
   corretora_name: string;
   corretora_slug: string;
+  impersonation?: ImpersonationInfo | null;
 };
 
 /** Membro da equipe (listagem em /painel/corretora/equipe). */

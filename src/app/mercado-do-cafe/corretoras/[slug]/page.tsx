@@ -30,6 +30,8 @@ import { WhatsAppDirectButton } from "@/components/mercado-do-cafe/WhatsAppDirec
 import { CorretoraReviews } from "@/components/mercado-do-cafe/CorretoraReviews";
 import { FavoriteButton } from "@/components/mercado-do-cafe/FavoriteButton";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
+import { buildCoffeeMetadata } from "@/lib/coffeeMetadata";
+import { buildCorretoraJsonLd } from "@/lib/corretoraJsonLd";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -38,13 +40,25 @@ type Props = {
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   const corretora = await fetchPublicCorretoraBySlug(slug);
-  if (!corretora) return { title: "Corretora não encontrada | Kavita" };
-  return {
+  if (!corretora) {
+    return buildCoffeeMetadata({
+      path: `/mercado-do-cafe/corretoras/${slug}`,
+      title: "Corretora não encontrada | Kavita",
+      description: "A corretora solicitada não foi encontrada.",
+      noIndex: true,
+    });
+  }
+  // OG image prefere logo da corretora (absolutizado). Fallback para
+  // a imagem genérica do módulo na função helper.
+  const ogImage = corretora.logo_path ? absUrl(corretora.logo_path) : null;
+  return buildCoffeeMetadata({
+    path: `/mercado-do-cafe/corretoras/${corretora.slug}`,
     title: `${corretora.name} — Corretora de Café | Kavita`,
     description:
       corretora.description ||
       `${corretora.name} — corretora de café em ${corretora.city}, ${corretora.state}.`,
-  };
+    image: ogImage,
+  });
 }
 
 export default async function CorretoraDetailPage({ params }: Props) {
@@ -85,28 +99,67 @@ export default async function CorretoraDetailPage({ params }: Props) {
         className="pointer-events-none absolute -bottom-40 left-1/2 h-[500px] w-[1000px] -translate-x-1/2 rounded-[100%] bg-amber-500/[0.05] blur-3xl"
       />
 
+      {/* ─── JSON-LD (LocalBusiness + BreadcrumbList) ──────────────
+          Rich results no Google: card da corretora com endereço,
+          rating e redes. Injetado como script — Next.js recomenda
+          dangerouslySetInnerHTML para structured data em RSC. */}
+      <script
+        type="application/ld+json"
+        // Serializado aqui (não lazy) — é objeto estático derivado do
+        // RSC, sem risco de injection já que todos os campos vêm do
+        // banco e passaram pelo Zod na criação/edição.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(buildCorretoraJsonLd(corretora)),
+        }}
+      />
+
       <div className="relative mx-auto w-full max-w-4xl px-4 pb-24 pt-5 sm:px-5 md:px-8 md:pb-32 md:pt-10 lg:max-w-5xl xl:max-w-6xl">
-        {/* ─── Back link ──────────────────────────────────────────── */}
-        <Link
-          href="/mercado-do-cafe/corretoras"
-          className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400 transition-colors hover:text-amber-300"
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M19 12H5" />
-            <path d="M12 19l-7-7 7-7" />
-          </svg>
-          Mercado do Café
-        </Link>
+        {/* ─── Breadcrumb (substitui back link puro) ────────────────
+            Semântica <nav aria-label="breadcrumb"> + <ol> para leitor
+            de tela. Complementa o JSON-LD BreadcrumbList acima. */}
+        <nav aria-label="breadcrumb" className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">
+          <ol className="flex flex-wrap items-center gap-1.5">
+            <li>
+              <Link
+                href="/mercado-do-cafe"
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-amber-300"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M19 12H5" />
+                  <path d="M12 19l-7-7 7-7" />
+                </svg>
+                Mercado do Café
+              </Link>
+            </li>
+            <li aria-hidden className="text-stone-600">
+              /
+            </li>
+            <li>
+              <Link
+                href="/mercado-do-cafe/corretoras"
+                className="transition-colors hover:text-amber-300"
+              >
+                Corretoras
+              </Link>
+            </li>
+            <li aria-hidden className="text-stone-600">
+              /
+            </li>
+            <li aria-current="page" className="truncate text-amber-300/80">
+              {corretora.name}
+            </li>
+          </ol>
+        </nav>
 
         {/* ─── HERO — dark espresso card com luzes driftando ────────
             Card contido com fundo gradient dark, duas luzes amber

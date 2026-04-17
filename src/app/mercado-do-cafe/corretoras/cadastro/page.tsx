@@ -13,12 +13,14 @@
 import Link from "next/link";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 import { CorretoraSubmissionForm } from "@/components/mercado-do-cafe/CorretoraSubmissionForm";
+import { buildCoffeeMetadata } from "@/lib/coffeeMetadata";
 
-export const metadata = {
+export const metadata = buildCoffeeMetadata({
+  path: "/mercado-do-cafe/corretoras/cadastro",
   title: "Cadastre sua corretora | Mercado do Café | Kavita",
   description:
     "Cadastre sua corretora de café da Zona da Mata mineira, crie sua senha e, após aprovação, acesse o painel privado para receber contatos de produtores.",
-};
+});
 
 export default function CadastroCorretoraPage() {
   return (

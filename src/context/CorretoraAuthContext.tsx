@@ -23,6 +23,7 @@ type CorretoraAuthContextValue = {
   loadSession: (opts?: { silent?: boolean }) => Promise<CorretoraUser | null>;
   markLoggedIn: (user: CorretoraUser) => void;
   logout: (opts?: { redirectTo?: string }) => Promise<void>;
+  exitImpersonation: (opts?: { redirectTo?: string }) => Promise<void>;
 };
 
 const CorretoraAuthContext = createContext<CorretoraAuthContextValue | null>(
@@ -90,9 +91,36 @@ export function CorretoraAuthProvider({
     [clearState],
   );
 
+  // Sai da impersonação: backend limpa o corretoraToken e devolve 200.
+  // Uso esperado: admin clica "voltar ao admin" no banner; o adminToken
+  // permanece válido porque é um cookie independente.
+  const exitImpersonation = useCallback(
+    async (opts?: { redirectTo?: string }) => {
+      try {
+        await apiClient.post("/api/corretora/exit-impersonation");
+      } catch {
+        // Silencioso: mesmo se falhar, limpamos o estado local e
+        // redirecionamos — o admin pode tentar de novo na volta.
+      } finally {
+        clearState();
+      }
+      window.location.assign(
+        opts?.redirectTo ?? "/admin/mercado-do-cafe",
+      );
+    },
+    [clearState],
+  );
+
   const value = useMemo<CorretoraAuthContextValue>(
-    () => ({ user, loading, loadSession, markLoggedIn, logout }),
-    [user, loading, loadSession, markLoggedIn, logout],
+    () => ({
+      user,
+      loading,
+      loadSession,
+      markLoggedIn,
+      logout,
+      exitImpersonation,
+    }),
+    [user, loading, loadSession, markLoggedIn, logout, exitImpersonation],
   );
 
   return (
