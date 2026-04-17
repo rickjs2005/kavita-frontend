@@ -9,6 +9,8 @@ import apiClient from "@/lib/apiClient";
 import CorretoraForm from "@/components/admin/mercado-do-cafe/corretoras/CorretoraForm";
 import CorretoraAuditLog from "@/components/admin/mercado-do-cafe/corretoras/CorretoraAuditLog";
 import ImpersonateCorretoraButton from "@/components/admin/mercado-do-cafe/corretoras/ImpersonateCorretoraButton";
+import ArchiveCorretoraButton from "@/components/admin/mercado-do-cafe/corretoras/ArchiveCorretoraButton";
+import SubscriptionEventsTimeline from "@/components/mercado-do-cafe/SubscriptionEventsTimeline";
 import type { CorretoraAdmin } from "@/types/corretora";
 
 export default function EditCorretoraPage() {
@@ -47,14 +49,48 @@ export default function EditCorretoraPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-base font-semibold text-slate-50 sm:text-lg">
               Editar Corretora
+              {corretora?.deleted_at && (
+                <span className="ml-2 inline-flex items-center rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-rose-300 ring-1 ring-rose-500/30">
+                  Arquivada
+                </span>
+              )}
             </h1>
             {corretora && (
-              <ImpersonateCorretoraButton
-                corretoraId={corretora.id}
-                corretoraName={corretora.name}
-                disabled={corretora.status !== "active"}
-                disabledHint="Só corretoras ativas podem ser impersonadas."
-              />
+              <div className="flex flex-wrap items-center gap-2">
+                <ImpersonateCorretoraButton
+                  corretoraId={corretora.id}
+                  corretoraName={corretora.name}
+                  disabled={
+                    corretora.status !== "active" || !!corretora.deleted_at
+                  }
+                  disabledHint={
+                    corretora.deleted_at
+                      ? "Corretora arquivada não pode ser impersonada."
+                      : "Só corretoras ativas podem ser impersonadas."
+                  }
+                />
+                <ArchiveCorretoraButton
+                  corretoraId={corretora.id}
+                  corretoraName={corretora.name}
+                  isArchived={!!corretora.deleted_at}
+                  onDone={() => {
+                    // Recarrega a corretora para refletir o novo
+                    // deleted_at (o toggle depende dele).
+                    setLoading(true);
+                    apiClient
+                      .get<CorretoraAdmin>(
+                        `/api/admin/mercado-do-cafe/corretoras/${corretora.id}`,
+                      )
+                      .then((data) => setCorretora(data))
+                      .catch(() => {
+                        // Se o GET falhar (ex.: filtro default exclui
+                        // arquivada), recarrega a tela como fallback.
+                        window.location.reload();
+                      })
+                      .finally(() => setLoading(false));
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -77,6 +113,13 @@ export default function EditCorretoraPage() {
 
         {!loading && corretora && (
           <CorretoraAuditLog corretoraId={corretora.id} />
+        )}
+
+        {!loading && corretora && (
+          <SubscriptionEventsTimeline
+            endpoint={`/api/admin/mercado-do-cafe/corretoras/${corretora.id}/subscription-events`}
+            variant="admin"
+          />
         )}
       </main>
     </div>

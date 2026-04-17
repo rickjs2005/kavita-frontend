@@ -103,15 +103,25 @@ export default function CorretorasTable({
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      isActive
-                        ? "bg-emerald-500/15 text-emerald-300"
-                        : "bg-rose-500/15 text-rose-300"
-                    }`}
-                  >
-                    {isActive ? "Ativa" : "Inativa"}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        isActive
+                          ? "bg-emerald-500/15 text-emerald-300"
+                          : "bg-rose-500/15 text-rose-300"
+                      }`}
+                    >
+                      {isActive ? "Ativa" : "Inativa"}
+                    </span>
+                    {c.deleted_at && (
+                      <span
+                        className="inline-flex items-center rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-rose-300 ring-1 ring-rose-500/30"
+                        title="Corretora arquivada — não aparece na vitrine pública."
+                      >
+                        Arquivada
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   {isFeatured && (

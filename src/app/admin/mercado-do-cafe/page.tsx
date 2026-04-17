@@ -92,13 +92,35 @@ export default function AdminMercadoDoCafePage() {
             )}
 
             {activeTab === "corretoras" && (
-              <CorretorasTable
-                rows={corretoras.rows}
-                loading={corretoras.loading}
-                onToggleStatus={corretoras.toggleStatus}
-                onToggleFeatured={corretoras.toggleFeatured}
-                onInviteUser={corretoras.inviteUser}
-              />
+              <div className="space-y-3">
+                {/* Toggle "Mostrar arquivadas" — soft delete UI (Sprint 4).
+                    Default: oculta arquivadas. Ao ativar, backend passa
+                    a incluir deleted_at IS NOT NULL na listagem. */}
+                <div className="flex items-center justify-end">
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-[11px] font-medium text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={corretoras.filters.includeArchived}
+                      onChange={(e) =>
+                        corretoras.setFilters((prev) => ({
+                          ...prev,
+                          includeArchived: e.target.checked,
+                          page: 1,
+                        }))
+                      }
+                      className="h-3.5 w-3.5 cursor-pointer accent-rose-400"
+                    />
+                    Mostrar arquivadas
+                  </label>
+                </div>
+                <CorretorasTable
+                  rows={corretoras.rows}
+                  loading={corretoras.loading}
+                  onToggleStatus={corretoras.toggleStatus}
+                  onToggleFeatured={corretoras.toggleFeatured}
+                  onInviteUser={corretoras.inviteUser}
+                />
+              </div>
             )}
 
             {activeTab === "solicitacoes" && (

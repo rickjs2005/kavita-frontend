@@ -45,6 +45,9 @@ export type CorretoraAdmin = PublicCorretora & {
   created_by?: number | null;
   created_at: string;
   updated_at: string;
+  // Sprint 4 — soft delete. null quando ativo, timestamp quando
+  // arquivado. Lista admin default filtra deleted_at IS NULL.
+  deleted_at?: string | null;
 };
 
 export type CorretoraSubmission = {

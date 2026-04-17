@@ -22,6 +22,7 @@ export function useCorretorasAdmin({ onUnauthorized }: Props) {
     city: "",
     search: "",
     page: 1,
+    includeArchived: false, // Sprint 4: mostra soft-deleted (deleted_at NOT NULL) quando true
   });
 
   const load = useCallback(async () => {
@@ -31,6 +32,7 @@ export function useCorretorasAdmin({ onUnauthorized }: Props) {
       if (filters.status) params.set("status", filters.status);
       if (filters.city) params.set("city", filters.city);
       if (filters.search) params.set("search", filters.search);
+      if (filters.includeArchived) params.set("include_archived", "1");
       params.set("page", String(filters.page));
       params.set("limit", "20");
 
@@ -131,6 +133,42 @@ export function useCorretorasAdmin({ onUnauthorized }: Props) {
     [onUnauthorized],
   );
 
+  // Arquivar/Restaurar (Sprint 4 — soft delete). Padrão consistente
+  // com toggleStatus/toggleFeatured: POSTa, toast, recarrega lista.
+  const archive = useCallback(
+    async (id: number) => {
+      try {
+        await apiClient.post(
+          `/api/admin/mercado-do-cafe/corretoras/${id}/archive`,
+        );
+        toast.success("Corretora arquivada.");
+        await load();
+      } catch (e: any) {
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403))
+          onUnauthorized?.();
+        toast.error(e?.message || "Erro ao arquivar.");
+      }
+    },
+    [load, onUnauthorized],
+  );
+
+  const restore = useCallback(
+    async (id: number) => {
+      try {
+        await apiClient.post(
+          `/api/admin/mercado-do-cafe/corretoras/${id}/restore`,
+        );
+        toast.success("Corretora restaurada.");
+        await load();
+      } catch (e: any) {
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403))
+          onUnauthorized?.();
+        toast.error(e?.message || "Erro ao restaurar.");
+      }
+    },
+    [load, onUnauthorized],
+  );
+
   return {
     rows: sorted,
     loading,
@@ -141,5 +179,7 @@ export function useCorretorasAdmin({ onUnauthorized }: Props) {
     toggleStatus,
     toggleFeatured,
     inviteUser,
+    archive,
+    restore,
   };
 }

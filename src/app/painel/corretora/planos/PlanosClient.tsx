@@ -11,6 +11,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import SubscriptionEventsTimeline from "@/components/mercado-do-cafe/SubscriptionEventsTimeline";
 
 type Plan = {
   id: number;
@@ -272,6 +273,16 @@ export default function PlanosClient() {
           );
         })}
       </div>
+
+      {/* Timeline — transparência sobre trial/upgrade/downgrade.
+          Reutiliza o componente compartilhado (mesmo que o admin vê),
+          só muda o chrome para o tema dark do painel. */}
+      <SubscriptionEventsTimeline
+        endpoint="/api/corretora/plan/events"
+        variant="panel"
+        title="Histórico da sua assinatura"
+        subtitle="Trial, upgrades e renovações que aconteceram nesta corretora."
+      />
 
       {/* Nota de segurança */}
       <p className="text-center text-[11px] text-stone-500">
