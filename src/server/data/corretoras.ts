@@ -102,12 +102,22 @@ export async function fetchFeaturedCorretoras(
 }
 
 /**
+ * Resultado do lookup por slug: match encontrado, redirect permanente
+ * para outro slug (renomeação registrada em corretora_slug_history),
+ * ou não encontrado.
+ */
+export type CorretoraSlugLookup =
+  | { kind: "found"; corretora: PublicCorretora }
+  | { kind: "redirect"; toSlug: string }
+  | { kind: "not_found" };
+
+/**
  * Fetch a single corretora by slug.
- * Returns null if not found (404).
+ * Retorna discriminated union para o caller tratar rename (301).
  */
 export async function fetchPublicCorretoraBySlug(
   slug: string,
-): Promise<PublicCorretora | null> {
+): Promise<CorretoraSlugLookup> {
   const url = buildUrl(`/api/public/corretoras/${encodeURIComponent(slug)}`);
 
   const res = await fetch(url, {
@@ -115,7 +125,7 @@ export async function fetchPublicCorretoraBySlug(
     headers: { Accept: "application/json" },
   });
 
-  if (res.status === 404) return null;
+  if (res.status === 404) return { kind: "not_found" };
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -123,12 +133,29 @@ export async function fetchPublicCorretoraBySlug(
   }
 
   const json = await res.json();
+  const payload =
+    json && typeof json === "object" && json.ok === true && "data" in json
+      ? json.data
+      : json;
 
-  if (json && typeof json === "object" && json.ok === true && "data" in json) {
-    return (json.data as PublicCorretora) ?? null;
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "redirect_to_slug" in payload &&
+    typeof (payload as { redirect_to_slug: unknown }).redirect_to_slug ===
+      "string"
+  ) {
+    return {
+      kind: "redirect",
+      toSlug: (payload as { redirect_to_slug: string }).redirect_to_slug,
+    };
   }
 
-  return (json as PublicCorretora) ?? null;
+  if (payload && typeof payload === "object" && "id" in payload) {
+    return { kind: "found", corretora: payload as PublicCorretora };
+  }
+
+  return { kind: "not_found" };
 }
 
 /**

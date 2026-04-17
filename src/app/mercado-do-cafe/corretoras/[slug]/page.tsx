@@ -20,7 +20,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { fetchPublicCorretoraBySlug } from "@/server/data/corretoras";
 import { absUrl } from "@/utils/absUrl";
 import { CorretoraContactChannels } from "@/components/mercado-do-cafe/CorretoraContactChannels";
@@ -39,8 +39,20 @@ type Props = {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const corretora = await fetchPublicCorretoraBySlug(slug);
-  if (!corretora) {
+  const result = await fetchPublicCorretoraBySlug(slug);
+
+  // No redirect case, o metadata não renderiza na página (o render
+  // aciona permanentRedirect antes), mas Next.js chama generateMetadata
+  // em paralelo. Devolvemos metadata neutro para não quebrar.
+  if (result.kind === "redirect") {
+    return buildCoffeeMetadata({
+      path: `/mercado-do-cafe/corretoras/${result.toSlug}`,
+      title: "Corretora de Café | Kavita",
+      description: "Corretora de café verificada na Zona da Mata mineira.",
+    });
+  }
+
+  if (result.kind !== "found") {
     return buildCoffeeMetadata({
       path: `/mercado-do-cafe/corretoras/${slug}`,
       title: "Corretora não encontrada | Kavita",
@@ -48,8 +60,8 @@ export async function generateMetadata({ params }: Props) {
       noIndex: true,
     });
   }
-  // OG image prefere logo da corretora (absolutizado). Fallback para
-  // a imagem genérica do módulo na função helper.
+
+  const corretora = result.corretora;
   const ogImage = corretora.logo_path ? absUrl(corretora.logo_path) : null;
   return buildCoffeeMetadata({
     path: `/mercado-do-cafe/corretoras/${corretora.slug}`,
@@ -63,9 +75,15 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function CorretoraDetailPage({ params }: Props) {
   const { slug } = await params;
-  const corretora = await fetchPublicCorretoraBySlug(slug);
+  const result = await fetchPublicCorretoraBySlug(slug);
 
-  if (!corretora) notFound();
+  // Slug antigo mapeado no corretora_slug_history → 301 para o atual.
+  // Preserva tráfego orgânico/compartilhado que veio do link antigo.
+  if (result.kind === "redirect") {
+    permanentRedirect(`/mercado-do-cafe/corretoras/${result.toSlug}`);
+  }
+  if (result.kind !== "found") notFound();
+  const corretora = result.corretora;
 
   const isFeatured =
     corretora.is_featured === true || corretora.is_featured === 1;

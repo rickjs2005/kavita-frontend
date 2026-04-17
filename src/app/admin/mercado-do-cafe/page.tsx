@@ -107,6 +107,8 @@ export default function AdminMercadoDoCafePage() {
                 loading={submissions.loading}
                 statusFilter={submissions.statusFilter}
                 onStatusFilterChange={submissions.setStatusFilter}
+                onBulkApprove={submissions.bulkApprove}
+                onBulkReject={submissions.bulkReject}
               />
             )}
 
