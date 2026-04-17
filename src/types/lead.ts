@@ -75,6 +75,10 @@ export type CorretoraLead = {
   // painel. Vem do backend como COUNT(*); 0 quando é o primeiro
   // contato. Isolado por corretora (não vaza entre tenants).
   previous_contacts_count?: number;
+  // Sprint 6 — score de prioridade calculado no service com base em
+  // volume, córrego especial, tempo de espera e recorrência. 0..~100.
+  // Usado para ranking e filtros presets na UI.
+  priority_score?: number;
 };
 
 export type LeadsSummary = {

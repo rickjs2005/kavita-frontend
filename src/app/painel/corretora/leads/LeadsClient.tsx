@@ -20,6 +20,15 @@ import type {
 type StatusFilter = LeadStatus | "all";
 type AmostraFilter = AmostraStatus | "all";
 type BebidaFilter = BebidaClassificacao | "all";
+// Presets de prioridade (Sprint 6) — atalhos para "urgente" e "alta
+// prioridade" sem exigir que o corretor combine 3 filtros manuais.
+type PriorityPreset = "all" | "urgent" | "high";
+
+// Limiares do score (casa com PRIORITY_WEIGHTS do backend). Um lead
+// 500+ sacas em córrego especial já soma 55, que bate "alta"; com
+// aging de 48h bate "urgente" sem ambiguidade.
+const SCORE_URGENT = 60;
+const SCORE_HIGH = 40;
 
 const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -65,6 +74,7 @@ export default function LeadsClient() {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [amostraFilter, setAmostraFilter] = useState<AmostraFilter>("all");
   const [bebidaFilter, setBebidaFilter] = useState<BebidaFilter>("all");
+  const [priorityPreset, setPriorityPreset] = useState<PriorityPreset>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -118,7 +128,8 @@ export default function LeadsClient() {
 
   // Filtro local por texto (nome/córrego) — evita round-trip ao backend
   // para busca simples. Aplica sobre os leads já carregados da página.
-  const filteredLeads =
+  // Preset de prioridade é outro filtro client-side encadeado.
+  const filteredLeads = (
     search.trim().length >= 2
       ? leads.filter((l) => {
           const q = search.toLowerCase();
@@ -128,7 +139,14 @@ export default function LeadsClient() {
             (l.cidade ?? "").toLowerCase().includes(q)
           );
         })
-      : leads;
+      : leads
+  ).filter((l) => {
+    if (priorityPreset === "all") return true;
+    const score = l.priority_score ?? 0;
+    if (priorityPreset === "urgent") return score >= SCORE_URGENT;
+    if (priorityPreset === "high") return score >= SCORE_HIGH;
+    return true;
+  });
 
   const todayShort = new Date().toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -164,6 +182,74 @@ export default function LeadsClient() {
           Mesa de operação
         </h1>
         <ExportCsvButton statusFilter={filter} />
+      </div>
+
+      {/* ─── Presets de prioridade (Sprint 6) ────────────────────
+          Chips rápidos ao topo dos filtros: "Urgentes" e "Alta
+          prioridade" combinam score automaticamente. Client-side —
+          opera sobre os leads já carregados da página. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300/70">
+          Atalhos
+        </span>
+        {(
+          [
+            {
+              value: "all" as const,
+              label: "Todos",
+              count: leads.length,
+              tone: "neutral" as const,
+            },
+            {
+              value: "urgent" as const,
+              label: "Urgentes",
+              count: leads.filter(
+                (l) => (l.priority_score ?? 0) >= SCORE_URGENT,
+              ).length,
+              tone: "rose" as const,
+            },
+            {
+              value: "high" as const,
+              label: "Alta prioridade",
+              count: leads.filter(
+                (l) => (l.priority_score ?? 0) >= SCORE_HIGH,
+              ).length,
+              tone: "amber" as const,
+            },
+          ]
+        ).map((chip) => {
+          const active = priorityPreset === chip.value;
+          const activeClass =
+            chip.tone === "rose"
+              ? "bg-rose-500/15 text-rose-200 ring-rose-400/30"
+              : chip.tone === "amber"
+                ? "bg-amber-500/15 text-amber-200 ring-amber-400/30"
+                : "bg-white/[0.08] text-stone-100 ring-white/15";
+          return (
+            <button
+              key={chip.value}
+              type="button"
+              onClick={() => setPriorityPreset(chip.value)}
+              disabled={chip.count === 0 && chip.value !== "all"}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1 transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                active
+                  ? activeClass
+                  : "bg-white/[0.03] text-stone-400 ring-white/[0.06] hover:text-stone-200"
+              }`}
+            >
+              {chip.label}
+              <span
+                className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold tabular-nums ${
+                  active
+                    ? "bg-white/20 text-white"
+                    : "bg-white/[0.06] text-stone-400"
+                }`}
+              >
+                {chip.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ─── Filtros ─────────────────────────────────────────── */}

@@ -31,6 +31,7 @@ import {
   CANAIS_CONTATO,
 } from "@/lib/regioes";
 import { BebidaBadge, PotencialBadge, LaudoPanel } from "./LaudoPanel";
+import { QuickRepliesDropdown } from "./QuickRepliesDropdown";
 
 // Sprint 7 — fluxo de amostra física (kanban simplificado)
 const AMOSTRA_LABELS: Record<AmostraStatus, string> = {
@@ -256,6 +257,28 @@ export function LeadsTable({
                             ↺ Já te procurou {lead.previous_contacts_count}×
                           </span>
                         )}
+                      {/* Sprint 6 — score de prioridade. Só mostra a
+                          tag quando o lead bate alta/urgente (>=40);
+                          abaixo disso não agrega informação útil. */}
+                      {lead.priority_score != null &&
+                        lead.priority_score >= 60 && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-rose-200 ring-1 ring-rose-400/30"
+                            title={`Urgente (score ${lead.priority_score}). Combina volume alto, córrego especial e tempo de espera.`}
+                          >
+                            🔥 Urgente
+                          </span>
+                        )}
+                      {lead.priority_score != null &&
+                        lead.priority_score >= 40 &&
+                        lead.priority_score < 60 && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-amber-200 ring-1 ring-amber-400/30"
+                            title={`Alta prioridade (score ${lead.priority_score}).`}
+                          >
+                            ★ Alta prioridade
+                          </span>
+                        )}
                       {isLoteIndisponivel && (
                         <span className="rounded-full bg-stone-800 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400 ring-1 ring-white/[0.06]">
                           Lote vendido
@@ -329,6 +352,10 @@ export function LeadsTable({
                       </svg>
                       WhatsApp
                     </a>
+                    <QuickRepliesDropdown
+                      lead={lead}
+                      corretoraNome={corretoraNomeEmpresa || corretoraNome}
+                    />
                     <a
                       href={`tel:+55${lead.telefone.replace(/\D/g, "")}`}
                       className="inline-flex h-9 min-w-[100px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[12px] font-semibold text-stone-200 transition-colors hover:border-amber-400/30 hover:text-amber-200"
