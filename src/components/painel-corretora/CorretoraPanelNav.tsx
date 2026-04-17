@@ -27,6 +27,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { href: "/painel/corretora", label: "Resumo", exact: true },
   { href: "/painel/corretora/leads", label: "Leads" },
+  { href: "/painel/corretora/analytics", label: "Analytics" },
   { href: "/painel/corretora/reviews", label: "Avaliações" },
   { href: "/painel/corretora/perfil", label: "Meu perfil" },
   {
