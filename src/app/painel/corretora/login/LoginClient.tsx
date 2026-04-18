@@ -16,7 +16,11 @@ import {
 import type { CorretoraUser } from "@/types/corretoraUser";
 
 type LoginResponse = {
-  user: CorretoraUser;
+  user?: CorretoraUser;
+  // ETAPA 2.2 — quando o usuário tem 2FA ativo, o backend não devolve
+  // cookie; devolve um challenge_token pro segundo passo.
+  requires_totp?: boolean;
+  challenge_token?: string;
 };
 
 export default function LoginClient() {
@@ -28,6 +32,9 @@ export default function LoginClient() {
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  // ETAPA 2.2 — TOTP step
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [totpCode, setTotpCode] = useState("");
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
@@ -57,13 +64,25 @@ export default function LoginClient() {
         "/api/corretora/login",
         payload,
       );
+      // ETAPA 2.2 — 2FA: segundo passo com challenge_token
+      if (data?.requires_totp && data.challenge_token) {
+        setChallengeToken(data.challenge_token);
+        setLoading(false);
+        // Turnstile já consumido — reset pra preparar retry caso o step
+        // TOTP falhe e o usuário tenha que voltar.
+        setTurnstileToken(null);
+        turnstileRef.current?.reset();
+        return;
+      }
+      if (!data?.user) {
+        throw new Error("Resposta inesperada do servidor.");
+      }
       markLoggedIn(data.user);
       router.replace(redirectTo);
     } catch (err: unknown) {
       const ui = formatApiError(err, "Credenciais inválidas.");
       setErrMsg(ui.message);
       setLoading(false);
-      // Token é single-use — reset para o usuário obter um novo sem reload.
       setTurnstileToken(null);
       turnstileRef.current?.reset();
     }
@@ -77,6 +96,34 @@ export default function LoginClient() {
     turnstileToken,
     turnstileError,
   ]);
+
+  const handleTotpSubmit = useCallback(async () => {
+    if (!challengeToken) return;
+    if (loading) return;
+    const trimmed = totpCode.trim();
+    if (trimmed.length < 4) {
+      setErrMsg("Digite o código do app ou um código de backup.");
+      return;
+    }
+    setLoading(true);
+    setErrMsg(null);
+    try {
+      const data = await apiClient.post<LoginResponse>(
+        "/api/corretora/login/totp",
+        { challenge_token: challengeToken, code: trimmed },
+      );
+      if (!data?.user) {
+        throw new Error("Resposta inesperada do servidor.");
+      }
+      markLoggedIn(data.user);
+      router.replace(redirectTo);
+    } catch (err: unknown) {
+      const ui = formatApiError(err, "Código inválido.");
+      setErrMsg(ui.message);
+      setLoading(false);
+      setTotpCode("");
+    }
+  }, [challengeToken, loading, totpCode, markLoggedIn, router, redirectTo]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleLogin();
@@ -106,6 +153,65 @@ export default function LoginClient() {
           )}
         </div>
 
+        {/* ETAPA 2.2 — segundo passo 2FA. Oculta o form de senha
+            quando tem challenge_token. Aceita código de 6 dígitos
+            (do app) OU código de backup (8 chars). */}
+        {challengeToken ? (
+          <div className="space-y-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-600">
+                Autenticação em dois fatores
+              </p>
+              <p className="mt-1 text-[12px] text-stone-500">
+                Digite o código de 6 dígitos do seu aplicativo autenticador,
+                ou um código de backup de 8 caracteres.
+              </p>
+            </div>
+            <div>
+              <input
+                id="totp-code"
+                type="text"
+                inputMode="text"
+                autoComplete="one-time-code"
+                autoFocus
+                value={totpCode}
+                onChange={(e) =>
+                  setTotpCode(
+                    e.target.value
+                      .toUpperCase()
+                      .replace(/[^0-9A-Z]/g, "")
+                      .slice(0, 8),
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleTotpSubmit();
+                }}
+                placeholder="000000"
+                maxLength={8}
+                className="h-12 w-full rounded-lg border border-stone-300 bg-white px-4 text-center font-mono text-lg tracking-[0.3em] text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleTotpSubmit}
+              disabled={loading || totpCode.length < 4}
+              className="block w-full rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 px-4 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-amber-600/30 transition-all hover:from-amber-500 hover:to-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Verificando..." : "Confirmar e entrar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setChallengeToken(null);
+                setTotpCode("");
+                setErrMsg(null);
+              }}
+              className="block w-full text-center text-[11px] font-semibold text-stone-500 hover:text-stone-900"
+            >
+              ← Trocar de usuário
+            </button>
+          </div>
+        ) : (
         <div className="space-y-4">
           <div>
             <label
@@ -192,6 +298,7 @@ export default function LoginClient() {
             </Link>
           </div>
         </div>
+        )}
 
         <div className="mt-6 border-t border-stone-200 pt-4">
           <p className="text-center text-[11px] text-stone-500">

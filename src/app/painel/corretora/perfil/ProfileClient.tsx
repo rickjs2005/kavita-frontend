@@ -292,6 +292,26 @@ export default function ProfileClient() {
         />
       )}
 
+      {/* ETAPA 2.4 — link para segurança / 2FA */}
+      <PanelCard density="compact">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-300/80">
+              Segurança da conta
+            </p>
+            <p className="mt-0.5 text-[12px] text-stone-300">
+              Ative autenticação em dois fatores e gerencie sessões.
+            </p>
+          </div>
+          <a
+            href="/painel/corretora/perfil/seguranca"
+            className="inline-flex h-9 items-center rounded-lg border border-amber-400/40 bg-amber-500/10 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 transition-colors hover:bg-amber-500/20"
+          >
+            Abrir segurança →
+          </a>
+        </div>
+      </PanelCard>
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Seção: Informações principais */}
         <PanelCard density="spacious">
