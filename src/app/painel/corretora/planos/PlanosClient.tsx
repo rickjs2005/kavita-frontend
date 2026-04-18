@@ -77,11 +77,42 @@ export default function PlanosClient() {
     load();
   }, [load]);
 
-  const handleUpgrade = async (planId: number) => {
-    setUpgrading(planId);
+  const handleUpgrade = async (plan: Plan) => {
+    setUpgrading(plan.id);
     try {
+      // Fase 6 — plano pago: tenta checkout Asaas primeiro. Se gateway
+      // indisponível (dev/sandbox sem credenciais), cai pro fluxo
+      // manual. Plano gratuito (price_cents=0) pula direto pro manual
+      // — não faz sentido gerar cobrança zerada.
+      if (plan.price_cents > 0) {
+        const checkout = await apiClient.post<{
+          gateway_available: boolean;
+          checkout_url?: string;
+          provider?: string;
+        }>("/api/corretora/plan/checkout", { plan_id: plan.id });
+
+        if (checkout.gateway_available && checkout.checkout_url) {
+          toast.success("Abrindo cobrança…");
+          // Abre em nova aba para o produtor não perder a sessão no painel
+          window.open(checkout.checkout_url, "_blank", "noopener,noreferrer");
+          // Após o pagamento, o webhook do Asaas atualiza status. A UI
+          // consulta /plan no next load — aqui só damos orientação.
+          toast.success(
+            "Depois de pagar, seu plano atualiza automaticamente em alguns minutos.",
+            { duration: 8000 },
+          );
+          return;
+        }
+        // Gateway indisponível — informa, cai pro manual
+        toast(
+          "Pagamento automático indisponível. Um administrador vai confirmar seu upgrade.",
+          { icon: "ℹ️", duration: 5000 },
+        );
+      }
+
+      // Fluxo manual (FREE ou gateway off): troca o plano direto
       await apiClient.post("/api/corretora/plan/upgrade", {
-        plan_id: planId,
+        plan_id: plan.id,
       });
       toast.success("Plano atualizado com sucesso!");
       await load();
@@ -254,7 +285,7 @@ export default function PlanosClient() {
                   <button
                     type="button"
                     disabled={upgrading !== null}
-                    onClick={() => handleUpgrade(plan.id)}
+                    onClick={() => handleUpgrade(plan)}
                     className={`block w-full rounded-xl px-4 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.14em] transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
                       isFeatured
                         ? "bg-gradient-to-br from-amber-300 to-amber-500 text-stone-950 shadow-lg shadow-amber-500/30 hover:from-amber-200 hover:to-amber-400"
@@ -262,10 +293,14 @@ export default function PlanosClient() {
                     }`}
                   >
                     {upgrading === plan.id
-                      ? "Atualizando..."
-                      : plan.price_cents > current?.plan?.price_cents!
-                        ? "Fazer upgrade"
-                        : "Mudar plano"}
+                      ? plan.price_cents > 0
+                        ? "Gerando cobrança…"
+                        : "Atualizando…"
+                      : plan.price_cents === 0
+                        ? "Usar gratuito"
+                        : plan.price_cents > (current?.plan?.price_cents ?? 0)
+                          ? "Assinar agora"
+                          : "Mudar plano"}
                   </button>
                 )}
               </div>
