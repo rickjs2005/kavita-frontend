@@ -11,6 +11,54 @@ import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import type { LeadFormData } from "@/types/lead";
+
+// Máscara simples de telefone brasileiro. Cliente só; o backend
+// normaliza via normalizePhone(). Formatos aceitos:
+//   (33) 9 9999-9999  (celular com 9 dígito)
+//   (33) 9999-9999    (fixo ou celular antigo)
+// Aceita máximo 11 dígitos. Mantém o que o usuário digita até 2
+// dígitos de DDD, e só formata a partir daí.
+function maskPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 11);
+  if (digits.length === 0) return "";
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) {
+    // Fixo / celular antigo: (DD) XXXX-XXXX
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  // Celular 11 dígitos: (DD) 9 XXXX-XXXX
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3, 7)}-${digits.slice(7)}`;
+}
+
+// Opções dos novos chips — centralizadas aqui pra facilitar i18n/ajuste
+// de copy sem espalhar strings pelo JSX. Copy em pt-BR regional rural.
+const URGENCIA_OPTIONS = [
+  { value: "hoje", label: "Hoje" },
+  { value: "semana", label: "Esta semana" },
+  { value: "mes", label: "Este mês" },
+  { value: "sem_pressa", label: "Sem pressa" },
+] as const;
+
+const AMOSTRA_OPTIONS = [
+  { value: "sim", label: "Tenho amostra" },
+  { value: "nao", label: "Não tenho" },
+  { value: "vou_colher", label: "Vou colher em breve" },
+] as const;
+
+const LAUDO_OPTIONS = [
+  { value: "sim", label: "Já tenho laudo" },
+  { value: "nao", label: "Ainda não" },
+] as const;
+
+const BEBIDA_OPTIONS = [
+  { value: "mole", label: "Mole" },
+  { value: "dura", label: "Dura" },
+  { value: "riada", label: "Riada" },
+  { value: "rio", label: "Rio" },
+  { value: "especial", label: "Especial" },
+  { value: "nao_sei", label: "Não sei" },
+] as const;
 import {
   CIDADES_ZONA_DA_MATA,
   OBJETIVOS_CONTATO,
@@ -225,6 +273,8 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
   // habilita o botão "limpar meus dados" no final do form.
   const [hasDraft, setHasDraft] = useState(false);
 
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -249,6 +299,15 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       // troca com 1 clique se tiver estoque fora da janela. Reduz fricção
       // sem forçar — segue editável.
       safra_tipo: getCurrentSafraTipo(),
+      // Fase 2 — novos campos regionais; todos opcionais exceto consent
+      possui_amostra: undefined,
+      possui_laudo: undefined,
+      bebida_percebida: undefined,
+      preco_esperado_saca: undefined,
+      urgencia: undefined,
+      observacoes: "",
+      consentimento_contato: false,
+      website_hp: "",
     },
   });
 
@@ -291,9 +350,10 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
 
     setSubmitting(true);
     try {
-      const payload: Record<string, string> = {
+      const payload: Record<string, string | number | boolean> = {
         nome: data.nome.trim(),
         telefone: data.telefone.trim(),
+        consentimento_contato: data.consentimento_contato === true,
       };
       if (data.email?.trim()) payload.email = data.email.trim();
       if (data.cidade?.trim()) payload.cidade = data.cidade.trim();
@@ -308,17 +368,42 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         payload.corrego_localidade = data.corrego_localidade.trim();
       }
       if (data.safra_tipo) payload.safra_tipo = data.safra_tipo;
+      // Fase 2 — campos regionais adicionais
+      if (data.urgencia) payload.urgencia = data.urgencia;
+      if (data.possui_amostra) payload.possui_amostra = data.possui_amostra;
+      if (data.possui_laudo) payload.possui_laudo = data.possui_laudo;
+      if (data.bebida_percebida) payload.bebida_percebida = data.bebida_percebida;
+      if (
+        data.preco_esperado_saca != null &&
+        !Number.isNaN(Number(data.preco_esperado_saca)) &&
+        Number(data.preco_esperado_saca) > 0
+      ) {
+        payload.preco_esperado_saca = Number(data.preco_esperado_saca);
+      }
+      if (data.observacoes?.trim()) payload.observacoes = data.observacoes.trim();
+      // Honeypot — se preenchido, envia mesmo assim. Backend descarta
+      // silenciosamente. Usuário real nunca vê o campo.
+      if (data.website_hp?.trim()) payload.website_hp = data.website_hp.trim();
       if (turnstileEnabled && turnstileToken) {
         payload["cf-turnstile-response"] = turnstileToken;
       }
 
-      await apiClient.post(
+      const res = await apiClient.post<{
+        data?: { deduplicated?: boolean };
+        message?: string;
+      }>(
         `/api/public/corretoras/${encodeURIComponent(corretoraSlug)}/leads`,
         payload,
       );
-      toast.success(
-        "Mensagem enviada — a corretora já foi avisada e retorna em breve.",
-      );
+      if (res?.data?.deduplicated) {
+        toast.success(
+          "Já recebemos seu contato recentemente — avisamos a corretora que você voltou a chamar.",
+        );
+      } else {
+        toast.success(
+          "Mensagem enviada — a corretora já foi avisada e retorna em breve.",
+        );
+      }
       // Persist draft só no sucesso. Mantém só o que faz sentido
       // reusar em outra corretora (identidade + canal preferido).
       saveLeadDraft({
@@ -463,6 +548,10 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
               {...register("telefone", {
                 required: "Telefone é obrigatório.",
                 minLength: { value: 8, message: "Telefone muito curto." },
+                onChange: (e) => {
+                  // Formata enquanto digita — backend normaliza de novo.
+                  e.target.value = maskPhone(e.target.value);
+                },
               })}
               className={inputClass}
               placeholder="(33) 9 9999-9999"
@@ -699,6 +788,29 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
             ))}
           </div>
         </div>
+
+        {/* Fase 2 — Amostra disponível. Sinaliza logística pra corretora
+            (precisa buscar? já está pronta?). Helpertext regional. */}
+        <div>
+          <label className={labelClass}>Você já tem amostra?</label>
+          <div className="flex flex-wrap gap-2">
+            {AMOSTRA_OPTIONS.map((opt) => (
+              <label key={opt.value} className="cursor-pointer">
+                <input
+                  type="radio"
+                  value={opt.value}
+                  {...register("possui_amostra")}
+                  className="peer sr-only"
+                />
+                <span className={chipClass}>{opt.label}</span>
+              </label>
+            ))}
+          </div>
+          <p className={helperClass}>
+            Ajuda a corretora a decidir se vai até você buscar ou se você
+            leva até a mesa dela.
+          </p>
+        </div>
       </fieldset>
 
       {/* ─── 3. Retorno ──────────────────────────────────────────── */}
@@ -717,6 +829,24 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
                   type="radio"
                   value={opt.value}
                   {...register("canal_preferido")}
+                  className="peer sr-only"
+                />
+                <span className={chipClass}>{opt.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Fase 2 — Urgência. Ajuda a corretora a priorizar. */}
+        <div>
+          <label className={labelClass}>Qual a pressa?</label>
+          <div className="flex flex-wrap gap-2">
+            {URGENCIA_OPTIONS.map((opt) => (
+              <label key={opt.value} className="cursor-pointer">
+                <input
+                  type="radio"
+                  value={opt.value}
+                  {...register("urgencia")}
                   className="peer sr-only"
                 />
                 <span className={chipClass}>{opt.label}</span>
@@ -744,6 +874,195 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
           )}
         </div>
       </fieldset>
+
+      {/* ─── 4. Mais detalhes (colapsável) ──────────────────────────
+          Fica escondido por default pra não pesar o form — produtores
+          que não sabem esses termos técnicos nem veem. Quem quer
+          passar laudo/classificação/preço clica pra abrir. */}
+      <fieldset className="space-y-4 border-0 p-0 lg:space-y-5">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          aria-expanded={showAdvanced}
+          className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition-colors hover:bg-white/[0.06]"
+        >
+          <span className="flex flex-col gap-0.5">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300/90">
+              Mais detalhes do seu café
+            </span>
+            <span className="text-[12px] text-stone-300">
+              Laudo, bebida, preço esperado — opcional, ajuda a corretora a
+              responder com mais precisão.
+            </span>
+          </span>
+          <span
+            aria-hidden
+            className={`shrink-0 text-amber-300/80 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </span>
+        </button>
+
+        {showAdvanced && (
+          <div className="space-y-4 rounded-xl border border-white/5 bg-white/[0.02] p-4 lg:space-y-5">
+            <div>
+              <label className={labelClass}>Laudo / classificação</label>
+              <div className="flex flex-wrap gap-2">
+                {LAUDO_OPTIONS.map((opt) => (
+                  <label key={opt.value} className="cursor-pointer">
+                    <input
+                      type="radio"
+                      value={opt.value}
+                      {...register("possui_laudo")}
+                      className="peer sr-only"
+                    />
+                    <span className={chipClass}>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Bebida (se você já sabe)</label>
+              <div className="flex flex-wrap gap-2">
+                {BEBIDA_OPTIONS.map((opt) => (
+                  <label key={opt.value} className="cursor-pointer">
+                    <input
+                      type="radio"
+                      value={opt.value}
+                      {...register("bebida_percebida")}
+                      className="peer sr-only"
+                    />
+                    <span className={chipClass}>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+              <p className={helperClass}>
+                Se não tiver certeza, escolha &quot;Não sei&quot; — a
+                corretora vai avaliar.
+              </p>
+            </div>
+
+            <div>
+              <label className={labelClass} htmlFor="lead-preco">
+                Preço esperado por saca (R$, opcional)
+              </label>
+              <input
+                id="lead-preco"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={0}
+                {...register("preco_esperado_saca", {
+                  valueAsNumber: true,
+                  min: { value: 0, message: "Preço não pode ser negativo." },
+                  max: {
+                    value: 100000,
+                    message: "Valor acima do razoável — confira os dígitos.",
+                  },
+                })}
+                className={inputClass}
+                placeholder="Ex: 1250,00"
+              />
+              {errors.preco_esperado_saca && (
+                <p className={errorClass}>
+                  {errors.preco_esperado_saca.message as string}
+                </p>
+              )}
+              <p className={helperClass}>
+                Serve de balizamento. A corretora sempre vai comparar com a
+                cotação do dia.
+              </p>
+            </div>
+
+            <div>
+              <label className={labelClass} htmlFor="lead-observacoes">
+                Observações (opcional)
+              </label>
+              <textarea
+                id="lead-observacoes"
+                rows={2}
+                maxLength={1000}
+                {...register("observacoes", {
+                  maxLength: { value: 1000, message: "Máximo 1000 caracteres." },
+                })}
+                className={inputClass}
+                placeholder="Detalhes técnicos do lote, prazos, condições de retirada…"
+              />
+              {errors.observacoes && (
+                <p className={errorClass}>
+                  {errors.observacoes.message as string}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </fieldset>
+
+      {/* Honeypot — invisível a usuário humano e leitor de tela.
+          Posicionado fora do viewport + tabindex=-1 + autocomplete=off
+          para que autofill/keyboard-only não o preencham. Bots que
+          percorrem todos os inputs cegamente caem aqui. Backend
+          (controller) descarta o lead silenciosamente quando preenchido. */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: "-10000px",
+          top: "auto",
+          width: 1,
+          height: 1,
+          overflow: "hidden",
+        }}
+      >
+        <label htmlFor="lead-website-hp">
+          Website (não preencher)
+          <input
+            id="lead-website-hp"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            {...register("website_hp")}
+          />
+        </label>
+      </div>
+
+        {/* Consentimento LGPD — obrigatório. Linguagem simples, sem jargão. */}
+        <div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:bg-white/[0.05]">
+            <input
+              type="checkbox"
+              {...register("consentimento_contato", {
+                required:
+                  "Precisamos da sua autorização para compartilhar com a corretora.",
+              })}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-stone-900 text-amber-400 focus:ring-amber-400/60 focus:ring-offset-0"
+            />
+            <span className="text-[12px] leading-relaxed text-stone-300">
+              Autorizo a Kavita a compartilhar meus dados com{" "}
+              <strong className="font-semibold text-stone-100">
+                {corretoraName}
+              </strong>{" "}
+              para tratar do meu café. Posso pedir a exclusão dos dados depois.
+            </span>
+          </label>
+          {errors.consentimento_contato && (
+            <p className={errorClass}>
+              {errors.consentimento_contato.message as string}
+            </p>
+          )}
+        </div>
 
         {turnstileEnabled && (
           <div
@@ -813,6 +1132,14 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
                   canal_preferido: "whatsapp",
                   corrego_localidade: "",
                   safra_tipo: getCurrentSafraTipo(),
+                  possui_amostra: undefined,
+                  possui_laudo: undefined,
+                  bebida_percebida: undefined,
+                  preco_esperado_saca: undefined,
+                  urgencia: undefined,
+                  observacoes: "",
+                  consentimento_contato: false,
+                  website_hp: "",
                 });
                 setHasDraft(false);
                 toast.success("Dados salvos no navegador removidos.");

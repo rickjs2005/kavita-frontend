@@ -89,6 +89,17 @@ export type LeadsSummary = {
   lost: number;
 };
 
+export type PossuiAmostra = "sim" | "nao" | "vou_colher";
+export type PossuiLaudo = "sim" | "nao";
+export type BebidaPercebida =
+  | "especial"
+  | "dura"
+  | "riada"
+  | "rio"
+  | "mole"
+  | "nao_sei";
+export type Urgencia = "hoje" | "semana" | "mes" | "sem_pressa";
+
 export type LeadFormData = {
   nome: string;
   telefone: string;
@@ -103,4 +114,14 @@ export type LeadFormData = {
   // Operação física (Sprint 7) — opcionais
   corrego_localidade?: string;
   safra_tipo?: SafraTipo;
+  // Fase 2 — campos regionais adicionais
+  possui_amostra?: PossuiAmostra;
+  possui_laudo?: PossuiLaudo;
+  bebida_percebida?: BebidaPercebida;
+  preco_esperado_saca?: number;
+  urgencia?: Urgencia;
+  observacoes?: string;
+  consentimento_contato: boolean;
+  // Honeypot anti-bot — usuário humano nunca preenche
+  website_hp?: string;
 };
