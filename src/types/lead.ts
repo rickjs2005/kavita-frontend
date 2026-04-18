@@ -39,6 +39,7 @@ export type CorretoraLead = {
   corretora_id: number;
   nome: string;
   telefone: string;
+  email?: string | null;
   cidade?: string | null;
   mensagem?: string | null;
   // Qualificação regional (Sprint 2)

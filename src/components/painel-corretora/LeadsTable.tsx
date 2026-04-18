@@ -434,8 +434,8 @@ export function LeadsTable({
                     </p>
                   )}
 
-                  {/* CTA editar laudo / nota */}
-                  <div className="mt-3">
+                  {/* CTA editar laudo / nota + abrir detalhe */}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setExpandedId(isExpanded ? null : lead.id)}
@@ -449,6 +449,12 @@ export function LeadsTable({
                           ? "☕ Editar laudo"
                           : "📝 Nota interna"}
                     </button>
+                    <a
+                      href={`/painel/corretora/leads/${lead.id}`}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-4 text-[11px] font-semibold text-stone-200 transition-colors hover:bg-white/[0.06]"
+                    >
+                      Abrir detalhe →
+                    </a>
                   </div>
                 </div>
               )}
