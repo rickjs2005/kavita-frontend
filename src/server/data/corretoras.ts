@@ -164,6 +164,31 @@ export async function fetchPublicCorretoraBySlug(
 }
 
 /**
+ * Fase 8 — agregado anonimizado de lotes fechados (prova social).
+ * Nunca expõe produtor/preço individualmente. Falha silenciosamente:
+ * ficha pública segue renderizando mesmo se o endpoint der erro.
+ */
+export type CorretoraTrackRecord = {
+  total_lots: number;
+  estimated_sacas: number;
+  window_days: number;
+};
+
+export async function fetchCorretoraTrackRecord(
+  slug: string,
+): Promise<CorretoraTrackRecord | null> {
+  try {
+    return await fetchJson<CorretoraTrackRecord>(
+      buildUrl(
+        `/api/public/corretoras/${encodeURIComponent(slug)}/track-record`,
+      ),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetch distinct cities for the filter dropdown.
  */
 export async function fetchCorretorasCities(): Promise<string[]> {

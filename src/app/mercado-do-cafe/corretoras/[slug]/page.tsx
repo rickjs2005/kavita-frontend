@@ -21,7 +21,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound, permanentRedirect } from "next/navigation";
-import { fetchPublicCorretoraBySlug } from "@/server/data/corretoras";
+import {
+  fetchPublicCorretoraBySlug,
+  fetchCorretoraTrackRecord,
+} from "@/server/data/corretoras";
 import { absUrl } from "@/utils/absUrl";
 import { CorretoraContactChannels } from "@/components/mercado-do-cafe/CorretoraContactChannels";
 import { CorretoraRegionalTrust } from "@/components/mercado-do-cafe/CorretoraRegionalTrust";
@@ -84,6 +87,10 @@ export default async function CorretoraDetailPage({ params }: Props) {
   }
   if (result.kind !== "found") notFound();
   const corretora = result.corretora;
+
+  // Fase 8 — track record anonimizado. Fire-and-forget: se falhar,
+  // a ficha renderiza sem o pill (track-record é null).
+  const trackRecord = await fetchCorretoraTrackRecord(slug);
 
   const isFeatured =
     corretora.is_featured === true || corretora.is_featured === 1;
@@ -407,6 +414,46 @@ export default async function CorretoraDetailPage({ params }: Props) {
           <CorretoraRegionalTrust corretora={corretora} />
         </section>
 
+        {/* Fase 8 — track record agregado. Só renderiza quando houve
+            pelo menos 1 lote fechado nos últimos 365 dias. Nada de
+            preço/produtor — só agregado anonimizado. */}
+        {trackRecord && trackRecord.total_lots > 0 && (
+          <section className="mt-6 md:mt-8">
+            <div className="relative overflow-hidden rounded-2xl border border-emerald-400/20 bg-emerald-500/[0.05] p-5 sm:p-6">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/40 to-transparent"
+              />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/80">
+                Histórico verificado · últimos 12 meses
+              </p>
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-2">
+                <p className="font-serif text-[28px] font-semibold leading-none text-stone-50 md:text-[32px]">
+                  {trackRecord.total_lots}
+                  <span className="ml-2 text-[13px] font-sans font-normal text-stone-300">
+                    {trackRecord.total_lots === 1 ? "lote" : "lotes"} fechados
+                  </span>
+                </p>
+                {trackRecord.estimated_sacas > 0 && (
+                  <p className="text-[13px] text-stone-300">
+                    ≈{" "}
+                    <span className="font-semibold tabular-nums text-stone-100">
+                      {new Intl.NumberFormat("pt-BR").format(
+                        trackRecord.estimated_sacas,
+                      )}
+                    </span>{" "}
+                    sacas negociadas
+                  </p>
+                )}
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-stone-400">
+                Número agregado com base nos lotes que passaram pela mesa da{" "}
+                {corretora.name} — sem expor produtor ou preço individual.
+              </p>
+            </div>
+          </section>
+        )}
+
         {/* ─── 01 / SOBRE A CORRETORA ───────────────────────────── */}
         {corretora.description && (
           <section className="mt-14 sm:mt-20 md:mt-28">
@@ -473,13 +520,65 @@ export default async function CorretoraDetailPage({ params }: Props) {
             <CorretoraContactChannels corretora={corretora} variant="full" />
           </div>
 
-          {/* Fase 5 — link Google Maps sem API key. Abre busca pelo
-              nome + cidade/estado; o produtor vê o endereço real ou a
-              região de atuação. Sem custo e sem integração. */}
+          {/* Fase 8 — sinais operacionais regionais. Aparecem como
+              chips de dados (volume mínimo, especial, retirada,
+              exportação, cooperativas). Só renderizam quando há ao
+              menos um true, pra não poluir fichas antigas. */}
+          {(corretora.compra_cafe_especial ||
+            corretora.faz_retirada_amostra ||
+            corretora.trabalha_exportacao ||
+            corretora.trabalha_cooperativas ||
+            (corretora.volume_minimo_sacas != null &&
+              corretora.volume_minimo_sacas > 0)) && (
+            <div className="mt-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300/80">
+                Como a mesa opera
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {corretora.volume_minimo_sacas != null &&
+                  corretora.volume_minimo_sacas > 0 && (
+                    <span className="inline-flex items-center rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold text-stone-200 ring-1 ring-white/10">
+                      Mín. {corretora.volume_minimo_sacas} sacas
+                    </span>
+                  )}
+                {corretora.compra_cafe_especial && (
+                  <span className="inline-flex items-center rounded-full bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-semibold text-amber-100 ring-1 ring-amber-400/25">
+                    Café especial
+                  </span>
+                )}
+                {corretora.faz_retirada_amostra && (
+                  <span className="inline-flex items-center rounded-full bg-emerald-400/[0.08] px-2.5 py-1 text-[11px] font-semibold text-emerald-200 ring-1 ring-emerald-400/25">
+                    Retira amostra
+                  </span>
+                )}
+                {corretora.trabalha_exportacao && (
+                  <span className="inline-flex items-center rounded-full bg-sky-400/[0.08] px-2.5 py-1 text-[11px] font-semibold text-sky-200 ring-1 ring-sky-400/25">
+                    Exportação
+                  </span>
+                )}
+                {corretora.trabalha_cooperativas && (
+                  <span className="inline-flex items-center rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold text-stone-200 ring-1 ring-white/10">
+                    Atende cooperativas
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Fase 5 — link Google Maps sem API key. Fase 8 enriquece
+              com endereco_textual quando disponível (pin direto no
+              endereço, não na região). */}
           <div className="mt-5">
+            {corretora.endereco_textual && (
+              <p className="mb-1.5 text-[12px] text-stone-300">
+                {corretora.endereco_textual}
+              </p>
+            )}
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                `${corretora.name} ${corretora.city} ${corretora.state}`,
+                corretora.endereco_textual
+                  ? `${corretora.endereco_textual} ${corretora.city} ${corretora.state}`
+                  : `${corretora.name} ${corretora.city} ${corretora.state}`,
               )}`}
               target="_blank"
               rel="noopener noreferrer"

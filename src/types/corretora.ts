@@ -32,6 +32,13 @@ export type PublicCorretora = {
   horario_atendimento?: string | null;
   anos_atuacao?: number | null;
   foto_responsavel_path?: string | null;
+  // Fase 8 — regionais adicionais
+  endereco_textual?: string | null;
+  compra_cafe_especial?: boolean | number | null;
+  volume_minimo_sacas?: number | null;
+  faz_retirada_amostra?: boolean | number | null;
+  trabalha_exportacao?: boolean | number | null;
+  trabalha_cooperativas?: boolean | number | null;
   // Agregado de reviews aprovadas (Sprint 1 — vitrine rica). Vem do
   // SELECT da camada pública; null quando ainda não há reviews.
   reviews_count?: number | null;

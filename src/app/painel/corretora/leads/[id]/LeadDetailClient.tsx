@@ -51,6 +51,16 @@ type LeadDetailResponse = {
     telefone_normalizado?: string | null;
     recontact_count?: number;
     last_recontact_at?: string | null;
+    // Fase 8 — campos de análise do café (já existiam em updateLeadSchema)
+    umidade_pct?: number | null;
+    catacao_defeitos?: string | null;
+    aspecto_lote?: string | null;
+    obs_sensoriais?: string | null;
+    obs_comerciais?: string | null;
+    mercado_indicado?: string | null;
+    aptidao_oferta?: string | null;
+    altitude_origem?: number | null;
+    variedade_cultivar?: string | null;
   };
   notes: LeadNote[];
   events: LeadEvent[];
@@ -288,6 +298,7 @@ function LeadDetailBody({
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <LeadDataBlock lead={lead} />
+          <AnalysisBlock lead={lead} onChanged={onChanged} />
           <ProposalBlock lead={lead} onChanged={onChanged} />
           <NextActionBlock lead={lead} onChanged={onChanged} />
           <NotesBlock leadId={lead.id} notes={notes} onChanged={onChanged} />
@@ -521,6 +532,367 @@ function LeadDataBlock({ lead }: { lead: LeadDetailResponse["lead"] }) {
         </div>
       )}
     </section>
+  );
+}
+
+// ─── Análise do café (Fase 8) ───────────────────────────────────
+
+const BEBIDA_CLASSIFICACAO_OPTS = [
+  { value: "especial", label: "Especial" },
+  { value: "dura", label: "Dura" },
+  { value: "riado", label: "Riado" },
+  { value: "rio", label: "Rio" },
+  { value: "escolha", label: "Escolha" },
+] as const;
+
+const AMOSTRA_OPTS = [
+  { value: "nao_entregue", label: "Não entregue" },
+  { value: "prometida", label: "Prometida" },
+  { value: "recebida", label: "Recebida" },
+  { value: "laudada", label: "Laudada" },
+] as const;
+
+const MERCADO_OPTS = [
+  { value: "exportacao", label: "Exportação" },
+  { value: "mercado_interno", label: "Mercado interno" },
+  { value: "cafeteria", label: "Cafeteria/specialty" },
+  { value: "commodity", label: "Commodity" },
+  { value: "indefinido", label: "Indefinido" },
+] as const;
+
+const APTIDAO_OPTS = [
+  { value: "sim", label: "Compra" },
+  { value: "parcial", label: "Compra parcial" },
+  { value: "nao", label: "Não compra" },
+] as const;
+
+function AnalysisBlock({
+  lead,
+  onChanged,
+}: {
+  lead: LeadDetailResponse["lead"];
+  onChanged: () => void;
+}) {
+  const [expanded, setExpanded] = useState(
+    Boolean(
+      lead.amostra_status && lead.amostra_status !== "nao_entregue",
+    ) ||
+      Boolean(lead.bebida_classificacao) ||
+      Boolean(lead.pontuacao_sca),
+  );
+  const [saving, setSaving] = useState(false);
+
+  // Campos em estado local (controlled). String pra inputs numéricos
+  // para evitar "NaN" quando user limpa.
+  const [amostra, setAmostra] = useState(lead.amostra_status ?? "");
+  const [bebida, setBebida] = useState(lead.bebida_classificacao ?? "");
+  const [sca, setSca] = useState(
+    lead.pontuacao_sca != null ? String(lead.pontuacao_sca) : "",
+  );
+  const [peneira, setPeneira] = useState(lead.peneira ?? "");
+  const [umidade, setUmidade] = useState(
+    lead.umidade_pct != null ? String(lead.umidade_pct) : "",
+  );
+  const [defeitos, setDefeitos] = useState(lead.catacao_defeitos ?? "");
+  const [aspecto, setAspecto] = useState(lead.aspecto_lote ?? "");
+  const [variedade, setVariedade] = useState(lead.variedade_cultivar ?? "");
+  const [altitude, setAltitude] = useState(
+    lead.altitude_origem != null ? String(lead.altitude_origem) : "",
+  );
+  const [mercado, setMercado] = useState(lead.mercado_indicado ?? "");
+  const [aptidao, setAptidao] = useState(lead.aptidao_oferta ?? "");
+  const [obsSensoriais, setObsSensoriais] = useState(lead.obs_sensoriais ?? "");
+  const [obsComerciais, setObsComerciais] = useState(lead.obs_comerciais ?? "");
+
+  const save = async () => {
+    setSaving(true);
+    const payload: Record<string, unknown> = {};
+    const toNum = (v: string) => (v.trim() === "" ? null : Number(v.replace(",", ".")));
+    if (amostra) payload.amostra_status = amostra;
+    if (bebida) payload.bebida_classificacao = bebida;
+    else if (lead.bebida_classificacao) payload.bebida_classificacao = null;
+    payload.pontuacao_sca = toNum(sca);
+    payload.peneira = peneira.trim() || null;
+    payload.umidade_pct = toNum(umidade);
+    payload.catacao_defeitos = defeitos.trim() || null;
+    payload.aspecto_lote = aspecto.trim() || null;
+    payload.variedade_cultivar = variedade.trim() || null;
+    const alt = toNum(altitude);
+    payload.altitude_origem = alt == null ? null : Math.round(alt);
+    payload.mercado_indicado = mercado || null;
+    payload.aptidao_oferta = aptidao || null;
+    payload.obs_sensoriais = obsSensoriais.trim() || null;
+    payload.obs_comerciais = obsComerciais.trim() || null;
+    try {
+      await apiClient.patch(`/api/corretora/leads/${lead.id}`, payload);
+      toast.success("Análise salva.");
+      onChanged();
+    } catch (err) {
+      toast.error(formatApiError(err, "Erro ao salvar análise.").message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="rounded-2xl border border-white/[0.08] bg-stone-900/60 p-5">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="flex w-full items-start justify-between gap-3 text-left"
+      >
+        <div>
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300/90">
+            Análise do café
+          </h2>
+          <p className="mt-1 text-[11px] text-stone-400">
+            Bebida, peneira, umidade, defeitos e observações da amostra.
+          </p>
+        </div>
+        <span
+          aria-hidden
+          className={`mt-1 text-amber-300/80 transition-transform ${expanded ? "rotate-180" : ""}`}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="mt-4 space-y-4">
+          {/* Amostra status */}
+          <div>
+            <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+              Status da amostra
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {AMOSTRA_OPTS.map((o) => {
+                const active = amostra === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => setAmostra(active ? "" : o.value)}
+                    className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
+                      active
+                        ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/40"
+                        : "bg-white/[0.03] text-stone-400 ring-1 ring-white/[0.08] hover:text-stone-100"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bebida */}
+          <div>
+            <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+              Bebida (laudo)
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {BEBIDA_CLASSIFICACAO_OPTS.map((o) => {
+                const active = bebida === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => setBebida(active ? "" : o.value)}
+                    className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
+                      active
+                        ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/40"
+                        : "bg-white/[0.03] text-stone-400 ring-1 ring-white/[0.08] hover:text-stone-100"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Métricas numéricas + texto curto */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <AnalysisField
+              label="Pontuação SCA"
+              value={sca}
+              onChange={setSca}
+              type="number"
+              placeholder="0 a 100"
+              step="0.25"
+            />
+            <AnalysisField
+              label="Peneira"
+              value={peneira}
+              onChange={setPeneira}
+              placeholder="Ex: 16 acima"
+            />
+            <AnalysisField
+              label="Umidade (%)"
+              value={umidade}
+              onChange={setUmidade}
+              type="number"
+              placeholder="0 a 30"
+              step="0.1"
+            />
+            <AnalysisField
+              label="Altitude origem (m)"
+              value={altitude}
+              onChange={setAltitude}
+              type="number"
+              placeholder="Ex: 900"
+            />
+            <AnalysisField
+              label="Variedade / cultivar"
+              value={variedade}
+              onChange={setVariedade}
+              placeholder="Ex: Catuaí Amarelo"
+            />
+            <AnalysisField
+              label="Aspecto do lote"
+              value={aspecto}
+              onChange={setAspecto}
+              placeholder="Ex: Bom, uniforme"
+            />
+          </div>
+
+          <AnalysisField
+            label="Defeitos / catação"
+            value={defeitos}
+            onChange={setDefeitos}
+            placeholder="Ex: 8 brocados, 3 pretos"
+          />
+
+          {/* Mercado + aptidão em chips */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+                Mercado indicado
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {MERCADO_OPTS.map((o) => {
+                  const active = mercado === o.value;
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setMercado(active ? "" : o.value)}
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
+                        active
+                          ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/40"
+                          : "bg-white/[0.03] text-stone-400 ring-1 ring-white/[0.08] hover:text-stone-100"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+                Aptidão de compra
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {APTIDAO_OPTS.map((o) => {
+                  const active = aptidao === o.value;
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setAptidao(active ? "" : o.value)}
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
+                        active
+                          ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/40"
+                          : "bg-white/[0.03] text-stone-400 ring-1 ring-white/[0.08] hover:text-stone-100"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+                Observações sensoriais
+              </label>
+              <textarea
+                value={obsSensoriais}
+                onChange={(e) => setObsSensoriais(e.target.value)}
+                rows={3}
+                maxLength={2000}
+                className="w-full rounded-lg border border-white/10 bg-white/[0.04] p-3 text-[13px] text-stone-100 placeholder:text-stone-500 focus:border-amber-400/50 focus:outline-none focus:ring-1 focus:ring-amber-400/30"
+                placeholder="Ex: doce, corpo médio, acidez cítrica"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+                Observações comerciais
+              </label>
+              <textarea
+                value={obsComerciais}
+                onChange={(e) => setObsComerciais(e.target.value)}
+                rows={3}
+                maxLength={2000}
+                className="w-full rounded-lg border border-white/10 bg-white/[0.04] p-3 text-[13px] text-stone-100 placeholder:text-stone-500 focus:border-amber-400/50 focus:outline-none focus:ring-1 focus:ring-amber-400/30"
+                placeholder="Ex: pediu retirada em 10 dias; prefere Pix"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving}
+              className="inline-flex h-9 items-center rounded-lg bg-amber-500/20 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 ring-1 ring-amber-400/40 transition-colors hover:bg-amber-500/30 disabled:opacity-50"
+            >
+              {saving ? "Salvando…" : "Salvar análise"}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AnalysisField({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  step,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: "text" | "number";
+  placeholder?: string;
+  step?: string;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+        {label}
+      </label>
+      <input
+        type={type}
+        inputMode={type === "number" ? "decimal" : undefined}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-9 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[13px] text-stone-100 placeholder:text-stone-500 focus:border-amber-400/50 focus:outline-none focus:ring-1 focus:ring-amber-400/30"
+      />
+    </div>
   );
 }
 

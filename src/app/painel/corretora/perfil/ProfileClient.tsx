@@ -44,6 +44,13 @@ type ProfileFormData = {
   perfil_compra: PerfilCompra | "";
   horario_atendimento: string;
   anos_atuacao: string; // string no form, convertido para number no submit
+  // Fase 8 — regionais adicionais
+  endereco_textual: string;
+  compra_cafe_especial: boolean;
+  volume_minimo_sacas: string; // string no form
+  faz_retirada_amostra: boolean;
+  trabalha_exportacao: boolean;
+  trabalha_cooperativas: boolean;
 };
 
 const CONTACT_FIELDS = [
@@ -108,6 +115,12 @@ export default function ProfileClient() {
       perfil_compra: "",
       horario_atendimento: "",
       anos_atuacao: "",
+      endereco_textual: "",
+      compra_cafe_especial: false,
+      volume_minimo_sacas: "",
+      faz_retirada_amostra: false,
+      trabalha_exportacao: false,
+      trabalha_cooperativas: false,
     },
   });
 
@@ -141,6 +154,17 @@ export default function ProfileClient() {
           horario_atendimento: data.horario_atendimento ?? "",
           anos_atuacao:
             data.anos_atuacao != null ? String(data.anos_atuacao) : "",
+          // Fase 8 — regionais adicionais (booleans podem vir como
+          // 0/1 do MySQL; normaliza para boolean do form)
+          endereco_textual: data.endereco_textual ?? "",
+          compra_cafe_especial: Boolean(data.compra_cafe_especial),
+          volume_minimo_sacas:
+            data.volume_minimo_sacas != null
+              ? String(data.volume_minimo_sacas)
+              : "",
+          faz_retirada_amostra: Boolean(data.faz_retirada_amostra),
+          trabalha_exportacao: Boolean(data.trabalha_exportacao),
+          trabalha_cooperativas: Boolean(data.trabalha_cooperativas),
         });
       } catch (err) {
         toast.error(formatApiError(err, "Erro ao carregar perfil.").message);
@@ -184,6 +208,15 @@ export default function ProfileClient() {
         anos_atuacao: data.anos_atuacao
           ? Number(data.anos_atuacao)
           : null,
+        // Fase 8 — regionais adicionais
+        endereco_textual: data.endereco_textual?.trim() || null,
+        compra_cafe_especial: Boolean(data.compra_cafe_especial),
+        volume_minimo_sacas: data.volume_minimo_sacas
+          ? Number(data.volume_minimo_sacas)
+          : null,
+        faz_retirada_amostra: Boolean(data.faz_retirada_amostra),
+        trabalha_exportacao: Boolean(data.trabalha_exportacao),
+        trabalha_cooperativas: Boolean(data.trabalha_cooperativas),
       };
 
       const updated = await apiClient.put<CorretoraAdmin>(
@@ -575,6 +608,117 @@ export default function ProfileClient() {
                   </p>
                 )}
               </div>
+            </div>
+          </div>
+        </PanelCard>
+
+        {/* Fase 8 — perfil comercial da mesa (Zona da Mata) */}
+        <PanelCard density="spacious">
+          <div className="mb-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+              Mesa regional
+            </p>
+            <h2 className="mt-1 text-base font-semibold text-stone-100">
+              Como você opera na região
+            </h2>
+            <p className="mt-0.5 text-[12px] text-stone-400">
+              Esses sinais aparecem na sua ficha pública e no filtro que o
+              produtor usa para escolher corretora.
+            </p>
+          </div>
+
+          <div className="space-y-5">
+            <div>
+              <label className={labelClass}>Endereço (rua, número, bairro)</label>
+              <input
+                {...register("endereco_textual", { maxLength: 255 })}
+                className={inputClass}
+                placeholder="Ex: Rua São Paulo 200, Centro — Manhuaçu/MG"
+              />
+              <p className="mt-1.5 text-[11px] text-stone-500">
+                Aparece na ficha pública e alimenta o link do Google Maps.
+              </p>
+            </div>
+
+            <div>
+              <label className={labelClass}>Volume mínimo (sacas de 60 kg)</label>
+              <input
+                type="number"
+                min="0"
+                max="100000"
+                {...register("volume_minimo_sacas")}
+                className={inputClass}
+                placeholder="Ex: 30 (deixe vazio se não há mínimo)"
+              />
+              <p className="mt-1.5 text-[11px] text-stone-500">
+                Deixe em branco se você atende lotes de qualquer tamanho.
+              </p>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-colors hover:bg-white/[0.05]">
+                <input
+                  type="checkbox"
+                  {...register("compra_cafe_especial")}
+                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-stone-900 text-amber-400 focus:ring-amber-400/60"
+                />
+                <span className="text-[13px] leading-snug text-stone-200">
+                  <span className="font-semibold text-stone-100">
+                    Compra café especial
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-stone-400">
+                    Arábica SCA 80+, microlotes, cafés premiados.
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-colors hover:bg-white/[0.05]">
+                <input
+                  type="checkbox"
+                  {...register("faz_retirada_amostra")}
+                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-stone-900 text-amber-400 focus:ring-amber-400/60"
+                />
+                <span className="text-[13px] leading-snug text-stone-200">
+                  <span className="font-semibold text-stone-100">
+                    Faz retirada de amostra
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-stone-400">
+                    Vai até o produtor buscar sem custo adicional.
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-colors hover:bg-white/[0.05]">
+                <input
+                  type="checkbox"
+                  {...register("trabalha_exportacao")}
+                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-stone-900 text-amber-400 focus:ring-amber-400/60"
+                />
+                <span className="text-[13px] leading-snug text-stone-200">
+                  <span className="font-semibold text-stone-100">
+                    Trabalha com exportação
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-stone-400">
+                    Coloca lote direto no contêiner.
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-colors hover:bg-white/[0.05]">
+                <input
+                  type="checkbox"
+                  {...register("trabalha_cooperativas")}
+                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-stone-900 text-amber-400 focus:ring-amber-400/60"
+                />
+                <span className="text-[13px] leading-snug text-stone-200">
+                  <span className="font-semibold text-stone-100">
+                    Atende cooperativas
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-stone-400">
+                    Compra de cooperados ou via cooperativa.
+                  </span>
+                </span>
+              </label>
             </div>
           </div>
         </PanelCard>
