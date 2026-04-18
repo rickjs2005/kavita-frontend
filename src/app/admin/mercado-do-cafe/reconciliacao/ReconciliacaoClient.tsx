@@ -326,6 +326,7 @@ export default function ReconciliacaoClient() {
                     <th className="py-2 text-left">Recebido em</th>
                     <th className="py-2 text-left">Processado em</th>
                     <th className="py-2 text-right">Retries</th>
+                    <th className="py-2 text-right">Ação</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -371,6 +372,11 @@ export default function ReconciliacaoClient() {
                       </td>
                       <td className="py-2 text-right tabular-nums text-slate-400">
                         {e.retry_count}
+                      </td>
+                      <td className="py-2 text-right">
+                        {(e.processing_error || !e.processed_at) && (
+                          <RetryButton eventId={e.id} onDone={load} />
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -486,6 +492,46 @@ function FilterChips({
         );
       })}
     </div>
+  );
+}
+
+// ETAPA 1.3 — botão de retry manual. Chama
+// POST /reconciliation/webhook-events/:id/retry; em sucesso recarrega
+// a tabela pra refletir novo status.
+function RetryButton({
+  eventId,
+  onDone,
+}: {
+  eventId: number;
+  onDone: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const retry = async () => {
+    if (loading) return;
+    if (!confirm("Reprocessar este evento? A ação é idempotente.")) return;
+    setLoading(true);
+    try {
+      const res = await apiClient.post<{
+        applied: { applied: boolean; reason?: string };
+        message?: string;
+      }>(`/api/admin/monetization/reconciliation/webhook-events/${eventId}/retry`);
+      toast.success(res?.message ?? "Evento reprocessado.");
+      onDone();
+    } catch (err) {
+      toast.error(formatApiError(err, "Falha ao reprocessar.").message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={retry}
+      disabled={loading}
+      className="inline-flex items-center rounded-lg border border-amber-400/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-100 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
+    >
+      {loading ? "..." : "↻ Retry"}
+    </button>
   );
 }
 

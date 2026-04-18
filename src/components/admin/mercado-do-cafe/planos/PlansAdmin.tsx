@@ -7,6 +7,8 @@ import { ApiError } from "@/lib/errors";
 
 type Capabilities = {
   max_users?: number;
+  // ETAPA 1.4 — null/undefined = ilimitado; número > 0 = cap mensal
+  max_leads_per_month?: number | null;
   leads_export?: boolean;
   regional_highlight?: boolean;
   advanced_reports?: boolean;
@@ -441,6 +443,21 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
                   onChange={(e) =>
                     updateCapability("max_users", Number(e.target.value))
                   }
+                  className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100"
+                />
+              </Field>
+              <Field label="max_leads_per_month (vazio = ilimitado)">
+                <input
+                  type="number"
+                  min={0}
+                  value={draft.capabilities?.max_leads_per_month ?? ""}
+                  onChange={(e) =>
+                    updateCapability(
+                      "max_leads_per_month",
+                      e.target.value === "" ? null : Number(e.target.value),
+                    )
+                  }
+                  placeholder="Ex: 50 no FREE"
                   className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100"
                 />
               </Field>

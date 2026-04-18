@@ -64,6 +64,15 @@ type DashboardRisks = {
   };
 };
 
+// ETAPA 1.4 — uso mensal de leads + limite do plano
+type PlanUsageLite = {
+  plan: { slug: string; name: string; price_cents: number };
+  capabilities?: { max_leads_per_month?: number | null };
+  usage?: {
+    leads_this_month?: { used: number; limit: number | null };
+  };
+};
+
 function formatBrl(v: number | null | undefined) {
   if (v == null || v === 0) return "—";
   return new Intl.NumberFormat("pt-BR", {
@@ -182,6 +191,7 @@ export default function PanelClient() {
   const [summary, setSummary] = useState<LeadsSummary>(EMPTY_SUMMARY);
   const [recent, setRecent] = useState<CorretoraLead[]>([]);
   const [risks, setRisks] = useState<DashboardRisks | null>(null);
+  const [planUsage, setPlanUsage] = useState<PlanUsageLite | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -189,16 +199,18 @@ export default function PanelClient() {
     setLoading(true);
     setError(null);
     try {
-      const [summaryData, leadsRes, risksData] = await Promise.all([
+      const [summaryData, leadsRes, risksData, planData] = await Promise.all([
         apiClient.get<LeadsSummary>("/api/corretora/leads/summary"),
         apiClient.get<{ items: CorretoraLead[] }>(
           "/api/corretora/leads?limit=5",
         ),
         apiClient.get<DashboardRisks>("/api/corretora/leads/risks"),
+        apiClient.get<PlanUsageLite>("/api/corretora/plan"),
       ]);
       setSummary(summaryData);
       setRecent(leadsRes.items ?? []);
       setRisks(risksData);
+      setPlanUsage(planData);
     } catch (err) {
       setError(formatApiError(err, "Erro ao carregar painel.").message);
     } finally {
@@ -223,6 +235,12 @@ export default function PanelClient() {
 
   return (
     <div className="space-y-7 md:space-y-9">
+      {/* ETAPA 1.4 — banner de cap de leads do plano. Aparece quando
+          o plano tem limite e o uso está >= 80% do cap. CTA upgrade
+          direciona pra /planos. Se user != owner/manager, o banner
+          aparece mas o CTA linka pra compartilhar com quem tem. */}
+      {planUsage && <LeadsCapBanner planUsage={planUsage} />}
+
       {/* ============================================================
           MARKET STRIP — masthead editorial
          ============================================================ */}
@@ -652,6 +670,67 @@ export default function PanelClient() {
           />
         )}
       </section>
+    </div>
+  );
+}
+
+// ===================================================================
+// ETAPA 1.4 — banner de cap mensal de leads
+// ===================================================================
+
+function LeadsCapBanner({ planUsage }: { planUsage: PlanUsageLite }) {
+  const limit = planUsage.usage?.leads_this_month?.limit ?? null;
+  const used = planUsage.usage?.leads_this_month?.used ?? 0;
+  // Sem limite → sem banner
+  if (limit == null || limit <= 0) return null;
+  const pct = Math.min(100, Math.round((used / limit) * 100));
+  // Só renderiza a partir de 80% — evita ruído em uso leve
+  if (pct < 80) return null;
+
+  const isOver = used >= limit;
+  const tone = isOver
+    ? {
+        ring: "border-rose-400/40 bg-rose-500/[0.06]",
+        text: "text-rose-100",
+        kicker: "text-rose-300",
+      }
+    : {
+        ring: "border-amber-400/40 bg-amber-500/[0.06]",
+        text: "text-amber-100",
+        kicker: "text-amber-300",
+      };
+
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl border ${tone.ring} p-5`}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
+      />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${tone.kicker}`}>
+            Limite mensal do plano {planUsage.plan.name}
+          </p>
+          <p className={`mt-1 text-[14px] font-semibold ${tone.text}`}>
+            {isOver
+              ? `Você atingiu o limite de ${limit} leads/mês deste plano.`
+              : `Você já recebeu ${used} de ${limit} leads neste mês (${pct}%).`}
+          </p>
+          <p className="mt-1 text-[12px] text-stone-300">
+            {isOver
+              ? "Os novos leads continuam chegando, mas o painel só exibe os primeiros do plano. Faça upgrade para destravar o mês corrente."
+              : "Faça upgrade antes de chegar no limite e não perca visibilidade dos leads."}
+          </p>
+        </div>
+        <Link
+          href="/painel/corretora/planos"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400"
+        >
+          Ver planos →
+        </Link>
+      </div>
     </div>
   );
 }

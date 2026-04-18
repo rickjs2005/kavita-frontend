@@ -6,7 +6,7 @@
 // Mostra plano atual + planos disponíveis + CTA de troca.
 // NÃO redireciona para cadastro — age sobre a conta existente.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
@@ -31,6 +31,10 @@ type PlanContext = {
     status: string;
     trial_ends_at: string | null;
     current_period_end: string | null;
+    // ETAPA 1.2 — checkout pendente que a corretora pode reabrir
+    pending_checkout_url?: string | null;
+    pending_checkout_at?: string | null;
+    provider_status?: string | null;
   } | null;
   capabilities?: Record<string, unknown>;
 };
@@ -153,6 +157,18 @@ export default function PlanosClient() {
           sem novo cadastro.
         </p>
       </div>
+
+      {/* ETAPA 1.2 — checkout pendente. Aparece em destaque acima do
+          plano atual quando a corretora iniciou cobrança mas não
+          completou pagamento. Link clicável reabre o mesmo checkout
+          no gateway; nenhuma cobrança duplicada é criada. Timestamp
+          "há X horas" orienta; se > 24h, copy sugere gerar um novo. */}
+      {current?.subscription?.pending_checkout_url && (
+        <PendingCheckoutBanner
+          url={current.subscription.pending_checkout_url}
+          startedAt={current.subscription.pending_checkout_at ?? null}
+        />
+      )}
 
       {/* Plano atual */}
       {current && (
@@ -330,6 +346,68 @@ export default function PlanosClient() {
           Voltar ao painel
         </Link>
       </p>
+    </div>
+  );
+}
+
+// ─── ETAPA 1.2 — Banner de checkout pendente ─────────────────────────
+function PendingCheckoutBanner({
+  url,
+  startedAt,
+}: {
+  url: string;
+  startedAt: string | null;
+}) {
+  const ageLabel = useMemo(() => {
+    if (!startedAt) return null;
+    try {
+      const ms = Date.now() - new Date(startedAt).getTime();
+      const hrs = Math.floor(ms / 3_600_000);
+      if (hrs < 1) return "iniciado há menos de 1h";
+      if (hrs < 24) return `iniciado há ${hrs}h`;
+      const days = Math.floor(hrs / 24);
+      return `iniciado há ${days}d`;
+    } catch {
+      return null;
+    }
+  }, [startedAt]);
+
+  const isStale =
+    startedAt &&
+    Date.now() - new Date(startedAt).getTime() > 24 * 3_600_000;
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-amber-400/40 bg-amber-500/[0.06] p-5 shadow-lg shadow-amber-500/10">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
+      />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300">
+            Pagamento pendente
+          </p>
+          <p className="mt-1 text-[14px] font-semibold text-stone-50">
+            Você iniciou uma cobrança e ainda não finalizou o pagamento.
+          </p>
+          <p className="mt-1 text-[12px] text-stone-300">
+            Clique em <span className="font-semibold">Reabrir link</span>{" "}
+            para concluir no mesmo gateway
+            {ageLabel ? ` · ${ageLabel}` : ""}.
+            {isStale &&
+              " Se o link já expirou, escolha o plano novamente abaixo para gerar um novo."}
+          </p>
+        </div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400"
+        >
+          Reabrir link
+          <span aria-hidden>↗</span>
+        </a>
+      </div>
     </div>
   );
 }
