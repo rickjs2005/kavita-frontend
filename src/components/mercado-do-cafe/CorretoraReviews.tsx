@@ -88,6 +88,10 @@ export function CorretoraReviews({ corretoraSlug, corretoraName }: Props) {
   const [data, setData] = useState<PublicReviewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  // Fase 5.1 — feedback inline de moderação após o submit. O toast
+  // some rápido; este banner dá certeza ao produtor de que a
+  // avaliação foi recebida e está em fila.
+  const [justSubmitted, setJustSubmitted] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -214,11 +218,54 @@ export function CorretoraReviews({ corretoraSlug, corretoraName }: Props) {
           corretoraName={corretoraName}
           onSuccess={() => {
             setShowForm(false);
+            setJustSubmitted(true);
             // Recarrega agregado (não adianta — ainda pending — mas mantém
             // consistência caso endpoint mude para auto-approval no futuro).
             load();
           }}
         />
+      )}
+
+      {justSubmitted && (
+        <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.06] p-5 sm:p-6">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/40 to-transparent"
+          />
+          <div className="flex items-start gap-3">
+            <div
+              aria-hidden
+              className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                <path
+                  fillRule="evenodd"
+                  d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 011.42-1.42L8.5 12.09l6.79-6.8a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-semibold text-stone-50">
+                Avaliação recebida
+              </p>
+              <p className="mt-1 text-[13px] leading-relaxed text-stone-300">
+                Sua avaliação foi enviada e{" "}
+                <strong className="font-semibold text-emerald-200">
+                  ficará visível após moderação da equipe Kavita
+                </strong>
+                . Isso costuma levar até 24h úteis.
+              </p>
+              <button
+                type="button"
+                onClick={() => setJustSubmitted(false)}
+                className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-200 hover:text-emerald-100"
+              >
+                Entendi
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Lista de reviews aprovadas */}

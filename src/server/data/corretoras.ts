@@ -53,6 +53,9 @@ export async function fetchPublicCorretoras(params?: {
   city?: string;
   featured?: string;
   search?: string;
+  // Fase 5 — filtros profundos
+  tipo_cafe?: string;
+  perfil_compra?: string;
   page?: number;
   limit?: number;
 }): Promise<PaginatedResponse<PublicCorretora>> {
@@ -60,6 +63,8 @@ export async function fetchPublicCorretoras(params?: {
   if (params?.city) qs.set("city", params.city);
   if (params?.featured) qs.set("featured", params.featured);
   if (params?.search) qs.set("search", params.search);
+  if (params?.tipo_cafe) qs.set("tipo_cafe", params.tipo_cafe);
+  if (params?.perfil_compra) qs.set("perfil_compra", params.perfil_compra);
   if (params?.page) qs.set("page", String(params.page));
   if (params?.limit) qs.set("limit", String(params.limit));
 

@@ -19,7 +19,16 @@ import Link from "next/link";
 import Image from "next/image";
 import type { PublicCorretora } from "@/types/corretora";
 import { absUrl } from "@/utils/absUrl";
-import { getCidadeBySlug } from "@/lib/regioes";
+import { getCidadeBySlug, TIPOS_CAFE } from "@/lib/regioes";
+
+// Lookup label por value. Usado pra mostrar chips de especialidade
+// sem acoplar o card ao catálogo via includes/find em cada render.
+const TIPO_CAFE_LABEL: Record<string, string> = Object.fromEntries(
+  TIPOS_CAFE.filter((t) => t.value !== "ainda_nao_sei").map((t) => [
+    t.value,
+    t.label,
+  ]),
+);
 
 type Props = {
   corretora: PublicCorretora;
@@ -161,6 +170,22 @@ export function CorretoraCard({ corretora }: Props) {
   );
   const hasStats = hasReviews || anosAtuacao != null || horario != null;
 
+  // Fase 5 — chips de especialidade. Máximo 3; surplus resumido como "+N".
+  const tiposCafeChips =
+    corretora.tipos_cafe?.filter((t) => TIPO_CAFE_LABEL[t]) ?? [];
+  const tiposShown = tiposCafeChips.slice(0, 3);
+  const tiposRest = tiposCafeChips.length - tiposShown.length;
+  // Perfil comercial: mostramos o chip apenas se a corretora declarou
+  // (registros antigos ficam sem).
+  const perfilCompraLabel =
+    corretora.perfil_compra === "compra"
+      ? "Compra café"
+      : corretora.perfil_compra === "venda"
+        ? "Vende café"
+        : corretora.perfil_compra === "ambos"
+          ? "Compra e vende"
+          : null;
+
   return (
     <article
       className="
@@ -238,6 +263,24 @@ export function CorretoraCard({ corretora }: Props) {
                   {corretora.name}
                 </Link>
               </h3>
+              {/* Fase 5 — Verificada por Kavita é status intrínseco de toda
+                  corretora aprovada. Aparece em TODAS as cards públicas. */}
+              <span
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-300 ring-1 ring-emerald-400/30"
+                title="Cadastro e identidade validados pela curadoria Kavita"
+              >
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden
+                >
+                  <path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" />
+                </svg>
+                Verificada por Kavita
+              </span>
+              {/* Destaque regional é separado — reservado para planos Pro/Max */}
               {isFeatured && (
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-200 ring-1 ring-amber-400/30">
                   <svg
@@ -249,7 +292,7 @@ export function CorretoraCard({ corretora }: Props) {
                   >
                     <path d="M12 2l2.39 7.36H22l-6.2 4.5 2.38 7.36L12 16.72l-6.18 4.5 2.38-7.36L2 9.36h7.61L12 2z" />
                   </svg>
-                  Verificada
+                  Destaque regional
                 </span>
               )}
             </div>
@@ -418,6 +461,33 @@ export function CorretoraCard({ corretora }: Props) {
           </div>
         )}
 
+        {/* ── ESPECIALIDADES (Fase 5) ─────────────────────────────────
+            Chips de tipos de café que a corretora trabalha + perfil
+            comercial (compra / vende / ambos). Sinaliza ao produtor
+            se faz match antes dele abrir a ficha. */}
+        {(tiposShown.length > 0 || perfilCompraLabel) && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {perfilCompraLabel && (
+              <span className="inline-flex items-center rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-stone-200 ring-1 ring-white/10">
+                {perfilCompraLabel}
+              </span>
+            )}
+            {tiposShown.map((t) => (
+              <span
+                key={t}
+                className="inline-flex items-center rounded-full bg-amber-400/[0.08] px-2 py-0.5 text-[10px] font-semibold text-amber-100 ring-1 ring-amber-400/20"
+              >
+                {TIPO_CAFE_LABEL[t]}
+              </span>
+            ))}
+            {tiposRest > 0 && (
+              <span className="inline-flex items-center rounded-full bg-white/[0.03] px-2 py-0.5 text-[10px] font-semibold text-stone-400 ring-1 ring-white/[0.08]">
+                +{tiposRest}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* ── CHANNELS ROW ──────────────────────────────────────────── */}
         {channels.length > 0 && (
           <div className="mt-4 border-t border-white/[0.06] pt-4">
@@ -447,21 +517,32 @@ export function CorretoraCard({ corretora }: Props) {
           </div>
         )}
 
-        {/* ── FOOTER: CTA ───────────────────────────────────────────── */}
-        <div className="mt-5 flex items-center justify-end">
+        {/* ── FOOTER: CTA (Fase 5 — mais direto/acionável) ──────────────
+            Botão primário "Vender meu café" com visual de destaque —
+            é a ação que o produtor quer tomar. Link secundário "Ver
+            ficha" fica discreto ao lado. */}
+        <div className="mt-5 flex items-center justify-between gap-3">
           <Link
             href={detailHref}
-            aria-label={`Ver detalhes de ${corretora.name}`}
+            className="text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-400 transition-colors hover:text-amber-200"
+          >
+            Ver ficha
+          </Link>
+          <Link
+            href={`${detailHref}#fale-corretora`}
+            aria-label={`Enviar lote para ${corretora.name}`}
             className="
-              inline-flex items-center gap-1.5 rounded-lg
-              text-xs font-semibold uppercase tracking-[0.12em] text-amber-300
-              transition-colors hover:text-amber-200
+              group/cta inline-flex items-center gap-1.5 rounded-lg
+              bg-gradient-to-br from-amber-300 to-amber-500 px-3.5 py-2
+              text-[11px] font-bold uppercase tracking-[0.12em] text-stone-950
+              shadow-lg shadow-amber-500/20 transition-all
+              hover:from-amber-200 hover:to-amber-400
               focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950
             "
           >
-            Ver detalhes
+            Vender meu café
             <span
-              className="transition-transform duration-300 group-hover:translate-x-1"
+              className="transition-transform duration-300 group-hover/cta:translate-x-0.5"
               aria-hidden
             >
               →

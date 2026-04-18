@@ -472,13 +472,115 @@ export default async function CorretoraDetailPage({ params }: Props) {
           <div className="mt-6 md:mt-8">
             <CorretoraContactChannels corretora={corretora} variant="full" />
           </div>
+
+          {/* Fase 5 — link Google Maps sem API key. Abre busca pelo
+              nome + cidade/estado; o produtor vê o endereço real ou a
+              região de atuação. Sem custo e sem integração. */}
+          <div className="mt-5">
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                `${corretora.name} ${corretora.city} ${corretora.state}`,
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-amber-300 transition-colors hover:text-amber-200"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              Ver localização no Google Maps
+              <span aria-hidden>↗</span>
+            </a>
+          </div>
+        </section>
+
+        {/* ─── 02b / COMO FUNCIONA (Fase 5) ────────────────────────
+            Passo-a-passo editorial posicionado entre "Contato direto"
+            e o formulário. Ajuda o produtor a entender o caminho
+            inteiro antes de preencher — reduz fricção e desconfiança. */}
+        <section className="mt-14 sm:mt-20 md:mt-28">
+          <SectionLabel
+            number="02b"
+            title="Como funciona"
+            subtitle="Do seu primeiro envio até a compra — sem intermediário."
+          />
+          <ol className="mt-8 grid gap-3 sm:gap-4 md:mt-10 md:grid-cols-5">
+            {[
+              {
+                n: "1",
+                title: "Você envia os dados",
+                desc: "Córrego, safra, volume, bebida — leva 1 minuto.",
+              },
+              {
+                n: "2",
+                title: "A corretora analisa",
+                desc: `${corretora.name} recebe o lead na hora.`,
+              },
+              {
+                n: "3",
+                title: "Contato direto",
+                desc: "WhatsApp ou ligação pelo canal que você preferir.",
+              },
+              {
+                n: "4",
+                title: "Amostra e laudo",
+                desc: "Se fizer sentido, combinam retirada da amostra.",
+              },
+              {
+                n: "5",
+                title: "Proposta e compra",
+                desc: "Preço negociado e fechamento direto com a corretora.",
+              },
+            ].map((step) => (
+              <li
+                key={step.n}
+                className="relative overflow-hidden rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.06] sm:p-5"
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
+                />
+                <span
+                  aria-hidden
+                  className="font-mono text-[10px] font-bold tracking-[0.18em] text-amber-400"
+                >
+                  ETAPA {step.n}
+                </span>
+                <p className="mt-2 font-serif text-[15px] font-semibold text-stone-100">
+                  {step.title}
+                </p>
+                <p className="mt-1 text-[12px] leading-relaxed text-stone-400">
+                  {step.desc}
+                </p>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-6 text-[12px] leading-relaxed text-stone-500">
+            <Link
+              href="/mercado-do-cafe/verificacao"
+              className="text-amber-300 transition-colors hover:text-amber-200"
+            >
+              Como verificamos as corretoras →
+            </Link>
+          </p>
         </section>
 
         {/* ─── 03 / MENSAGEM DIRETA ────────────────────────────────
             Card atmosférico dark com duas luzes amber nas bordas.
             Grid 5/7 interno: pitch editorial à esquerda, form à direita.
             Tudo alinhado pelo mesmo grid. */}
-        <section className="mt-14 sm:mt-20 md:mt-28">
+        <section id="fale-corretora" className="mt-14 sm:mt-20 md:mt-28 scroll-mt-24">
           <SectionLabel
             number="03"
             title="Fale sobre seu café"

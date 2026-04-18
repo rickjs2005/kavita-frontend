@@ -51,7 +51,14 @@ function pickCoffeeCotacao(list: PublicCotacao[]): PublicCotacao | null {
 }
 
 type Props = {
-  searchParams: Promise<{ city?: string; search?: string; page?: string }>;
+  searchParams: Promise<{
+    city?: string;
+    search?: string;
+    page?: string;
+    featured?: string;
+    tipo_cafe?: string;
+    perfil_compra?: string;
+  }>;
 };
 
 // Metadata dinâmica para ajustar canonical por filtro. Page numbers
@@ -93,6 +100,9 @@ export default async function CorretorasListPage({ searchParams }: Props) {
     fetchPublicCorretoras({
       city: params.city,
       search: params.search,
+      featured: params.featured,
+      tipo_cafe: params.tipo_cafe,
+      perfil_compra: params.perfil_compra,
       page,
       limit: 20,
     }).catch(() => ({

@@ -18,38 +18,115 @@ type Props = {
   cities: string[];
 };
 
+// Fase 5 — filtros profundos. Chips inline abaixo do command bar.
+// tipo_cafe bate com o catálogo JSON na coluna tipos_cafe;
+// perfil_compra contempla "ambos" no lado servidor.
+const TIPO_CAFE_CHIPS = [
+  { value: "arabica_especial", label: "Arábica especial" },
+  { value: "arabica_comum", label: "Arábica comum" },
+  { value: "natural", label: "Natural" },
+  { value: "cereja_descascado", label: "Cereja descascado" },
+] as const;
+
+const PERFIL_COMPRA_CHIPS = [
+  { value: "compra", label: "Compra café" },
+  { value: "venda", label: "Vende café" },
+  { value: "ambos", label: "Compra e vende" },
+] as const;
+
 export function CorretoraFilters({ cities }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [city, setCity] = useState(searchParams.get("city") ?? "");
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
+  const [tipoCafe, setTipoCafe] = useState(searchParams.get("tipo_cafe") ?? "");
+  const [perfil, setPerfil] = useState(
+    searchParams.get("perfil_compra") ?? "",
+  );
+  const [onlyFeatured, setOnlyFeatured] = useState(
+    searchParams.get("featured") === "1",
+  );
 
   const applyFilters = useCallback(
-    (newCity: string, newSearch: string) => {
+    (next: {
+      city?: string;
+      search?: string;
+      tipo_cafe?: string;
+      perfil_compra?: string;
+      featured?: boolean;
+    }) => {
       const params = new URLSearchParams();
-      if (newCity) params.set("city", newCity);
-      if (newSearch.trim()) params.set("search", newSearch.trim());
+      if (next.city) params.set("city", next.city);
+      if (next.search?.trim()) params.set("search", next.search.trim());
+      if (next.tipo_cafe) params.set("tipo_cafe", next.tipo_cafe);
+      if (next.perfil_compra) params.set("perfil_compra", next.perfil_compra);
+      if (next.featured) params.set("featured", "1");
       const qs = params.toString();
       router.push(`/mercado-do-cafe/corretoras${qs ? `?${qs}` : ""}`);
     },
     [router],
   );
 
+  const currentState = {
+    city,
+    search,
+    tipo_cafe: tipoCafe,
+    perfil_compra: perfil,
+    featured: onlyFeatured,
+  };
+
   const handleCityChange = (value: string) => {
     setCity(value);
-    applyFilters(value, search);
+    applyFilters({ ...currentState, city: value });
+  };
+
+  const toggleTipoCafe = (value: string) => {
+    const next = tipoCafe === value ? "" : value;
+    setTipoCafe(next);
+    applyFilters({ ...currentState, tipo_cafe: next });
+  };
+
+  const togglePerfil = (value: string) => {
+    const next = perfil === value ? "" : value;
+    setPerfil(next);
+    applyFilters({ ...currentState, perfil_compra: next });
+  };
+
+  const toggleFeatured = () => {
+    const next = !onlyFeatured;
+    setOnlyFeatured(next);
+    applyFilters({ ...currentState, featured: next });
+  };
+
+  const clearAll = () => {
+    setCity("");
+    setSearch("");
+    setTipoCafe("");
+    setPerfil("");
+    setOnlyFeatured(false);
+    router.push(`/mercado-do-cafe/corretoras`);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    applyFilters(city, search);
+    applyFilters(currentState);
   };
 
   useEffect(() => {
     setCity(searchParams.get("city") ?? "");
     setSearch(searchParams.get("search") ?? "");
+    setTipoCafe(searchParams.get("tipo_cafe") ?? "");
+    setPerfil(searchParams.get("perfil_compra") ?? "");
+    setOnlyFeatured(searchParams.get("featured") === "1");
   }, [searchParams]);
+
+  const hasAnyFilter =
+    Boolean(city) ||
+    search.trim().length > 0 ||
+    Boolean(tipoCafe) ||
+    Boolean(perfil) ||
+    onlyFeatured;
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-1.5 ring-1 ring-white/[0.08] backdrop-blur-sm">
@@ -96,7 +173,7 @@ export function CorretoraFilters({ cities }: Props) {
           className="hidden h-6 w-px bg-white/15 md:block"
         />
 
-        {/* City select as chip */}
+        {/* City select as chip (mantido ao lado da busca) */}
         <div className="relative flex items-center md:min-w-[200px]">
           <svg
             width="14"
@@ -141,6 +218,82 @@ export function CorretoraFilters({ cities }: Props) {
             <path d="M6 9l6 6 6-6" />
           </svg>
         </div>
+      </div>
+
+      {/* Fase 5 — chips de filtros profundos. Row abaixo da command bar.
+          Cada chip toggle independente; click em chip ativo limpa. */}
+      <div className="relative mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 px-1 py-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/70">
+            Tipo de café
+          </span>
+          {TIPO_CAFE_CHIPS.map((c) => {
+            const active = tipoCafe === c.value;
+            return (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => toggleTipoCafe(c.value)}
+                className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
+                  active
+                    ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/40"
+                    : "bg-white/[0.03] text-stone-400 ring-1 ring-white/[0.08] hover:text-stone-100"
+                }`}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <span aria-hidden className="hidden h-5 w-px bg-white/10 sm:block" />
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/70">
+            Perfil
+          </span>
+          {PERFIL_COMPRA_CHIPS.map((c) => {
+            const active = perfil === c.value;
+            return (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => togglePerfil(c.value)}
+                className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
+                  active
+                    ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/40"
+                    : "bg-white/[0.03] text-stone-400 ring-1 ring-white/[0.08] hover:text-stone-100"
+                }`}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <span aria-hidden className="hidden h-5 w-px bg-white/10 sm:block" />
+
+        <button
+          type="button"
+          onClick={toggleFeatured}
+          className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
+            onlyFeatured
+              ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/40"
+              : "bg-white/[0.03] text-stone-400 ring-1 ring-white/[0.08] hover:text-stone-100"
+          }`}
+        >
+          ⭐ Só destaques
+        </button>
+
+        {hasAnyFilter && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="ml-auto text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-300/70 transition-colors hover:text-amber-200"
+          >
+            ✕ Limpar filtros
+          </button>
+        )}
       </div>
     </div>
   );

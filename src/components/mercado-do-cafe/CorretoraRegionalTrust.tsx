@@ -27,10 +27,13 @@ type Props = {
   };
 };
 
-// Mínimo de amostra para divulgar SLA no público. Abaixo disso o
-// número oscila demais — 2 leads muito rápidos distorceriam para a
-// corretora, 2 leads travados a prejudicariam injustamente.
-const SLA_MIN_SAMPLE = 5;
+// Mínimo de amostra para divulgar SLA no público. Fase 5 — subimos de
+// 5 para 30. Com n=5, uma semana atípica (ex.: viagem do corretor)
+// pode pintar um SLA de 3 dias quando a realidade é 2h, ou o inverso
+// — 5 leads rápidos pintando "média 10min" que não se sustenta.
+// n=30 estabiliza a média contra ruído sazonal e dá credibilidade
+// estatística antes de publicar o número.
+const SLA_MIN_SAMPLE = 30;
 
 function formatSlaHoras(h: number): string {
   if (h < 1) return "< 1h";
