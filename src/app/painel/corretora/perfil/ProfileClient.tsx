@@ -2,10 +2,13 @@
 
 // src/app/painel/corretora/perfil/ProfileClient.tsx
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
+import { API_BASE } from "@/utils/absUrl";
+import { ApiError } from "@/lib/errors";
 import { formatApiError } from "@/lib/formatApiError";
 import { PanelCard } from "@/components/painel-corretora/PanelCard";
 import type { CorretoraAdmin, PerfilCompra } from "@/types/corretora";
@@ -240,12 +243,20 @@ export default function ProfileClient() {
                 </span>
               </p>
               <p className="mt-0.5 text-[11px] leading-relaxed text-stone-400">
-                Para alterar o nome da empresa, cidade ou a logo, entre em
-                contato com o administrador do Kavita.
+                Nome, cidade e estado são mantidos pelo admin do Kavita. Logo,
+                canais e descrição você edita aqui mesmo.
               </p>
             </div>
           </div>
         </PanelCard>
+      )}
+
+      {/* Logo — Fase 4 */}
+      {corretora && (
+        <LogoUploader
+          corretora={corretora}
+          onUpdated={(updated) => setCorretora(updated)}
+        />
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -591,5 +602,181 @@ export default function ProfileClient() {
         </div>
       </form>
     </div>
+  );
+}
+
+// ===================================================================
+// Fase 4 — LogoUploader
+// ===================================================================
+//
+// Componente separado do form principal porque upload é multipart e
+// não depende de react-hook-form/Zod pipeline. Dois estados visuais:
+// preview do arquivo escolhido (ainda não enviado) e estado salvo
+// (logo atual da corretora).
+//
+// RBAC: backend rejeita 403 se role não tiver profile.edit. Aqui só
+// tentamos; fallback com toast pra sales/viewer. Poderíamos esconder
+// preventivamente, mas o custo de deixar o botão e cair num toast
+// amigável é menor que pedir role aqui no cliente e arriscar drift.
+
+const MAX_LOGO_BYTES = 2 * 1024 * 1024;
+const ACCEPTED_LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function LogoUploader({
+  corretora,
+  onUpdated,
+}: {
+  corretora: CorretoraAdmin;
+  onUpdated: (updated: CorretoraAdmin) => void;
+}) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const currentSrc = corretora.logo_path
+    ? `${API_BASE}${corretora.logo_path.startsWith("/") ? "" : "/"}${corretora.logo_path}`
+    : null;
+
+  const handlePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = e.target.files?.[0];
+    if (!picked) return;
+    if (!ACCEPTED_LOGO_TYPES.includes(picked.type)) {
+      toast.error("Use JPEG, PNG ou WebP.");
+      return;
+    }
+    if (picked.size > MAX_LOGO_BYTES) {
+      toast.error("Arquivo acima de 2 MB. Tente uma imagem menor.");
+      return;
+    }
+    setFile(picked);
+    const url = URL.createObjectURL(picked);
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return url;
+    });
+  };
+
+  const reset = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+    setFile(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const upload = async () => {
+    if (!file) return;
+    const fd = new FormData();
+    fd.append("logo", file);
+    setUploading(true);
+    try {
+      const res = await apiClient.put<CorretoraAdmin>(
+        "/api/corretora/profile/logo",
+        fd,
+      );
+      onUpdated(res);
+      toast.success("Logo atualizado.");
+      reset();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        toast.error(
+          "Seu papel não permite editar o perfil. Peça pra quem tem permissão.",
+        );
+      } else {
+        toast.error(formatApiError(err, "Erro ao enviar logo.").message);
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Cleanup do objectURL quando o componente desmonta.
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  const displaySrc = preview ?? currentSrc;
+
+  return (
+    <PanelCard density="spacious">
+      <div className="mb-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+          Marca
+        </p>
+        <h2 className="mt-1 text-base font-semibold text-stone-100">
+          Logo da corretora
+        </h2>
+        <p className="mt-1 text-[12px] text-stone-400">
+          Aparece no seu card público e no painel. JPEG, PNG ou WebP — até
+          2 MB.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-stone-950">
+          {displaySrc ? (
+            <Image
+              src={displaySrc}
+              alt={`Logo de ${corretora.name}`}
+              fill
+              sizes="96px"
+              className="object-contain"
+              unoptimized
+            />
+          ) : (
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+              Sem logo
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="inline-flex h-9 items-center rounded-lg border border-white/10 bg-white/[0.04] px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-200 transition-colors hover:bg-white/[0.08] disabled:opacity-50"
+            >
+              {preview ? "Trocar arquivo" : "Escolher arquivo"}
+            </button>
+            {preview && (
+              <>
+                <button
+                  type="button"
+                  onClick={upload}
+                  disabled={uploading}
+                  className="inline-flex h-9 items-center rounded-lg bg-amber-500/20 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 ring-1 ring-amber-400/40 transition-colors hover:bg-amber-500/30 disabled:opacity-50"
+                >
+                  {uploading ? "Enviando…" : "Salvar logo"}
+                </button>
+                <button
+                  type="button"
+                  onClick={reset}
+                  disabled={uploading}
+                  className="inline-flex h-9 items-center rounded-lg border border-white/10 bg-white/[0.02] px-4 text-[11px] font-semibold text-stone-400 transition-colors hover:text-stone-200 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+              </>
+            )}
+          </div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={ACCEPTED_LOGO_TYPES.join(",")}
+            onChange={handlePick}
+            className="sr-only"
+          />
+          {file && (
+            <p className="text-[11px] text-stone-400">
+              Arquivo: {file.name} · {(file.size / 1024).toFixed(0)} KB
+            </p>
+          )}
+        </div>
+      </div>
+    </PanelCard>
   );
 }

@@ -38,6 +38,73 @@ const EMPTY_SUMMARY: LeadsSummary = {
   lost: 0,
 };
 
+// Fase 4 — dashboard operacional
+type RiskLead = {
+  id: number;
+  nome: string;
+  cidade?: string | null;
+  corrego_localidade?: string | null;
+  telefone?: string | null;
+  volume_range?: string | null;
+  tipo_cafe?: string | null;
+  urgencia?: string | null;
+  created_at?: string;
+  status?: string;
+  next_action_text?: string | null;
+  next_action_at?: string | null;
+  recontact_count?: number;
+};
+
+type DashboardRisks = {
+  overdue: RiskLead[];
+  stale: RiskLead[];
+  pipeline: {
+    negotiating: { total: number; soma_propostos: number };
+    closed_month: { total: number; soma_fechados: number };
+  };
+};
+
+function formatBrl(v: number | null | undefined) {
+  if (v == null || v === 0) return "—";
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(Number(v));
+}
+
+function formatHoursAgo(iso?: string) {
+  if (!iso) return "";
+  try {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const hrs = Math.floor(diffMs / 3_600_000);
+    if (hrs < 1) return "menos de 1h";
+    if (hrs < 24) return `${hrs}h atrás`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d atrás`;
+  } catch {
+    return "";
+  }
+}
+
+function formatDueTime(iso?: string | null) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    const diffMs = d.getTime() - Date.now();
+    const absHrs = Math.floor(Math.abs(diffMs) / 3_600_000);
+    if (diffMs < 0) {
+      if (absHrs < 24) return `vencida há ${absHrs}h`;
+      const days = Math.floor(absHrs / 24);
+      return `vencida há ${days}d`;
+    }
+    if (absHrs < 24) return `em ${absHrs}h`;
+    const days = Math.floor(absHrs / 24);
+    return `em ${days}d`;
+  } catch {
+    return "";
+  }
+}
+
 function formatTodayShort() {
   try {
     return new Date()
@@ -114,6 +181,7 @@ export default function PanelClient() {
   const { user } = useCorretoraAuth();
   const [summary, setSummary] = useState<LeadsSummary>(EMPTY_SUMMARY);
   const [recent, setRecent] = useState<CorretoraLead[]>([]);
+  const [risks, setRisks] = useState<DashboardRisks | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -121,14 +189,16 @@ export default function PanelClient() {
     setLoading(true);
     setError(null);
     try {
-      const [summaryData, leadsRes] = await Promise.all([
+      const [summaryData, leadsRes, risksData] = await Promise.all([
         apiClient.get<LeadsSummary>("/api/corretora/leads/summary"),
         apiClient.get<{ items: CorretoraLead[] }>(
           "/api/corretora/leads?limit=5",
         ),
+        apiClient.get<DashboardRisks>("/api/corretora/leads/risks"),
       ]);
       setSummary(summaryData);
       setRecent(leadsRes.items ?? []);
+      setRisks(risksData);
     } catch (err) {
       setError(formatApiError(err, "Erro ao carregar painel.").message);
     } finally {
@@ -449,6 +519,97 @@ export default function PanelClient() {
       </section>
 
       {/* ============================================================
+          03b — OPERAÇÃO AGORA (Fase 4)
+          Pipeline comercial + sinais de risco acionáveis
+         ============================================================ */}
+      {risks && (
+        <>
+          <OrnamentalDivider label="Operação agora" />
+
+          <section aria-label="Operação agora" className="space-y-4">
+            <ChapterHeader
+              number={showSetupPanel ? "04" : "03"}
+              kicker="Operação"
+              title="O que precisa da sua atenção hoje"
+              hint="Pipeline em negociação, compras do mês e leads que podem esfriar."
+            />
+
+            {/* KPIs de pipeline */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <PipelineKpi
+                kicker="Em negociação"
+                count={risks.pipeline.negotiating.total}
+                amount={risks.pipeline.negotiating.soma_propostos}
+                hint="Leads com proposta registrada e ainda em aberto"
+                tone="amber"
+              />
+              <PipelineKpi
+                kicker="Fechadas no mês"
+                count={risks.pipeline.closed_month.total}
+                amount={risks.pipeline.closed_month.soma_fechados}
+                hint="Compras com preço fechado e data neste mês"
+                tone="emerald"
+              />
+            </div>
+
+            {/* Listas lado a lado */}
+            <div className="grid gap-3 lg:grid-cols-2">
+              <RiskCard
+                title="Próximas ações vencidas"
+                emptyMessage="Nenhuma ação vencida. Continue assim."
+                empty={risks.overdue.length === 0}
+                tone="rose"
+                badge={risks.overdue.length}
+              >
+                {risks.overdue.map((lead) => (
+                  <RiskRow
+                    key={lead.id}
+                    leadId={lead.id}
+                    title={lead.nome}
+                    subtitle={
+                      [lead.cidade, lead.corrego_localidade]
+                        .filter(Boolean)
+                        .join(" · ") || "Sem localização"
+                    }
+                    note={lead.next_action_text ?? "Sem descrição"}
+                    timing={formatDueTime(lead.next_action_at)}
+                    tone="rose"
+                  />
+                ))}
+              </RiskCard>
+              <RiskCard
+                title="Leads parados (+48h)"
+                emptyMessage="Todos os leads novos estão sendo atendidos dentro do SLA."
+                empty={risks.stale.length === 0}
+                tone="amber"
+                badge={risks.stale.length}
+              >
+                {risks.stale.map((lead) => (
+                  <RiskRow
+                    key={lead.id}
+                    leadId={lead.id}
+                    title={lead.nome}
+                    subtitle={
+                      [lead.cidade, lead.corrego_localidade]
+                        .filter(Boolean)
+                        .join(" · ") || "Sem localização"
+                    }
+                    note={
+                      lead.recontact_count && lead.recontact_count > 0
+                        ? `${lead.recontact_count}× já voltou a chamar`
+                        : (lead.volume_range ?? "volume não informado")
+                    }
+                    timing={formatHoursAgo(lead.created_at)}
+                    tone="amber"
+                  />
+                ))}
+              </RiskCard>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* ============================================================
           04 — ATIVIDADE RECENTE
          ============================================================ */}
       <OrnamentalDivider label="Atividade" />
@@ -492,6 +653,145 @@ export default function PanelClient() {
         )}
       </section>
     </div>
+  );
+}
+
+// ===================================================================
+// Fase 4 — componentes do bloco "Operação agora"
+// ===================================================================
+
+function PipelineKpi({
+  kicker,
+  count,
+  amount,
+  hint,
+  tone,
+}: {
+  kicker: string;
+  count: number;
+  amount: number;
+  hint: string;
+  tone: "amber" | "emerald";
+}) {
+  const toneRing =
+    tone === "emerald"
+      ? "ring-emerald-500/25 bg-emerald-500/[0.05]"
+      : "ring-amber-500/25 bg-amber-500/[0.05]";
+  const toneText = tone === "emerald" ? "text-emerald-200" : "text-amber-200";
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl p-5 ring-1 ${toneRing}`}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
+      />
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+        {kicker}
+      </p>
+      <div className="mt-2 flex items-baseline gap-2">
+        <span className={`font-serif text-3xl font-semibold ${toneText}`}>
+          {count}
+        </span>
+        <span className="text-[11px] text-stone-400">
+          lead{count === 1 ? "" : "s"}
+        </span>
+      </div>
+      <p className="mt-1.5 text-[13px] font-semibold text-stone-100">
+        {formatBrl(amount)} em preço por saca
+      </p>
+      <p className="mt-0.5 text-[11px] text-stone-500">{hint}</p>
+    </div>
+  );
+}
+
+function RiskCard({
+  title,
+  empty,
+  emptyMessage,
+  tone,
+  badge,
+  children,
+}: {
+  title: string;
+  empty: boolean;
+  emptyMessage: string;
+  tone: "rose" | "amber";
+  badge: number;
+  children: React.ReactNode;
+}) {
+  const toneRing =
+    tone === "rose" ? "ring-rose-500/25" : "ring-amber-500/25";
+  const badgeClass =
+    tone === "rose"
+      ? "bg-rose-500/15 text-rose-200 ring-rose-400/30"
+      : "bg-amber-500/15 text-amber-200 ring-amber-400/30";
+  return (
+    <div
+      className={`overflow-hidden rounded-2xl bg-stone-900/60 p-5 ring-1 ${toneRing}`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300/90">
+          {title}
+        </h3>
+        {!empty && (
+          <span
+            className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold ring-1 ${badgeClass}`}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
+      {empty ? (
+        <p className="mt-3 text-[12px] text-stone-400">{emptyMessage}</p>
+      ) : (
+        <ul className="mt-3 space-y-2">{children}</ul>
+      )}
+    </div>
+  );
+}
+
+function RiskRow({
+  leadId,
+  title,
+  subtitle,
+  note,
+  timing,
+  tone,
+}: {
+  leadId: number;
+  title: string;
+  subtitle: string;
+  note: string;
+  timing: string;
+  tone: "rose" | "amber";
+}) {
+  const timingColor =
+    tone === "rose" ? "text-rose-300" : "text-amber-300";
+  return (
+    <li>
+      <Link
+        href={`/painel/corretora/leads/${leadId}`}
+        className="flex items-start justify-between gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 transition-colors hover:border-amber-400/30 hover:bg-white/[0.04]"
+      >
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-semibold text-stone-100">
+            {title}
+          </p>
+          <p className="mt-0.5 truncate text-[11px] text-stone-400">
+            {subtitle}
+          </p>
+          <p className="mt-0.5 truncate text-[11px] italic text-stone-300">
+            {note}
+          </p>
+        </div>
+        <span
+          className={`shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] ${timingColor}`}
+        >
+          {timing}
+        </span>
+      </Link>
+    </li>
   );
 }
 
