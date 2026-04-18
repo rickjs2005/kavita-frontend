@@ -307,6 +307,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
       urgencia: undefined,
       observacoes: "",
       consentimento_contato: false,
+      sms_optin: false,
       website_hp: "",
     },
   });
@@ -381,6 +382,8 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
         payload.preco_esperado_saca = Number(data.preco_esperado_saca);
       }
       if (data.observacoes?.trim()) payload.observacoes = data.observacoes.trim();
+      // ETAPA 3.2 — opt-in SMS
+      if (data.sms_optin) payload.sms_optin = true;
       // Honeypot — se preenchido, envia mesmo assim. Backend descarta
       // silenciosamente. Usuário real nunca vê o campo.
       if (data.website_hp?.trim()) payload.website_hp = data.website_hp.trim();
@@ -1062,6 +1065,25 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
               {errors.consentimento_contato.message as string}
             </p>
           )}
+        </div>
+
+        {/* ETAPA 3.2 — opt-in SMS. Opcional. Texto pensado pra produtor
+            mais velho que não usa WhatsApp ativamente. */}
+        <div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:bg-white/[0.05]">
+            <input
+              type="checkbox"
+              {...register("sms_optin")}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-stone-900 text-amber-400 focus:ring-amber-400/60 focus:ring-offset-0"
+            />
+            <span className="text-[12px] leading-relaxed text-stone-300">
+              <strong className="font-semibold text-stone-100">
+                Quero um SMS
+              </strong>{" "}
+              quando a corretora visualizar meu contato. Útil se você não
+              usa WhatsApp com frequência.
+            </span>
+          </label>
         </div>
 
         {turnstileEnabled && (

@@ -123,6 +123,8 @@ export type LeadFormData = {
   urgencia?: Urgencia;
   observacoes?: string;
   consentimento_contato: boolean;
+  // ETAPA 3.2 — opt-in explícito de SMS (produtores 50+ anos)
+  sms_optin?: boolean;
   // Honeypot anti-bot — usuário humano nunca preenche
   website_hp?: string;
 };

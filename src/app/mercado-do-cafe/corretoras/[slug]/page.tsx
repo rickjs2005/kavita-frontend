@@ -24,6 +24,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import {
   fetchPublicCorretoraBySlug,
   fetchCorretoraTrackRecord,
+  fetchArabicaSpot,
 } from "@/server/data/corretoras";
 import { absUrl } from "@/utils/absUrl";
 import { CorretoraContactChannels } from "@/components/mercado-do-cafe/CorretoraContactChannels";
@@ -91,6 +92,10 @@ export default async function CorretoraDetailPage({ params }: Props) {
   // Fase 8 — track record anonimizado. Fire-and-forget: se falhar,
   // a ficha renderiza sem o pill (track-record é null).
   const trackRecord = await fetchCorretoraTrackRecord(slug);
+
+  // ETAPA 3.1 — cotação spot do arábica. Render condicional:
+  // null quando provider não está ligado, ticker some nesse caso.
+  const arabicaSpot = await fetchArabicaSpot();
 
   const isFeatured =
     corretora.is_featured === true || corretora.is_featured === 1;
@@ -414,6 +419,12 @@ export default async function CorretoraDetailPage({ params }: Props) {
           <CorretoraRegionalTrust corretora={corretora} />
         </section>
 
+        {/* ETAPA 3.1 — ticker de cotação do arábica. Só renderiza
+            quando o backend devolve preço válido (provider ligado +
+            fonte respondeu). Fail-silent: sem ticker quando falha.
+            Nunca inventa preço — é o sinal mais decisivo pro produtor. */}
+        {arabicaSpot && <ArabicaTicker spot={arabicaSpot} />}
+
         {/* Fase 8 — track record agregado. Só renderiza quando houve
             pelo menos 1 lote fechado nos últimos 365 dias. Nada de
             preço/produtor — só agregado anonimizado. */}
@@ -565,43 +576,11 @@ export default async function CorretoraDetailPage({ params }: Props) {
             </div>
           )}
 
-          {/* Fase 5 — link Google Maps sem API key. Fase 8 enriquece
-              com endereco_textual quando disponível (pin direto no
-              endereço, não na região). */}
-          <div className="mt-5">
-            {corretora.endereco_textual && (
-              <p className="mb-1.5 text-[12px] text-stone-300">
-                {corretora.endereco_textual}
-              </p>
-            )}
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                corretora.endereco_textual
-                  ? `${corretora.endereco_textual} ${corretora.city} ${corretora.state}`
-                  : `${corretora.name} ${corretora.city} ${corretora.state}`,
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-amber-300 transition-colors hover:text-amber-200"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              Ver localização no Google Maps
-              <span aria-hidden>↗</span>
-            </a>
-          </div>
+          {/* Fase 5/8 + ETAPA 3.3 — embed oficial Google Maps quando
+              NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY existir e houver
+              endereco_textual; senão link externo (comportamento
+              antigo preservado, zero risco). */}
+          <MapsBlock corretora={corretora} />
         </section>
 
         {/* ─── 02b / COMO FUNCIONA (Fase 5) ────────────────────────
@@ -894,5 +873,165 @@ function SectionLabel({
         </div>
       </div>
     </div>
+  );
+}
+
+// ETAPA 3.3 — bloco de localização. Iframe oficial quando há key de
+// embed + endereço textual; caso contrário link externo pro Maps
+// (funciona sem key, sempre). Nunca usa URLs não documentadas do
+// Google (risco de quebra).
+function MapsBlock({
+  corretora,
+}: {
+  corretora: {
+    name: string;
+    city: string;
+    state: string;
+    endereco_textual?: string | null;
+  };
+}) {
+  const embedKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
+  const query = corretora.endereco_textual
+    ? `${corretora.endereco_textual} ${corretora.city} ${corretora.state}`
+    : `${corretora.name} ${corretora.city} ${corretora.state}`;
+
+  return (
+    <div className="mt-5">
+      {corretora.endereco_textual && (
+        <p className="mb-1.5 text-[12px] text-stone-300">
+          {corretora.endereco_textual}
+        </p>
+      )}
+      {embedKey && corretora.endereco_textual ? (
+        <div className="overflow-hidden rounded-xl border border-white/10 bg-stone-900/40">
+          <iframe
+            title={`Mapa da ${corretora.name}`}
+            src={`https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(
+              embedKey,
+            )}&q=${encodeURIComponent(query)}`}
+            width="100%"
+            height="280"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            style={{ border: 0 }}
+            allowFullScreen
+          />
+        </div>
+      ) : (
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-amber-300 transition-colors hover:text-amber-200"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          Ver localização no Google Maps
+          <span aria-hidden>↗</span>
+        </a>
+      )}
+    </div>
+  );
+}
+
+// ETAPA 3.1 — ticker compacto da cotação arábica. Editorial, não
+// agressivo: produtor lê "tá a 1800 a saca" e se orienta. Fonte
+// linkável (source_url) para auditoria; fonte sem link mostra só
+// o texto "· Fonte indicativa".
+function ArabicaTicker({
+  spot,
+}: {
+  spot: {
+    price_cents: number;
+    variation_pct: number | null;
+    as_of: string | null;
+    source: string;
+    source_url: string | null;
+  };
+}) {
+  const priceBrl = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(spot.price_cents / 100);
+
+  const variation = spot.variation_pct;
+  const variationTone =
+    variation == null
+      ? "text-stone-400"
+      : variation >= 0
+        ? "text-emerald-300"
+        : "text-rose-300";
+  const variationLabel =
+    variation == null
+      ? ""
+      : `${variation >= 0 ? "+" : ""}${variation.toFixed(2).replace(".", ",")}%`;
+
+  const asOfLabel = spot.as_of
+    ? new Date(spot.as_of).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "short",
+      })
+    : "atual";
+
+  return (
+    <section className="mt-6 md:mt-8" aria-label="Cotação indicativa do arábica">
+      <div className="relative overflow-hidden rounded-2xl border border-amber-400/30 bg-amber-500/[0.05] p-4 sm:p-5">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
+        />
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <div className="flex items-baseline gap-2">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300/80">
+              Arábica · saca 60kg
+            </span>
+          </div>
+          <p className="font-serif text-xl font-semibold tabular-nums text-stone-50 md:text-2xl">
+            {priceBrl}
+          </p>
+          {variationLabel && (
+            <span
+              className={`font-mono text-[13px] font-semibold tabular-nums ${variationTone}`}
+            >
+              {variationLabel}
+            </span>
+          )}
+          <span className="ml-auto text-[11px] text-stone-400">
+            {asOfLabel}
+            {spot.source_url ? (
+              <>
+                {" · "}
+                <a
+                  href={spot.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-amber-300 underline-offset-4 hover:underline"
+                >
+                  fonte
+                </a>
+              </>
+            ) : (
+              " · indicativo"
+            )}
+          </span>
+        </div>
+        <p className="mt-2 text-[11px] text-stone-400/90">
+          Cotação indicativa — não substitui a negociação direta com a
+          corretora. Atualizada a cada 15 minutos.
+        </p>
+      </div>
+    </section>
   );
 }

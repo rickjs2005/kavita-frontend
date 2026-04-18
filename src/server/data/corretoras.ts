@@ -164,6 +164,29 @@ export async function fetchPublicCorretoraBySlug(
 }
 
 /**
+ * ETAPA 3.1 — cotação spot do arábica. Retorna null quando não há
+ * provider configurado ou a fonte falhou. Ficha pública esconde o
+ * ticker nesses casos (nunca inventa preço).
+ */
+export type ArabicaSpot = {
+  price_cents: number;
+  variation_pct: number | null;
+  as_of: string | null;
+  source: string;
+  source_url: string | null;
+};
+
+export async function fetchArabicaSpot(): Promise<ArabicaSpot | null> {
+  try {
+    return await fetchJson<ArabicaSpot | null>(
+      buildUrl("/api/public/cotacoes-cafe/arabica"),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fase 8 — agregado anonimizado de lotes fechados (prova social).
  * Nunca expõe produtor/preço individualmente. Falha silenciosamente:
  * ficha pública segue renderizando mesmo se o endpoint der erro.

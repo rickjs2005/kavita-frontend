@@ -79,6 +79,17 @@ export default function AdminMercadoDoCafePage() {
               <span className="hidden sm:inline">Reconciliação</span>
             </Link>
             <Link
+              href="/admin/mercado-do-cafe/backfill-regional"
+              aria-label="Corretoras com perfil regional incompleto"
+              className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
+              title="Corretoras que ainda não preencheram os 6 campos regionais"
+            >
+              <span aria-hidden className="text-sm sm:mr-1.5">
+                📋
+              </span>
+              <span className="hidden sm:inline">Backfill</span>
+            </Link>
+            <Link
               href="/admin/auditoria"
               aria-label="Abrir histórico do Mercado do Café"
               className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
