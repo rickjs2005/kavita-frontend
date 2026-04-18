@@ -29,6 +29,27 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
+type BroadcastPreview = {
+  plan: {
+    id: number;
+    slug: string;
+    name: string;
+    capabilities_live: Capabilities;
+  };
+  affected_count: number;
+  subscriptions: Array<{
+    subscription_id: number;
+    corretora_id: number;
+    corretora_name: string;
+    corretora_slug: string;
+    corretora_city: string | null;
+    corretora_state: string | null;
+    status: string;
+    has_snapshot: boolean;
+    divergent_from_live: boolean;
+  }>;
+};
+
 function formatPrice(cents: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -67,6 +88,9 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
   // ativas existentes. Padrão seguro é false: editar um plano NÃO
   // muda contratos vigentes a menos que admin marque explicitamente.
   const [applyToActive, setApplyToActive] = useState(false);
+  const [preview, setPreview] = useState<BroadcastPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -131,51 +155,95 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
     );
   };
 
+  const doSave = useCallback(
+    async (confirmedApplyToActive: boolean) => {
+      if (!draft) return;
+      const payload: Record<string, unknown> = {
+        ...draft,
+        capabilities: draft.capabilities ?? {},
+      };
+      if (editingId && confirmedApplyToActive) {
+        payload.apply_to_active_subscriptions = true;
+      }
+      setSaving(true);
+      setError(null);
+      setSuccessMsg(null);
+      try {
+        if (editingId) {
+          const res = await apiClient.put<{
+            data?: { broadcast?: { affected: number } | null };
+            message?: string;
+          }>(`/api/admin/monetization/plans/${editingId}`, payload);
+          const affected = res?.data?.broadcast?.affected ?? null;
+          if (confirmedApplyToActive && affected !== null) {
+            setSuccessMsg(
+              `Plano atualizado. ${affected} assinatura(s) receberam as novas capabilities.`,
+            );
+          } else {
+            setSuccessMsg(
+              "Plano atualizado. Assinaturas existentes continuam com a versão anterior.",
+            );
+          }
+        } else {
+          await apiClient.post("/api/admin/monetization/plans", payload);
+          setSuccessMsg("Plano criado.");
+        }
+        setDraft(null);
+        setEditingId(null);
+        setApplyToActive(false);
+        setPreview(null);
+        await load();
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          onUnauthorized?.();
+          return;
+        }
+        setError(err instanceof Error ? err.message : "Erro ao salvar plano.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [draft, editingId, load, onUnauthorized],
+  );
+
   const save = async () => {
     if (!draft) return;
-    const payload: Record<string, unknown> = {
-      ...draft,
-      capabilities: draft.capabilities ?? {},
-    };
-    if (editingId && applyToActive) {
-      payload.apply_to_active_subscriptions = true;
+    // Se admin não marcou broadcast, salva direto.
+    if (!editingId || !applyToActive) {
+      await doSave(false);
+      return;
     }
-    setSaving(true);
-    setError(null);
-    setSuccessMsg(null);
+    // Broadcast marcado — busca preview e abre modal de confirmação.
+    // Só chama PUT depois que admin revisar lista de corretoras afetadas.
+    setPreviewLoading(true);
+    setPreviewError(null);
     try {
-      if (editingId) {
-        const res = await apiClient.put<{
-          data?: { broadcast?: { affected: number } | null };
-          message?: string;
-        }>(`/api/admin/monetization/plans/${editingId}`, payload);
-        const affected = res?.data?.broadcast?.affected ?? null;
-        if (applyToActive && affected !== null) {
-          setSuccessMsg(
-            `Plano atualizado. ${affected} assinatura(s) receberam as novas capabilities.`,
-          );
-        } else {
-          setSuccessMsg(
-            "Plano atualizado. Assinaturas existentes continuam com a versão anterior.",
-          );
-        }
-      } else {
-        await apiClient.post("/api/admin/monetization/plans", payload);
-        setSuccessMsg("Plano criado.");
-      }
-      setDraft(null);
-      setEditingId(null);
-      setApplyToActive(false);
-      await load();
+      const res = await apiClient.get<{ data: BroadcastPreview }>(
+        `/api/admin/monetization/plans/${editingId}/broadcast-preview`,
+      );
+      setPreview(res?.data ?? null);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         onUnauthorized?.();
         return;
       }
-      setError(err instanceof Error ? err.message : "Erro ao salvar plano.");
+      setPreviewError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível calcular o impacto do broadcast.",
+      );
     } finally {
-      setSaving(false);
+      setPreviewLoading(false);
     }
+  };
+
+  const confirmBroadcast = async () => {
+    await doSave(true);
+  };
+
+  const closePreview = () => {
+    setPreview(null);
+    setPreviewError(null);
   };
 
   const orderedPlans = useMemo(
@@ -439,14 +507,193 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
             <button
               type="button"
               onClick={save}
-              disabled={saving || !draft.name || !draft.slug}
+              disabled={
+                saving || previewLoading || !draft.name || !draft.slug
+              }
               className="rounded-md bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
             >
-              {saving ? "Salvando…" : editingId ? "Salvar" : "Criar"}
+              {saving
+                ? "Salvando…"
+                : previewLoading
+                  ? "Calculando impacto…"
+                  : editingId
+                    ? applyToActive
+                      ? "Revisar impacto…"
+                      : "Salvar"
+                    : "Criar"}
             </button>
           </div>
         </div>
       )}
+
+      {preview && (
+        <BroadcastPreviewModal
+          preview={preview}
+          error={previewError}
+          saving={saving}
+          onCancel={closePreview}
+          onConfirm={confirmBroadcast}
+        />
+      )}
+    </div>
+  );
+}
+
+function BroadcastPreviewModal({
+  preview,
+  error,
+  saving,
+  onCancel,
+  onConfirm,
+}: {
+  preview: BroadcastPreview;
+  error: string | null;
+  saving: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { plan, affected_count, subscriptions } = preview;
+  const hasAffected = affected_count > 0;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="broadcast-preview-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
+    >
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-amber-500/40 bg-slate-900 shadow-2xl">
+        <header className="border-b border-slate-800 px-5 py-4">
+          <h3
+            id="broadcast-preview-title"
+            className="text-base font-semibold text-amber-100"
+          >
+            Confirmar propagação de capabilities
+          </h3>
+          <p className="mt-1 text-[11px] text-slate-400">
+            Plano{" "}
+            <span className="font-semibold text-slate-200">{plan.name}</span>{" "}
+            (<span className="text-slate-300">{plan.slug}</span>) — revise
+            antes de aplicar.
+          </p>
+        </header>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {error && (
+            <div className="mb-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
+              {error}
+            </div>
+          )}
+
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-3">
+            <p className="text-xs font-semibold text-amber-100">
+              Impacto:{" "}
+              <span className="text-lg font-bold">{affected_count}</span>{" "}
+              assinatura(s) ativa(s) receberão as novas capabilities deste
+              plano.
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-amber-200/80">
+              Esta ação sobrescreve o snapshot de capabilities congelado no
+              momento da contratação. É auditada e não pode ser desfeita
+              automaticamente — se precisar reverter, edite o plano de volta
+              e broadcasteie novamente.
+            </p>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Capabilities que serão propagadas
+            </p>
+            <ul className="mt-2 grid gap-1 text-[11px] text-slate-300 sm:grid-cols-2">
+              <li>
+                max_users:{" "}
+                <span className="text-slate-100">
+                  {plan.capabilities_live.max_users ?? 1}
+                </span>
+              </li>
+              <li>
+                leads_export:{" "}
+                <span className="text-slate-100">
+                  {plan.capabilities_live.leads_export ? "sim" : "não"}
+                </span>
+              </li>
+              <li>
+                regional_highlight:{" "}
+                <span className="text-slate-100">
+                  {plan.capabilities_live.regional_highlight ? "sim" : "não"}
+                </span>
+              </li>
+              <li>
+                advanced_reports:{" "}
+                <span className="text-slate-100">
+                  {plan.capabilities_live.advanced_reports ? "sim" : "não"}
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Corretoras afetadas
+            </p>
+            {!hasAffected ? (
+              <p className="mt-2 rounded-lg border border-dashed border-slate-700 bg-slate-900/40 px-3 py-3 text-xs text-slate-400">
+                Nenhuma assinatura ativa no momento — o broadcast não terá
+                efeito prático. Você ainda pode confirmar para atualizar o
+                plano.
+              </p>
+            ) : (
+              <ul className="mt-2 grid max-h-64 gap-1 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950/40 p-2">
+                {subscriptions.map((s) => (
+                  <li
+                    key={s.subscription_id}
+                    className="flex items-center justify-between gap-2 rounded-md border border-slate-800 bg-slate-900/60 px-2 py-1.5 text-[11px]"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-slate-100">
+                        {s.corretora_name}
+                      </p>
+                      <p className="truncate text-[10px] text-slate-400">
+                        {[s.corretora_city, s.corretora_state]
+                          .filter(Boolean)
+                          .join(" / ") || "sem cidade"}
+                        {" · "}
+                        {s.status}
+                      </p>
+                    </div>
+                    {s.divergent_from_live && (
+                      <span className="shrink-0 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-200">
+                        snapshot divergente
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <footer className="flex justify-end gap-2 border-t border-slate-800 px-5 py-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={saving}
+            className="rounded-md border border-slate-700 bg-slate-900 px-4 py-2 text-xs text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={saving}
+            className="rounded-md bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+          >
+            {saving
+              ? "Aplicando…"
+              : `Confirmar e aplicar a ${affected_count} assinatura(s)`}
+          </button>
+        </footer>
+      </div>
     </div>
   );
 }
