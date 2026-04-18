@@ -164,6 +164,23 @@ export async function fetchPublicCorretoraBySlug(
 }
 
 /**
+ * FIX #3 — features ativas do ambiente. Frontend usa para esconder
+ * opt-ins que dependem de credencial externa não configurada (SMS).
+ */
+export type PublicFeatures = {
+  sms_active: boolean;
+  cotacao_active: boolean;
+};
+
+export async function fetchPublicFeatures(): Promise<PublicFeatures> {
+  try {
+    return await fetchJson<PublicFeatures>(buildUrl("/api/public/features"));
+  } catch {
+    return { sms_active: false, cotacao_active: false };
+  }
+}
+
+/**
  * ETAPA 3.1 — cotação spot do arábica. Retorna null quando não há
  * provider configurado ou a fonte falhou. Ficha pública esconde o
  * ticker nesses casos (nunca inventa preço).

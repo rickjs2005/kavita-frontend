@@ -105,16 +105,31 @@ function buildCards(c: Props["corretora"]): Card[] {
     });
   }
 
-  // 3. Tempo médio de resposta — usa SLA quando existe, senão promessa
+  // 3. Tempo médio de resposta — 3 cenários:
+  //   (a) amostra confiável (n ≥ SLA_MIN_SAMPLE): mostra número real
+  //   (b) amostra pequena (1 ≤ n < SLA_MIN_SAMPLE): FIX #10 —
+  //       mostra card "Novidade" explicando que ainda está
+  //       acumulando histórico; evita esconder info de corretora
+  //       que acabou de entrar
+  //   (c) zero amostra ou só prop legada: promessa "No mesmo dia"
   const slaHoras = resolveSlaHoras(c);
+  const slaSample = typeof c.sla_sample_count === "number" ? c.sla_sample_count : 0;
   if (slaHoras != null) {
-    const sample = c.sla_sample_count ?? null;
     cards.push({
       kicker: "Resposta média",
       value: formatSlaHoras(slaHoras),
-      hint: sample
-        ? `base de ${sample} ${sample === 1 ? "lead respondido" : "leads respondidos"}`
+      hint: slaSample
+        ? `base de ${slaSample} ${slaSample === 1 ? "lead respondido" : "leads respondidos"}`
         : "últimos 30 dias",
+    });
+  } else if (slaSample > 0 && slaSample < SLA_MIN_SAMPLE) {
+    // Novidade: já tem alguns leads respondidos mas amostra ainda
+    // pequena pra publicar média confiável. Transparente em vez de
+    // silêncio.
+    cards.push({
+      kicker: "Novidade",
+      value: "Em construção",
+      hint: `${slaSample} ${slaSample === 1 ? "resposta registrada" : "respostas registradas"} · histórico ainda curto`,
     });
   } else {
     cards.push({

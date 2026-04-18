@@ -77,6 +77,9 @@ import {
 type Props = {
   corretoraSlug: string;
   corretoraName: string;
+  // FIX #3 — backend sinaliza se SMS_PROVIDER está ativo. Sem ele,
+  // escondemos o opt-in pra não prometer SMS que nunca chega.
+  smsAvailable?: boolean;
 };
 
 // --- Cloudflare Turnstile ---------------------------------------------------
@@ -196,7 +199,11 @@ const OPTION_STYLE: React.CSSProperties = {
 // queremos brecha acidental em ataque combinado (CDN indisponível +
 // spam no form).
 
-export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
+export function LeadContactForm({
+  corretoraSlug,
+  corretoraName,
+  smsAvailable = false,
+}: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -1067,8 +1074,10 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
           )}
         </div>
 
-        {/* ETAPA 3.2 — opt-in SMS. Opcional. Texto pensado pra produtor
-            mais velho que não usa WhatsApp ativamente. */}
+        {/* ETAPA 3.2 + FIX #3 — opt-in SMS só renderiza quando o
+            backend confirma SMS_PROVIDER ativo. Sem provider, o
+            checkbox some: evita o produtor marcar e não receber. */}
+        {smsAvailable && (
         <div>
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:bg-white/[0.05]">
             <input
@@ -1085,6 +1094,7 @@ export function LeadContactForm({ corretoraSlug, corretoraName }: Props) {
             </span>
           </label>
         </div>
+        )}
 
         {turnstileEnabled && (
           <div

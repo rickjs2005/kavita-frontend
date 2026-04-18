@@ -25,6 +25,7 @@ import {
   fetchPublicCorretoraBySlug,
   fetchCorretoraTrackRecord,
   fetchArabicaSpot,
+  fetchPublicFeatures,
 } from "@/server/data/corretoras";
 import { absUrl } from "@/utils/absUrl";
 import { CorretoraContactChannels } from "@/components/mercado-do-cafe/CorretoraContactChannels";
@@ -96,6 +97,11 @@ export default async function CorretoraDetailPage({ params }: Props) {
   // ETAPA 3.1 — cotação spot do arábica. Render condicional:
   // null quando provider não está ligado, ticker some nesse caso.
   const arabicaSpot = await fetchArabicaSpot();
+
+  // FIX #3 — features. Hoje usado para esconder o opt-in SMS no
+  // form quando Zenvia não está configurado (evita produtor marcar
+  // "quero SMS" e não receber nada).
+  const features = await fetchPublicFeatures();
 
   const isFeatured =
     corretora.is_featured === true || corretora.is_featured === 1;
@@ -761,6 +767,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 <LeadContactForm
                   corretoraSlug={corretora.slug}
                   corretoraName={corretora.name}
+                  smsAvailable={features.sms_active}
                 />
               </div>
             </div>
