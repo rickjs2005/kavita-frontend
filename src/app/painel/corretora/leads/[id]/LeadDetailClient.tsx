@@ -987,7 +987,7 @@ function ProposalBlock({
           <select
             value={destino}
             onChange={(e) => setDestino(e.target.value)}
-            className="h-9 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[13px] text-stone-100 focus:border-amber-400/50 focus:outline-none focus:ring-1 focus:ring-amber-400/30 [color-scheme:dark]"
+            className="h-9 w-full rounded-lg border border-white/10 bg-stone-950/80 px-3 text-[13px] text-amber-100 outline-none transition hover:border-amber-400/30 focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/30 [color-scheme:dark]"
           >
             <option value="">Selecione…</option>
             {Object.entries(DESTINO_LABEL).map(([k, v]) => (
