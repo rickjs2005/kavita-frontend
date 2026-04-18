@@ -209,6 +209,9 @@ export default function CorretoraDrillDownPage() {
           onUnauthorized={handleUnauthorized}
         />
 
+        {/* Fase 7 — notas internas do admin Kavita */}
+        <AdminNotesBlock corretoraId={corretora.id} />
+
         {/* 2 colunas: perfil + SLA */}
         <div className="grid gap-5 lg:grid-cols-2">
           <ProfileBlock corretora={corretora} />
@@ -521,5 +524,184 @@ function Channel({
         {value || "não informado"}
       </p>
     </div>
+  );
+}
+
+// ─── Fase 7 — Notas internas admin ───────────────────────────────────────────
+
+type AdminNote = {
+  id: number;
+  corretora_id: number;
+  admin_id: number | null;
+  admin_nome: string | null;
+  body: string;
+  category: string | null;
+  created_at: string;
+};
+
+const NOTE_CATEGORIES = [
+  { value: "", label: "Sem categoria" },
+  { value: "pagamento", label: "Pagamento" },
+  { value: "documento", label: "Documento" },
+  { value: "comercial", label: "Comercial" },
+  { value: "qualidade", label: "Qualidade" },
+  { value: "suporte", label: "Suporte" },
+];
+
+function AdminNotesBlock({ corretoraId }: { corretoraId: number }) {
+  const [notes, setNotes] = useState<AdminNote[]>([]);
+  const [draft, setDraft] = useState("");
+  const [category, setCategory] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.get<AdminNote[]>(
+        `/api/admin/mercado-do-cafe/corretoras/${corretoraId}/admin-notes`,
+      );
+      setNotes(Array.isArray(res) ? res : []);
+    } catch {
+      // silêncio — admin ainda pode usar o bloco (form inicial)
+      setNotes([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [corretoraId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const save = async () => {
+    const body = draft.trim();
+    if (!body) return;
+    setSaving(true);
+    try {
+      await apiClient.post(
+        `/api/admin/mercado-do-cafe/corretoras/${corretoraId}/admin-notes`,
+        { body, category: category || null },
+      );
+      setDraft("");
+      setCategory("");
+      await load();
+    } catch (err) {
+      alert(formatApiError(err, "Erro ao adicionar nota.").message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (noteId: number) => {
+    if (!confirm("Remover esta nota interna?")) return;
+    try {
+      await apiClient.del(
+        `/api/admin/mercado-do-cafe/corretoras/${corretoraId}/admin-notes/${noteId}`,
+      );
+      await load();
+    } catch (err) {
+      alert(formatApiError(err, "Erro ao remover nota.").message);
+    }
+  };
+
+  return (
+    <section className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300/80">
+            Notas internas · Kavita admin
+          </p>
+          <h2 className="mt-1 text-base font-semibold text-slate-50">
+            Observações privadas sobre esta corretora
+          </h2>
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            Não são visíveis para a corretora. Cada nota registra o autor, a
+            data e (opcionalmente) uma categoria.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={3}
+          maxLength={2000}
+          placeholder="Ex: pediu desconto no PRO; aguardando comprovante de CNPJ."
+          className="w-full rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-[13px] text-slate-100 placeholder:text-slate-500 focus:border-amber-500/40 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+        />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="h-9 rounded-lg border border-slate-800 bg-slate-900/60 px-3 text-[12px] text-slate-200 focus:border-amber-500/40 focus:outline-none [color-scheme:dark]"
+          >
+            {NOTE_CATEGORIES.map((c) => (
+              <option key={c.value || "none"} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving || !draft.trim()}
+            className="inline-flex h-9 items-center rounded-lg bg-amber-500/20 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 ring-1 ring-amber-400/40 transition-colors hover:bg-amber-500/30 disabled:opacity-50"
+          >
+            {saving ? "Salvando…" : "Adicionar nota"}
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="mt-4 space-y-2">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse rounded-lg bg-slate-800/40" />
+          ))}
+        </div>
+      ) : notes.length === 0 ? (
+        <p className="mt-4 text-[11px] text-slate-500">
+          Nenhuma nota registrada ainda.
+        </p>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {notes.map((n) => (
+            <li
+              key={n.id}
+              className="rounded-lg border border-slate-800/60 bg-slate-950/40 p-3"
+            >
+              <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                <span>
+                  {n.admin_nome ?? "Autor removido"} ·{" "}
+                  {new Date(n.created_at).toLocaleString("pt-BR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+                {n.category && (
+                  <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] text-amber-200 ring-1 ring-amber-400/30">
+                    {n.category}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => remove(n.id)}
+                  className="ml-auto text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-500 hover:text-rose-300"
+                >
+                  Remover
+                </button>
+              </div>
+              <p className="mt-1.5 whitespace-pre-wrap text-[13px] text-slate-100">
+                {n.body}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

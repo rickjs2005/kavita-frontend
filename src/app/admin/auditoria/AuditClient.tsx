@@ -274,11 +274,24 @@ function humanizeMeta(
 
 // ─── Componente principal ──────────────────────────────────────────
 
+// Fase 7.2 — escopos do módulo Mercado do Café. Label legível +
+// key (bate com SCOPE_PREFIXES no backend).
+const SCOPES: { key: string; label: string }[] = [
+  { key: "", label: "Todos" },
+  { key: "mercado_cafe", label: "Mercado do Café" },
+  { key: "monetizacao", label: "Monetização" },
+  { key: "corretoras", label: "Corretoras" },
+  { key: "planos", label: "Planos" },
+  { key: "assinaturas", label: "Assinaturas" },
+  { key: "reviews", label: "Reviews" },
+];
+
 export default function AuditClient() {
   const [rows, setRows] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [actionFilter, setActionFilter] = useState("");
+  const [scopeFilter, setScopeFilter] = useState("");
   const [error, setError] = useState<string | null>(null);
   // Disclosure por-linha para ver payload técnico original.
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -292,6 +305,7 @@ export default function AuditClient() {
         limit: "30",
       });
       if (actionFilter) qs.set("action", actionFilter);
+      if (scopeFilter) qs.set("scope", scopeFilter);
       const res = await apiClient.get<AuditLog[]>(
         `/api/admin/audit?${qs.toString()}`,
       );
@@ -305,7 +319,7 @@ export default function AuditClient() {
     } finally {
       setLoading(false);
     }
-  }, [page, actionFilter]);
+  }, [page, actionFilter, scopeFilter]);
 
   useEffect(() => {
     load();
@@ -374,6 +388,35 @@ export default function AuditClient() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-3 pb-12 pt-5 sm:px-5">
+        {/* ─── Filtro de escopo (Fase 7.2) ────────────────────── */}
+        <div className="mb-5">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Escopo
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {SCOPES.map((s) => {
+              const active = scopeFilter === s.key;
+              return (
+                <button
+                  key={s.key || "all-scope"}
+                  type="button"
+                  onClick={() => {
+                    setPage(1);
+                    setScopeFilter(s.key);
+                  }}
+                  className={`inline-flex min-h-[32px] items-center rounded-full border px-3.5 py-1 text-[11px] font-semibold transition-colors ${
+                    active
+                      ? "border-amber-500/50 bg-amber-500/10 text-amber-100"
+                      : "border-slate-800 bg-slate-950/30 text-slate-400 hover:border-amber-500/30 hover:text-slate-100"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* ─── Filtros ────────────────────────────────────────── */}
         <div className="mb-5">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
