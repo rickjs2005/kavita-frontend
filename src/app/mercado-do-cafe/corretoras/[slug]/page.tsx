@@ -203,7 +203,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
             o elemento mais dramático da página, mas agora integrado
             ao dark committed da página inteira. */}
         <header
-          className="relative mt-6 overflow-hidden rounded-[1.75rem] bg-stone-900/60 px-5 py-10 ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 backdrop-blur-sm sm:mt-8 sm:rounded-3xl sm:px-6 sm:py-12 md:mt-14 md:px-14 md:py-20"
+          className="relative mt-6 overflow-hidden rounded-[1.5rem] bg-stone-900/60 px-5 py-8 ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 backdrop-blur-sm sm:mt-8 sm:rounded-3xl sm:px-6 sm:py-12 md:mt-14 md:px-14 md:py-20"
           aria-label={`Identidade da corretora ${corretora.name}`}
         >
           {/* Layer 1 — Base gradient dark coffee */}
@@ -281,9 +281,10 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 </p>
               </div>
 
-              {/* Display title — desktop mantém FavoriteButton inline */}
-              <div className="mt-5 flex items-start justify-between gap-4 md:mt-8">
-                <h1 className="text-[2rem] font-semibold leading-[1] tracking-[-0.02em] text-stone-50 sm:text-[2.5rem] md:text-5xl md:leading-[0.95] lg:text-6xl">
+              {/* Display title — desktop mantém FavoriteButton inline.
+                  Usa clamp+break-words pra nome longo não estourar 320px. */}
+              <div className="mt-4 flex items-start justify-between gap-4 md:mt-8">
+                <h1 className="break-words text-[clamp(1.75rem,7vw,2rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-stone-50 sm:text-[2.5rem] md:text-5xl md:leading-[0.95] lg:text-6xl">
                   {corretora.name}
                 </h1>
                 <div className="hidden shrink-0 pt-2 md:block">
@@ -863,17 +864,19 @@ function SectionLabel({
         aria-hidden
         className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-white/15 via-white/[0.06] to-transparent"
       />
-      <div className="flex items-baseline gap-5">
+      {/* Em mobile o gap entre pill numérica e título reduz pra 0.75rem
+          — com gap-5 o título ficava pendurado longe do rótulo. */}
+      <div className="flex items-baseline gap-3 sm:gap-5">
         {/* Número pill amber glow */}
-        <span className="inline-flex items-center rounded-md bg-amber-400/10 px-2 py-1 font-mono text-[10px] font-bold uppercase tabular-nums tracking-[0.1em] text-amber-300 ring-1 ring-amber-400/20 shadow-[0_0_20px_rgba(251,191,36,0.1)]">
+        <span className="inline-flex shrink-0 items-center rounded-md bg-amber-400/10 px-2 py-1 font-mono text-[10px] font-bold uppercase tabular-nums tracking-[0.1em] text-amber-300 ring-1 ring-amber-400/20 shadow-[0_0_20px_rgba(251,191,36,0.1)]">
           {number}
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-semibold tracking-tight text-stone-50 md:text-2xl">
+          <h2 className="text-lg font-semibold tracking-tight text-stone-50 sm:text-xl md:text-2xl">
             {title}
           </h2>
           {subtitle && (
-            <p className="mt-1.5 max-w-lg text-[13px] leading-relaxed text-stone-400">
+            <p className="mt-1.5 max-w-lg text-[12px] leading-relaxed text-stone-400 sm:text-[13px]">
               {subtitle}
             </p>
           )}
