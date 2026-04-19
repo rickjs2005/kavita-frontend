@@ -168,6 +168,7 @@ export function CorretoraPanelNav() {
   }, [menuOpen]);
 
   return (
+    <>
     <header
       className="sticky top-0 z-40 border-b border-white/[0.06] bg-stone-950/90 backdrop-blur-md"
       aria-label="Navegação da Sala Reservada"
@@ -297,13 +298,17 @@ export function CorretoraPanelNav() {
         </div>
 
       </div>
+    </header>
 
-      {/* ═══ DRAWER MOBILE ══════════════════════════════════════════
-          Editorial dark — gradient café + glows amber, ícones por
-          seção, agrupamento Operação/Conta, microcopy no item ativo.
-          Só renderiza em mobile (md:hidden) e quando aberto. */}
+    {/* ═══ DRAWER MOBILE ══════════════════════════════════════════
+        Editorial dark — gradient café + glows amber, ícones por
+        seção, agrupamento Operação/Conta, microcopy no item ativo.
+        Só renderiza em mobile (md:hidden) e quando aberto.
+        FORA do <header> de propósito: o header tem backdrop-blur-md,
+        que cria um containing block e prende elementos `position:
+        fixed` filhos ao próprio header em vez do viewport. */}
       {menuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menu do painel">
+        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true" aria-label="Menu do painel">
           {/* Backdrop — click fecha o drawer */}
           <button
             type="button"
@@ -499,6 +504,6 @@ export function CorretoraPanelNav() {
           </aside>
         </div>
       )}
-    </header>
+    </>
   );
 }
