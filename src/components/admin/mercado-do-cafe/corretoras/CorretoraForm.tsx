@@ -6,7 +6,23 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
+import { isApiError } from "@/lib/errors";
+import { formatApiError } from "@/lib/formatApiError";
 import type { CorretoraAdmin } from "@/types/corretora";
+
+// Shape do erro 400 do backend quando a validação Zod falha
+// (middleware/validate.js emite { code: VALIDATION_ERROR,
+// details: { fields: [{ field, message }] }}).
+type FieldError = { field: string; message: string };
+function extractFieldErrors(err: unknown): FieldError[] {
+  if (!isApiError(err)) return [];
+  const details = err.details as { fields?: FieldError[] } | null;
+  if (!details || !Array.isArray(details.fields)) return [];
+  return details.fields.filter(
+    (f): f is FieldError =>
+      !!f && typeof f.field === "string" && typeof f.message === "string",
+  );
+}
 
 type FormValues = {
   name: string;
@@ -34,9 +50,18 @@ export default function CorretoraForm({ existing }: Props) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  // Erros não associados a um campo específico (ex: conflito de slug,
+  // arquivo grande demais). Aparecem como banner acima do form.
+  const [globalError, setGlobalError] = useState<string | null>(null);
   const isEdit = !!existing;
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const {
+    register,
+    handleSubmit,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm<FormValues>({
     defaultValues: {
       name: existing?.name ?? "",
       contact_name: existing?.contact_name ?? "",
@@ -58,6 +83,8 @@ export default function CorretoraForm({ existing }: Props) {
 
   const onSubmit = async (data: FormValues) => {
     setSubmitting(true);
+    setGlobalError(null);
+    clearErrors();
     try {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
@@ -75,8 +102,42 @@ export default function CorretoraForm({ existing }: Props) {
         toast.success("Corretora cadastrada.");
       }
       router.push("/admin/mercado-do-cafe");
-    } catch (err: any) {
-      toast.error(err?.message || "Erro ao salvar.");
+    } catch (err) {
+      const ui = formatApiError(err, "Erro ao salvar.");
+      const fieldErrors = extractFieldErrors(err);
+
+      // Pinta cada campo errado com a mensagem vinda do backend. Usa
+      // type: "server" pra diferenciar dos erros de validação client-side.
+      const paintedKeys = new Set<string>();
+      for (const fe of fieldErrors) {
+        // O backend pode devolver "path.subpath" — pegamos só o primeiro
+        // segmento que casa com os campos conhecidos do form.
+        const key = fe.field.split(".")[0] as keyof FormValues;
+        if (key in data) {
+          setError(key, { type: "server", message: fe.message });
+          paintedKeys.add(key);
+        }
+      }
+
+      // Banner acima do form com lista dos problemas — principalmente
+      // útil quando o backend retornou erros em campos que não estão
+      // visíveis na tela ou quando o erro é global (HTTP 409, 413 etc).
+      if (fieldErrors.length > 0) {
+        const orphan = fieldErrors.filter(
+          (fe) => !paintedKeys.has(fe.field.split(".")[0] as keyof FormValues),
+        );
+        setGlobalError(
+          orphan.length > 0
+            ? `${ui.message} — corrija: ${orphan.map((o) => o.message).join("; ")}`
+            : `${ui.message} Confira os campos em vermelho abaixo.`,
+        );
+      } else {
+        setGlobalError(
+          ui.requestId ? `${ui.message} (ref: ${ui.requestId})` : ui.message,
+        );
+      }
+
+      toast.error(ui.message);
     } finally {
       setSubmitting(false);
     }
@@ -87,7 +148,46 @@ export default function CorretoraForm({ existing }: Props) {
   const labelClass = "block text-xs font-medium text-slate-300 mb-1";
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+      {/* Banner de erro global — visível e acionável. Aparece quando o
+          backend devolve um erro que não está associado a um campo
+          individual (conflito, arquivo grande, falha transitória) ou
+          como resumo quando há múltiplos campos inválidos. */}
+      {globalError && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-xl border border-rose-500/40 bg-rose-500/[0.08] p-3.5 text-sm text-rose-100"
+        >
+          <div className="flex items-start gap-2.5">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="mt-0.5 shrink-0 text-rose-300"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <div className="min-w-0">
+              <p className="font-semibold text-rose-100">
+                Não foi possível salvar
+              </p>
+              <p className="mt-0.5 text-[13px] leading-relaxed text-rose-200/90">
+                {globalError}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Dados da empresa */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-slate-100">Dados da empresa</h3>
@@ -101,18 +201,22 @@ export default function CorretoraForm({ existing }: Props) {
           <div>
             <label className={labelClass}>Responsável *</label>
             <input {...register("contact_name", { required: "Obrigatório" })} className={inputClass} />
+            {errors.contact_name && <p className="mt-1 text-xs text-rose-400">{errors.contact_name.message}</p>}
           </div>
           <div>
             <label className={labelClass}>Cidade *</label>
             <input {...register("city", { required: "Obrigatório" })} className={inputClass} />
+            {errors.city && <p className="mt-1 text-xs text-rose-400">{errors.city.message}</p>}
           </div>
           <div>
             <label className={labelClass}>Estado *</label>
             <input {...register("state", { required: "Obrigatório" })} className={inputClass} maxLength={2} />
+            {errors.state && <p className="mt-1 text-xs text-rose-400">{errors.state.message}</p>}
           </div>
           <div>
             <label className={labelClass}>Região</label>
             <input {...register("region")} className={inputClass} />
+            {errors.region && <p className="mt-1 text-xs text-rose-400">{errors.region.message}</p>}
           </div>
           <div>
             <label className={labelClass}>Logo</label>
@@ -128,6 +232,7 @@ export default function CorretoraForm({ existing }: Props) {
         <div>
           <label className={labelClass}>Descrição</label>
           <textarea {...register("description")} className={`${inputClass} min-h-[80px] resize-y`} />
+          {errors.description && <p className="mt-1 text-xs text-rose-400">{errors.description.message}</p>}
         </div>
       </div>
 
@@ -138,26 +243,32 @@ export default function CorretoraForm({ existing }: Props) {
           <div>
             <label className={labelClass}>WhatsApp</label>
             <input {...register("whatsapp")} className={inputClass} placeholder="(33) 99999-0000" />
+            {errors.whatsapp && <p className="mt-1 text-xs text-rose-400">{errors.whatsapp.message}</p>}
           </div>
           <div>
             <label className={labelClass}>Telefone</label>
             <input {...register("phone")} className={inputClass} placeholder="(33) 3331-0000" />
+            {errors.phone && <p className="mt-1 text-xs text-rose-400">{errors.phone.message}</p>}
           </div>
           <div>
             <label className={labelClass}>E-mail</label>
             <input {...register("email")} className={inputClass} type="email" />
+            {errors.email && <p className="mt-1 text-xs text-rose-400">{errors.email.message}</p>}
           </div>
           <div>
             <label className={labelClass}>Site</label>
-            <input {...register("website")} className={inputClass} />
+            <input {...register("website")} className={inputClass} placeholder="https://..." />
+            {errors.website && <p className="mt-1 text-xs text-rose-400">{errors.website.message}</p>}
           </div>
           <div>
             <label className={labelClass}>Instagram</label>
             <input {...register("instagram")} className={inputClass} placeholder="@empresa" />
+            {errors.instagram && <p className="mt-1 text-xs text-rose-400">{errors.instagram.message}</p>}
           </div>
           <div>
             <label className={labelClass}>Facebook</label>
             <input {...register("facebook")} className={inputClass} />
+            {errors.facebook && <p className="mt-1 text-xs text-rose-400">{errors.facebook.message}</p>}
           </div>
         </div>
       </div>
