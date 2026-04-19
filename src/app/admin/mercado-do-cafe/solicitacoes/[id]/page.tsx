@@ -7,8 +7,34 @@ import Link from "next/link";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
+import { isApiError } from "@/lib/errors";
+import { formatApiError } from "@/lib/formatApiError";
 import { absUrl } from "@/utils/absUrl";
 import type { CorretoraSubmission } from "@/types/corretora";
+
+// Extrai a causa exibível de um erro da API de admin. Prioriza:
+//   1. details.fields (erro de validação Zod)
+//   2. message + status + requestId (erro de negócio/servidor)
+// Resultado vira tanto o texto do toast quanto do banner inline.
+function describeAdminError(err: unknown, fallback: string): string {
+  const ui = formatApiError(err, fallback);
+  if (isApiError(err)) {
+    const details = err.details as { fields?: { message?: string }[] } | null;
+    if (Array.isArray(details?.fields) && details.fields.length > 0) {
+      const msgs = details.fields
+        .map((f) => f?.message)
+        .filter((m): m is string => typeof m === "string" && m.length > 0);
+      if (msgs.length > 0) {
+        return `${ui.message} — ${msgs.join("; ")}`;
+      }
+    }
+    const parts = [ui.message];
+    if (err.status && err.status >= 500) parts.push(`(HTTP ${err.status})`);
+    if (ui.requestId) parts.push(`(ref: ${ui.requestId})`);
+    return parts.join(" ");
+  }
+  return ui.message;
+}
 
 function formatDate(dateStr?: string | null) {
   if (!dateStr) return "—";
@@ -33,6 +59,9 @@ export default function SubmissionReviewPage() {
   const [sub, setSub] = useState<CorretoraSubmission | null>(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
+  // Erro detalhado da última ação (approve/reject) — persiste até o
+  // admin tentar de novo ou sair da tela.
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const [rejectMode, setRejectMode] = useState(false);
   const [reason, setReason] = useState("");
@@ -44,8 +73,8 @@ export default function SubmissionReviewPage() {
           `/api/admin/mercado-do-cafe/submissions/${id}`
         );
         setSub(data);
-      } catch (err: any) {
-        toast.error(err?.message || "Erro ao carregar solicitação.");
+      } catch (err) {
+        toast.error(formatApiError(err, "Erro ao carregar solicitação.").message);
       } finally {
         setLoading(false);
       }
@@ -55,12 +84,15 @@ export default function SubmissionReviewPage() {
 
   const handleApprove = useCallback(async () => {
     setActing(true);
+    setActionError(null);
     try {
       await apiClient.post(`/api/admin/mercado-do-cafe/submissions/${id}/approve`);
       toast.success("Corretora aprovada e publicada.");
       router.push("/admin/mercado-do-cafe");
-    } catch (err: any) {
-      toast.error(err?.message || "Erro ao aprovar.");
+    } catch (err) {
+      const msg = describeAdminError(err, "Erro ao aprovar.");
+      setActionError(msg);
+      toast.error(msg);
     } finally {
       setActing(false);
     }
@@ -68,18 +100,22 @@ export default function SubmissionReviewPage() {
 
   const handleReject = useCallback(async () => {
     if (reason.trim().length < 10) {
+      setActionError("Motivo deve ter pelo menos 10 caracteres.");
       toast.error("Motivo deve ter pelo menos 10 caracteres.");
       return;
     }
     setActing(true);
+    setActionError(null);
     try {
       await apiClient.post(`/api/admin/mercado-do-cafe/submissions/${id}/reject`, {
         reason: reason.trim(),
       });
       toast.success("Solicitação rejeitada.");
       router.push("/admin/mercado-do-cafe");
-    } catch (err: any) {
-      toast.error(err?.message || "Erro ao rejeitar.");
+    } catch (err) {
+      const msg = describeAdminError(err, "Erro ao rejeitar.");
+      setActionError(msg);
+      toast.error(msg);
     } finally {
       setActing(false);
     }
@@ -213,6 +249,43 @@ export default function SubmissionReviewPage() {
             {isPending && (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6 space-y-4">
                 <h2 className="text-sm font-semibold text-slate-100">Ação</h2>
+
+                {/* Banner do último erro — aparece embaixo do título e fica
+                    até a próxima tentativa (role=alert, aria-live=polite). */}
+                {actionError && (
+                  <div
+                    role="alert"
+                    aria-live="polite"
+                    className="rounded-xl border border-rose-500/40 bg-rose-500/[0.08] p-3.5 text-sm text-rose-100"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="mt-0.5 shrink-0 text-rose-300"
+                        aria-hidden
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-rose-100">
+                          A ação não foi concluída
+                        </p>
+                        <p className="mt-0.5 text-[13px] leading-relaxed text-rose-200/90 break-words">
+                          {actionError}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {!rejectMode ? (
                   <div className="flex items-center gap-3">
