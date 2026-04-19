@@ -181,11 +181,12 @@ export function CorretoraPanelNav() {
           {/* LEFT — hambúrguer (mobile only) + brand lockup + corretora name */}
           <div className="flex min-w-0 items-center gap-3 md:gap-5">
             {/* Hambúrguer — abre drawer lateral em mobile. Em desktop
-                fica oculto pois há nav inline. */}
+                fica oculto pois há nav inline. Dimensionado em 36×36
+                (h-9) pra bater com o sino de notificações à direita. */}
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-stone-200 transition-colors hover:bg-white/[0.08] hover:text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 md:hidden"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-stone-200 transition-colors hover:bg-white/[0.08] hover:text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 md:hidden"
               aria-label="Abrir menu"
               aria-expanded={menuOpen}
               aria-controls="corretora-mobile-drawer"
@@ -263,17 +264,18 @@ export function CorretoraPanelNav() {
 
             <span
               aria-hidden
-              className="mx-2 hidden h-6 w-px bg-stone-300 md:block"
+              className="mx-2 hidden h-6 w-px bg-white/15 md:block"
             />
 
             {/* Bell de notificações — visível em desktop e mobile */}
             <NotificationsBell />
 
-            {/* Avatar + nome — informação, não ação */}
+            {/* Avatar + nome — informação, não ação. Avatar em h-9
+                pra casar com sino e botão Sair na mesma linha de 36px. */}
             <div className="hidden items-center gap-2.5 md:flex">
               <div
                 aria-hidden
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-400/15 text-[11px] font-semibold text-amber-200 ring-1 ring-amber-400/30"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400/15 text-[11px] font-semibold text-amber-200 ring-1 ring-amber-400/30"
               >
                 {initials}
               </div>
@@ -283,13 +285,14 @@ export function CorretoraPanelNav() {
             </div>
 
             {/* Sair — visível só em desktop. Em mobile o botão vive
-                no rodapé do drawer. */}
+                no rodapé do drawer. Altura explícita h-9 pra alinhar
+                com avatar e sino (tinha py-1.5 que dava ~28px). */}
             <button
               type="button"
               onClick={() =>
                 logout({ redirectTo: "/painel/corretora/login" })
               }
-              className="ml-1 hidden rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-300 transition-colors hover:bg-white/[0.08] hover:text-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 md:inline-flex"
+              className="ml-1 hidden h-9 items-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-stone-300 transition-colors hover:bg-white/[0.08] hover:text-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 md:inline-flex"
               aria-label="Encerrar sessão"
             >
               Sair
