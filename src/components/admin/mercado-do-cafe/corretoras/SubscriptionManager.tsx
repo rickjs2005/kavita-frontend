@@ -189,6 +189,43 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
     }
   };
 
+  // Cancela a assinatura ativa da corretora (volta pro FREE). Não
+  // arquiva o registro — corretora continua aparecendo na vitrine
+  // apenas perde features pagas. Usado pro admin atender cancelamento
+  // solicitado via suporte ou por inadimplência prolongada.
+  const cancelSubscription = async () => {
+    const reason = window.prompt(
+      "Motivo do cancelamento (opcional, max 500 chars):",
+      "",
+    );
+    if (reason === null) return; // ESC/cancel
+    if (
+      !window.confirm(
+        "Cancelar a assinatura desta corretora? Ela volta ao plano FREE e perde as features pagas. Pode reatribuir um plano depois.",
+      )
+    ) {
+      return;
+    }
+    setSaving(true);
+    try {
+      await apiClient.post(
+        `/api/admin/mercado-do-cafe/corretoras/${corretoraId}/cancel-subscription`,
+        { reason: reason.trim() || undefined },
+      );
+      toast.success("Assinatura cancelada.");
+      await load();
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        onUnauthorized?.();
+      }
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao cancelar assinatura.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
@@ -242,13 +279,29 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
           Plano e assinatura
         </p>
-        <button
-          type="button"
-          onClick={() => setEditing((v) => !v)}
-          className="text-[10px] font-semibold text-slate-400 hover:text-emerald-300"
-        >
-          {editing ? "Cancelar" : "Editar"}
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Cancelar assinatura — só faz sentido mostrar se há
+              subscription paga ativa. FREE já é o estado "cancelado". */}
+          {!editing &&
+            sub.status !== "canceled" &&
+            (sub.monthly_price_cents ?? 0) > 0 && (
+              <button
+                type="button"
+                onClick={cancelSubscription}
+                disabled={saving}
+                className="text-[10px] font-semibold text-rose-400 transition-colors hover:text-rose-300 disabled:opacity-50"
+              >
+                Cancelar assinatura
+              </button>
+            )}
+          <button
+            type="button"
+            onClick={() => setEditing((v) => !v)}
+            className="text-[10px] font-semibold text-slate-400 hover:text-emerald-300"
+          >
+            {editing ? "Cancelar" : "Editar"}
+          </button>
+        </div>
       </div>
 
       {!editing ? (

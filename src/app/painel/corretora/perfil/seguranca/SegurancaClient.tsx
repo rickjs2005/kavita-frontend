@@ -12,9 +12,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { useCorretoraAuth } from "@/context/CorretoraAuthContext";
 
 type TwoFaStatus = {
   enabled: boolean;
@@ -91,6 +93,10 @@ export default function SegurancaClient() {
           )}
 
           <SessionBlock status={status} onDone={load} />
+
+          {/* Zona de perigo — só owner vê. A ação é irreversível
+              pela UI (admin pode restaurar depois por suporte). */}
+          <DangerZone />
         </>
       )}
 
@@ -103,6 +109,214 @@ export default function SegurancaClient() {
         </Link>
       </div>
     </div>
+  );
+}
+
+// ─── Zona de perigo — encerrar conta ─────────────────────────────────
+// Visível só para owner. Exige senha + motivo opcional. Depois do
+// sucesso, redireciona pra /painel/corretora/login com querystring
+// ?closed=1 pra mensagem de despedida.
+
+function DangerZone() {
+  const router = useRouter();
+  const { user, logout } = useCorretoraAuth();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [reason, setReason] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Só owner vê a seção inteira. Manager/sales/viewer não precisam
+  // nem saber que existe — evita confusão de escopo.
+  if (user?.role !== "owner") return null;
+
+  const closeModal = () => {
+    if (submitting) return;
+    setModalOpen(false);
+    setPassword("");
+    setReason("");
+    setConfirmed(false);
+  };
+
+  const handleConfirm = async () => {
+    if (!password || !confirmed || submitting) return;
+    setSubmitting(true);
+    try {
+      await apiClient.post("/api/corretora/account/deactivate", {
+        password,
+        reason: reason.trim() || undefined,
+      });
+      toast.success("Conta encerrada. Até logo!");
+      // Chama logout do contexto pra limpar estado local (cookie já
+      // foi limpo pelo backend) e navega pra login.
+      try {
+        await logout({ redirectTo: "/painel/corretora/login?closed=1" });
+      } catch {
+        router.replace("/painel/corretora/login?closed=1");
+      }
+    } catch (err) {
+      toast.error(
+        formatApiError(err, "Não foi possível encerrar a conta.").message,
+      );
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <section
+      aria-labelledby="danger-zone-title"
+      className="relative overflow-hidden rounded-2xl border border-rose-500/30 bg-rose-500/[0.04] p-5 sm:p-6"
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-rose-400/50 to-transparent"
+      />
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2
+            id="danger-zone-title"
+            className="text-base font-semibold text-rose-100"
+          >
+            Encerrar conta
+          </h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-stone-300">
+            Arquiva sua corretora no Kavita. Você sai da vitrine pública, os
+            planos pagos são cancelados e todos os usuários do time perdem
+            acesso ao painel. Seus leads ficam preservados — se precisar
+            voltar, fale com a curadoria.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-[11px] text-stone-500">
+          Ação sensível — exige senha e só pode ser feita pelo <strong className="text-stone-300">owner</strong>.
+        </p>
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 px-5 text-sm font-semibold text-rose-200 transition-colors hover:bg-rose-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+        >
+          Encerrar minha conta
+        </button>
+      </div>
+
+      {modalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="danger-modal-title"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/75 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+        >
+          <button
+            type="button"
+            aria-label="Fechar"
+            onClick={closeModal}
+            className="absolute inset-0 cursor-default"
+          />
+          <div className="relative w-full max-w-md overflow-hidden rounded-t-2xl bg-stone-900 ring-1 ring-rose-500/30 shadow-2xl shadow-black/70 sm:rounded-2xl">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-rose-400/50 to-transparent"
+            />
+            <div className="p-5 sm:p-6">
+              <h3
+                id="danger-modal-title"
+                className="text-base font-semibold text-rose-100"
+              >
+                Confirmar encerramento
+              </h3>
+              <p className="mt-1 text-[13px] leading-relaxed text-stone-300">
+                Isso arquiva <strong className="text-stone-50">{user?.corretora_name}</strong> no
+                Kavita. Você e todo o time perdem acesso agora.
+              </p>
+
+              <div className="mt-5 space-y-3">
+                <div>
+                  <label
+                    htmlFor="danger-password"
+                    className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400"
+                  >
+                    Sua senha
+                  </label>
+                  <input
+                    id="danger-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={submitting}
+                    required
+                    className="mt-1.5 w-full rounded-lg border border-white/10 bg-stone-950 px-3 py-2.5 text-sm text-stone-100 placeholder:text-stone-500 focus:border-rose-400/60 focus:outline-none focus:ring-1 focus:ring-rose-400/30 disabled:opacity-60"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="danger-reason"
+                    className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400"
+                  >
+                    Motivo (opcional)
+                  </label>
+                  <textarea
+                    id="danger-reason"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value.slice(0, 500))}
+                    disabled={submitting}
+                    rows={3}
+                    placeholder="Ajuda a gente a melhorar o Mercado do Café."
+                    className="mt-1.5 w-full resize-none rounded-lg border border-white/10 bg-stone-950 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-500 focus:border-rose-400/60 focus:outline-none focus:ring-1 focus:ring-rose-400/30 disabled:opacity-60"
+                  />
+                </div>
+
+                <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-rose-500/20 bg-rose-500/[0.04] p-3 text-[12px] leading-relaxed text-stone-200">
+                  <input
+                    type="checkbox"
+                    checked={confirmed}
+                    onChange={(e) => setConfirmed(e.target.checked)}
+                    disabled={submitting}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-stone-900 text-rose-500 focus:ring-rose-400"
+                  />
+                  <span>
+                    Entendo que minha corretora sai da vitrine, planos pagos
+                    são cancelados e o time perde acesso imediatamente.
+                  </span>
+                </label>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  disabled={submitting}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-5 text-sm font-semibold text-stone-200 transition-colors hover:bg-white/[0.08] disabled:opacity-60"
+                >
+                  Voltar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={!password || !confirmed || submitting}
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-rose-500/90 px-5 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-colors hover:bg-rose-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:opacity-50"
+                >
+                  {submitting ? "Encerrando…" : "Encerrar conta"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 

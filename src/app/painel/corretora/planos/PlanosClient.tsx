@@ -127,6 +127,10 @@ export default function PlanosClient() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<number | null>(null);
+  // Estado do fluxo de cancelamento — modal + motivo + request in-flight.
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [canceling, setCanceling] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -147,6 +151,28 @@ export default function PlanosClient() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleCancelConfirm = async () => {
+    setCanceling(true);
+    try {
+      const res = await apiClient.post<{ already_free?: boolean }>(
+        "/api/corretora/plan/cancel",
+        { reason: cancelReason.trim() || undefined },
+      );
+      if (res?.already_free) {
+        toast("Você já estava no plano gratuito.", { icon: "ℹ️" });
+      } else {
+        toast.success("Plano cancelado. Você voltou ao plano gratuito.");
+      }
+      setCancelOpen(false);
+      setCancelReason("");
+      await load();
+    } catch (err) {
+      toast.error(formatApiError(err, "Erro ao cancelar plano.").message);
+    } finally {
+      setCanceling(false);
+    }
+  };
 
   const handleUpgrade = async (plan: Plan) => {
     setUpgrading(plan.id);
@@ -237,41 +263,153 @@ export default function PlanosClient() {
         />
       )}
 
-      {/* Plano atual */}
+      {/* Plano atual — mostra card + botão "Cancelar assinatura" quando
+          é plano pago. O cancelamento volta a corretora pro FREE, sem
+          perder acesso nem leads. */}
       {current && (
         <div className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.03] p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300">
-            Plano atual
-          </p>
-          <p className="mt-1 text-lg font-bold text-stone-50">
-            {current.plan.name}
-            <span className="ml-2 text-sm font-medium text-stone-400">
-              {formatPrice(current.plan.price_cents)}
-              {current.plan.price_cents > 0 ? "/mês" : ""}
-            </span>
-          </p>
-          <p className="mt-1 text-xs text-stone-400">
-            Status:{" "}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300">
+                Plano atual
+              </p>
+              <p className="mt-1 text-lg font-bold text-stone-50">
+                {current.plan.name}
+                <span className="ml-2 text-sm font-medium text-stone-400">
+                  {formatPrice(current.plan.price_cents)}
+                  {current.plan.price_cents > 0 ? "/mês" : ""}
+                </span>
+              </p>
+              <p className="mt-1 text-xs text-stone-400">
+                Status:{" "}
+                <span
+                  className={`font-semibold ${
+                    current.subscription?.status === "trialing"
+                      ? "text-amber-200"
+                      : current.subscription?.status === "active"
+                        ? "text-emerald-300"
+                        : "text-rose-300"
+                  }`}
+                >
+                  {current.subscription?.status === "trialing"
+                    ? "Em teste"
+                    : current.subscription?.status === "active"
+                      ? "Ativa"
+                      : current.subscription?.status === "expired"
+                        ? "Expirada"
+                        : current.status === "free_default"
+                          ? "Sem assinatura"
+                          : current.subscription?.status ?? "—"}
+                </span>
+              </p>
+            </div>
+
+            {/* Botão cancelar — aparece só se for plano pago (FREE não
+                tem o que cancelar). Texto secundário pra não competir
+                com o CTA primário de upgrade nos cards abaixo. */}
+            {current.plan.price_cents > 0 && (
+              <button
+                type="button"
+                onClick={() => setCancelOpen(true)}
+                className="shrink-0 self-start text-xs font-semibold text-stone-400 underline-offset-4 transition-colors hover:text-rose-300 hover:underline sm:self-auto"
+              >
+                Cancelar assinatura
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmação — "zona de alerta" do cancelamento.
+          Overlay full-screen bloqueia interação no resto; ESC/click fora
+          fecha. Motivo é opcional (feedback valioso de churn). */}
+      {cancelOpen && current && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Confirmar cancelamento"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/70 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+        >
+          <button
+            type="button"
+            aria-label="Fechar"
+            onClick={() => !canceling && setCancelOpen(false)}
+            className="absolute inset-0 cursor-default"
+          />
+          <div className="relative w-full max-w-md overflow-hidden rounded-t-2xl bg-stone-900 ring-1 ring-white/[0.08] shadow-2xl shadow-black/60 sm:rounded-2xl">
             <span
-              className={`font-semibold ${
-                current.subscription?.status === "trialing"
-                  ? "text-amber-200"
-                  : current.subscription?.status === "active"
-                    ? "text-emerald-300"
-                    : "text-rose-300"
-              }`}
-            >
-              {current.subscription?.status === "trialing"
-                ? "Em teste"
-                : current.subscription?.status === "active"
-                  ? "Ativa"
-                  : current.subscription?.status === "expired"
-                    ? "Expirada"
-                    : current.status === "free_default"
-                      ? "Sem assinatura"
-                      : current.subscription?.status ?? "—"}
-            </span>
-          </p>
+              aria-hidden
+              className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-rose-300/40 to-transparent"
+            />
+            <div className="p-5 sm:p-6">
+              <div className="flex items-start gap-3">
+                <span
+                  aria-hidden
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden>
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-base font-semibold text-stone-50">
+                    Cancelar assinatura {current.plan.name}?
+                  </h2>
+                  <p className="mt-1 text-[13px] leading-relaxed text-stone-400">
+                    Você vai voltar ao plano <strong className="text-stone-200">Gratuito</strong>.
+                    Seus leads, notas e histórico continuam aqui, mas os
+                    recursos pagos (exportação, destaque regional, usuários
+                    extras) ficam indisponíveis.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <label
+                  htmlFor="cancel-reason"
+                  className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400"
+                >
+                  Motivo (opcional)
+                </label>
+                <p className="mt-1 text-[11px] text-stone-500">
+                  Ajuda a gente a entender o que melhorar — totalmente confidencial.
+                </p>
+                <textarea
+                  id="cancel-reason"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value.slice(0, 500))}
+                  rows={3}
+                  disabled={canceling}
+                  placeholder="Ex: preço, período parado, falta de leads na região…"
+                  className="mt-2 w-full resize-none rounded-lg border border-white/10 bg-stone-950 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-500 focus:border-amber-400/60 focus:outline-none focus:ring-1 focus:ring-amber-400/25 disabled:opacity-60 [color-scheme:dark]"
+                />
+                <p className="mt-1 text-right text-[10px] text-stone-600 tabular-nums">
+                  {cancelReason.length}/500
+                </p>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setCancelOpen(false)}
+                  disabled={canceling}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-5 text-sm font-semibold text-stone-200 transition-colors hover:bg-white/[0.08] disabled:opacity-60"
+                >
+                  Manter assinatura
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelConfirm}
+                  disabled={canceling}
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-rose-500/90 px-5 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-colors hover:bg-rose-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:opacity-60"
+                >
+                  {canceling ? "Cancelando…" : "Cancelar e voltar ao FREE"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
