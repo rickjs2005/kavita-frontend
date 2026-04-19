@@ -252,15 +252,19 @@ export default function LeadsClient() {
         })}
       </div>
 
-      {/* ─── Filtros ─────────────────────────────────────────── */}
+      {/* ─── Filtros ───────────────────────────────────────────
+          Em mobile o container vira coluna — busca full-width em cima,
+          cada FilterGroup em linha própria com chips em flex-wrap (as
+          5+ opções de Status/Bebida não cabem lado a lado em 375px).
+          Em sm+ volta ao layout horizontal original. */}
       <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-stone-900/50">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 p-3 sm:p-4">
+        <div className="flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2 sm:p-4">
           {/* Busca */}
           <div className="relative w-full sm:w-auto sm:min-w-[200px]">
             <svg
               viewBox="0 0 20 20"
               fill="currentColor"
-              className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-500"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500 sm:left-2.5 sm:h-3.5 sm:w-3.5"
               aria-hidden
             >
               <path
@@ -274,7 +278,7 @@ export default function LeadsClient() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar nome ou córrego..."
-              className="h-8 w-full rounded-lg border border-white/10 bg-white/[0.04] pl-8 pr-3 text-[12px] text-stone-100 placeholder:text-stone-500 focus:border-amber-400/50 focus:outline-none focus:ring-1 focus:ring-amber-400/25 [color-scheme:dark]"
+              className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.04] pl-9 pr-3 text-sm text-stone-100 placeholder:text-stone-500 focus:border-amber-400/50 focus:outline-none focus:ring-1 focus:ring-amber-400/25 [color-scheme:dark] sm:h-8 sm:pl-8 sm:text-[12px]"
             />
           </div>
 
@@ -287,7 +291,7 @@ export default function LeadsClient() {
             <button
               type="button"
               onClick={clearFilters}
-              className="text-[10px] font-semibold text-amber-300/70 transition-colors hover:text-amber-200"
+              className="self-start text-[11px] font-semibold text-amber-300/70 transition-colors hover:text-amber-200 sm:self-auto sm:text-[10px]"
             >
               ✕ Limpar
             </button>
@@ -318,25 +322,28 @@ export default function LeadsClient() {
         <LeadsTable leads={filteredLeads} onChanged={load} />
       )}
 
-      {/* ─── Paginação ───────────────────────────────────────── */}
+      {/* ─── Paginação — botões grandes no mobile pra navegar com
+          polegar sem precisar mirar; compactos em desktop. ───── */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 pt-1">
           <button
             type="button"
             disabled={page === 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="inline-flex h-8 items-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] px-4 text-sm font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:min-w-0 sm:px-3 sm:text-[11px]"
+            aria-label="Página anterior"
           >
             ←
           </button>
-          <span className="font-mono text-[11px] font-medium tabular-nums text-stone-500">
+          <span className="font-mono text-[12px] font-medium tabular-nums text-stone-400 sm:text-[11px] sm:text-stone-500">
             {page} / {totalPages}
           </span>
           <button
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="inline-flex h-8 items-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] px-4 text-sm font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:min-w-0 sm:px-3 sm:text-[11px]"
+            aria-label="Próxima página"
           >
             →
           </button>
@@ -418,7 +425,7 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
       type="button"
       onClick={handleExport}
       disabled={downloading}
-      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3.5 text-[11px] font-semibold text-stone-300 transition-colors hover:border-amber-400/30 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-60 sm:h-8"
       title="Exportar CSV"
     >
       <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden>
@@ -446,28 +453,34 @@ function FilterGroup({
   value: string;
   onChange: (v: string) => void;
 }) {
+  // Em mobile: label vai pra linha separada e chips quebram em várias
+  // linhas (flex-wrap) — evita que 5 opções de Status/Bebida estourem
+  // os 375px. Chips ganham padding maior (px-2.5 py-1) pra ter tap
+  // target ≈32px. Em sm+ volta ao layout inline compacto original.
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-[9px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-1.5">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400 sm:text-[9px] sm:tracking-[0.1em] sm:text-stone-500">
         {label}
       </span>
-      {items.map((f) => {
-        const active = value === f.value;
-        return (
-          <button
-            key={f.value}
-            type="button"
-            onClick={() => onChange(f.value)}
-            className={`rounded-md px-2 py-0.5 text-[11px] font-semibold transition-all ${
-              active
-                ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30"
-                : "text-stone-500 hover:text-stone-200"
-            }`}
-          >
-            {f.label}
-          </button>
-        );
-      })}
+      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
+        {items.map((f) => {
+          const active = value === f.value;
+          return (
+            <button
+              key={f.value}
+              type="button"
+              onClick={() => onChange(f.value)}
+              className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all sm:px-2 sm:py-0.5 ${
+                active
+                  ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30"
+                  : "bg-white/[0.03] text-stone-400 ring-1 ring-white/[0.06] hover:text-stone-200 sm:bg-transparent sm:text-stone-500 sm:ring-0"
+              }`}
+            >
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
