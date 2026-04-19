@@ -163,23 +163,27 @@ export default async function CorretorasListPage({ searchParams }: Props) {
       />
 
       {/* ═══ MARKET STRIP — tira fina no topo em dark ═══════════════
-          Border-white/[0.08] hairline, pulse dot amber, cotação inline. */}
+          Border-white/[0.08] hairline, pulse dot amber, cotação inline.
+          Em mobile o kicker encurta pra caber a cotação ao lado. */}
       <div className="relative border-b border-white/[0.08] bg-stone-950/60 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-2.5 md:px-6">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-2.5 sm:gap-3 md:px-6">
           <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
           </span>
-          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-300">
-            Mercado do Café
-            <span className="mx-2 text-stone-600">·</span>
-            <span className="text-stone-400">Zona da Mata</span>
-            <span className="mx-2 text-stone-600">·</span>
-            <span className="text-stone-400">MG</span>
+          <p className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-300 sm:tracking-[0.2em]">
+            <span className="sm:hidden">Mercado do Café</span>
+            <span className="hidden sm:inline">
+              Mercado do Café
+              <span className="mx-2 text-stone-600">·</span>
+              <span className="text-stone-400">Zona da Mata</span>
+              <span className="mx-2 text-stone-600">·</span>
+              <span className="text-stone-400">MG</span>
+            </span>
           </p>
           <span
             aria-hidden
-            className="ml-auto hidden h-3 w-px bg-white/20 md:inline-block"
+            className="ml-auto h-3 w-px shrink-0 bg-white/20"
           />
           <MarketCotacaoPill cotacao={coffeeCotacao} variant="strip" />
         </div>
@@ -189,25 +193,25 @@ export default async function CorretorasListPage({ searchParams }: Props) {
           Brand mark + kicker + título display + subtítulo à esquerda,
           market intelligence stats em glass card à direita. */}
       <section className="relative">
-        <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-10 md:px-6 md:pb-14 md:pt-16">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-8 pt-8 md:px-6 md:pb-14 md:pt-16">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between md:gap-10">
             {/* Left: brand + title + subtitle */}
             <div className="min-w-0 flex-1">
-              <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center text-amber-200">
+              <div className="mb-4 flex items-center gap-3 md:mb-5">
+                <div className="flex h-9 w-9 items-center justify-center text-amber-200 md:h-10 md:w-10">
                   <PanelBrandMark className="h-full w-full" />
                 </div>
-                <div className="h-6 w-px bg-white/15" aria-hidden />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300/90">
+                <div className="h-5 w-px bg-white/15 md:h-6" aria-hidden />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300/90 sm:text-[11px] sm:tracking-[0.2em]">
                   Corretoras verificadas
                 </p>
               </div>
 
-              <h1 className="text-3xl font-semibold leading-[1.05] tracking-tight text-stone-50 md:text-4xl lg:text-5xl">
+              <h1 className="text-[clamp(1.6rem,6vw,2rem)] font-semibold leading-[1.1] tracking-tight text-stone-50 md:text-4xl lg:text-5xl">
                 A mesa do café da Zona&nbsp;da&nbsp;Mata
               </h1>
 
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-stone-300 md:text-base">
+              <p className="mt-4 max-w-2xl text-[13px] leading-relaxed text-stone-300 sm:text-sm md:text-base">
                 Encontre corretoras que atuam na Zona da Mata mineira. Rede
                 curada pelo Kavita — cada empresa listada passou pela análise
                 da nossa equipe antes de aparecer aqui. Negocie com confiança,
@@ -218,7 +222,7 @@ export default async function CorretorasListPage({ searchParams }: Props) {
             {/* Right: market intelligence block em dark glass */}
             <aside
               aria-label="Indicadores do mercado do café"
-              className="relative shrink-0 overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:min-w-[460px]"
+              className="relative w-full shrink-0 overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:w-auto md:min-w-[460px]"
             >
               {/* Top highlight amber */}
               <span
@@ -231,18 +235,24 @@ export default async function CorretorasListPage({ searchParams }: Props) {
                 className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-amber-500/15 blur-3xl"
               />
 
-              <div className="relative grid grid-cols-3 divide-x divide-white/[0.06]">
-                <Stat
-                  kicker="Ativas"
-                  value={totalAtivas}
-                  hint={totalAtivas === 1 ? "corretora" : "corretoras"}
-                />
+              {/* Em mobile os dois stats numéricos ficam lado a lado e a cotação
+                  vira linha full-width abaixo; em sm+ volta ao grid 3-col. */}
+              <div className="relative grid grid-cols-2 sm:grid-cols-3 sm:divide-x sm:divide-white/[0.06]">
+                <div className="border-r border-white/[0.06] sm:border-r-0">
+                  <Stat
+                    kicker="Ativas"
+                    value={totalAtivas}
+                    hint={totalAtivas === 1 ? "corretora" : "corretoras"}
+                  />
+                </div>
                 <Stat
                   kicker="Cidades"
                   value={totalCidades}
                   hint={totalCidades === 1 ? "atendida" : "atendidas"}
                 />
-                <MarketCotacaoPill cotacao={coffeeCotacao} variant="stat" />
+                <div className="col-span-2 border-t border-white/[0.06] sm:col-span-1 sm:border-t-0">
+                  <MarketCotacaoPill cotacao={coffeeCotacao} variant="stat" />
+                </div>
               </div>
             </aside>
           </div>
@@ -281,7 +291,7 @@ export default async function CorretorasListPage({ searchParams }: Props) {
 
         {/* Empty state */}
         {result.items.length === 0 && (
-          <section className="relative mt-8 overflow-hidden rounded-2xl bg-white/[0.04] p-10 text-center ring-1 ring-white/[0.08] backdrop-blur-sm">
+          <section className="relative mt-8 overflow-hidden rounded-2xl bg-white/[0.04] p-7 text-center ring-1 ring-white/[0.08] backdrop-blur-sm sm:p-10">
             <span
               aria-hidden
               className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
@@ -302,7 +312,7 @@ export default async function CorretorasListPage({ searchParams }: Props) {
             {hasFilters && (
               <Link
                 href="/mercado-do-cafe/corretoras"
-                className="relative mt-5 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-amber-300 to-amber-500 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400"
+                className="relative mt-5 inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-amber-300 to-amber-500 px-5 text-xs font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400"
               >
                 Limpar filtros
               </Link>
@@ -351,44 +361,48 @@ export default async function CorretorasListPage({ searchParams }: Props) {
           </section>
         )}
 
-        {/* Pagination em dark glass */}
+        {/* Pagination em dark glass — em mobile os botões empilham em cima
+            do contador pra ter tap target confortável e não estourar a
+            largura em 320-375px. */}
         {result.totalPages > 1 && (
           <nav
-            className="mt-10 flex items-center justify-center gap-3"
+            className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
             aria-label="Paginação"
           >
-            {page > 1 ? (
-              <Link
-                href={buildPageHref(page - 1)}
-                className="rounded-lg bg-white/[0.05] px-3.5 py-2 text-xs font-semibold text-stone-300 ring-1 ring-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.08] hover:text-amber-200 hover:ring-amber-400/30"
-              >
-                ← Anterior
-              </Link>
-            ) : (
-              <span className="cursor-not-allowed rounded-lg bg-white/[0.02] px-3.5 py-2 text-xs font-semibold text-stone-600 ring-1 ring-white/[0.04]">
-                ← Anterior
-              </span>
-            )}
-            <span className="text-xs font-medium tabular-nums text-stone-400">
+            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:gap-3">
+              {page > 1 ? (
+                <Link
+                  href={buildPageHref(page - 1)}
+                  className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg bg-white/[0.05] px-4 text-xs font-semibold text-stone-300 ring-1 ring-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.08] hover:text-amber-200 hover:ring-amber-400/30 sm:flex-none"
+                >
+                  ← Anterior
+                </Link>
+              ) : (
+                <span className="inline-flex min-h-[44px] flex-1 cursor-not-allowed items-center justify-center rounded-lg bg-white/[0.02] px-4 text-xs font-semibold text-stone-600 ring-1 ring-white/[0.04] sm:flex-none">
+                  ← Anterior
+                </span>
+              )}
+              {page < result.totalPages ? (
+                <Link
+                  href={buildPageHref(page + 1)}
+                  className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-lg bg-white/[0.05] px-4 text-xs font-semibold text-stone-300 ring-1 ring-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.08] hover:text-amber-200 hover:ring-amber-400/30 sm:order-3 sm:flex-none"
+                >
+                  Próxima →
+                </Link>
+              ) : (
+                <span className="inline-flex min-h-[44px] flex-1 cursor-not-allowed items-center justify-center rounded-lg bg-white/[0.02] px-4 text-xs font-semibold text-stone-600 ring-1 ring-white/[0.04] sm:order-3 sm:flex-none">
+                  Próxima →
+                </span>
+              )}
+            </div>
+            <span className="text-xs font-medium tabular-nums text-stone-400 sm:order-2">
               Página {page} de {result.totalPages}
             </span>
-            {page < result.totalPages ? (
-              <Link
-                href={buildPageHref(page + 1)}
-                className="rounded-lg bg-white/[0.05] px-3.5 py-2 text-xs font-semibold text-stone-300 ring-1 ring-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.08] hover:text-amber-200 hover:ring-amber-400/30"
-              >
-                Próxima →
-              </Link>
-            ) : (
-              <span className="cursor-not-allowed rounded-lg bg-white/[0.02] px-3.5 py-2 text-xs font-semibold text-stone-600 ring-1 ring-white/[0.04]">
-                Próxima →
-              </span>
-            )}
           </nav>
         )}
 
         {/* CTA Cadastro — dark glass com botão amber */}
-        <section className="relative mt-16 overflow-hidden rounded-2xl bg-white/[0.04] p-7 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:p-10">
+        <section className="relative mt-14 overflow-hidden rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm sm:p-7 md:mt-16 md:p-10">
           {/* Top highlight */}
           <span
             aria-hidden
@@ -424,7 +438,7 @@ export default async function CorretorasListPage({ searchParams }: Props) {
             </div>
             <Link
               href="/mercado-do-cafe/corretoras/cadastro"
-              className="group relative shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+              className="group relative inline-flex min-h-[48px] w-full shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 hover:shadow-amber-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 sm:w-auto sm:text-xs"
             >
               <span
                 aria-hidden
