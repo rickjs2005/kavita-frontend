@@ -404,6 +404,20 @@ export default function Header({ categories, shop }: HeaderProps) {
               )}
             </MobileMenuSection>
 
+            {/* ── Seção: Área da Corretora ──
+                Espelha o atalho que existe no UserMenu do desktop. O
+                painel tem contexto de auth próprio (cookie corretoraToken);
+                o guard do layout redireciona pro login se não houver
+                sessão de corretora ativa. */}
+            <MobileMenuSection label="Área da Corretora">
+              <MobileMenuLink
+                href="/painel/corretora"
+                label="Painel da corretora"
+                icon="☕"
+                onClick={() => setIsMenuOpen(false)}
+              />
+            </MobileMenuSection>
+
             {/* ── Seção: Atendimento ── */}
             <MobileMenuSection label="Atendimento">
               <MobileMenuLink
