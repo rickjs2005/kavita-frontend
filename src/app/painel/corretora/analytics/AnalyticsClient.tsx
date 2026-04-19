@@ -241,34 +241,37 @@ export default function AnalyticsClient() {
 
   return (
     <div className="space-y-6">
-      {/* Hero editorial + range selector */}
-      <header className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm sm:p-8">
+      {/* Hero editorial + range selector.
+          Em mobile o range segmented control desce pra linha abaixo e
+          ocupa toda a largura (3 segmentos iguais com tap target ≥44px);
+          em sm+ fica ancorado à direita como antes. */}
+      <header className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm sm:p-6 md:p-8">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
         />
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300/90">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300/90 sm:tracking-[0.2em]">
               Sala Reservada · Analytics
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-50 sm:text-3xl">
+            <h1 className="mt-2 text-[clamp(1.5rem,6vw,1.75rem)] font-semibold tracking-tight text-stone-50 sm:text-2xl md:text-3xl">
               Sua operação em números
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-300">
+            <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-stone-300 sm:text-sm">
               Volume de leads, tempo de resposta e conversão da sua
               corretora nos últimos {data?.days ?? "…"} dias. Deltas comparam
               com o período anterior de mesma duração.
             </p>
           </div>
 
-          <div className="flex items-center gap-1 rounded-xl bg-white/[0.04] p-1 ring-1 ring-white/[0.08]">
+          <div className="flex w-full items-stretch gap-1 rounded-xl bg-white/[0.04] p-1 ring-1 ring-white/[0.08] sm:w-auto sm:items-center">
             {(["7d", "30d", "90d"] as Range[]).map((r) => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setRange(r)}
-                className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+                className={`flex-1 rounded-lg px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors sm:flex-none sm:py-1.5 ${
                   range === r
                     ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30"
                     : "text-stone-400 hover:text-stone-100"
@@ -388,9 +391,11 @@ export default function AnalyticsClient() {
                 </div>
 
                 {/* Comparativo regional: só aparece com amostra
-                    estatisticamente útil (MIN_SAMPLE do backend). */}
+                    estatisticamente útil (MIN_SAMPLE do backend).
+                    Em mobile o badge desce pra linha abaixo do texto; em
+                    sm+ fica à direita. */}
                 {hasRegional && (
-                  <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-amber-400/[0.06] p-3 ring-1 ring-amber-400/15">
+                  <div className="mt-4 flex flex-col gap-2.5 rounded-xl bg-amber-400/[0.06] p-3 ring-1 ring-amber-400/15 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/90">
                         Sua cidade · {data.regional.city}
@@ -407,7 +412,7 @@ export default function AnalyticsClient() {
                       </p>
                     </div>
                     <span
-                      className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
+                      className={`self-start whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-semibold sm:self-auto ${
                         regionalDelta !== null && regionalDelta < 0
                           ? "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-400/30"
                           : "bg-rose-500/15 text-rose-200 ring-1 ring-rose-400/30"
