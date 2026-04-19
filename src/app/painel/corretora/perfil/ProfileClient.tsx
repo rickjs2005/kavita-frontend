@@ -62,8 +62,10 @@ const CONTACT_FIELDS = [
   "facebook",
 ] as const;
 
+// Em mobile, py-3 dá ~44px de altura efetiva (tap target WCAG). Em sm+
+// voltamos pra py-2.5 compacto — telas grandes operam com cursor, não dedo.
 const inputClass =
-  "w-full rounded-xl border border-white/10 bg-stone-950 px-3.5 py-2.5 text-sm text-stone-100 placeholder:text-stone-500 shadow-sm transition-colors hover:bg-stone-950/80 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/25 [color-scheme:dark]";
+  "w-full rounded-xl border border-white/10 bg-stone-950 px-3.5 py-3 text-sm text-stone-100 placeholder:text-stone-500 shadow-sm transition-colors hover:bg-stone-950/80 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/25 sm:py-2.5 [color-scheme:dark]";
 const labelClass =
   "mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400";
 const errorClass = "mt-1.5 text-[11px] font-medium text-red-300";
@@ -294,7 +296,7 @@ export default function ProfileClient() {
 
       {/* ETAPA 2.4 — link para segurança / 2FA */}
       <PanelCard density="compact">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-300/80">
               Segurança da conta
@@ -305,7 +307,7 @@ export default function ProfileClient() {
           </div>
           <a
             href="/painel/corretora/perfil/seguranca"
-            className="inline-flex h-9 items-center rounded-lg border border-amber-400/40 bg-amber-500/10 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 transition-colors hover:bg-amber-500/20"
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg border border-amber-400/40 bg-amber-500/10 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 transition-colors hover:bg-amber-500/20 sm:h-9 sm:min-h-0 sm:w-auto"
           >
             Abrir segurança →
           </a>
@@ -743,17 +745,19 @@ export default function ProfileClient() {
           </div>
         </PanelCard>
 
-        {/* Action row */}
-        <div className="flex items-center justify-end gap-3">
+        {/* Action row — em mobile o botão é full-width com tap target
+            confortável; "Alterações não salvas" sobe acima do botão pra
+            não ficar espremido. Em sm+ volta pro layout inline direito. */}
+        <div className="sticky bottom-0 -mx-1 flex flex-col items-stretch gap-2 border-t border-white/[0.06] bg-stone-950/80 px-1 py-3 backdrop-blur-sm sm:static sm:mx-0 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
           {isDirty && (
-            <span className="text-[11px] font-medium text-stone-500">
+            <span className="text-center text-[11px] font-medium text-stone-500 sm:text-left">
               Alterações não salvas
             </span>
           )}
           <button
             type="submit"
             disabled={saving || !isDirty}
-            className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 px-5 py-2.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/20 transition-colors hover:from-amber-300 hover:to-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-60"
+            className="group relative inline-flex min-h-[48px] w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 px-5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/20 transition-colors hover:from-amber-300 hover:to-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-0 sm:w-auto sm:py-2.5"
           >
             <span
               aria-hidden
@@ -879,7 +883,7 @@ function LogoUploader({
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-stone-950">
+        <div className="relative flex h-24 w-24 shrink-0 items-center justify-center self-center overflow-hidden rounded-2xl border border-white/10 bg-stone-950 sm:self-auto">
           {displaySrc ? (
             <Image
               src={displaySrc}
@@ -897,12 +901,14 @@ function LogoUploader({
         </div>
 
         <div className="flex flex-1 flex-col gap-2">
-          <div className="flex flex-wrap gap-2">
+          {/* Em mobile botões empilham full-width com tap target 44px.
+              Em sm+ voltam lado a lado compactos (h-9) como antes. */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="inline-flex h-9 items-center rounded-lg border border-white/10 bg-white/[0.04] px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-200 transition-colors hover:bg-white/[0.08] disabled:opacity-50"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-200 transition-colors hover:bg-white/[0.08] disabled:opacity-50 sm:h-9 sm:min-h-0"
             >
               {preview ? "Trocar arquivo" : "Escolher arquivo"}
             </button>
@@ -912,7 +918,7 @@ function LogoUploader({
                   type="button"
                   onClick={upload}
                   disabled={uploading}
-                  className="inline-flex h-9 items-center rounded-lg bg-amber-500/20 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 ring-1 ring-amber-400/40 transition-colors hover:bg-amber-500/30 disabled:opacity-50"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-amber-500/20 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 ring-1 ring-amber-400/40 transition-colors hover:bg-amber-500/30 disabled:opacity-50 sm:h-9 sm:min-h-0"
                 >
                   {uploading ? "Enviando…" : "Salvar logo"}
                 </button>
@@ -920,7 +926,7 @@ function LogoUploader({
                   type="button"
                   onClick={reset}
                   disabled={uploading}
-                  className="inline-flex h-9 items-center rounded-lg border border-white/10 bg-white/[0.02] px-4 text-[11px] font-semibold text-stone-400 transition-colors hover:text-stone-200 disabled:opacity-50"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-white/10 bg-white/[0.02] px-4 text-[11px] font-semibold text-stone-400 transition-colors hover:text-stone-200 disabled:opacity-50 sm:h-9 sm:min-h-0"
                 >
                   Cancelar
                 </button>
