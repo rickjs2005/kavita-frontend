@@ -17,31 +17,108 @@ import { can, ROLE_LABELS, type CorretoraRole } from "@/types/corretoraUser";
 import { PanelBrand } from "./PanelBrand";
 import { NotificationsBell } from "./NotificationsBell";
 
+// Ícones dedicados por seção — estilo Lucide (stroke 1.8, 20x20).
+// Inline pra não depender de lib externa e manter bundle pequeno.
+type IconProps = { className?: string };
+const Icons = {
+  home: ({ className }: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M3 11l9-8 9 8" />
+      <path d="M5 10v10h4v-6h6v6h4V10" />
+    </svg>
+  ),
+  inbox: ({ className }: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+    </svg>
+  ),
+  chart: ({ className }: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M3 3v18h18" />
+      <path d="M7 14l4-4 4 3 5-7" />
+    </svg>
+  ),
+  star: ({ className }: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" />
+    </svg>
+  ),
+  user: ({ className }: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
+  users: ({ className }: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  card: ({ className }: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" />
+    </svg>
+  ),
+} as const;
+
 type NavItem = {
   href: string;
   label: string;
+  icon: (props: IconProps) => React.ReactElement;
   exact?: boolean;
   requiresCapability?: Parameters<typeof can>[1];
+  // Nota editorial que aparece como legenda abaixo do item ativo — dá
+  // respiração ao drawer sem depender só de lista plana de labels.
+  hint?: string;
 };
 
-const navItems: NavItem[] = [
-  { href: "/painel/corretora", label: "Resumo", exact: true },
-  { href: "/painel/corretora/leads", label: "Leads" },
-  { href: "/painel/corretora/analytics", label: "Analytics" },
-  { href: "/painel/corretora/reviews", label: "Avaliações" },
-  { href: "/painel/corretora/perfil", label: "Meu perfil" },
+// Agrupamento por função — "Operação" cobre o que a corretora faz
+// todo dia com lead; "Conta" fica reservado pra ajustes menos
+// frequentes (perfil, time, billing).
+type NavSection = { label: string; items: NavItem[] };
+const navSections: NavSection[] = [
   {
-    href: "/painel/corretora/equipe",
-    label: "Equipe",
-    requiresCapability: "team.view",
+    label: "Operação",
+    items: [
+      { href: "/painel/corretora", label: "Resumo", icon: Icons.home, exact: true, hint: "Hoje na mesa" },
+      { href: "/painel/corretora/leads", label: "Leads", icon: Icons.inbox, hint: "Pipeline de contatos" },
+      { href: "/painel/corretora/analytics", label: "Analytics", icon: Icons.chart, hint: "Métricas e SLA" },
+      { href: "/painel/corretora/reviews", label: "Avaliações", icon: Icons.star, hint: "O que dizem de você" },
+    ],
   },
-  { href: "/painel/corretora/planos", label: "Meu plano" },
+  {
+    label: "Conta",
+    items: [
+      { href: "/painel/corretora/perfil", label: "Meu perfil", icon: Icons.user, hint: "Canais e vitrine pública" },
+      { href: "/painel/corretora/equipe", label: "Equipe", icon: Icons.users, requiresCapability: "team.view", hint: "Usuários e papéis" },
+      { href: "/painel/corretora/planos", label: "Meu plano", icon: Icons.card, hint: "Assinatura e limites" },
+    ],
+  },
 ];
+
+// Flat list pra nav desktop (mantém ordem original, sem seções).
+const navItems: NavItem[] = navSections.flatMap((s) => s.items);
 
 function filterNav(role: CorretoraRole | null | undefined) {
   return navItems.filter((item) =>
     item.requiresCapability ? can(role, item.requiresCapability) : true,
   );
+}
+
+function filterSections(role: CorretoraRole | null | undefined): NavSection[] {
+  return navSections
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((i) =>
+        i.requiresCapability ? can(role, i.requiresCapability) : true,
+      ),
+    }))
+    .filter((s) => s.items.length > 0);
 }
 
 function initialsFrom(name?: string | null): string {
@@ -59,6 +136,7 @@ export function CorretoraPanelNav() {
 
   const initials = initialsFrom(user?.nome);
   const items = filterNav(user?.role);
+  const sections = filterSections(user?.role);
   const firstName = user?.nome?.split(" ")[0] ?? "";
   const roleLabel = user?.role ? ROLE_LABELS[user.role] : "";
 
@@ -221,9 +299,9 @@ export function CorretoraPanelNav() {
       </div>
 
       {/* ═══ DRAWER MOBILE ══════════════════════════════════════════
-          Backdrop fullscreen + aside da esquerda com header de
-          identidade + lista de nav + rodapé com "Sair". Só renderiza
-          DOM quando aberto (perf) e em mobile (md:hidden no wrapper). */}
+          Editorial dark — gradient café + glows amber, ícones por
+          seção, agrupamento Operação/Conta, microcopy no item ativo.
+          Só renderiza em mobile (md:hidden) e quando aberto. */}
       {menuOpen && (
         <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menu do painel">
           {/* Backdrop — click fecha o drawer */}
@@ -231,26 +309,41 @@ export function CorretoraPanelNav() {
             type="button"
             aria-label="Fechar menu"
             onClick={() => setMenuOpen(false)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-stone-950/70 backdrop-blur-sm"
           />
 
-          {/* Drawer — aside esquerdo */}
+          {/* Drawer — aside esquerdo com DNA coffee editorial */}
           <aside
             id="corretora-mobile-drawer"
-            className="absolute inset-y-0 left-0 flex w-[86%] max-w-[340px] flex-col border-r border-white/[0.08] bg-stone-950 shadow-2xl shadow-black/60 animate-[slideInLeft_0.2s_ease-out]"
+            className="absolute inset-y-0 left-0 flex w-[88%] max-w-[360px] flex-col overflow-hidden border-r border-amber-900/30 bg-gradient-to-br from-stone-950 via-[#1f1914] to-stone-900 shadow-2xl shadow-black/70 animate-[slideInLeft_0.2s_ease-out]"
           >
-            {/* Header — identidade do usuário */}
-            <div className="relative border-b border-white/[0.06] p-5">
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
-              />
+            {/* Atmospheric glows — profundidade warm-on-dark */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-500/[0.12] blur-3xl"
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-orange-700/[0.1] blur-3xl"
+            />
+            {/* Top highlight hairline */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/60 to-transparent"
+            />
+
+            {/* ─── Header — identidade editorial ────────────────── */}
+            <div className="relative border-b border-white/[0.06] px-5 pb-5 pt-5">
               <div className="flex items-center justify-between gap-3">
-                <PanelBrand tone="light" />
+                <div className="flex items-center gap-2.5">
+                  <span className="font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-amber-300/80">
+                    Sala Reservada
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={() => setMenuOpen(false)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-white/[0.05] hover:text-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-white/[0.05] hover:text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
                   aria-label="Fechar menu"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-5 w-5" aria-hidden>
@@ -259,19 +352,28 @@ export function CorretoraPanelNav() {
                 </button>
               </div>
 
+              {/* Identity card — avatar + nome serif + role + corretora */}
               <div className="mt-5 flex items-center gap-3">
-                <div
-                  aria-hidden
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-400/15 text-sm font-bold text-amber-200 ring-1 ring-amber-400/30"
-                >
-                  {initials}
+                <div className="relative shrink-0">
+                  <div
+                    aria-hidden
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-300/30 to-amber-600/10 text-base font-bold text-amber-100 ring-1 ring-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.15)]"
+                  >
+                    {initials}
+                  </div>
+                  {/* Dot "online" — a sala está ativa quando o usuário
+                      está logado. Reforça vibe de terminal vivo. */}
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-stone-950 shadow-[0_0_6px_rgba(52,211,153,0.6)]"
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-stone-50">
+                  <p className="truncate font-serif text-[17px] font-semibold leading-tight text-stone-50">
                     {firstName || "Usuário"}
                   </p>
                   {roleLabel && (
-                    <p className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-300/80">
+                    <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-amber-300/90">
                       {roleLabel}
                     </p>
                   )}
@@ -284,63 +386,115 @@ export function CorretoraPanelNav() {
               </div>
             </div>
 
-            {/* Nav — lista vertical com tap target 48px */}
+            {/* ─── Nav — agrupada em seções com labels ────────────── */}
             <nav
-              className="flex-1 overflow-y-auto p-3"
+              className="relative flex-1 overflow-y-auto px-3 pb-4 pt-3"
               aria-label="Seções do painel"
             >
-              <ul className="space-y-1">
-                {items.map((item) => {
-                  const active = item.exact
-                    ? pathname === item.href
-                    : pathname?.startsWith(item.href);
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        aria-current={active ? "page" : undefined}
-                        className={`flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-[14px] font-semibold transition-colors ${
-                          active
-                            ? "bg-amber-400/15 text-amber-100 ring-1 ring-amber-400/40"
-                            : "text-stone-300 hover:bg-white/[0.05] hover:text-stone-50 active:bg-white/[0.08]"
-                        }`}
-                      >
-                        <span
-                          aria-hidden
-                          className={`h-5 w-1 rounded-full transition-colors ${
-                            active ? "bg-amber-400" : "bg-transparent"
-                          }`}
-                        />
-                        <span className="flex-1">{item.label}</span>
-                        {active && (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-4 w-4 text-amber-300" aria-hidden>
-                            <path d="M9 18l6-6-6-6" />
-                          </svg>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+              {sections.map((section, sectionIdx) => (
+                <div
+                  key={section.label}
+                  className={sectionIdx > 0 ? "mt-5" : ""}
+                >
+                  <p className="px-3 pb-2 font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                    {section.label}
+                  </p>
+                  <ul className="space-y-0.5">
+                    {section.items.map((item) => {
+                      const active = item.exact
+                        ? pathname === item.href
+                        : pathname?.startsWith(item.href);
+                      const Icon = item.icon;
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            aria-current={active ? "page" : undefined}
+                            className={`group/nav relative flex min-h-[52px] items-center gap-3 overflow-hidden rounded-xl px-3 text-[14px] font-semibold transition-all ${
+                              active
+                                ? "bg-gradient-to-r from-amber-400/15 via-amber-400/[0.08] to-transparent text-amber-100 ring-1 ring-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.08)]"
+                                : "text-stone-300 hover:bg-white/[0.04] hover:text-stone-50 active:bg-white/[0.06]"
+                            }`}
+                          >
+                            {/* Barra vertical amber no item ativo */}
+                            <span
+                              aria-hidden
+                              className={`absolute inset-y-2 left-0 w-[3px] rounded-full transition-colors ${
+                                active
+                                  ? "bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500"
+                                  : "bg-transparent"
+                              }`}
+                            />
+
+                            {/* Ícone em container quadrado */}
+                            <span
+                              aria-hidden
+                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                                active
+                                  ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30"
+                                  : "bg-white/[0.04] text-stone-400 ring-1 ring-white/[0.06] group-hover/nav:text-stone-100"
+                              }`}
+                            >
+                              <Icon className="h-4 w-4" />
+                            </span>
+
+                            {/* Label + hint editorial */}
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate">{item.label}</span>
+                              {item.hint && (
+                                <span
+                                  className={`block truncate text-[10px] font-medium leading-tight ${
+                                    active ? "text-amber-300/70" : "text-stone-500"
+                                  }`}
+                                >
+                                  {item.hint}
+                                </span>
+                              )}
+                            </span>
+
+                            {/* Chevron no ativo */}
+                            {active && (
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                className="h-4 w-4 shrink-0 text-amber-300/80"
+                                aria-hidden
+                              >
+                                <path d="M9 18l6-6-6-6" />
+                              </svg>
+                            )}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
             </nav>
 
-            {/* Footer — botão Sair */}
-            <div className="border-t border-white/[0.06] p-3">
+            {/* ─── Footer — Sair + marca d'água ─────────────────── */}
+            <div className="relative border-t border-white/[0.06] p-3">
               <button
                 type="button"
                 onClick={() => {
                   setMenuOpen(false);
                   logout({ redirectTo: "/painel/corretora/login" });
                 }}
-                className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/[0.08] px-4 text-sm font-semibold text-rose-200 transition-colors hover:bg-rose-500/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                className="group/logout flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/[0.08] px-4 text-sm font-semibold text-rose-200 transition-colors hover:bg-rose-500/15 hover:text-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 transition-transform group-hover/logout:translate-x-0.5" aria-hidden>
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
                 Encerrar sessão
               </button>
+              <p className="mt-3 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-stone-600">
+                Kavita · Mercado do Café
+              </p>
             </div>
           </aside>
         </div>
