@@ -270,7 +270,7 @@ export default function PanelClient() {
          ============================================================ */}
       <section
         aria-label="Centro de comando"
-        className="kavita-rise-in relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-950 via-[#1f1914] to-stone-900 p-7 shadow-2xl shadow-stone-900/40 ring-1 ring-amber-900/20 md:p-10"
+        className="kavita-rise-in relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-950 via-[#1f1914] to-stone-900 p-5 shadow-2xl shadow-stone-900/40 ring-1 ring-amber-900/20 sm:p-7 md:p-10"
       >
         {/* Top highlight amber */}
         <span
@@ -304,8 +304,10 @@ export default function PanelClient() {
               </span>
             </div>
 
-            {/* Greeting with serif italic accent */}
-            <h1 className="mt-5 font-serif text-4xl font-semibold leading-[1.02] tracking-tight text-stone-50 md:text-[3rem]">
+            {/* Greeting with serif italic accent. Em mobile <400px o nome
+                longo (ex: "Larissa") ia quebrar do lado do "Olá," — clamp
+                previne estouro. */}
+            <h1 className="mt-4 font-serif text-[clamp(1.75rem,8vw,2.25rem)] font-semibold leading-[1.05] tracking-tight text-stone-50 sm:text-4xl sm:leading-[1.02] md:mt-5 md:text-[3rem]">
               <span className="font-sans font-light text-stone-300">Olá,</span>{" "}
               <span className="italic">
                 <span className="bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 bg-clip-text text-transparent">
@@ -357,11 +359,12 @@ export default function PanelClient() {
               <CurrentPlanBadge />
             </div>
 
-            {/* CTAs */}
-            <div className="mt-7 flex flex-col gap-2 sm:flex-row">
+            {/* CTAs — mobile full-width com min-h-[48px] (tap target);
+                sm+ volta compacto inline. */}
+            <div className="mt-6 flex flex-col gap-2 sm:mt-7 sm:flex-row">
               <Link
                 href="/painel/corretora/leads"
-                className="group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-6 py-2.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/30 transition-colors hover:from-amber-200 hover:to-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+                className="group relative inline-flex min-h-[48px] items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-6 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/30 transition-colors hover:from-amber-200 hover:to-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 sm:min-h-0 sm:py-2.5"
               >
                 <span aria-hidden className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
                 Abrir leads
@@ -369,15 +372,16 @@ export default function PanelClient() {
               </Link>
               <Link
                 href="/painel/corretora/perfil"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-stone-200 backdrop-blur-sm transition-colors hover:bg-white/[0.08] hover:text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+                className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-5 text-sm font-semibold text-stone-200 backdrop-blur-sm transition-colors hover:bg-white/[0.08] hover:text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 sm:min-h-0 sm:py-2.5"
               >
                 Editar perfil
               </Link>
             </div>
           </div>
 
-          {/* RIGHT — aside card com metadata (stone + amber) */}
-          <aside className="relative shrink-0 rounded-2xl bg-white/[0.03] p-5 ring-1 ring-white/[0.08] backdrop-blur-sm md:w-[220px]">
+          {/* RIGHT — aside card com metadata (stone + amber).
+              Em mobile vira linha full-width abaixo do greeting. */}
+          <aside className="relative w-full shrink-0 rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.08] backdrop-blur-sm sm:p-5 md:w-[220px]">
             <span
               aria-hidden
               className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
@@ -510,7 +514,7 @@ export default function PanelClient() {
                 <div className="flex shrink-0 flex-col gap-2 md:items-end md:self-center">
                   <Link
                     href="/painel/corretora/perfil"
-                    className="group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 py-2.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/30 transition-colors hover:from-amber-200 hover:to-amber-400"
+                    className="group relative inline-flex min-h-[48px] items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/30 transition-colors hover:from-amber-200 hover:to-amber-400 sm:min-h-0 sm:py-2.5"
                   >
                     <span aria-hidden className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
                     Completar perfil
@@ -520,7 +524,7 @@ export default function PanelClient() {
                     href={publicUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-2 text-xs font-semibold text-stone-200 backdrop-blur-sm transition-colors hover:bg-white/[0.08] hover:text-amber-200"
+                    className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-5 text-xs font-semibold text-stone-200 backdrop-blur-sm transition-colors hover:bg-white/[0.08] hover:text-amber-200 sm:min-h-0 sm:py-2"
                   >
                     Ver página pública
                     <span aria-hidden>↗</span>
@@ -713,7 +717,7 @@ function LeadsCapBanner({ planUsage }: { planUsage: PlanUsageLite }) {
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border ${tone.ring} p-5`}
+      className={`relative overflow-hidden rounded-2xl border ${tone.ring} p-4 sm:p-5`}
     >
       <span
         aria-hidden
@@ -737,7 +741,7 @@ function LeadsCapBanner({ planUsage }: { planUsage: PlanUsageLite }) {
         </div>
         <Link
           href="/painel/corretora/planos"
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400"
+          className="inline-flex min-h-[48px] w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400 sm:h-10 sm:min-h-0 sm:w-auto"
         >
           Ver planos →
         </Link>
@@ -818,7 +822,7 @@ function TrialEndingBanner({ planUsage }: { planUsage: PlanUsageLite }) {
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border ${tone.border} p-5`}
+      className={`relative overflow-hidden rounded-2xl border ${tone.border} p-4 sm:p-5`}
       role="status"
       aria-live="polite"
     >
@@ -842,7 +846,7 @@ function TrialEndingBanner({ planUsage }: { planUsage: PlanUsageLite }) {
         </div>
         <Link
           href="/painel/corretora/planos"
-          className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-[11px] font-bold uppercase tracking-[0.14em] shadow-lg transition-all ${tone.cta}`}
+          className={`inline-flex min-h-[48px] w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-[11px] font-bold uppercase tracking-[0.14em] shadow-lg transition-all sm:h-10 sm:min-h-0 sm:w-auto ${tone.cta}`}
         >
           {expired ? "Reativar agora" : "Ver planos"} →
         </Link>
@@ -1014,7 +1018,7 @@ function EducationalEmptyState({ publicUrl }: { publicUrl: string }) {
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-[#1f1914] to-stone-900 p-8 shadow-xl shadow-stone-900/30 ring-1 ring-amber-900/20 md:p-10">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-[#1f1914] to-stone-900 p-6 shadow-xl shadow-stone-900/30 ring-1 ring-amber-900/20 sm:p-8 md:p-10">
       <span
         aria-hidden
         className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/60 to-transparent"
@@ -1078,12 +1082,12 @@ function EducationalEmptyState({ publicUrl }: { publicUrl: string }) {
           ))}
         </ol>
 
-        <div className="mt-9 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+        <div className="mt-8 flex w-full flex-col gap-2 sm:mt-9 sm:flex-row sm:justify-center">
           <a
             href={publicUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-6 py-2.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/30 transition-colors hover:from-amber-200 hover:to-amber-400"
+            className="group relative inline-flex min-h-[48px] items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-6 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/30 transition-colors hover:from-amber-200 hover:to-amber-400 sm:min-h-0 sm:py-2.5"
           >
             <span aria-hidden className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
             Visitar página pública
@@ -1091,7 +1095,7 @@ function EducationalEmptyState({ publicUrl }: { publicUrl: string }) {
           </a>
           <Link
             href="/painel/corretora/perfil"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-stone-200 backdrop-blur-sm transition-colors hover:bg-white/[0.08] hover:text-amber-200"
+            className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-5 text-sm font-semibold text-stone-200 backdrop-blur-sm transition-colors hover:bg-white/[0.08] hover:text-amber-200 sm:min-h-0 sm:py-2.5"
           >
             Aprimorar perfil
           </Link>
