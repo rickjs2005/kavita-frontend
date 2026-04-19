@@ -122,7 +122,7 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
   if (!cotacao) {
     if (variant === "strip") {
       return (
-        <span className="hidden text-[10px] font-medium text-stone-500 md:inline">
+        <span className="text-[10px] font-medium text-stone-500">
           Mercado indisponível
         </span>
       );
@@ -163,31 +163,36 @@ export function MarketCotacaoPill({ cotacao, variant }: Props) {
   // ─── Variant: strip (inline no topbar de mercado) ────────────────
   // Priorizamos a saca 60kg. Cores adaptadas para dark parent: text
   // amber-300 nos nomes/valores, stone-600 nos separadores.
+  // Em mobile o rótulo da unidade fica oculto pra caber a cotação ao
+  // lado do kicker do topbar; em sm+ volta a aparecer.
   if (variant === "strip") {
     return (
       <Link
         href={detailHref}
-        className="group hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400 transition-colors hover:text-amber-300 md:inline-flex"
+        className="group inline-flex min-w-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400 transition-colors hover:text-amber-300 sm:gap-2"
         aria-label={`Ver cotação: ${cotacao.name ?? "café"}`}
       >
-        <span className="text-amber-300/80">
+        <span className="hidden text-amber-300/80 sm:inline">
           {cotacao.name ?? "Café arábica"}
+        </span>
+        <span className="text-amber-300/80 sm:hidden" aria-hidden>
+          ☕
         </span>
         {localUnit ? (
           <>
-            <span aria-hidden className="text-stone-600">
+            <span aria-hidden className="hidden text-stone-600 sm:inline">
               ·
             </span>
             <span className="font-bold tabular-nums text-stone-100">
               R$ {formatPrice(localUnit.value)}
             </span>
-            <span className="text-[9px] font-medium normal-case tracking-normal text-stone-500">
+            <span className="hidden text-[9px] font-medium normal-case tracking-normal text-stone-500 sm:inline">
               /{localUnit.label}
             </span>
           </>
         ) : hasPrice(cotacao.price) ? (
           <>
-            <span aria-hidden className="text-stone-600">
+            <span aria-hidden className="hidden text-stone-600 sm:inline">
               ·
             </span>
             <span className="font-bold tabular-nums text-stone-100">
