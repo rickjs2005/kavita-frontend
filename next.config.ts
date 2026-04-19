@@ -31,6 +31,36 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  // ---------------------------------------------------------------------------
+  // Reverse proxy interno — evita cross-origin cookies em dev e permite testar
+  // o painel em qualquer host (localhost, IP local, ngrok) sem mexer em .env.
+  //
+  // Como funciona:
+  //   - O browser chama sempre `/api/*` e `/uploads/*` relativos ao host que
+  //     ele está acessando (ex: `http://192.168.0.100:3000/api/...`).
+  //   - O Next recebe a request e reescreve internamente para
+  //     `http://localhost:5000/api/...`, batendo no Express.
+  //   - O cookie `adminToken` é setado no domínio que o browser acessou
+  //     (localhost ou IP), não no backend — portanto viaja em requests
+  //     subsequentes sem depender de `SameSite=None` / cross-origin.
+  //
+  // O target do proxy (`BACKEND_URL_INTERNAL`) é resolvido só no servidor
+  // Next — nunca vai pro bundle client. Fallback é `http://localhost:5000`
+  // porque o backend sempre roda na mesma máquina do Next em dev.
+  // ---------------------------------------------------------------------------
+  async rewrites() {
+    const backend = (
+      process.env.BACKEND_URL_INTERNAL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:5000"
+    ).replace(/\/+$/, "");
+
+    return [
+      { source: "/api/:path*", destination: `${backend}/api/:path*` },
+      { source: "/uploads/:path*", destination: `${backend}/uploads/:path*` },
+    ];
+  },
+
   images: {
     remotePatterns: [
       // Padrões fixos para desenvolvimento local

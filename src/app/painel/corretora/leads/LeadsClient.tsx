@@ -354,9 +354,10 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
   const handleExport = async () => {
     setDownloading(true);
     try {
+      // URL relativa — cai no rewrite do next.config.ts que faz proxy
+      // pro backend. Mantém o cookie no mesmo domínio (localhost/IP/túnel).
       const qs = statusFilter !== "all" ? `?status=${statusFilter}` : "";
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
-      const url = `${apiBase}/api/corretora/leads/export${qs}`;
+      const url = `/api/corretora/leads/export${qs}`;
       const res = await fetch(url, {
         credentials: "include",
         headers: { Accept: "text/csv" },

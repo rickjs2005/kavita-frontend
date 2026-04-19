@@ -120,10 +120,21 @@ export type ApiRequestOptions = RequestInit & {
   timeout?: number;
 };
 
-const DEFAULT_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:5000";
+// No browser, baseUrl fica vazio — todas as requests são relativas ao host
+// (`/api/...`), passando pelo rewrite do next.config.ts que faz proxy pro
+// backend. Isso evita problemas de cookie cross-origin (SameSite=Lax) e
+// permite acessar o painel de qualquer host na rede (localhost, IP, túnel)
+// sem mexer em .env.
+//
+// No server (RSC/SSR), mantém URL absoluta — o server não tem "host" pra
+// herdar e precisa bater direto no backend Express.
+const IS_SERVER = typeof window === "undefined";
+
+const DEFAULT_BASE_URL = IS_SERVER
+  ? process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    "http://localhost:5000"
+  : "";
 
 /** Timeout padrão para todas as requisições (15 segundos). Use options.timeout=0 para desabilitar. */
 const DEFAULT_TIMEOUT_MS = 15_000;

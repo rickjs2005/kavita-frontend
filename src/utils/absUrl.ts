@@ -1,6 +1,18 @@
-export const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-).replace(/\/+$/, "");
+// No browser, API_BASE vira "" — caminhos como "/uploads/..." ficam
+// relativos ao host acessado, passando pelo rewrite do next.config.ts
+// que faz proxy pro backend. Isso evita cross-origin: o cookie de auth
+// fica no mesmo domínio (localhost OU IP da rede) sem SameSite=None.
+//
+// No server (RSC, SSR), mantém a URL absoluta do backend — o server
+// não tem "host acessado" pra herdar, precisa apontar direto.
+const IS_SERVER = typeof window === "undefined";
+
+export const API_BASE = IS_SERVER
+  ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(
+      /\/+$/,
+      "",
+    )
+  : "";
 
 export function absUrl(raw?: string | null): string {
   if (!raw) return "/placeholder.png";
