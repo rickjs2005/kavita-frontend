@@ -65,8 +65,10 @@ export function CorretoraPanelNav() {
       aria-label="Navegação da Sala Reservada"
     >
       <div className="mx-auto w-full max-w-6xl px-4 md:px-8">
-        {/* LINHA 1: Brand + contexto da corretora + ações */}
-        <div className="flex h-16 items-center justify-between gap-4">
+        {/* LINHA 1: Brand + contexto da corretora + ações.
+            Mais compacta em mobile (h-14) pra economizar vertical space —
+            a sala reservada é operacional, não hero. */}
+        <div className="flex h-14 items-center justify-between gap-3 md:h-16 md:gap-4">
           {/* LEFT — brand lockup + corretora name */}
           <div className="flex min-w-0 items-center gap-5">
             <Link
@@ -148,13 +150,15 @@ export function CorretoraPanelNav() {
               </span>
             </div>
 
-            {/* Sair — ação secundária sutil */}
+            {/* Sair — ação secundária sutil. Em mobile fica com tap
+                target confortável (36px) e ligeiramente maior que o
+                sino ao lado pra não virar alvo difícil. */}
             <button
               type="button"
               onClick={() =>
                 logout({ redirectTo: "/painel/corretora/login" })
               }
-              className="ml-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-stone-300 transition-colors hover:bg-white/[0.08] hover:text-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950"
+              className="ml-0.5 inline-flex h-9 items-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-stone-300 transition-colors hover:bg-white/[0.08] hover:text-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950 md:ml-1 md:h-auto md:py-1.5"
               aria-label="Encerrar sessão"
             >
               Sair
@@ -162,10 +166,27 @@ export function CorretoraPanelNav() {
           </div>
         </div>
 
-        {/* LINHA 2 (mobile only): nav pills + corretora name compacto */}
-        <div className="flex items-center justify-between gap-3 border-t border-white/[0.04] py-2.5 md:hidden">
+        {/* LINHA 2 (mobile only): nav pills.
+            — chips com min-h-[40px] pra tap target confortável (antes
+              eram ~28px, muito difícil de acertar com o polegar)
+            — fade nas laterais indica ao usuário que há mais pra
+              scrollar horizontalmente
+            — active ganha destaque extra (ring duplo + text em amber-100)
+              pra ser óbvio em qual seção está
+            — nome da corretora sai daqui: já aparece no hero do dashboard
+              e ocupava espaço competindo com os 7 chips de nav */}
+        <div className="relative border-t border-white/[0.04] md:hidden">
+          {/* Fade lateral esquerdo + direito — sinaliza scroll horizontal */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-stone-950 to-transparent"
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-stone-950 to-transparent"
+          />
           <nav
-            className="flex items-center gap-1 overflow-x-auto"
+            className="flex items-center gap-1.5 overflow-x-auto px-4 py-2 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label="Seções do painel (mobile)"
           >
             {items.map((item) => {
@@ -176,10 +197,11 @@ export function CorretoraPanelNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex min-h-[40px] shrink-0 items-center rounded-full px-4 text-[13px] font-semibold transition-colors ${
                     active
-                      ? "bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30"
-                      : "bg-white/[0.04] text-stone-400 ring-1 ring-white/[0.06] hover:text-stone-200"
+                      ? "bg-amber-400/20 text-amber-100 ring-1 ring-amber-400/50 shadow-[0_0_0_1px_rgba(251,191,36,0.1)]"
+                      : "bg-white/[0.04] text-stone-300 ring-1 ring-white/[0.08] hover:text-stone-100 active:bg-white/[0.08]"
                   }`}
                 >
                   {item.label}
@@ -187,12 +209,6 @@ export function CorretoraPanelNav() {
               );
             })}
           </nav>
-
-          {user?.corretora_name && (
-            <span className="shrink-0 truncate max-w-[120px] text-[11px] font-medium text-stone-400">
-              {user.corretora_name}
-            </span>
-          )}
         </div>
       </div>
     </header>
