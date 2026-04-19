@@ -13,7 +13,7 @@
 
 import type { PublicCorretora } from "@/types/corretora";
 import { SITE_URL } from "./coffeeMetadata";
-import { absUrl } from "@/utils/absUrl";
+import { absoluteUrl } from "@/utils/absUrl";
 
 type JsonLdGraph = Record<string, unknown>[];
 
@@ -44,7 +44,8 @@ function digitsOnly(value: string | null | undefined): string | null {
 
 export function buildCorretoraJsonLd(corretora: PublicCorretora): JsonLdGraph {
   const pageUrl = `${SITE_URL}/mercado-do-cafe/corretoras/${corretora.slug}`;
-  const logoUrl = corretora.logo_path ? absUrl(corretora.logo_path) : null;
+  // JSON-LD precisa de URL absoluta (Google lê via crawler externo).
+  const logoUrl = corretora.logo_path ? absoluteUrl(corretora.logo_path) : null;
 
   const sameAs: string[] = [];
   const website = cleanWebsite(corretora.website);

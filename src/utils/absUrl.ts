@@ -1,18 +1,16 @@
-// No browser, API_BASE vira "" — caminhos como "/uploads/..." ficam
-// relativos ao host acessado, passando pelo rewrite do next.config.ts
-// que faz proxy pro backend. Isso evita cross-origin: o cookie de auth
-// fica no mesmo domínio (localhost OU IP da rede) sem SameSite=None.
+// API_BASE sempre vazio — caminhos como "/uploads/..." ficam relativos
+// ao host acessado em qualquer ambiente (SSR + browser). O next.config.ts
+// faz rewrite interno pro backend, então o browser requisita
+// http://<host-acessado>/uploads/... e o Next proxy pro Express.
 //
-// No server (RSC, SSR), mantém a URL absoluta do backend — o server
-// não tem "host acessado" pra herdar, precisa apontar direto.
-const IS_SERVER = typeof window === "undefined";
-
-export const API_BASE = IS_SERVER
-  ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(
-      /\/+$/,
-      "",
-    )
-  : "";
+// Antes era "" no browser e "http://localhost:5000" no server — isso
+// causava hydration mismatch em <img src={absUrl(...)}>: o HTML do SSR
+// trazia URL absoluta e o hydrate esperava relativa. Agora é consistente.
+//
+// Para SEO (JSON-LD, metadata OG) que precisa de URL absoluta real,
+// use `absoluteUrl()` abaixo — resolve via NEXT_PUBLIC_SITE_URL (ou o
+// NEXT_PUBLIC_API_URL como fallback em dev).
+export const API_BASE = "";
 
 export function absUrl(raw?: string | null): string {
   if (!raw) return "/placeholder.png";
@@ -48,4 +46,21 @@ export function absUrl(raw?: string | null): string {
 
   // veio só nome de arquivo
   return `${API_BASE}/uploads/${src}`;
+}
+
+// ─── URL absoluta para SEO (JSON-LD, OG image, canonical) ───────────────────
+// Casos onde o consumidor precisa de http(s)://...: structured data do
+// Google, web crawlers, og:image compartilhado externamente. Usa o
+// NEXT_PUBLIC_SITE_URL (origem pública do frontend) como base, com
+// fallback para localhost em dev.
+const SITE_ORIGIN = (
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  "http://localhost:3000"
+).replace(/\/+$/, "");
+
+export function absoluteUrl(raw?: string | null): string {
+  const rel = absUrl(raw);
+  if (/^https?:\/\//i.test(rel) || rel.startsWith("data:")) return rel;
+  return `${SITE_ORIGIN}${rel.startsWith("/") ? "" : "/"}${rel}`;
 }
