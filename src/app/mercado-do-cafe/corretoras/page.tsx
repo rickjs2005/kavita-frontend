@@ -32,6 +32,7 @@ import type { PublicCotacao } from "@/lib/newsPublicApi";
 import { CorretoraCard } from "@/components/mercado-do-cafe/CorretoraCard";
 import { CorretoraFilters } from "@/components/mercado-do-cafe/CorretoraFilters";
 import { CityChips } from "@/components/mercado-do-cafe/CityChips";
+import { PorQueConfiar } from "@/components/mercado-do-cafe/PorQueConfiar";
 import { MarketCotacaoPill } from "@/components/mercado-do-cafe/MarketCotacaoPill";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 import { normalizeCityName, CIDADES_ZONA_DA_MATA } from "@/lib/regioes";
@@ -250,6 +251,15 @@ export default async function CorretorasListPage({ searchParams }: Props) {
 
       {/* ═══ CONTEÚDO ═══════════════════════════════════════════════ */}
       <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 md:px-6">
+        {/* Por que confiar — responde à dúvida que todo produtor novo
+            traz: por que este diretório é diferente. Aparece só sem
+            filtros para não poluir a busca ativa. */}
+        {!hasFilters && (
+          <div className="mb-5">
+            <PorQueConfiar />
+          </div>
+        )}
+
         {/* Filtro regional por cidade — chips grandes acima dos filtros */}
         <div className="mb-5">
           <CityChips

@@ -168,7 +168,27 @@ export function CorretoraCard({ corretora }: Props) {
     corretora.cidades_atendidas,
     3,
   );
-  const hasStats = hasReviews || anosAtuacao != null || horario != null;
+  // Chip SLA — piso de amostra menor no card (n>=10) que na ficha
+  // individual (n>=30). No card o usuário vê dezenas de corretoras
+  // rapidamente, então o sinal "responde rápido" é muito valioso
+  // mesmo com confiança estatística mais relaxada. A ficha individual
+  // continua com piso forte pra não induzir decisão com ruído.
+  const slaHoras =
+    typeof corretora.sla_avg_seconds === "number" &&
+    corretora.sla_avg_seconds > 0 &&
+    typeof corretora.sla_sample_count === "number" &&
+    corretora.sla_sample_count >= 10
+      ? corretora.sla_avg_seconds / 3600
+      : null;
+  const slaLabel =
+    slaHoras === null
+      ? null
+      : slaHoras < 1
+        ? "Responde em menos de 1h"
+        : slaHoras < 24
+          ? `Responde em média em ${Math.round(slaHoras)}h`
+          : `Responde em ${Math.max(1, Math.round(slaHoras / 24))}d em média`;
+  const hasStats = hasReviews || anosAtuacao != null || horario != null || slaLabel != null;
 
   // Fase 5 — chips de especialidade. Máximo 3; surplus resumido como "+N".
   const tiposCafeChips =
@@ -367,6 +387,30 @@ export function CorretoraCard({ corretora }: Props) {
                     ({reviewsCount}{" "}
                     {reviewsCount === 1 ? "avaliação" : "avaliações"})
                   </span>
+                </dd>
+              </div>
+            )}
+
+            {slaLabel && (
+              <div className="inline-flex items-center gap-1.5">
+                <dt className="sr-only">Tempo médio de resposta</dt>
+                <dd
+                  className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-200 ring-1 ring-emerald-400/25"
+                  title="Média das últimas respostas registradas"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3 w-3"
+                    aria-hidden
+                  >
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                  </svg>
+                  {slaLabel}
                 </dd>
               </div>
             )}

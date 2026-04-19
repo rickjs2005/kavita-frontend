@@ -367,14 +367,26 @@ function ExportCsvButton({ statusFilter }: { statusFilter: StatusFilter }) {
           return;
         }
         if (res.status === 403) {
-          let msg = "Exportação não permitida no seu plano atual.";
-          try {
-            const body = await res.json();
-            if (body?.message) msg = body.message;
-          } catch {
-            /* fallback */
-          }
-          toast.error(msg);
+          // Feature não liberada no plano atual. Oferece caminho direto
+          // pra resolver em vez de deixar a corretora no escuro.
+          toast.error(
+            (t) => (
+              <span className="text-sm">
+                Exportar CSV não está liberado no seu plano atual.{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.dismiss(t.id);
+                    window.location.href = "/painel/corretora/planos";
+                  }}
+                  className="font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-800"
+                >
+                  Ver planos
+                </button>
+              </span>
+            ),
+            { duration: 7000 },
+          );
           return;
         }
         throw new Error(`HTTP ${res.status}`);

@@ -124,6 +124,31 @@
   }
 }
 
+/* Sino da corretora — balanço leve quando chega notificação nova.
+   Usado no NotificationsBell do painel. Curto e discreto: nem muito
+   chamativo pra não cansar, nem sutil demais pra passar despercebido. */
+@keyframes bell-swing {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(14deg);
+  }
+  30% {
+    transform: rotate(-12deg);
+  }
+  45% {
+    transform: rotate(8deg);
+  }
+  60% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
 /* Sala Reservada — rise-in suave (fade + translate up 6px) usado em
    KPI cards e outros blocos do painel da corretora. Respeitado por
    prefers-reduced-motion via o reset global abaixo. */

@@ -122,6 +122,251 @@ const POSSUI_AMOSTRA_LABEL: Record<string, string> = {
   vou_colher: "Vai colher em breve",
 };
 
+// ─── Chips operacionais ─────────────────────────────────────────
+// Derivados do estado do lead para dar leitura em 1s: qual é a
+// situação deste lead agora? Ordem importa — primeiro a render
+// vence no caso de sobreposição (ex.: "Perdido" tira tudo).
+
+type OpChip = {
+  key: string;
+  label: string;
+  tone: "amber" | "emerald" | "rose" | "sky" | "slate" | "indigo";
+  title?: string;
+};
+
+const OP_CHIP_TONE: Record<OpChip["tone"], string> = {
+  amber:
+    "bg-amber-400/15 text-amber-100 ring-amber-400/35",
+  emerald:
+    "bg-emerald-500/15 text-emerald-100 ring-emerald-400/35",
+  rose:
+    "bg-rose-500/15 text-rose-100 ring-rose-400/35",
+  sky: "bg-sky-500/15 text-sky-100 ring-sky-400/35",
+  slate: "bg-white/[0.05] text-stone-200 ring-white/15",
+  indigo:
+    "bg-indigo-500/15 text-indigo-100 ring-indigo-400/35",
+};
+
+function deriveOperationalChips(
+  lead: LeadDetailResponse["lead"],
+): OpChip[] {
+  const chips: OpChip[] = [];
+  const now = Date.now();
+  const createdMs = lead.created_at
+    ? new Date(lead.created_at).getTime()
+    : null;
+  const hoursSinceCreation =
+    createdMs !== null ? (now - createdMs) / 3_600_000 : null;
+
+  // Terminais primeiro — matam todas as preocupações operacionais.
+  if (lead.status === "closed") {
+    chips.push({
+      key: "closed",
+      label: "Fechado",
+      tone: "emerald",
+      title: "Lote fechado",
+    });
+    if (lead.preco_fechado != null) {
+      chips.push({
+        key: "venda",
+        label: `Venda ${formatBrl(lead.preco_fechado)}/sc`,
+        tone: "emerald",
+      });
+    }
+    return chips;
+  }
+  if (lead.status === "lost") {
+    chips.push({
+      key: "lost",
+      label: "Perdido",
+      tone: "rose",
+      title: "Lead descartado",
+    });
+    return chips;
+  }
+
+  // Sinal forte: proposta enviada, aguardando produtor decidir.
+  if (lead.preco_proposto != null) {
+    chips.push({
+      key: "proposta_enviada",
+      label: `Proposta ${formatBrl(lead.preco_proposto)}/sc`,
+      tone: "indigo",
+      title: "Proposta enviada — aguardando produtor",
+    });
+  }
+
+  // Novo vs em negociação — ajuda a priorizar a mesa.
+  if (lead.status === "new") {
+    chips.push({ key: "new", label: "Novo", tone: "amber" });
+  } else if (lead.status === "contacted") {
+    chips.push({ key: "contacted", label: "Em negociação", tone: "sky" });
+  }
+
+  // Urgência por volume/score.
+  if ((lead.priority_score ?? 0) >= 60) {
+    chips.push({
+      key: "urgente",
+      label: "Urgente",
+      tone: "rose",
+      title: "Score de prioridade alto",
+    });
+  }
+
+  // Sem resposta: criado e status continua "new" após 24h.
+  if (
+    lead.status === "new" &&
+    hoursSinceCreation !== null &&
+    hoursSinceCreation >= 24
+  ) {
+    chips.push({
+      key: "sem_resposta",
+      label: "Sem resposta há +24h",
+      tone: "rose",
+      title: "Ninguém tocou neste lead ainda",
+    });
+  }
+
+  // Próxima ação vencida. Os terminais (closed/lost) já retornaram
+  // acima, então aqui só tratamos new/contacted.
+  if (
+    lead.next_action_at &&
+    new Date(lead.next_action_at).getTime() < now
+  ) {
+    chips.push({
+      key: "next_vencida",
+      label: "Próxima ação vencida",
+      tone: "rose",
+      title: "Você marcou uma ação para esta data e ela já passou",
+    });
+  }
+
+  // Amostra — quando prometida/recebida/laudada dá uma pista
+  // operacional rápida à corretora.
+  if (
+    lead.amostra_status &&
+    lead.amostra_status !== "nao_entregue"
+  ) {
+    chips.push({
+      key: `amostra_${lead.amostra_status}`,
+      label: `Amostra ${(AMOSTRA_LABEL[lead.amostra_status] ?? lead.amostra_status).toLowerCase()}`,
+      tone: "slate",
+    });
+  }
+
+  return chips;
+}
+
+function OperationalChipsRow({
+  chips,
+}: {
+  chips: OpChip[];
+}) {
+  if (chips.length === 0) return null;
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1.5"
+      role="list"
+      aria-label="Estado operacional do lead"
+    >
+      {chips.map((c) => (
+        <span
+          key={c.key}
+          role="listitem"
+          title={c.title}
+          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${OP_CHIP_TONE[c.tone]}`}
+        >
+          {c.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ─── Próxima ação em destaque ──────────────────────────────────
+// Banner fixo no topo do detalhe: resposta direta à pergunta
+// "o que fazer agora?". Mostra a próxima ação marcada, vencida
+// ou não; senão, orienta a marcar uma.
+
+function NextActionHighlight({
+  lead,
+  onJumpTab,
+}: {
+  lead: LeadDetailResponse["lead"];
+  onJumpTab: () => void;
+}) {
+  const terminal = lead.status === "closed" || lead.status === "lost";
+  if (terminal) return null;
+
+  const hasAction = Boolean(lead.next_action_at || lead.next_action_text);
+  const when = lead.next_action_at
+    ? new Date(lead.next_action_at)
+    : null;
+  const overdue = when ? when.getTime() < Date.now() : false;
+
+  const tone = overdue
+    ? {
+        ring: "ring-rose-400/40",
+        bg: "bg-rose-500/[0.08]",
+        kicker: "text-rose-200",
+        cta: "bg-rose-500/20 text-rose-100 ring-rose-400/40 hover:bg-rose-500/30",
+        label: "Próxima ação vencida",
+      }
+    : hasAction
+      ? {
+          ring: "ring-amber-400/35",
+          bg: "bg-amber-400/[0.06]",
+          kicker: "text-amber-200",
+          cta: "bg-amber-500/20 text-amber-100 ring-amber-400/40 hover:bg-amber-500/30",
+          label: "O que fazer em seguida",
+        }
+      : {
+          ring: "ring-white/10",
+          bg: "bg-white/[0.03]",
+          kicker: "text-stone-300",
+          cta: "bg-white/[0.05] text-stone-200 ring-white/15 hover:bg-white/[0.08]",
+          label: "Próxima ação não marcada",
+        };
+
+  return (
+    <section
+      className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 ring-1 ${tone.ring} ${tone.bg}`}
+      aria-label="Próxima ação"
+    >
+      <div className="min-w-0 flex-1">
+        <p
+          className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${tone.kicker}`}
+        >
+          {tone.label}
+        </p>
+        {hasAction ? (
+          <p className="mt-1 text-[14px] text-stone-100">
+            <span className="font-semibold">
+              {lead.next_action_text?.trim() || "Ação agendada"}
+            </span>
+            {when && (
+              <span className="ml-2 text-[12px] text-stone-400">
+                · {formatDate(when.toISOString())}
+              </span>
+            )}
+          </p>
+        ) : (
+          <p className="mt-1 text-[13px] text-stone-400">
+            Defina o próximo passo para este lead não esfriar (ex: “ligar às
+            17h”, “buscar amostra na sexta”).
+          </p>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onJumpTab}
+        className={`inline-flex h-9 items-center rounded-lg px-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1 transition-colors ${tone.cta}`}
+      >
+        {hasAction ? "Editar" : "Definir ação"}
+      </button>
+    </section>
+  );
+}
+
 const EVENT_TONE: Record<
   string,
   { ring: string; dot: string; label: string }
@@ -258,6 +503,134 @@ export default function LeadDetailClient({ leadId }: { leadId: number }) {
 
 // ─── Body (separado pra manter render clean mesmo com hooks extras) ──
 
+type LeadTab =
+  | "contato"
+  | "cafe"
+  | "proposta"
+  | "acao"
+  | "timeline";
+
+const TABS: Array<{
+  id: LeadTab;
+  label: string;
+  short: string;
+  icon: React.ReactNode;
+}> = [
+  {
+    id: "contato",
+    label: "Contato",
+    short: "Contato",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+      </svg>
+    ),
+  },
+  {
+    id: "cafe",
+    label: "Café / Análise",
+    short: "Café",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+        <path d="M17 8h1a4 4 0 010 8h-1" />
+        <path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z" />
+        <path d="M7 1v3M11 1v3M15 1v3" />
+      </svg>
+    ),
+  },
+  {
+    id: "proposta",
+    label: "Proposta",
+    short: "Proposta",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M15 9a3 3 0 00-3-2c-1.7 0-3 1-3 2.3 0 1.3 1 2 3 2.2 2 .3 3 1 3 2.3 0 1.2-1.3 2.2-3 2.2a3 3 0 01-3-2" />
+        <path d="M12 6v2M12 16v2" />
+      </svg>
+    ),
+  },
+  {
+    id: "acao",
+    label: "Próxima ação",
+    short: "Ação",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    ),
+  },
+  {
+    id: "timeline",
+    label: "Timeline",
+    short: "Timeline",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+        <path d="M3 6h18M3 12h18M3 18h18" />
+      </svg>
+    ),
+  },
+];
+
+function LeadTabsNav({
+  active,
+  onChange,
+  badges,
+}: {
+  active: LeadTab;
+  onChange: (t: LeadTab) => void;
+  badges: Partial<Record<LeadTab, string>>;
+}) {
+  return (
+    <nav
+      aria-label="Seções do lead"
+      className="relative -mx-1 overflow-x-auto"
+    >
+      <ul className="flex min-w-full items-center gap-1 px-1" role="tablist">
+        {TABS.map((t) => {
+          const isActive = active === t.id;
+          const badge = badges[t.id];
+          return (
+            <li key={t.id} className="shrink-0">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`tab-panel-${t.id}`}
+                id={`tab-btn-${t.id}`}
+                onClick={() => onChange(t.id)}
+                className={`inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-[12px] font-semibold transition-colors ${
+                  isActive
+                    ? "bg-amber-400/15 text-amber-100 ring-1 ring-amber-400/35"
+                    : "text-stone-400 hover:bg-white/[0.04] hover:text-stone-100"
+                }`}
+              >
+                <span aria-hidden>{t.icon}</span>
+                <span>
+                  <span className="hidden sm:inline">{t.label}</span>
+                  <span className="sm:hidden">{t.short}</span>
+                </span>
+                {badge && (
+                  <span
+                    className={`ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] ${
+                      isActive
+                        ? "bg-amber-400/25 text-amber-100"
+                        : "bg-white/[0.06] text-stone-300"
+                    }`}
+                  >
+                    {badge}
+                  </span>
+                )}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
 function LeadDetailBody({
   detail,
   onChanged,
@@ -266,6 +639,7 @@ function LeadDetailBody({
   onChanged: () => void;
 }) {
   const { lead, notes, events } = detail;
+  const [tab, setTab] = useState<LeadTab>("contato");
 
   // WhatsApp prefill contextual — economia de tempo pra corretora
   const waHref = useMemo(() => {
@@ -282,6 +656,35 @@ function LeadDetailBody({
     return `https://wa.me/${prefix}?text=${encodeURIComponent(greeting)}`;
   }, [lead]);
 
+  const opChips = useMemo(() => deriveOperationalChips(lead), [lead]);
+
+  // Badges por aba pra dar sinal rápido do que mudou/precisa atenção.
+  const badges: Partial<Record<LeadTab, string>> = useMemo(() => {
+    const b: Partial<Record<LeadTab, string>> = {};
+    if (notes.length > 0) b.contato = String(notes.length);
+    // Badge de análise: sinaliza se tem dado preenchido.
+    const hasAnalysis =
+      lead.bebida_classificacao ||
+      lead.pontuacao_sca != null ||
+      lead.umidade_pct != null ||
+      lead.catacao_defeitos ||
+      lead.mercado_indicado;
+    if (hasAnalysis) b.cafe = "✓";
+    if (lead.preco_proposto != null || lead.preco_fechado != null) {
+      b.proposta = "✓";
+    }
+    if (lead.next_action_at || lead.next_action_text) {
+      const overdue =
+        lead.next_action_at &&
+        new Date(lead.next_action_at).getTime() < Date.now() &&
+        lead.status !== "closed" &&
+        lead.status !== "lost";
+      b.acao = overdue ? "!" : "✓";
+    }
+    if (events.length > 0) b.timeline = String(events.length);
+    return b;
+  }, [lead, notes.length, events.length]);
+
   return (
     <div className="space-y-4">
       <Link
@@ -294,18 +697,47 @@ function LeadDetailBody({
       {/* ─── Cabeçalho ───────────────────────────────────────── */}
       <LeadHeader lead={lead} waHref={waHref} onChanged={onChanged} />
 
-      {/* ─── Grid 2col: esquerda dados+proposta, direita timeline ─── */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          <LeadDataBlock lead={lead} />
-          <AnalysisBlock lead={lead} onChanged={onChanged} />
+      {/* ─── Chips operacionais — estado real em 1s ─── */}
+      <OperationalChipsRow chips={opChips} />
+
+      {/* ─── Próxima ação em destaque no topo ──────────── */}
+      <NextActionHighlight
+        lead={lead}
+        onJumpTab={() => setTab("acao")}
+      />
+
+      {/* ─── Abas ─────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-white/[0.06] bg-stone-900/40 p-1.5">
+        <LeadTabsNav active={tab} onChange={setTab} badges={badges} />
+      </div>
+
+      {/* ─── Painel da aba ativa ───────────────────────── */}
+      <div
+        role="tabpanel"
+        id={`tab-panel-${tab}`}
+        aria-labelledby={`tab-btn-${tab}`}
+        className="space-y-4"
+      >
+        {tab === "contato" && (
+          <>
+            <LeadDataBlock lead={lead} />
+            <NotesBlock
+              leadId={lead.id}
+              notes={notes}
+              onChanged={onChanged}
+            />
+          </>
+        )}
+        {tab === "cafe" && (
+          <AnalysisBlock lead={lead} onChanged={onChanged} alwaysOpen />
+        )}
+        {tab === "proposta" && (
           <ProposalBlock lead={lead} onChanged={onChanged} />
+        )}
+        {tab === "acao" && (
           <NextActionBlock lead={lead} onChanged={onChanged} />
-          <NotesBlock leadId={lead.id} notes={notes} onChanged={onChanged} />
-        </div>
-        <div className="lg:col-span-1">
-          <TimelineBlock events={events} />
-        </div>
+        )}
+        {tab === "timeline" && <TimelineBlock events={events} />}
       </div>
     </div>
   );
@@ -569,14 +1001,17 @@ const APTIDAO_OPTS = [
 function AnalysisBlock({
   lead,
   onChanged,
+  alwaysOpen = false,
 }: {
   lead: LeadDetailResponse["lead"];
   onChanged: () => void;
+  alwaysOpen?: boolean;
 }) {
   const [expanded, setExpanded] = useState(
-    Boolean(
-      lead.amostra_status && lead.amostra_status !== "nao_entregue",
-    ) ||
+    alwaysOpen ||
+      Boolean(
+        lead.amostra_status && lead.amostra_status !== "nao_entregue",
+      ) ||
       Boolean(lead.bebida_classificacao) ||
       Boolean(lead.pontuacao_sca),
   );
@@ -636,12 +1071,7 @@ function AnalysisBlock({
 
   return (
     <section className="rounded-2xl border border-white/[0.08] bg-stone-900/60 p-5">
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-        className="flex w-full items-start justify-between gap-3 text-left"
-      >
+      {alwaysOpen ? (
         <div>
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300/90">
             Análise do café
@@ -650,15 +1080,31 @@ function AnalysisBlock({
             Bebida, peneira, umidade, defeitos e observações da amostra.
           </p>
         </div>
-        <span
-          aria-hidden
-          className={`mt-1 text-amber-300/80 transition-transform ${expanded ? "rotate-180" : ""}`}
+      ) : (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="flex w-full items-start justify-between gap-3 text-left"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </span>
-      </button>
+          <div>
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300/90">
+              Análise do café
+            </h2>
+            <p className="mt-1 text-[11px] text-stone-400">
+              Bebida, peneira, umidade, defeitos e observações da amostra.
+            </p>
+          </div>
+          <span
+            aria-hidden
+            className={`mt-1 text-amber-300/80 transition-transform ${expanded ? "rotate-180" : ""}`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </span>
+        </button>
+      )}
 
       {expanded && (
         <div className="mt-4 space-y-4">

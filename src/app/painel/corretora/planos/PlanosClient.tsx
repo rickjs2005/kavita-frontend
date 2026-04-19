@@ -48,12 +48,79 @@ function formatPrice(cents: number): string {
   }).format(cents / 100);
 }
 
-const FEATURE_LABELS: Record<string, string> = {
-  max_users: "Usuários na equipe",
-  leads_export: "Exportar leads (CSV)",
-  regional_highlight: "Destaque regional",
-  advanced_reports: "Relatórios avançados",
+// Labels + descrições curtas de cada feature. Descrições viram hint
+// no hover e aparecem no callout de "feature bloqueada".
+type FeatureMeta = {
+  label: string;
+  hint: string;
+  // Formatador específico para capabilities numéricas. Se ausente, a
+  // chave é tratada como boolean (✓/✕) e o número é mostrado cru.
+  format?: (value: number) => string;
 };
+
+const FEATURE_META: Record<string, FeatureMeta> = {
+  max_leads_per_month: {
+    label: "Leads/mês",
+    hint: "Quantos leads novos você pode receber neste plano por mês.",
+    format: (n) => (n >= 9999 ? "Ilimitados" : `${n} por mês`),
+  },
+  max_users: {
+    label: "Usuários na equipe",
+    hint: "Quantas pessoas podem entrar no painel (owner + manager + sales + viewer).",
+    format: (n) => (n === 1 ? "1 usuário" : `${n} usuários`),
+  },
+  leads_export: {
+    label: "Exportar leads (CSV)",
+    hint: "Baixar planilha com os leads recebidos no período.",
+  },
+  regional_highlight: {
+    label: "Destaque regional",
+    hint: "Aparecer em posição destacada na vitrine pública da Zona da Mata.",
+  },
+  advanced_reports: {
+    label: "Relatórios avançados",
+    hint: "SLA, conversão, origem dos leads e desempenho por cidade.",
+  },
+  quick_replies: {
+    label: "Respostas rápidas personalizadas",
+    hint: "Criar e editar seus próprios templates de WhatsApp.",
+  },
+  priority_support: {
+    label: "Suporte prioritário",
+    hint: "Atendimento direto pela curadoria Kavita nos dias úteis.",
+  },
+};
+
+// Ordem de exibição em cada card (estável, não alfabética). Chaves
+// não mapeadas aqui aparecem no fim na ordem do backend.
+const FEATURE_ORDER: string[] = [
+  "max_leads_per_month",
+  "max_users",
+  "leads_export",
+  "quick_replies",
+  "regional_highlight",
+  "advanced_reports",
+  "priority_support",
+];
+
+function formatCapability(key: string, value: unknown): {
+  on: boolean;
+  display: string | null;
+} {
+  const meta = FEATURE_META[key];
+  if (typeof value === "number") {
+    const on = value > 0;
+    if (!on) return { on, display: null };
+    return {
+      on,
+      display: meta?.format ? meta.format(value) : String(value),
+    };
+  }
+  if (typeof value === "boolean") {
+    return { on: value, display: null };
+  }
+  return { on: false, display: null };
+}
 
 export default function PlanosClient() {
   const [current, setCurrent] = useState<PlanContext | null>(null);
@@ -253,42 +320,61 @@ export default function PlanosClient() {
                 </p>
               )}
 
-              {/* Features */}
+              {/* Features — ordem estável (FEATURE_ORDER) + fallback
+                  pro resto; quando o plano tem cap numérico, mostra o
+                  limite legível ("500 por mês", "3 usuários"). Valores
+                  off ou zero aparecem atenuados com "—". */}
               <ul className="mt-4 flex-1 space-y-2">
-                {Object.entries(plan.capabilities ?? {}).map(([key, value]) => {
-                  const label = FEATURE_LABELS[key];
-                  if (!label) return null;
-                  const isOn =
-                    typeof value === "boolean"
-                      ? value
-                      : typeof value === "number" && value > 0;
-                  return (
-                    <li
-                      key={key}
-                      className="flex items-center gap-2 text-[12px]"
-                    >
-                      <span
-                        className={`text-xs ${isOn ? "text-amber-300" : "text-stone-600"}`}
-                      >
-                        {isOn ? "✓" : "✕"}
-                      </span>
-                      <span
-                        className={
-                          isOn
-                            ? "font-medium text-stone-200"
-                            : "text-stone-500"
-                        }
-                      >
-                        {label}
-                        {typeof value === "number" && value > 0 && (
-                          <span className="ml-1 text-stone-500">
-                            · {value}
-                          </span>
-                        )}
-                      </span>
-                    </li>
+                {(() => {
+                  const caps = plan.capabilities ?? {};
+                  const known = FEATURE_ORDER.filter((k) =>
+                    Object.prototype.hasOwnProperty.call(caps, k),
                   );
-                })}
+                  const extras = Object.keys(caps).filter(
+                    (k) => !FEATURE_ORDER.includes(k) && FEATURE_META[k],
+                  );
+                  const orderedKeys = [...known, ...extras];
+                  return orderedKeys.map((key) => {
+                    const meta = FEATURE_META[key];
+                    if (!meta) return null;
+                    const { on, display } = formatCapability(
+                      key,
+                      caps[key],
+                    );
+                    return (
+                      <li
+                        key={key}
+                        className="flex items-start gap-2 text-[12px]"
+                        title={meta.hint}
+                      >
+                        <span
+                          aria-hidden
+                          className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                            on
+                              ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30"
+                              : "bg-white/[0.04] text-stone-600 ring-1 ring-white/[0.06]"
+                          }`}
+                        >
+                          {on ? "✓" : "—"}
+                        </span>
+                        <span
+                          className={`min-w-0 flex-1 ${
+                            on
+                              ? "text-stone-200"
+                              : "text-stone-500 line-through decoration-stone-700"
+                          }`}
+                        >
+                          <span className="font-medium">{meta.label}</span>
+                          {display && (
+                            <span className="ml-1 font-semibold text-amber-200/90">
+                              · {display}
+                            </span>
+                          )}
+                        </span>
+                      </li>
+                    );
+                  });
+                })()}
               </ul>
 
               {/* CTA */}

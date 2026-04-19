@@ -27,12 +27,14 @@ export default function FirstAccessClient() {
   const [confirmacao, setConfirmacao] = useState("");
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  const [errExpired, setErrExpired] = useState(false);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
     if (!token) {
+      setErrExpired(true);
       setErrMsg(
-        "Link de primeiro acesso inválido. Peça ao administrador para reenviar o convite.",
+        "Este link de boas-vindas não é válido. Você pode pedir um novo abaixo.",
       );
     }
   }, [token]);
@@ -52,6 +54,7 @@ export default function FirstAccessClient() {
 
     setLoading(true);
     setErrMsg(null);
+    setErrExpired(false);
     try {
       await apiClient.post("/api/corretora/reset-password", { token, senha });
       setDone(true);
@@ -59,9 +62,23 @@ export default function FirstAccessClient() {
         router.replace("/painel/corretora/login");
       }, 2200);
     } catch (err) {
-      setErrMsg(
-        formatApiError(err, "Não foi possível definir a senha.").message,
-      );
+      const apiErr = formatApiError(err, "Não foi possível definir a senha.");
+      // Backend responde "Token inválido ou expirado" com código específico
+      // para reset/invite. Trocamos pela copy humana de boas-vindas quando
+      // detectamos esse caso, pra não assustar a corretora.
+      const looksExpired =
+        /expirad/i.test(apiErr.message) ||
+        /inválid/i.test(apiErr.message) ||
+        apiErr.code === "INVALID_TOKEN" ||
+        apiErr.code === "TOKEN_EXPIRED";
+      if (looksExpired) {
+        setErrExpired(true);
+        setErrMsg(
+          "Seu link de boas-vindas venceu. Links de primeiro acesso valem por 7 dias — peça um novo e entramos em contato em seguida.",
+        );
+      } else {
+        setErrMsg(apiErr.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -100,6 +117,51 @@ export default function FirstAccessClient() {
             </h2>
             <p className="text-sm text-stone-600">
               Tudo pronto. Redirecionando para o login...
+            </p>
+          </div>
+        ) : errExpired ? (
+          <div role="status" className="space-y-4 text-center">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+                aria-hidden
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-stone-900">
+                Seu link de boas-vindas venceu
+              </h2>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-stone-600">
+                Links de primeiro acesso valem por 7 dias. É só pedir um novo
+                que reenviamos para o e-mail cadastrado e você entra em
+                seguida.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 pt-1">
+              <Link
+                href="/painel/corretora/esqueci-senha"
+                className="inline-flex items-center justify-center rounded-xl bg-stone-900 px-4 py-2.5 text-sm font-semibold text-stone-50 shadow-lg shadow-stone-900/20 transition-all hover:bg-stone-800"
+              >
+                Pedir novo link de acesso
+              </Link>
+              <Link
+                href="/painel/corretora/login"
+                className="text-xs font-semibold text-amber-700 hover:text-amber-800"
+              >
+                Já tenho senha — ir para o login
+              </Link>
+            </div>
+            <p className="pt-2 text-[11px] text-stone-500">
+              Se precisar de ajuda, responda o e-mail que recebeu da Kavita.
             </p>
           </div>
         ) : (

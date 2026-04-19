@@ -71,6 +71,11 @@ type PlanUsageLite = {
   usage?: {
     leads_this_month?: { used: number; limit: number | null };
   };
+  // Bloco 3 — status do trial para banner proativo (7/3/1 dias)
+  subscription?: {
+    status?: string | null;
+    trial_ends_at?: string | null;
+  } | null;
 };
 
 function formatBrl(v: number | null | undefined) {
@@ -235,6 +240,12 @@ export default function PanelClient() {
 
   return (
     <div className="space-y-7 md:space-y-9">
+      {/* Bloco 3 — banner proativo de fim de trial. Aparece nos últimos
+          7 dias do período de teste e muda tom conforme a proximidade
+          (7d informativo, 3d atenção, 1d urgente). Quando já expirou,
+          muda para estado "expirado" com CTA de reativação. */}
+      {planUsage && <TrialEndingBanner planUsage={planUsage} />}
+
       {/* ETAPA 1.4 — banner de cap de leads do plano. Aparece quando
           o plano tem limite e o uso está >= 80% do cap. CTA upgrade
           direciona pra /planos. Se user != owner/manager, o banner
@@ -729,6 +740,111 @@ function LeadsCapBanner({ planUsage }: { planUsage: PlanUsageLite }) {
           className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-950 shadow-lg shadow-amber-500/30 transition-all hover:from-amber-200 hover:to-amber-400"
         >
           Ver planos →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ===================================================================
+// Bloco 3 — banner proativo de fim de trial
+// ===================================================================
+// Mostra aviso progressivo conforme a proximidade do vencimento do
+// trial. Ignora tudo que não estiver em status "trialing" (já ativo,
+// expirado não-trial, etc. têm outros banners). Depois de expirado,
+// o banner fica como "trial expirado" até admin reconciliar.
+
+function TrialEndingBanner({ planUsage }: { planUsage: PlanUsageLite }) {
+  const sub = planUsage.subscription ?? null;
+  if (!sub || sub.status !== "trialing") return null;
+  if (!sub.trial_ends_at) return null;
+
+  const endsMs = new Date(sub.trial_ends_at).getTime();
+  if (!Number.isFinite(endsMs)) return null;
+
+  const diffMs = endsMs - Date.now();
+  const diffDays = Math.ceil(diffMs / 86_400_000);
+
+  // Só renderiza a partir de 7d — antes disso é ruído.
+  if (diffDays > 7) return null;
+
+  const expired = diffMs <= 0;
+  const urgent = !expired && diffDays <= 1;
+  const warn = !expired && !urgent && diffDays <= 3;
+
+  const tone = expired
+    ? {
+        border: "border-rose-400/40 bg-rose-500/[0.08]",
+        kicker: "text-rose-300",
+        text: "text-rose-50",
+        cta:
+          "bg-gradient-to-br from-rose-300 to-rose-500 text-stone-950 shadow-rose-500/30",
+        label: "Seu teste gratuito expirou",
+      }
+    : urgent
+      ? {
+          border: "border-rose-400/40 bg-rose-500/[0.06]",
+          kicker: "text-rose-300",
+          text: "text-rose-50",
+          cta:
+            "bg-gradient-to-br from-amber-300 to-amber-500 text-stone-950 shadow-amber-500/30",
+          label: "Último dia do seu teste gratuito",
+        }
+      : warn
+        ? {
+            border: "border-amber-400/45 bg-amber-500/[0.06]",
+            kicker: "text-amber-300",
+            text: "text-amber-50",
+            cta:
+              "bg-gradient-to-br from-amber-300 to-amber-500 text-stone-950 shadow-amber-500/30",
+            label: `Seu teste gratuito acaba em ${diffDays} dias`,
+          }
+        : {
+            border: "border-white/10 bg-white/[0.03]",
+            kicker: "text-amber-300/90",
+            text: "text-stone-100",
+            cta:
+              "bg-white/[0.06] text-amber-100 ring-1 ring-amber-400/30 hover:bg-white/[0.1]",
+            label: `Seu teste gratuito acaba em ${diffDays} dias`,
+          };
+
+  const body = expired
+    ? "Seus leads continuam chegando, mas o painel entra em modo limitado. Assine um plano para destravar tudo e continuar respondendo produtores."
+    : urgent
+      ? "Assine hoje para manter o acesso completo ao painel — leads, timeline, propostas e equipe. Sem interrupção."
+      : warn
+        ? "Assine antes do fim do teste para manter o ritmo de trabalho. Dá pra escolher o plano a qualquer momento, sem perder histórico."
+        : "Experimente os recursos pagos com calma. Quando decidir, o painel segue exatamente com os leads e histórico que você já tem hoje.";
+
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl border ${tone.border} p-5`}
+      role="status"
+      aria-live="polite"
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
+      />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p
+            className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${tone.kicker}`}
+          >
+            {expired ? "Teste expirado" : "Teste gratuito"}
+          </p>
+          <p className={`mt-1 text-[14px] font-semibold ${tone.text}`}>
+            {tone.label}
+          </p>
+          <p className="mt-1 text-[12px] leading-relaxed text-stone-300">
+            {body}
+          </p>
+        </div>
+        <Link
+          href="/painel/corretora/planos"
+          className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-[11px] font-bold uppercase tracking-[0.14em] shadow-lg transition-all ${tone.cta}`}
+        >
+          {expired ? "Reativar agora" : "Ver planos"} →
         </Link>
       </div>
     </div>
