@@ -82,6 +82,35 @@ export type ContratoPublico = {
   };
 };
 
+// Resposta do painel do produtor (GET /api/produtor/contratos).
+// Inclui dados nested da corretora — projeção pensada pra renderizar
+// card sem segunda requisição.
+export type ProducerContrato = {
+  id: number;
+  tipo: ContratoTipo;
+  status: ContratoStatus;
+  hash_sha256: string;
+  qr_verification_token: string;
+  has_signed_pdf: boolean;
+  created_at: string;
+  sent_at: string | null;
+  signed_at: string | null;
+  cancelled_at: string | null;
+  cancel_reason: string | null;
+  corretora: {
+    id: number;
+    name: string;
+    slug: string;
+    logo_path: string | null;
+  };
+  resumo: {
+    safra: string | null;
+    quantidade_sacas: number | null;
+    bebida_laudo: string | null;
+    nome_armazem_ou_fazenda: string | null;
+  };
+};
+
 // UI helpers.
 export const CONTRATO_TIPO_LABEL: Record<ContratoTipo, string> = {
   disponivel: "Compra e Venda — Disponível",
