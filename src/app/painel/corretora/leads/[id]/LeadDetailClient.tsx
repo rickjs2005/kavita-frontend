@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { ContratosSection } from "@/components/painel-corretora/ContratosSection";
 import type {
   CorretoraLead,
   LeadStatus,
@@ -732,7 +733,10 @@ function LeadDetailBody({
           <AnalysisBlock lead={lead} onChanged={onChanged} alwaysOpen />
         )}
         {tab === "proposta" && (
-          <ProposalBlock lead={lead} onChanged={onChanged} />
+          <>
+            <ProposalBlock lead={lead} onChanged={onChanged} />
+            <ContratosSection leadId={lead.id} leadStatus={lead.status} />
+          </>
         )}
         {tab === "acao" && (
           <NextActionBlock lead={lead} onChanged={onChanged} />
