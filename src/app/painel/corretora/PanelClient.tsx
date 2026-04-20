@@ -27,6 +27,7 @@ import {
   MarketStripItem,
   MarketStripDivider,
 } from "@/components/painel-corretora/PanelOrnaments";
+import { LiveMarketQuotes } from "@/components/painel-corretora/LiveMarketQuotes";
 import { useCorretoraAuth } from "@/context/CorretoraAuthContext";
 import type { CorretoraLead, LeadsSummary } from "@/types/lead";
 
@@ -253,16 +254,14 @@ export default function PanelClient() {
       {planUsage && <LeadsCapBanner planUsage={planUsage} />}
 
       {/* ============================================================
-          MARKET STRIP — masthead editorial
+          MARKET STRIP — masthead vivo (CEPEA + ICE) com data e safra
          ============================================================ */}
       <MarketStrip>
         <MarketStripItem pulse>{todayShort}</MarketStripItem>
         <MarketStripDivider />
         <MarketStripItem accent>{safra}</MarketStripItem>
         <MarketStripDivider />
-        <MarketStripItem>Mercado do Café</MarketStripItem>
-        <MarketStripDivider />
-        <MarketStripItem>Sala Reservada · Kavita</MarketStripItem>
+        <LiveMarketQuotes />
       </MarketStrip>
 
       {/* ============================================================
