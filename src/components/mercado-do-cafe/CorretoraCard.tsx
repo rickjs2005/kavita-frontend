@@ -283,23 +283,26 @@ export function CorretoraCard({ corretora }: Props) {
                   {corretora.name}
                 </Link>
               </h3>
-              {/* Fase 5 — Verificada por Kavita é status intrínseco de toda
-                  corretora aprovada. Aparece em TODAS as cards públicas. */}
-              <span
-                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-300 ring-1 ring-emerald-400/30"
-                title="Cadastro e identidade validados pela curadoria Kavita"
-              >
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden
+              {/* Fase 10.2 — "Auditada" é o selo oficial de KYC.
+                  Só aparece quando kyc_status === 'verified' (grandfather
+                  em Fase 10.2 já marcou todas as corretoras ativas). */}
+              {corretora.kyc_status === "verified" && (
+                <span
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-300 ring-1 ring-emerald-400/30"
+                  title="CNPJ e QSA auditados pela curadoria Kavita (KYC aprovado)"
                 >
-                  <path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" />
-                </svg>
-                Verificada por Kavita
-              </span>
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden
+                  >
+                    <path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" />
+                  </svg>
+                  Corretora auditada
+                </span>
+              )}
               {/* Destaque regional é separado — reservado para planos Pro/Max */}
               {isFeatured && (
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-200 ring-1 ring-amber-400/30">

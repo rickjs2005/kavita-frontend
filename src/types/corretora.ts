@@ -49,6 +49,17 @@ export type PublicCorretora = {
   // é confiável (>= 5 leads respondidos — controlado via UI).
   sla_avg_seconds?: number | null;
   sla_sample_count?: number | null;
+  // Fase 10.2 — status KYC. Só corretoras `verified` podem emitir
+  // contratos e recebem o selo "Verificada por Kavita" no card
+  // público. `null` apenas em queries legadas que não trouxeram o
+  // campo; trate como não-verificada.
+  kyc_status?:
+    | "pending_verification"
+    | "under_review"
+    | "verified"
+    | "rejected"
+    | null;
+  kyc_verified_at?: string | null;
 };
 
 export type CorretoraAdmin = PublicCorretora & {
