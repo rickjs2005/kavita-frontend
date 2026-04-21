@@ -111,8 +111,16 @@ export function OrnamentalDivider({
 // dentro do ecossistema café sem virar decoração barata.
 // ===================================================================
 export function MarketStrip({ children }: { children: ReactNode }) {
+  // Mobile: scroll horizontal discreto em vez de quebra de linha feia
+  // (whitespace-nowrap + overflow-x-auto). Scrollbar-none mantém o
+  // visual limpo quando o usuário arrasta.
+  // Desktop (md+): comportamento original com flex-wrap — 4 itens
+  // raramente extravasam, mas se acontecer, quebram.
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/[0.06] pb-3 text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-stone-400">
+    <div
+      className="flex items-center gap-x-3 gap-y-1 overflow-x-auto whitespace-nowrap border-b border-white/[0.06] pb-3 text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-stone-400 md:flex-wrap md:overflow-visible md:whitespace-normal"
+      style={{ scrollbarWidth: "none" }}
+    >
       {children}
     </div>
   );

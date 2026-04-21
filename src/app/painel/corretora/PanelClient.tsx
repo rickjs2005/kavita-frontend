@@ -28,6 +28,7 @@ import {
   MarketStripDivider,
 } from "@/components/painel-corretora/PanelOrnaments";
 import { LiveMarketQuotes } from "@/components/painel-corretora/LiveMarketQuotes";
+import { formatSafraAtualLabel } from "@/lib/safra";
 import { useCorretoraAuth } from "@/context/CorretoraAuthContext";
 import type { CorretoraLead, LeadsSummary } from "@/types/lead";
 
@@ -144,12 +145,10 @@ function formatTodayFull() {
   }
 }
 
+// Delegado para `@/lib/safra:formatSafraAtualLabel` — fonte única
+// de verdade com padding garantido ("2025/26" nunca vira "2025/6").
 function currentSafra() {
-  const year = new Date().getFullYear();
-  const month = new Date().getMonth() + 1;
-  // Safra de café vai de maio a abril. Antes de maio, ainda é a safra anterior.
-  if (month < 5) return `SAFRA ${year - 1}/${String(year).slice(2)}`;
-  return `SAFRA ${year}/${String(year + 1).slice(2)}`;
+  return formatSafraAtualLabel();
 }
 
 // ============================================================

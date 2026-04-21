@@ -7,29 +7,37 @@
 "use client";
 
 import { useMarketQuotes } from "@/hooks/useMarketQuotes";
-import type { MarketQuote } from "@/types/marketQuotes";
 import { MarketStripItem, MarketStripDivider } from "./PanelOrnaments";
+
+// Formato pt-BR: vírgula decimal + ponto como agrupador de milhar.
+const BRL_FMT = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+});
+const PCT_FMT = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  signDisplay: "exceptZero",
+});
 
 function fmtBRL(cents: number | null | undefined) {
   if (cents == null) return null;
-  const reais = cents / 100;
-  return reais.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  });
+  return BRL_FMT.format(cents / 100);
 }
 
 function fmtUSCents(cents: number | null | undefined) {
   if (cents == null) return null;
-  // ICE exibe cents/lb com 2 casas — Yahoo já dá o número inteiro.
+  // ICE publica cents/lb com precisão de 0,05 cent — Yahoo v8 já
+  // devolve inteiro. Mostramos sem decimal para manter strip enxuto.
   return `${cents.toFixed(0)}¢/lb`;
 }
 
 function fmtVariation(pct: number | null | undefined) {
   if (pct == null || Number.isNaN(pct)) return null;
-  const sign = pct >= 0 ? "+" : "";
-  return `${sign}${pct.toFixed(2)}%`;
+  // Intl devolve "+1,23" / "-5,39" (signDisplay=exceptZero, vírgula
+  // decimal pt-BR).
+  return `${PCT_FMT.format(pct)}%`;
 }
 
 function QuoteItem({
@@ -53,16 +61,24 @@ function QuoteItem({
         ? "text-red-300"
         : "text-stone-400";
 
+  // Valor primário ganha peso e glow âmbar discreto para ser o foco
+  // do olhar — a corretora precisa bater o olho e entender rápido.
+  // Tracking normal quebra o letter-spacing do parent (uppercase +
+  // tracking-[0.2em] na casca do strip) para o número não se desfazer.
   const content = (
     <MarketStripItem pulse={!isStale} accent>
-      <span className="text-stone-400">{label}</span>
-      <span className="text-stone-100 font-bold tabular-nums">{primary}</span>
+      <span className="text-stone-500">{label}</span>
+      <span className="text-stone-50 font-bold tabular-nums text-[11px] tracking-normal drop-shadow-[0_0_8px_rgba(251,191,36,0.12)]">
+        {primary}
+      </span>
       {variation && (
-        <span className={`tabular-nums ${variationClass}`}>{variation}</span>
+        <span className={`tabular-nums font-semibold ${variationClass}`}>
+          {variation}
+        </span>
       )}
       {isStale && (
         <span
-          className="text-stone-500 normal-case"
+          className="text-stone-500 normal-case italic"
           title="Snapshot com mais de 48h — fonte pode não ter publicado em dia útil"
         >
           (defasado)
@@ -129,11 +145,3 @@ export function LiveMarketQuotes() {
     </>
   );
 }
-
-export function LiveMarketQuotesStub(props: LiveQuoteStubProps) {
-  // Versão silenciosa pra usar no topo de páginas sem quebrar layout
-  // quando backend ainda não tem snapshot.
-  return <LiveMarketQuotes {...props} />;
-}
-
-type LiveQuoteStubProps = Record<string, never>;

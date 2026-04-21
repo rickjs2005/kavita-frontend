@@ -218,11 +218,18 @@ export function CorretoraPanelNav() {
                   aria-hidden
                   className="hidden h-6 w-px bg-white/15 md:block"
                 />
-                <div className="hidden min-w-0 md:block">
-                  <p className="truncate text-sm font-semibold text-stone-100">
+                {/* Largura limitada + ellipsis. Em tablets (md < lg) o
+                    espaço da topbar é apertado pela nav inline ao lado,
+                    então o subtítulo "Corretora" só aparece em lg+.
+                    Evita a quebra feia "Laert d…" / "CORRE…". */}
+                <div className="hidden min-w-0 max-w-[160px] md:block lg:max-w-[240px]">
+                  <p
+                    className="truncate text-sm font-semibold leading-tight text-stone-100"
+                    title={user.corretora_name}
+                  >
                     {user.corretora_name}
                   </p>
-                  <p className="truncate text-[11px] font-medium uppercase tracking-[0.14em] text-stone-400">
+                  <p className="hidden truncate text-[11px] font-medium uppercase tracking-[0.14em] text-stone-400 lg:block">
                     Corretora
                   </p>
                 </div>
