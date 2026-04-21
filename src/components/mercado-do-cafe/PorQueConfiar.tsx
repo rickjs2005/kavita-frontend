@@ -129,8 +129,10 @@ export function PorQueConfiar() {
         </div>
         <p className="max-w-md text-[13px] leading-relaxed text-stone-400">
           O Mercado do Café não é um diretório aberto. Cada corretora listada
-          aqui passou por curadoria. O objetivo é simples: ajudar o produtor da
-          Zona da Mata a encontrar atendimento sério e rastreável.
+          aqui passou por curadoria. O objetivo é simples: ajudar produtores de
+          café em qualquer região produtora do Brasil a encontrar atendimento
+          sério e rastreável. Nascemos na Zona da Mata e atendemos todas as
+          praças cafeeiras.
         </p>
       </header>
 

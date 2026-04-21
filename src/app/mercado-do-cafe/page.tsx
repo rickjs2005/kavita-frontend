@@ -25,9 +25,9 @@ import { buildCoffeeMetadata } from "@/lib/coffeeMetadata";
 
 export const metadata = buildCoffeeMetadata({
   path: "/mercado-do-cafe",
-  title: "Mercado do Café · Matas de Minas | Kavita",
+  title: "Mercado do Café · Corretoras auditadas do Brasil | Kavita",
   description:
-    "Corretoras de café da Zona da Mata Mineira — Manhuaçu, Manhumirim, Lajinha, Caparaó, Matipó, Reduto. Cotações, canais diretos e rede curada pela Kavita.",
+    "Plataforma para corretoras de café do Brasil. Cotações ao vivo, canais diretos, contratos digitais e corretoras auditadas em regiões produtoras — Zona da Mata, Sul de Minas, Cerrado, Matas de Minas, Mogiana, Caparaó, Espírito Santo e Sul da Bahia.",
 });
 
 function pickCoffeeCotacao(list: PublicCotacao[]): PublicCotacao | null {
@@ -101,9 +101,9 @@ export default async function MercadoDoCafePage() {
             <span className="hidden sm:inline">
               Mercado do Café
               <span className="mx-2 text-stone-600">·</span>
-              <span className="text-stone-400">Zona da Mata</span>
+              <span className="text-stone-400">Rede nacional</span>
               <span className="mx-2 text-stone-600">·</span>
-              <span className="text-stone-400">MG</span>
+              <span className="text-stone-400">Brasil</span>
             </span>
           </p>
           <span
@@ -131,18 +131,20 @@ export default async function MercadoDoCafePage() {
               </div>
 
               <h1 className="text-[clamp(1.6rem,6vw,2rem)] font-semibold leading-[1.1] tracking-tight text-stone-50 md:text-4xl lg:text-5xl">
-                Corretoras de café da{" "}
+                Corretoras de{" "}
                 <span className="bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 bg-clip-text text-transparent">
-                  Zona&nbsp;da&nbsp;Mata
-                </span>{" "}
-                Mineira
+                  café&nbsp;do&nbsp;Brasil
+                </span>
+                , auditadas pela Kavita
               </h1>
 
               <p className="mt-4 max-w-2xl text-[13px] leading-relaxed text-stone-300 sm:text-sm md:mt-5 md:text-base">
-                Encontre corretoras verificadas em Manhuaçu, Manhumirim,
-                Lajinha e toda a região das Matas de Minas. Cotação de
-                referência, contato direto via WhatsApp e uma rede curada
-                pela Kavita — para você negociar o seu café com confiança.
+                Nascemos na Zona da Mata Mineira e estamos preparados para
+                atender corretoras e produtores em regiões produtoras do
+                Brasil — Sul de Minas, Cerrado, Matas de Minas, Mogiana,
+                Caparaó, Espírito Santo e Sul da Bahia. Cotação ao vivo,
+                contato direto e uma rede curada para você negociar com
+                confiança.
               </p>
             </div>
 
@@ -212,7 +214,7 @@ export default async function MercadoDoCafePage() {
           <SectionHeader
             kicker="02 · Rede curada"
             title="Corretoras em destaque"
-            hint="Empresas verificadas pela equipe Kavita atuando na Zona da Mata"
+            hint="Empresas verificadas pela equipe Kavita em regiões produtoras de café do Brasil"
             actionLabel="Ver todas"
             actionHref="/mercado-do-cafe/corretoras"
             count={featured.length}
@@ -249,12 +251,12 @@ export default async function MercadoDoCafePage() {
           )}
         </section>
 
-        {/* ─── 03 / Cidades da Zona da Mata ─────────────────────── */}
-        <section aria-label="Cidades da Zona da Mata" className="mt-16 md:mt-20">
+        {/* ─── 03 / Cidades da rede ─────────────────────────────── */}
+        <section aria-label="Corretoras por cidade" className="mt-16 md:mt-20">
           <SectionHeader
             kicker="03 · Região"
             title="Corretoras por cidade"
-            hint="Encontre quem atua no seu município da Zona da Mata Mineira"
+            hint="Rede inicial na Zona da Mata Mineira — em expansão para outras regiões cafeeiras do Brasil"
           />
           <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
             {CIDADES_DESTAQUE.map((cidade) => (
@@ -306,7 +308,7 @@ export default async function MercadoDoCafePage() {
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-stone-300">
               O que faz uma corretora, como funciona a comissão, calendário da
-              safra da Zona da Mata e glossário do café.
+              safra nas principais regiões produtoras e glossário do café.
             </p>
             <span className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 transition-colors group-hover:text-amber-200">
               Ler o guia
@@ -371,9 +373,9 @@ export default async function MercadoDoCafePage() {
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-stone-300">
                 Cadastre sua empresa gratuitamente e apareça para produtores
-                de toda a Zona da Mata. A análise é feita pela equipe Kavita
-                e, após aprovação, você acessa um painel próprio para
-                gerenciar contatos.
+                de café em regiões produtoras do Brasil. A análise é feita
+                pela equipe Kavita e, após aprovação, você acessa um painel
+                próprio para gerenciar contatos.
               </p>
             </div>
             <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">

@@ -1,7 +1,10 @@
 // src/lib/regioes.ts
 //
-// Catálogo regional — cidades da Zona da Mata Mineira prioritárias no
-// módulo Mercado do Café, com Manhuaçu como bandeira. Usado para:
+// Catálogo nacional — cidades cafeeiras do Brasil no módulo Mercado
+// do Café. Nasceu focado na Zona da Mata Mineira (praça piloto,
+// Manhuaçu como cidade-bandeira) e está em expansão controlada para
+// outras regiões produtoras (Sul de Minas, Cerrado, Mogiana, Caparaó,
+// ES, Sul da Bahia). Usado para:
 //
 //   - CityChips (filtro por cidade na listagem)
 //   - Rotas regionais (/mercado-do-cafe/[cidade])
@@ -9,27 +12,112 @@
 //   - SEO (meta tags regionais)
 //
 // Fonte única da verdade: mudanças aqui refletem em toda a UI pública.
+//
+// Retrocompat: o export `CIDADES_ZONA_DA_MATA` foi mantido como alias
+// @deprecated (aponta para `CIDADES`) para não quebrar imports
+// existentes. Novos imports devem usar `CIDADES` + `getCidadesPorRegiao()`.
+
+export type RegiaoCodigo =
+  | "zona_mata_mg"
+  | "matas_minas"
+  | "sul_minas"
+  | "cerrado_mg"
+  | "mogiana_sp"
+  | "caparao_mg_es"
+  | "es_conilon"
+  | "sul_bahia";
+
+export type Regiao = {
+  codigo: RegiaoCodigo;
+  nome: string;
+  estados: string[];
+  descricao?: string;
+};
+
+export const REGIOES: Regiao[] = [
+  {
+    codigo: "zona_mata_mg",
+    nome: "Zona da Mata",
+    estados: ["MG"],
+    descricao:
+      "Praça piloto da Kavita. Arábica de bebida dura a mole, tradição de corretagem local.",
+  },
+  {
+    codigo: "matas_minas",
+    nome: "Matas de Minas",
+    estados: ["MG"],
+    descricao:
+      "Denominação de Origem que engloba municípios da Zona da Mata com cafés de qualidade sensorial diferenciada.",
+  },
+  {
+    codigo: "sul_minas",
+    nome: "Sul de Minas",
+    estados: ["MG"],
+    descricao:
+      "Maior bacia produtora de arábica do Brasil, com forte presença de cooperativas.",
+  },
+  {
+    codigo: "cerrado_mg",
+    nome: "Cerrado Mineiro",
+    estados: ["MG"],
+    descricao:
+      "Denominação de Origem com arábica de altitude mecanizado, produção escalonada.",
+  },
+  {
+    codigo: "mogiana_sp",
+    nome: "Mogiana",
+    estados: ["SP"],
+    descricao:
+      "Região tradicional no estado de São Paulo, café de altitude e terroir reconhecido.",
+  },
+  {
+    codigo: "caparao_mg_es",
+    nome: "Caparaó",
+    estados: ["MG", "ES"],
+    descricao:
+      "Região serrana entre MG e ES, com arábica de altitude e cafés especiais premiados.",
+  },
+  {
+    codigo: "es_conilon",
+    nome: "Espírito Santo (Conilon)",
+    estados: ["ES"],
+    descricao:
+      "Maior produtor nacional de conilon (robusta), cafeicultura familiar extensiva.",
+  },
+  {
+    codigo: "sul_bahia",
+    nome: "Sul da Bahia",
+    estados: ["BA"],
+    descricao:
+      "Cerrado baiano e região costeira, produção de arábica e conilon em expansão.",
+  },
+];
 
 export type Cidade = {
   slug: string;
   nome: string;
   estado: string;
   regiao: string;
+  regiao_codigo?: RegiaoCodigo;
   destaque: boolean;
   descricao?: string;
 };
 
 /**
- * Cidades core do núcleo Zona da Mata / Matas de Minas priorizadas
- * pelo produto. Manhuaçu é a cidade-bandeira (destaque=true) e deve
- * sempre aparecer primeiro em listas.
+ * Catálogo nacional de cidades cafeeiras. Manhuaçu (Zona da Mata MG)
+ * é a cidade-bandeira do MVP e aparece primeiro em listas por
+ * `destaque: true`. Cidades de outras regiões foram acrescentadas
+ * para sinalizar a abertura nacional — à medida que houver corretora
+ * cadastrada em cada praça, mais cidades são adicionadas.
  */
-export const CIDADES_ZONA_DA_MATA: Cidade[] = [
+export const CIDADES: Cidade[] = [
+  // ─── Zona da Mata MG (praça piloto) ──────────────────────────────
   {
     slug: "manhuacu",
     nome: "Manhuaçu",
     estado: "MG",
     regiao: "Zona da Mata",
+    regiao_codigo: "zona_mata_mg",
     destaque: true,
     descricao:
       "Polo cafeeiro central da Zona da Mata, reconhecido pela produção de arábica de qualidade superior e forte cultura de negociação via corretoras locais.",
@@ -39,6 +127,7 @@ export const CIDADES_ZONA_DA_MATA: Cidade[] = [
     nome: "Manhumirim",
     estado: "MG",
     regiao: "Zona da Mata",
+    regiao_codigo: "zona_mata_mg",
     destaque: true,
     descricao:
       "Município vizinho a Manhuaçu com tradição na produção de café arábica e parte integrante da Denominação de Origem Matas de Minas.",
@@ -48,6 +137,7 @@ export const CIDADES_ZONA_DA_MATA: Cidade[] = [
     nome: "Lajinha",
     estado: "MG",
     regiao: "Zona da Mata",
+    regiao_codigo: "zona_mata_mg",
     destaque: true,
     descricao:
       "Importante município produtor da Zona da Mata Mineira, com forte atuação de corretoras no escoamento da safra anual.",
@@ -57,6 +147,7 @@ export const CIDADES_ZONA_DA_MATA: Cidade[] = [
     nome: "Caparaó",
     estado: "MG",
     regiao: "Zona da Mata",
+    regiao_codigo: "zona_mata_mg",
     destaque: true,
     descricao:
       "Região serrana com altitudes elevadas favoráveis ao café especial, integrando o complexo cafeeiro da Zona da Mata.",
@@ -66,6 +157,7 @@ export const CIDADES_ZONA_DA_MATA: Cidade[] = [
     nome: "Matipó",
     estado: "MG",
     regiao: "Zona da Mata",
+    regiao_codigo: "zona_mata_mg",
     destaque: false,
     descricao:
       "Município cafeeiro da Zona da Mata com produção relevante de arábica e presença de corretoras regionais.",
@@ -75,6 +167,7 @@ export const CIDADES_ZONA_DA_MATA: Cidade[] = [
     nome: "Reduto",
     estado: "MG",
     regiao: "Zona da Mata",
+    regiao_codigo: "zona_mata_mg",
     destaque: false,
     descricao:
       "Pequeno município da Zona da Mata com tradição na produção de café arábica e participação na rede regional de corretagem.",
@@ -84,6 +177,7 @@ export const CIDADES_ZONA_DA_MATA: Cidade[] = [
     nome: "Santana do Manhuaçu",
     estado: "MG",
     regiao: "Zona da Mata",
+    regiao_codigo: "zona_mata_mg",
     destaque: false,
   },
   {
@@ -91,6 +185,7 @@ export const CIDADES_ZONA_DA_MATA: Cidade[] = [
     nome: "Simonésia",
     estado: "MG",
     regiao: "Zona da Mata",
+    regiao_codigo: "zona_mata_mg",
     destaque: false,
   },
   {
@@ -98,6 +193,7 @@ export const CIDADES_ZONA_DA_MATA: Cidade[] = [
     nome: "Alto Jequitibá",
     estado: "MG",
     regiao: "Zona da Mata",
+    regiao_codigo: "zona_mata_mg",
     destaque: false,
   },
   {
@@ -105,25 +201,148 @@ export const CIDADES_ZONA_DA_MATA: Cidade[] = [
     nome: "Alto Caparaó",
     estado: "MG",
     regiao: "Zona da Mata",
+    regiao_codigo: "zona_mata_mg",
     destaque: false,
+  },
+  // ─── Sul de Minas ────────────────────────────────────────────────
+  {
+    slug: "varginha",
+    nome: "Varginha",
+    estado: "MG",
+    regiao: "Sul de Minas",
+    regiao_codigo: "sul_minas",
+    destaque: false,
+    descricao:
+      "Um dos maiores centros de comércio de café do Brasil, com forte presença de cooperativas e exportadoras no Sul de Minas.",
+  },
+  {
+    slug: "tres-pontas",
+    nome: "Três Pontas",
+    estado: "MG",
+    regiao: "Sul de Minas",
+    regiao_codigo: "sul_minas",
+    destaque: false,
+  },
+  {
+    slug: "guaxupe",
+    nome: "Guaxupé",
+    estado: "MG",
+    regiao: "Sul de Minas",
+    regiao_codigo: "sul_minas",
+    destaque: false,
+  },
+  // ─── Cerrado Mineiro ─────────────────────────────────────────────
+  {
+    slug: "patrocinio",
+    nome: "Patrocínio",
+    estado: "MG",
+    regiao: "Cerrado Mineiro",
+    regiao_codigo: "cerrado_mg",
+    destaque: false,
+    descricao:
+      "Polo do Cerrado Mineiro, Denominação de Origem reconhecida pela produção mecanizada de arábica de altitude.",
+  },
+  {
+    slug: "monte-carmelo",
+    nome: "Monte Carmelo",
+    estado: "MG",
+    regiao: "Cerrado Mineiro",
+    regiao_codigo: "cerrado_mg",
+    destaque: false,
+  },
+  // ─── Mogiana (SP) ────────────────────────────────────────────────
+  {
+    slug: "garca",
+    nome: "Garça",
+    estado: "SP",
+    regiao: "Mogiana",
+    regiao_codigo: "mogiana_sp",
+    destaque: false,
+  },
+  {
+    slug: "franca",
+    nome: "Franca",
+    estado: "SP",
+    regiao: "Mogiana",
+    regiao_codigo: "mogiana_sp",
+    destaque: false,
+  },
+  // ─── Caparaó (ES/MG) ─────────────────────────────────────────────
+  {
+    slug: "venda-nova-do-imigrante",
+    nome: "Venda Nova do Imigrante",
+    estado: "ES",
+    regiao: "Caparaó",
+    regiao_codigo: "caparao_mg_es",
+    destaque: false,
+    descricao:
+      "Município serrano do ES com tradição no cultivo de arábica de altitude e cafés especiais premiados.",
+  },
+  // ─── Espírito Santo (Conilon) ────────────────────────────────────
+  {
+    slug: "sao-gabriel-da-palha",
+    nome: "São Gabriel da Palha",
+    estado: "ES",
+    regiao: "Espírito Santo",
+    regiao_codigo: "es_conilon",
+    destaque: false,
+    descricao:
+      "Importante município produtor de conilon no ES, cafeicultura familiar extensiva.",
+  },
+  // ─── Sul da Bahia ────────────────────────────────────────────────
+  {
+    slug: "vitoria-da-conquista",
+    nome: "Vitória da Conquista",
+    estado: "BA",
+    regiao: "Sul da Bahia",
+    regiao_codigo: "sul_bahia",
+    destaque: false,
+    descricao:
+      "Polo cafeeiro do planalto da Bahia, arábica de altitude e produção em expansão.",
   },
 ];
 
 /**
- * Cidades destacadas — aparecem nos chips de filtro e nos links
- * regionais de destaque na landing.
+ * @deprecated — use `CIDADES` diretamente. Este alias existe apenas
+ * para não quebrar imports legados. Será removido em uma fase futura.
+ * Filtra apenas as cidades da Zona da Mata MG para manter o
+ * comportamento original de quem importava `CIDADES_ZONA_DA_MATA`.
  */
-export const CIDADES_DESTAQUE = CIDADES_ZONA_DA_MATA.filter((c) => c.destaque);
+export const CIDADES_ZONA_DA_MATA: Cidade[] = CIDADES.filter(
+  (c) => c.regiao_codigo === "zona_mata_mg",
+);
+
+/**
+ * Cidades destacadas — aparecem nos chips de filtro e nos links
+ * regionais de destaque na landing. Hoje são cidades da Zona da Mata
+ * (praça piloto); à medida que outras regiões se consolidarem, mais
+ * cidades podem ganhar `destaque: true`.
+ */
+export const CIDADES_DESTAQUE = CIDADES.filter((c) => c.destaque);
+
+/**
+ * Lista de regiões cafeeiras suportadas pelo catálogo. Para consumo
+ * em selects, autocompletes e metadados.
+ */
+export function getRegioes(): Regiao[] {
+  return REGIOES;
+}
+
+/**
+ * Cidades de uma região específica, na ordem em que aparecem no
+ * catálogo.
+ */
+export function getCidadesPorRegiao(codigo: RegiaoCodigo): Cidade[] {
+  return CIDADES.filter((c) => c.regiao_codigo === codigo);
+}
 
 /**
  * Busca cidade pelo slug (case-insensitive). Retorna null se não
- * encontrada no catálogo regional.
+ * encontrada no catálogo.
  */
 export function getCidadeBySlug(slug: string): Cidade | null {
   const normalized = slug.toLowerCase().trim();
-  return (
-    CIDADES_ZONA_DA_MATA.find((c) => c.slug === normalized) ?? null
-  );
+  return CIDADES.find((c) => c.slug === normalized) ?? null;
 }
 
 /**
@@ -133,7 +352,7 @@ export function getCidadeBySlug(slug: string): Cidade | null {
 export function getCidadeByNome(nome: string): Cidade | null {
   const normalized = normalizeCityName(nome);
   return (
-    CIDADES_ZONA_DA_MATA.find(
+    CIDADES.find(
       (c) => normalizeCityName(c.nome) === normalized,
     ) ?? null
   );

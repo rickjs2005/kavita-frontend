@@ -86,22 +86,29 @@ function buildCards(c: Props["corretora"]): Card[] {
   }
 
   // 2. Cidades atendidas — resolve slugs para nomes, lista com "+N"
+  // Hint regional é derivado do dado real da corretora (c.region) para
+  // não amarrar a UI a uma única região. Se a corretora cadastrou
+  // região explícita, mostra; caso contrário, deixa sem hint.
   const cidadeNomes = (c.cidades_atendidas ?? [])
     .map((slug) => getCidadeBySlug(slug)?.nome)
     .filter((n): n is string => Boolean(n));
+  const regiaoHint =
+    typeof c.region === "string" && c.region.trim().length > 0
+      ? c.region.trim()
+      : undefined;
   if (cidadeNomes.length > 0) {
     const head = cidadeNomes.slice(0, 3).join(" · ");
     const extra = cidadeNomes.length > 3 ? ` +${cidadeNomes.length - 3}` : "";
     cards.push({
       kicker: "Atua em",
       value: `${head}${extra}`,
-      hint: "Zona da Mata · Matas de Minas",
+      hint: regiaoHint,
     });
   } else if (c.city) {
     cards.push({
       kicker: "Atua em",
       value: c.city,
-      hint: c.state === "MG" ? "Zona da Mata · Matas de Minas" : undefined,
+      hint: regiaoHint,
     });
   }
 

@@ -72,14 +72,14 @@ export async function generateMetadata({ searchParams }: Props) {
   const search = params.search?.trim();
 
   let path = "/mercado-do-cafe/corretoras";
-  let title = "Corretoras de Café — Zona da Mata | Kavita";
+  let title = "Corretoras de Café — Brasil | Kavita";
   let description =
-    "Encontre corretoras de café verificadas que atuam na Zona da Mata mineira. Manhuaçu, Reduto, Simonésia e região.";
+    "Encontre corretoras de café auditadas pela Kavita. Rede curada em regiões produtoras do Brasil — Zona da Mata, Sul de Minas, Cerrado, Mogiana, Caparaó, Espírito Santo e Sul da Bahia.";
 
   if (city) {
     path = `/mercado-do-cafe/corretoras?city=${encodeURIComponent(city)}`;
     title = `Corretoras de café em ${city} | Kavita`;
-    description = `Corretoras de café verificadas atuando em ${city} e região da Zona da Mata mineira.`;
+    description = `Corretoras de café auditadas atuando em ${city} e região. Cadastro verificado, canais diretos, contratos digitais.`;
   } else if (search) {
     // Filtros só de busca não entram no canonical — são muito voláteis.
     title = `Buscar corretoras: ${search} | Kavita`;
@@ -176,9 +176,9 @@ export default async function CorretorasListPage({ searchParams }: Props) {
             <span className="hidden sm:inline">
               Mercado do Café
               <span className="mx-2 text-stone-600">·</span>
-              <span className="text-stone-400">Zona da Mata</span>
+              <span className="text-stone-400">Rede nacional</span>
               <span className="mx-2 text-stone-600">·</span>
-              <span className="text-stone-400">MG</span>
+              <span className="text-stone-400">Brasil</span>
             </span>
           </p>
           <span
@@ -208,13 +208,14 @@ export default async function CorretorasListPage({ searchParams }: Props) {
               </div>
 
               <h1 className="text-[clamp(1.6rem,6vw,2rem)] font-semibold leading-[1.1] tracking-tight text-stone-50 md:text-4xl lg:text-5xl">
-                A mesa do café da Zona&nbsp;da&nbsp;Mata
+                A mesa do café do Brasil
               </h1>
 
               <p className="mt-4 max-w-2xl text-[13px] leading-relaxed text-stone-300 sm:text-sm md:text-base">
-                Encontre corretoras que atuam na Zona da Mata mineira. Rede
-                curada pelo Kavita — cada empresa listada passou pela análise
-                da nossa equipe antes de aparecer aqui. Negocie com confiança,
+                Nascemos na Zona da Mata Mineira e estamos preparados para
+                atender regiões cafeeiras em todo o país. Rede curada pelo
+                Kavita — cada corretora listada passou pela análise da nossa
+                equipe antes de aparecer aqui. Negocie com confiança,
                 diretamente pelos canais de cada corretora.
               </p>
             </div>

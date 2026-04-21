@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: Props) {
     return buildCoffeeMetadata({
       path: `/mercado-do-cafe/corretoras/${result.toSlug}`,
       title: "Corretora de Café | Kavita",
-      description: "Corretora de café verificada na Zona da Mata mineira.",
+      description: "Corretora de café auditada pela Kavita.",
     });
   }
 
@@ -277,7 +277,9 @@ export default async function CorretoraDetailPage({ params }: Props) {
                 </div>
                 <span aria-hidden className="h-4 w-px bg-white/15" />
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200/90 sm:tracking-[0.24em]">
-                  Corretora verificada · Matas de Minas
+                  {corretora.kyc_status === "verified"
+                    ? "Corretora auditada pela Kavita"
+                    : "Corretora cadastrada na rede Kavita"}
                 </p>
               </div>
 

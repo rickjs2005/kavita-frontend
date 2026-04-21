@@ -19,7 +19,7 @@ export const metadata = buildCoffeeMetadata({
   path: "/mercado-do-cafe/corretoras/cadastro",
   title: "Cadastre sua corretora | Mercado do Café | Kavita",
   description:
-    "Cadastre sua corretora de café da Zona da Mata mineira, crie sua senha e, após aprovação, acesse o painel privado para receber contatos de produtores.",
+    "Cadastre sua corretora de café — qualquer região produtora do Brasil. Crie sua senha e, após aprovação, acesse o painel privado para receber contatos de produtores.",
 });
 
 export default function CadastroCorretoraPage() {

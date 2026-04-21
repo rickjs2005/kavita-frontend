@@ -10,7 +10,7 @@ import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 export const metadata = {
   title: "Planos — Comece 3 meses grátis | Kavita · Mercado do Café",
   description:
-    "Teste o Kavita por 3 meses sem compromisso. Planos pensados para corretoras de café da Zona da Mata Mineira.",
+    "Teste o Kavita por 3 meses sem compromisso. Planos para corretoras de café de qualquer região produtora do Brasil.",
 };
 
 // ─── Planos (estáticos — fonte de verdade para a página pública) ──
@@ -77,7 +77,7 @@ const PLANS: PlanDisplay[] = [
     price: "R$ 299",
     priceNote: "/mês",
     description:
-      "Para corretoras com volume maior, equipe dedicada e necessidade de presença regional forte nas cidades da Zona da Mata.",
+      "Para corretoras com volume maior, equipe dedicada e necessidade de presença regional forte na sua praça — Zona da Mata, Sul de Minas, Cerrado, Mogiana ou qualquer outra região produtora.",
     cta: "Falar com o time",
     ctaHref: "https://wa.me/5533999999999?text=Quero%20saber%20mais%20sobre%20o%20plano%20Premium%20do%20Kavita",
     featured: false,
@@ -254,7 +254,7 @@ export default function PricingPage() {
           />
           <FaqCard
             question="Como funciona o destaque regional?"
-            answer="Corretoras Premium aparecem em destaque nas cidades da Zona da Mata (Manhuaçu, Manhumirim, Lajinha, Caparaó e outras). É visibilidade prioritária para quem busca corretoras na região."
+            answer="Corretoras Premium aparecem em destaque na região em que atuam — seja Zona da Mata, Sul de Minas, Cerrado, Matas de Minas, Mogiana, Caparaó, Espírito Santo, Sul da Bahia ou outra praça cafeeira. É visibilidade prioritária para produtores que buscam corretoras na sua região."
           />
           <FaqCard
             question="Posso cancelar quando quiser?"

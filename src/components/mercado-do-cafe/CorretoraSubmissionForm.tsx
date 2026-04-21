@@ -118,8 +118,8 @@ export function CorretoraSubmissionForm() {
       contact_name: "",
       description: "",
       city: "",
-      state: "MG",
-      region: "Zona da Mata",
+      state: "",
+      region: "",
       phone: "",
       whatsapp: "",
       email: "",
@@ -306,7 +306,7 @@ export function CorretoraSubmissionForm() {
                 minLength: { value: 3, message: "Mínimo 3 caracteres." },
               })}
               className={errors.name ? inputClassError : inputClass}
-              placeholder="Ex: Café Corretora Manhuaçu"
+              placeholder="Ex: Nome da sua corretora"
             />
           </Field>
 
@@ -339,7 +339,7 @@ export function CorretoraSubmissionForm() {
                   minLength: { value: 2, message: "Mínimo 2 caracteres." },
                 })}
                 className={errors.city ? inputClassError : inputClass}
-                placeholder="Manhuaçu"
+                placeholder="Cidade onde sua corretora atua"
               />
             </Field>
 
@@ -367,7 +367,7 @@ export function CorretoraSubmissionForm() {
             <input
               {...register("region")}
               className={inputClass}
-              placeholder="Ex: Zona da Mata"
+              placeholder="Ex: Zona da Mata, Sul de Minas, Cerrado, Mogiana, Caparaó, Sul da Bahia…"
             />
           </Field>
 
@@ -387,7 +387,7 @@ export function CorretoraSubmissionForm() {
               className={`${
                 errors.description ? inputClassError : inputClass
               } resize-y leading-relaxed`}
-              placeholder="Atuamos há mais de 10 anos na Zona da Mata mineira, focados em cafés especiais..."
+              placeholder="Conte em 2-3 linhas a história da sua corretora, há quanto tempo atua e o perfil do café que negocia."
             />
           </Field>
 

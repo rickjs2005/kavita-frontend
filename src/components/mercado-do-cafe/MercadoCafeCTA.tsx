@@ -10,7 +10,7 @@ type Props = {
 
 export function MercadoCafeCTA({
   title = "Quer vender seu café pelo melhor preço?",
-  description = "Encontre corretoras de café que atuam na Zona da Mata mineira. Compare, conheça e entre em contato diretamente.",
+  description = "Encontre corretoras de café auditadas em regiões produtoras do Brasil. Compare, conheça e entre em contato diretamente.",
   href = "/mercado-do-cafe/corretoras",
   buttonLabel = "Ver Corretoras",
 }: Props) {

@@ -10,7 +10,7 @@ import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 export const metadata = {
   title: "Como verificamos as corretoras | Kavita · Mercado do Café",
   description:
-    "Entenda como a Kavita verifica corretoras de café da Zona da Mata Mineira antes de publicá-las — CNPJ, endereço, responsável e histórico.",
+    "Entenda como a Kavita audita corretoras de café antes de publicá-las — CNPJ, endereço, responsável e histórico. Rede nacional com praça piloto na Zona da Mata Mineira.",
 };
 
 const CRITERIOS = [
@@ -22,7 +22,7 @@ const CRITERIOS = [
   {
     n: "02",
     titulo: "Endereço físico confirmado",
-    desc: "Validamos o endereço físico declarado na região da Zona da Mata Mineira, preferencialmente em município cafeeiro.",
+    desc: "Validamos o endereço físico declarado na região cafeeira informada pela corretora, preferencialmente em município produtor de café.",
   },
   {
     n: "03",

@@ -17,9 +17,9 @@ import Link from "next/link";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 
 export const metadata = {
-  title: "Guia do Produtor · Café da Zona da Mata | Kavita",
+  title: "Guia do Produtor · Café | Kavita",
   description:
-    "Entenda o que faz uma corretora de café, como funciona a comissão, o calendário da safra na Zona da Mata Mineira e o selo Matas de Minas.",
+    "Entenda o que faz uma corretora de café, como funciona a comissão, o calendário da safra e o selo Matas de Minas. Guia para produtores de café do Brasil, com exemplos da Zona da Mata Mineira.",
 };
 
 const TOPICOS = [
@@ -82,7 +82,7 @@ export default function GuiaPage() {
             </div>
             <div className="h-6 w-px bg-white/15" aria-hidden />
             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-300/90">
-              Educacional · Zona da Mata
+              Educacional · Café
             </p>
           </div>
 
@@ -95,8 +95,9 @@ export default function GuiaPage() {
 
           <p className="mt-5 max-w-2xl text-sm leading-relaxed text-stone-300 md:text-base">
             O que você precisa saber antes de negociar com uma corretora de
-            café na Zona da Mata Mineira. Conteúdo direto, escrito para o
-            produtor — sem jargão desnecessário.
+            café. Conteúdo direto, escrito para o produtor — com exemplos da
+            Zona da Mata Mineira (nossa praça piloto) e aplicáveis a qualquer
+            região produtora do Brasil.
           </p>
         </header>
 

@@ -40,7 +40,7 @@ export async function generateMetadata({
   }
   return {
     title: `Corretoras de café em ${cidade.nome} — ${cidade.estado} | Kavita`,
-    description: `Encontre corretoras de café em ${cidade.nome} (${cidade.regiao}). Cotações, canais diretos de contato e rede curada pela Kavita para produtores da Zona da Mata Mineira.`,
+    description: `Encontre corretoras de café em ${cidade.nome} (${cidade.regiao}). Cotações, canais diretos de contato e rede curada pela Kavita para produtores de café do Brasil.`,
   };
 }
 
@@ -212,7 +212,7 @@ export default async function CidadePage({
               Ainda sem corretoras ativas em {cidade.nome}
             </p>
             <p className="relative mx-auto mt-1 max-w-md text-xs leading-relaxed text-stone-400">
-              Estamos construindo a rede da Zona da Mata. Veja corretoras próximas que também atendem a região.
+              Estamos construindo a rede Kavita em regiões produtoras. Veja corretoras próximas que também atendem a região.
             </p>
             <Link
               href="/mercado-do-cafe/corretoras"
@@ -230,19 +230,21 @@ export default async function CidadePage({
               Sobre a região
             </p>
             <h2 className="mt-2 text-lg font-semibold text-stone-50 md:text-xl">
-              {cidade.nome} no café da Zona da Mata
+              {cidade.nome} no café {cidade.regiao ? `da ${cidade.regiao}` : "do Brasil"}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-stone-300">
               {cidade.descricao ??
-                `${cidade.nome} integra a Zona da Mata Mineira, uma das regiões mais importantes na produção de café arábica do Brasil. Corretoras locais fazem a ponte entre produtores e compradores nacionais e internacionais.`}
+                `${cidade.nome}${cidade.regiao ? ` integra a região ${cidade.regiao}` : " é um município produtor de café"}, uma das praças cafeeiras importantes na produção do Brasil. Corretoras locais fazem a ponte entre produtores e compradores nacionais e internacionais.`}
             </p>
-            <p className="mt-3 text-sm leading-relaxed text-stone-400">
-              A Denominação de Origem{" "}
-              <span className="font-semibold text-amber-200">Matas de Minas</span>{" "}
-              reconhece a qualidade única dos cafés produzidos nesta região,
-              com características sensoriais específicas e tradição cafeeira
-              centenária.
-            </p>
+            {cidade.regiao === "Zona da Mata" && (
+              <p className="mt-3 text-sm leading-relaxed text-stone-400">
+                A Denominação de Origem{" "}
+                <span className="font-semibold text-amber-200">Matas de Minas</span>{" "}
+                reconhece a qualidade única dos cafés produzidos nesta região,
+                com características sensoriais específicas e tradição cafeeira
+                centenária.
+              </p>
+            )}
           </div>
 
           <div className="rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/[0.08] backdrop-blur-sm md:p-7">
