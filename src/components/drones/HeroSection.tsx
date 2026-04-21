@@ -3,9 +3,20 @@
 import type { DronePageSettings, DroneRepresentative } from "@/types/drones";
 import { absUrl } from "@/utils/absUrl";
 
+// Defaults de copy. Usados quando o admin ainda não preencheu o hero —
+// evita a landing ficar vazia ou mostrar placeholder de dev em produção.
+const DEFAULT_HERO_TITLE =
+  "Drones agrícolas DJI Agras para produtividade no campo";
+const DEFAULT_HERO_SUBTITLE =
+  "Pulverização precisa, economia de insumos e mais agilidade na safra. Atendimento com representante autorizado Kavita para ajudar você a escolher o modelo certo para sua propriedade.";
+const DEFAULT_CTA_TITLE = "Fale com um representante";
+const DEFAULT_CTA_BUTTON = "Falar no WhatsApp";
+const DEFAULT_CTA_MESSAGE =
+  "Olá! Quero conhecer melhor os drones DJI Agras da Kavita.";
+
 function buildWaLink(rep: DroneRepresentative, template?: string | null) {
   const phone = String(rep.whatsapp || "").replace(/\D/g, "");
-  const msg = template || "Olá! Quero conhecer melhor os drones da Kavita.";
+  const msg = template || DEFAULT_CTA_MESSAGE;
   const text = encodeURIComponent(`${msg}\n\nLoja: ${rep.name}`);
   const full = phone.startsWith("55") ? phone : `55${phone}`;
   return `https://wa.me/${full}?text=${text}`;
@@ -25,6 +36,13 @@ export default function HeroSection({
     ? absUrl(page.hero_image_fallback_path)
     : null;
 
+  const title = (page.hero_title || "").trim() || DEFAULT_HERO_TITLE;
+  const subtitle =
+    (page.hero_subtitle || "").trim() || DEFAULT_HERO_SUBTITLE;
+  const ctaTitle = (page.cta_title || "").trim() || DEFAULT_CTA_TITLE;
+  const ctaButton =
+    (page.cta_button_label || "").trim() || DEFAULT_CTA_BUTTON;
+
   const reps = (representatives || []).slice(0, 4);
 
   return (
@@ -42,18 +60,16 @@ export default function HeroSection({
             </div>
 
             <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              {page.hero_title}
+              {title}
             </h1>
 
-            {page.hero_subtitle ? (
-              <p className="mt-4 text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl">
-                {page.hero_subtitle}
-              </p>
-            ) : null}
+            <p className="mt-4 text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl">
+              {subtitle}
+            </p>
 
             <div className="mt-7">
               <p className="text-sm font-semibold text-slate-200">
-                {page.cta_title || "Fale com um representante"}
+                {ctaTitle}
               </p>
 
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -89,11 +105,11 @@ export default function HeroSection({
                           representatives[0],
                           page.cta_message_template,
                         )
-                      : "#"
+                      : "#representantes"
                   }
                   className="inline-flex w-full sm:w-auto items-center justify-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white hover:brightness-110 transition focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
                 >
-                  {page.cta_button_label || "Falar no WhatsApp"}
+                  {ctaButton}
                 </a>
 
                 <a
@@ -113,17 +129,53 @@ export default function HeroSection({
                 src={heroVideo}
                 controls
                 playsInline
+                preload="metadata"
                 poster={heroImg || undefined}
               />
             ) : heroImg ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 className="w-full rounded-2xl aspect-video object-cover bg-black/30"
                 src={heroImg}
-                alt="Kavita Drones"
+                alt="Drone agrícola DJI Agras em operação"
+                loading="eager"
               />
             ) : (
-              <div className="aspect-video rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center text-slate-300 text-sm px-4 text-center">
-                Configure o vídeo ou imagem do Hero no Admin.
+              // Fallback neutro — sem texto de admin vazando para o produtor.
+              // Gradiente agro/tech com ícone sutil mantém o hero coerente
+              // mesmo enquanto o conteúdo não é configurado no admin.
+              <div
+                className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-emerald-900/50 via-slate-900 to-emerald-950"
+                aria-label="Drone agrícola Kavita"
+              >
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.25),transparent_60%),radial-gradient(circle_at_70%_70%,rgba(59,130,246,0.18),transparent_55%)]" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center px-6">
+                    <svg
+                      viewBox="0 0 64 64"
+                      className="mx-auto h-14 w-14 text-emerald-300/80"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <circle cx="16" cy="16" r="6" />
+                      <circle cx="48" cy="16" r="6" />
+                      <circle cx="16" cy="48" r="6" />
+                      <circle cx="48" cy="48" r="6" />
+                      <path d="M22 16h20M22 48h20M16 22v20M48 22v20" />
+                      <rect x="26" y="26" width="12" height="12" rx="2" />
+                    </svg>
+                    <p className="mt-3 text-sm font-semibold text-emerald-100">
+                      Kavita Drones
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      DJI Agras para o campo brasileiro
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

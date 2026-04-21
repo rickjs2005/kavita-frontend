@@ -14,8 +14,73 @@ import { useRouter, useSearchParams } from "next/navigation";
 import HeroSection from "@/components/drones/HeroSection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import CommentsSection from "@/components/drones/CommentsSection";
+import InterestFormSection from "@/components/drones/InterestFormSection";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
+
+// ─── Copy por modelo ────────────────────────────────────────────────
+// Conteúdo dos cards da linha DJI Agras. Mantido aqui (não no admin)
+// porque os modelos são catálogo da DJI, não conteúdo editorial.
+// Se a DJI lançar novo modelo, adicionar entrada aqui ou cair no
+// default genérico.
+type ModelCopy = {
+  badge: string;
+  tagline: string;
+  description: string;
+  benefits: Array<{ label: string; value: string }>;
+};
+
+const MODEL_COPY: Record<string, ModelCopy> = {
+  t25p: {
+    badge: "Pequenas e médias operações",
+    tagline: "Pulverização precisa para relevos variados",
+    description:
+      "Ideal para propriedades menores, agricultura familiar e áreas com relevo irregular.",
+    benefits: [
+      { label: "Operação", value: "Compacta" },
+      { label: "Precisão", value: "Alta" },
+      { label: "Manejo", value: "Ágil" },
+    ],
+  },
+  t70p: {
+    badge: "Produtividade elevada",
+    tagline: "Mais hectares por dia sem perder precisão",
+    description:
+      "Para quem precisa cobrir mais área na janela de safra com economia de insumos.",
+    benefits: [
+      { label: "Capacidade", value: "70 kg" },
+      { label: "Autonomia", value: "Longa" },
+      { label: "Economia", value: "Insumos" },
+    ],
+  },
+  t100: {
+    badge: "Grandes áreas e alta demanda",
+    tagline: "Máximo desempenho para operações intensas",
+    description:
+      "Desenhado para grandes lavouras, cooperativas e prestadores de serviço de alta vazão.",
+    benefits: [
+      { label: "Capacidade", value: "100 kg" },
+      { label: "Vazão", value: "Máxima" },
+      { label: "Alcance", value: "Amplo" },
+    ],
+  },
+};
+
+const MODEL_COPY_DEFAULT: ModelCopy = {
+  badge: "Drone agrícola DJI Agras",
+  tagline: "Pulverização com tecnologia DJI",
+  description:
+    "Fale com um representante para conhecer especificações e adequação à sua propriedade.",
+  benefits: [
+    { label: "Precisão", value: "DJI" },
+    { label: "Suporte", value: "Regional" },
+    { label: "Tecnologia", value: "Agras" },
+  ],
+};
+
+function getModelCopy(key: string): ModelCopy {
+  return MODEL_COPY[key?.toLowerCase?.() ?? ""] ?? MODEL_COPY_DEFAULT;
+}
 
 type MediaTypeLower = "image" | "video";
 type MediaTypeUpper = "IMAGE" | "VIDEO";
@@ -176,22 +241,20 @@ function MiniStat({ label, value }: { label: string; value: string }) {
 function ModelCard({
   model,
   onOpen,
+  isFirst,
 }: {
   model: DroneModel;
   onOpen: (key: string) => void;
+  isFirst: boolean;
 }) {
   const { url, type } = resolveCardMedia(model);
+  const copy = getModelCopy(model.key);
 
   return (
     <div className="relative w-[84vw] sm:w-[430px] md:w-[470px] shrink-0 snap-start">
-      <div className="absolute -inset-3 rounded-[32px] bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.22),transparent_55%),radial-gradient(circle_at_70%_70%,rgba(59,130,246,0.18),transparent_60%)] blur-2xl opacity-80" />
+      <div className="absolute -inset-3 rounded-[32px] bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.18),transparent_55%),radial-gradient(circle_at_70%_70%,rgba(59,130,246,0.14),transparent_60%)] blur-2xl opacity-70" />
 
       <div className="group relative overflow-hidden rounded-[32px] border border-white/10 bg-dark-850/80 shadow-[0_30px_90px_-50px_rgba(0,0,0,0.95)] backdrop-blur-xl">
-        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition">
-          <div className="absolute -inset-[2px] rounded-[34px] bg-[conic-gradient(from_220deg,rgba(16,185,129,0.0),rgba(16,185,129,0.65),rgba(59,130,246,0.45),rgba(16,185,129,0.0))] blur-sm animate-[spin_7s_linear_infinite]" />
-          <div className="absolute inset-[1px] rounded-[32px] bg-dark-850" />
-        </div>
-
         <div className="relative">
           <div className="relative aspect-[16/10] bg-gradient-to-br from-white/10 via-white/5 to-transparent">
             {url && type === "video" ? (
@@ -200,53 +263,72 @@ function ModelCard({
                 src={url}
                 muted
                 playsInline
-                autoPlay
                 loop
+                preload="metadata"
+                // Evita autoplay simultâneo em vários cards no carrossel —
+                // só o primeiro toca automático, os demais ficam estáticos
+                // (ajuda em conexões 4G mais lentas no campo).
+                autoPlay={isFirst}
               />
             ) : url && type === "image" ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 className="h-full w-full object-cover"
                 src={url}
-                alt={model.label}
+                alt={`${model.label} — drone agrícola DJI Agras`}
+                loading={isFirst ? "eager" : "lazy"}
               />
             ) : (
-              <div className="h-full w-full flex items-center justify-center">
+              // Fallback visual quando o admin ainda não configurou a mídia.
+              // Sem texto de dev — apenas um marco institucional discreto
+              // com o nome do modelo.
+              <div
+                className="h-full w-full flex items-center justify-center bg-gradient-to-br from-emerald-900/40 via-slate-900/60 to-emerald-950/80"
+                aria-label={`${model.label} — imagem em breve`}
+              >
                 <div className="text-center px-6">
-                  <div className="text-sm text-slate-200 font-extrabold">
-                    Mídia do modelo
+                  <svg
+                    viewBox="0 0 64 64"
+                    className="mx-auto h-10 w-10 text-emerald-300/70"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <circle cx="16" cy="16" r="5" />
+                    <circle cx="48" cy="16" r="5" />
+                    <circle cx="16" cy="48" r="5" />
+                    <circle cx="48" cy="48" r="5" />
+                    <path d="M21 16h22M21 48h22M16 21v22M48 21v22" />
+                    <rect x="26" y="26" width="12" height="12" rx="2" />
+                  </svg>
+                  <div className="mt-2 text-sm font-extrabold text-slate-100">
+                    {model.label}
                   </div>
-                  <div className="text-xs text-slate-400 mt-1">
-                    Selecione uma imagem/vídeo no admin (Card) para aparecer
-                    aqui.
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    DJI Agras · Kavita Drones
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(16,185,129,0.18),transparent_45%),radial-gradient(circle_at_80%_60%,rgba(59,130,246,0.14),transparent_55%)]" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
 
             <div className="absolute left-4 top-4 right-4 flex items-start justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge>🚀 Inovação</Badge>
-                <Badge>🌱 AgroTech</Badge>
-              </div>
+              <Badge>{copy.badge}</Badge>
 
               <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 text-[11px] font-extrabold text-emerald-200">
                 MODELO
               </span>
             </div>
 
-            <div className="pointer-events-none absolute inset-0 opacity-70">
-              <div className="absolute -left-1/3 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent rotate-12 translate-x-[-30%] group-hover:translate-x-[220%] transition duration-[1200ms] ease-out" />
-            </div>
-
             <div className="absolute left-4 bottom-4 right-4">
               <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-4 py-2 backdrop-blur">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.85)]" />
+                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.7)]" />
                 <span className="text-[11px] font-bold text-slate-200">
-                  Sistema inteligente de pulverização
+                  {copy.tagline}
                 </span>
               </div>
             </div>
@@ -259,16 +341,16 @@ function ModelCard({
               <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
                 {model.label}
               </h3>
-              <p className="mt-1 text-xs sm:text-sm text-slate-300">
-                Especificações • Funcionalidades • Benefícios • Galeria
+              <p className="mt-1 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                {copy.description}
               </p>
             </div>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
-            <MiniStat label="Precisão" value="Alta" />
-            <MiniStat label="Performance" value="Pro" />
-            <MiniStat label="Eficiência" value="Max" />
+            {copy.benefits.map((b) => (
+              <MiniStat key={b.label} label={b.label} value={b.value} />
+            ))}
           </div>
 
           <div className="mt-5 flex items-center gap-3">
@@ -279,22 +361,17 @@ function ModelCard({
                          shadow-[0_18px_60px_-25px_rgba(16,185,129,0.95)]
                          hover:brightness-[1.05] active:scale-[0.99]"
             >
-              <span className="absolute inset-0 rounded-2xl opacity-60 blur-xl bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.25),transparent_55%)]" />
-              <span className="relative">Ver mais</span>
+              <span className="relative">Ver detalhes</span>
             </button>
-
-            <div className="hidden sm:flex flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[12px] text-slate-300">
-              Clique para detalhes completos e galeria do {model.label}.
-            </div>
           </div>
 
           <div className="mt-4 h-px w-full bg-gradient-to-r from-transparent via-white/12 to-transparent" />
 
           <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
-            <span className="font-bold">Kavita Drones • Tecnologia</span>
+            <span className="font-bold">Kavita Drones · DJI Agras</span>
             <span className="inline-flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-blue-400/80" />
-              sistema verificado
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
+              atendimento com representante
             </span>
           </div>
         </div>
@@ -380,8 +457,13 @@ function ModelsCarouselSection({
             ref={scrollerRef}
             className="relative flex gap-4 overflow-x-auto overscroll-x-contain snap-x snap-mandatory scroll-smooth no-scrollbar"
           >
-            {models.map((m) => (
-              <ModelCard key={m.key} model={m} onOpen={onOpenModel} />
+            {models.map((m, i) => (
+              <ModelCard
+                key={m.key}
+                model={m}
+                onOpen={onOpenModel}
+                isFirst={i === 0}
+              />
             ))}
           </div>
 
@@ -397,6 +479,82 @@ function ModelsCarouselSection({
               Fale com um representante
             </button>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Seção de confiança ─────────────────────────────────────────────
+// Bloco simples de "por que falar com a Kavita antes de comprar".
+// Sem prova regulatória real aqui (isso exige selos ANAC/MAPA/RT no
+// rodapé quando a operação formalizar). Esta seção foca no valor do
+// atendimento humano/regional — honesto sobre o que já existe hoje.
+function TrustSection() {
+  const pillars = [
+    {
+      title: "Atendimento regional",
+      desc: "Representantes autorizados Kavita em cidades produtoras — contato humano, não call center.",
+    },
+    {
+      title: "Suporte na escolha do modelo",
+      desc: "Orientação sobre qual DJI Agras cabe no tamanho da sua área, relevo e cultura.",
+    },
+    {
+      title: "Contato direto por WhatsApp",
+      desc: "Fale diretamente com o representante da sua região, sem intermediários.",
+    },
+    {
+      title: "Orientação antes da compra",
+      desc: "Tire dúvidas sobre operação, manutenção e treinamento antes de decidir.",
+    },
+  ];
+
+  return (
+    <section className="py-12 sm:py-16">
+      <div className="max-w-6xl mx-auto px-5">
+        <div className="text-center max-w-2xl mx-auto">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
+            Por que escolher a Kavita
+          </p>
+          <h2 className="mt-2 text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white">
+            Atendimento humano para uma decisão técnica
+          </h2>
+          <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
+            Drone agrícola é investimento sério. A Kavita oferece conversa
+            direta com representante autorizado para você escolher com
+            segurança o modelo certo para sua operação.
+          </p>
+        </div>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {pillars.map((p) => (
+            <div
+              key={p.title}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+            >
+              <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                  aria-hidden
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </div>
+              <h3 className="mt-3 text-sm font-extrabold text-white">
+                {p.title}
+              </h3>
+              <p className="mt-1 text-xs sm:text-[13px] leading-relaxed text-slate-300">
+                {p.desc}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -567,10 +725,23 @@ export default function DronesPublicPage() {
         !["specs", "features", "benefits", "gallery"].includes(String(k)),
     );
 
+    // Garante a ordem canônica: hero → models → trust → interest →
+    // representatives → comments. Seções de conteúdo (trust/interest)
+    // são injetadas se não vierem do admin.
     if (!filtered.includes("models")) {
       const heroIndex = filtered.indexOf("hero");
       if (heroIndex >= 0) filtered.splice(heroIndex + 1, 0, "models");
       else filtered.unshift("models");
+    }
+    if (!filtered.includes("trust")) {
+      const modelsIndex = filtered.indexOf("models");
+      if (modelsIndex >= 0) filtered.splice(modelsIndex + 1, 0, "trust");
+      else filtered.push("trust");
+    }
+    if (!filtered.includes("interest")) {
+      const repsIndex = filtered.indexOf("representatives");
+      if (repsIndex >= 0) filtered.splice(repsIndex, 0, "interest");
+      else filtered.push("interest");
     }
 
     return filtered;
@@ -587,6 +758,16 @@ export default function DronesPublicPage() {
           const el = document.getElementById("drones-representatives");
           if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
         }}
+      />
+    ),
+
+    trust: <TrustSection />,
+
+    interest: (
+      <InterestFormSection
+        models={models.filter((m) => String(m.is_active ?? 1) === "1")}
+        representative={representatives?.[0]}
+        messageTemplate={mergedPage?.cta_message_template}
       />
     ),
 
