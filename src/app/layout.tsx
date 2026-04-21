@@ -10,6 +10,7 @@ import ConditionalHeader from "@/components/layout/ConditionalHeader";
 import ConditionalFloatingWidgets from "@/components/layout/ConditionalFloatingWidgets";
 import WhatsAppFloatingButton from "@/components/ui/WhatsAppFloatingButton";
 import ChatAssistant from "@/components/ui/ChatAssistant";
+import { CookieBanner } from "@/components/CookieBanner";
 
 import { fetchPublicCategories } from "@/server/data/categories";
 import { fetchPublicShopSettings } from "@/server/data/shopSettings";
@@ -87,6 +88,7 @@ export default async function RootLayout({
               )}
             </ConditionalFloatingWidgets>
             <Toaster position="top-right" />
+            <CookieBanner />
           </CartProvider>
         </AuthProvider>
       </body>
