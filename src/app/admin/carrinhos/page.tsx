@@ -39,6 +39,14 @@ type WhatsAppLinkResponse = {
   message_text: string;
 };
 
+type ScanReport = {
+  candidates: number;
+  inserted: number;
+  skippedEmpty: number;
+  skippedError: number;
+  minHours: number;
+};
+
 /* --------------------------- helpers --------------------------- */
 
 
@@ -177,6 +185,22 @@ async function notifyCart(id: number, tipo: "whatsapp" | "email") {
   await apiClient.post(`/api/admin/carrinhos/${id}/notificar`, { tipo });
 }
 
+async function runScan(): Promise<ScanReport> {
+  const data = await apiClient.post<ScanReport>(
+    "/api/admin/carrinhos/scan",
+    {},
+  );
+  // backend devolve { candidates, inserted, skippedEmpty, skippedError, minHours }
+  // apiClient faz unwrap do envelope { ok, data }.
+  return {
+    candidates: Number(data?.candidates ?? 0),
+    inserted: Number(data?.inserted ?? 0),
+    skippedEmpty: Number(data?.skippedEmpty ?? 0),
+    skippedError: Number(data?.skippedError ?? 0),
+    minHours: Number(data?.minHours ?? 24),
+  };
+}
+
 async function getWhatsAppLink(id: number): Promise<WhatsAppLinkResponse> {
   const data = await apiClient.get<WhatsAppLinkResponse>(
     `/api/admin/carrinhos/${id}/whatsapp-link`,
@@ -265,6 +289,10 @@ export default function AdminCarrinhosAbandonadosPage() {
 
   // ✅ novo: controla qual carrinho está expandido (mostrar TODOS os itens)
   const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  // Scan manual
+  const [scanLoading, setScanLoading] = useState(false);
+  const [lastScan, setLastScan] = useState<ScanReport | null>(null);
 
   const router = useRouter();
 
@@ -394,6 +422,43 @@ export default function AdminCarrinhosAbandonadosPage() {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
+  const handleRunScan = async () => {
+    try {
+      setScanLoading(true);
+      const report = await runScan();
+      setLastScan(report);
+
+      if (report.inserted > 0) {
+        toast.success(
+          `Scan concluído: ${report.inserted} carrinho(s) adicionado(s) à lista.`,
+        );
+      } else if (report.candidates > 0) {
+        toast(
+          `Scan concluído: ${report.candidates} candidato(s), nenhum novo (já registrados ou vazios).`,
+          { icon: "ℹ️" },
+        );
+      } else {
+        toast(`Scan concluído: nenhum carrinho elegível no momento.`, {
+          icon: "ℹ️",
+        });
+      }
+
+      await carregar();
+    } catch (err: any) {
+      console.error("Erro ao executar scan:", err);
+
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        router.push("/admin/login");
+        return;
+      }
+
+      toast.error("Não foi possível buscar carrinhos abandonados agora.");
+    } finally {
+      setScanLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen w-full px-4 py-6 sm:px-6 lg:px-8">
@@ -507,6 +572,17 @@ export default function AdminCarrinhosAbandonadosPage() {
           <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
             <button
               type="button"
+              onClick={handleRunScan}
+              disabled={scanLoading}
+              className="inline-flex items-center rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {scanLoading
+                ? "Buscando..."
+                : "Buscar carrinhos abandonados agora"}
+            </button>
+
+            <button
+              type="button"
               onClick={carregar}
               className="inline-flex items-center rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-900"
             >
@@ -526,6 +602,26 @@ export default function AdminCarrinhosAbandonadosPage() {
             </div>
           </div>
         </header>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-3 text-xs text-slate-300">
+          <p>
+            Detecção automática ativa: carrinhos com mais de{" "}
+            <span className="font-semibold text-slate-100">
+              {lastScan?.minHours ?? 24}h
+            </span>{" "}
+            sem atualização aparecem aqui sozinhos. Use o botão acima para
+            forçar uma busca manual a qualquer momento.
+          </p>
+          {lastScan ? (
+            <p className="mt-1 text-[11px] text-slate-400">
+              Última busca manual: {lastScan.candidates} candidato(s) •{" "}
+              <span className="text-emerald-300">
+                {lastScan.inserted} novo(s)
+              </span>{" "}
+              • {lastScan.skippedEmpty} vazio(s).
+            </p>
+          ) : null}
+        </div>
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
