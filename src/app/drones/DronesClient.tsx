@@ -15,6 +15,10 @@ import HeroSection from "@/components/drones/HeroSection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import CommentsSection from "@/components/drones/CommentsSection";
 import InterestFormSection from "@/components/drones/InterestFormSection";
+import WhyDrones from "@/components/drones/WhyDrones";
+import WhoIsFor from "@/components/drones/WhoIsFor";
+import HowItWorks from "@/components/drones/HowItWorks";
+import DronesFAQ from "@/components/drones/DronesFAQ";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 
@@ -488,7 +492,7 @@ function ModelsCarouselSection({
   }
 
   return (
-    <section className="py-10 sm:py-14">
+    <section id="drones-models" className="py-10 sm:py-14 scroll-mt-24">
       <style>{`
         .no-scrollbar {
           -ms-overflow-style: none;
@@ -820,13 +824,26 @@ export default function DronesPublicPage() {
   );
 
   const sectionsOrder = useMemo(() => {
+    // Ordem canônica da landing — fases 1/2/3 do redesign:
+    // hero → why (educativa) → models (cards c/ specs reais) →
+    // who (segmentação) → how (processo 5 passos) → trust →
+    // interest (form WhatsApp) → representatives (lista) →
+    // faq (objeções) → comments (prova social).
+    //
+    // Se o admin mandar sections_order_json, respeitamos. Caso
+    // contrário, usamos a ordem fixa abaixo. Seções legadas de
+    // detalhe (specs/features/benefits/gallery) só existem em
+    // /drones/[id], então filtramos da ordem se vierem do admin.
     const raw = mergedPage?.sections_order_json || [
       "hero",
-      "specs",
-      "features",
-      "benefits",
-      "gallery",
+      "why",
+      "models",
+      "who",
+      "how",
+      "trust",
+      "interest",
       "representatives",
+      "faq",
       "comments",
     ];
 
@@ -835,30 +852,42 @@ export default function DronesPublicPage() {
         !["specs", "features", "benefits", "gallery"].includes(String(k)),
     );
 
-    // Garante a ordem canônica: hero → models → trust → interest →
-    // representatives → comments. Seções de conteúdo (trust/interest)
-    // são injetadas se não vierem do admin.
-    if (!filtered.includes("models")) {
-      const heroIndex = filtered.indexOf("hero");
-      if (heroIndex >= 0) filtered.splice(heroIndex + 1, 0, "models");
-      else filtered.unshift("models");
+    // Injeta as seções novas na ordem certa, caso venham do admin
+    // faltando alguma (compatibilidade com sections_order_json legado).
+    function ensureAfter(list: string[], after: string, key: string) {
+      if (list.includes(key)) return;
+      const idx = list.indexOf(after);
+      if (idx >= 0) list.splice(idx + 1, 0, key);
+      else list.push(key);
     }
-    if (!filtered.includes("trust")) {
-      const modelsIndex = filtered.indexOf("models");
-      if (modelsIndex >= 0) filtered.splice(modelsIndex + 1, 0, "trust");
-      else filtered.push("trust");
+    function ensureBefore(list: string[], before: string, key: string) {
+      if (list.includes(key)) return;
+      const idx = list.indexOf(before);
+      if (idx >= 0) list.splice(idx, 0, key);
+      else list.push(key);
     }
-    if (!filtered.includes("interest")) {
-      const repsIndex = filtered.indexOf("representatives");
-      if (repsIndex >= 0) filtered.splice(repsIndex, 0, "interest");
-      else filtered.push("interest");
-    }
+
+    ensureAfter(filtered, "hero", "why");
+    ensureAfter(filtered, "why", "models");
+    ensureAfter(filtered, "models", "who");
+    ensureAfter(filtered, "who", "how");
+    ensureAfter(filtered, "how", "trust");
+    ensureBefore(filtered, "representatives", "interest");
+    ensureAfter(filtered, "representatives", "faq");
 
     return filtered;
   }, [mergedPage]);
 
   const sections: Record<string, JSX.Element> = {
     hero: <HeroSection page={mergedPage} representatives={representatives} />,
+
+    why: <WhyDrones />,
+
+    who: <WhoIsFor />,
+
+    how: <HowItWorks />,
+
+    faq: <DronesFAQ />,
 
     models: (
       <ModelsCarouselSection
