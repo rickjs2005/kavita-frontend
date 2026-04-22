@@ -13,6 +13,12 @@
 # testing
 /coverage
 
+# CI artifacts (lint/eslint/vitest reports)
+lint-report.txt
+eslint-report.json
+eslint-effective.json
+tests-baseline/
+
 # next.js
 /.next/
 /out/
