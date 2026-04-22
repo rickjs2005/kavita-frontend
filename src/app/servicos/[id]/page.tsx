@@ -1,18 +1,28 @@
 import { notFound } from "next/navigation";
 import type { Service } from "@/types/service";
 import ServicoContent from "./ServicoContent";
-import { API_BASE } from "@/utils/absUrl";
 
 type PageProps = {
   params: Promise<{ id: string }>;
 };
+
+// Server Component: fetch roda no Node.js, precisa de URL absoluta.
+// @/utils/absUrl exporta API_BASE="" (vazio, funciona via rewrite do Next
+// apenas no browser). Aqui usamos o mesmo padrão dos fetchers em
+// src/server/data/*.ts — URL absoluta com fallback para dev local.
+const SERVER_API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.API_BASE ||
+  process.env.NEXT_PUBLIC_API_BASE ||
+  "http://localhost:5000"
+).replace(/\/$/, "");
 
 // 🔍 Busca um serviço público pelo ID
 async function fetchService(id: string): Promise<Service | null> {
   if (!id) return null;
 
   try {
-    const res = await fetch(`${API_BASE}/api/public/servicos/${id}`, {
+    const res = await fetch(`${SERVER_API_BASE}/api/public/servicos/${id}`, {
       next: { revalidate: 60 },
     });
 
