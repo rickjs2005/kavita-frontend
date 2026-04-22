@@ -1,7 +1,12 @@
 export function normalizeSlug(s: string) {
+  // normalize NFD separa acentos do caractere base; o range ̀-ͯ
+  // remove os diacríticos, transliterando "Manhuaçu" -> "manhuacu" em vez de
+  // "manhuu" (o que acontecia com a regex [^a-z0-9-] aplicada pós-toLowerCase).
   return (s || "")
-    .trim()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
+    .trim()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "")
     .replace(/-+/g, "-")

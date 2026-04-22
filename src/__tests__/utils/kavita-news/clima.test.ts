@@ -34,8 +34,10 @@ describe("utils/kavita-news/clima", () => {
       expect(normalizeSlug(undefined)).toBe("");
     });
 
-    it("remove acentos por efeito da regex (não translitera)", () => {
-      expect(normalizeSlug("Café com Leite")).toBe("caf-com-leite");
+    it("translitera acentos via normalize NFD (preserva a letra base)", () => {
+      expect(normalizeSlug("Café com Leite")).toBe("cafe-com-leite");
+      expect(normalizeSlug("Manhuaçu")).toBe("manhuacu");
+      expect(normalizeSlug("São Paulo")).toBe("sao-paulo");
     });
   });
 

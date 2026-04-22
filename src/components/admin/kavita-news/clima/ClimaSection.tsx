@@ -15,7 +15,7 @@ export default function ClimaSection(props: {
 }) {
   const { apiBase, authOptions, onUnauthorized } = props;
 
-  const [editMode, setEditMode] = useState<ClimaEditMode>("manual");
+  const [editMode, setEditMode] = useState<ClimaEditMode>("ibge");
   const clima = useClimaAdmin({ apiBase, authOptions, onUnauthorized });
 
   // estado local para “Atualizar tudo”
