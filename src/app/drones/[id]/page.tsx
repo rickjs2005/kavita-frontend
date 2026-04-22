@@ -15,7 +15,9 @@ import FeaturesSection from "@/components/drones/FeaturesSection";
 import BenefitsSection from "@/components/drones/BenefitsSection";
 import GallerySection from "@/components/drones/GallerySection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
-import { absUrl, API_BASE } from "@/utils/absUrl";
+import { absUrl } from "@/utils/absUrl";
+import apiClient from "@/lib/apiClient";
+import { isApiError } from "@/lib/errors";
 
 // ✅ ajuste o path se seus types estiverem em outro lugar
 import type {
@@ -264,69 +266,80 @@ export default function DroneModelPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchModels = useCallback(async (): Promise<DroneModel[]> => {
-    const res = await fetch(`${API_BASE}/api/public/drones/models`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
+    try {
+      const data = await apiClient.get<unknown>("/api/public/drones/models");
+      const raw = extractArray<Dict>(data);
 
-    const json: unknown = await res.json();
-    const raw = extractArray<Dict>(json);
+      return raw
+        .map((m) => {
+          const key = String(m.key ?? m.model_key ?? "").toLowerCase();
+          const label = String(m.label ?? m.name ?? "").trim();
 
-    return raw
-      .map((m) => {
-        const key = String(m.key ?? m.model_key ?? "").toLowerCase();
-        const label = String(m.label ?? m.name ?? "").trim();
+          const mediaUrl = String(
+            m.card_media_url ??
+              m.media_url ??
+              m.video_url ??
+              m.image_url ??
+              m.image ??
+              m.video ??
+              m.cover_url ??
+              m.thumb_url ??
+              "",
+          );
 
-        const mediaUrl = String(
-          m.card_media_url ??
-            m.media_url ??
-            m.video_url ??
-            m.image_url ??
-            m.image ??
-            m.video ??
-            m.cover_url ??
-            m.thumb_url ??
-            "",
-        );
+          const mediaTypeRaw = m.card_media_type ?? m.media_type;
+          const inferredType =
+            normalizeMediaType(mediaTypeRaw, mediaUrl) ||
+            (mediaUrl ? "image" : "");
 
-        const mediaTypeRaw = m.card_media_type ?? m.media_type;
-        const inferredType =
-          normalizeMediaType(mediaTypeRaw, mediaUrl) ||
-          (mediaUrl ? "image" : "");
+          const cardMediaType =
+            inferredType === "video"
+              ? "video"
+              : inferredType === "image"
+                ? "image"
+                : undefined;
 
-        const cardMediaType =
-          inferredType === "video"
-            ? "video"
-            : inferredType === "image"
-              ? "image"
-              : undefined;
-
-        return {
-          key,
-          label,
-          card_media_url: mediaUrl || undefined,
-          card_media_type: cardMediaType,
-          _raw: m,
-        } satisfies DroneModel;
-      })
-      .filter((m) => m.key);
+          return {
+            key,
+            label,
+            card_media_url: mediaUrl || undefined,
+            card_media_type: cardMediaType,
+            _raw: m,
+          } satisfies DroneModel;
+        })
+        .filter((m) => m.key);
+    } catch (err) {
+      if (isApiError(err)) return [];
+      return [];
+    }
   }, []);
 
+  // apiClient faz unwrap automatico do envelope { ok, data }.
+  // Antes usavamos fetch direto e acessavamos root.landing/model_data,
+  // mas o backend responde { ok: true, data: { landing, model_data, ... } },
+  // entao as secoes ficavam vazias. Essa funcao agora retorna o payload
+  // ja desempacotado — as sections recebem os campos reais.
   const fetchPage = useCallback(async (): Promise<RootResponse | null> => {
-    const res = await fetch(`${API_BASE}/api/public/drones?model=${modelKey}`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as RootResponse;
+    try {
+      return await apiClient.get<RootResponse>(
+        `/api/public/drones?model=${encodeURIComponent(modelKey)}`,
+      );
+    } catch (err) {
+      if (isApiError(err)) return null;
+      return null;
+    }
   }, [modelKey]);
 
   const fetchRepresentatives = useCallback(async (): Promise<Dict[]> => {
-    const res = await fetch(`${API_BASE}/api/public/drones/representantes`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    const json: unknown = await res.json();
-    return extractArray<Dict>(json);
+    try {
+      const data = await apiClient.get<unknown>(
+        "/api/public/drones/representantes",
+      );
+      return extractArray<Dict>(data);
+    } catch (err) {
+      if (isApiError(err)) return [];
+      return [];
+    }
   }, []);
 
   useEffect(() => {
