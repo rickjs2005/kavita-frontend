@@ -124,13 +124,20 @@ Hooks notáveis:
 
 ### 4. Contexts (`src/context/`)
 
-Estado global compartilhado entre componentes:
+Estado global compartilhado entre componentes. Existem **quatro contextos de auth isolados** (um cookie HttpOnly por contexto) + o contexto do carrinho:
 
-| Context | Escopo | Persistência |
-|---------|--------|-------------|
-| `AuthContext` | Sessão do usuário da loja | Cookie HttpOnly (backend) |
-| `AdminAuthContext` | Sessão do administrador | Cookie HttpOnly (backend) |
-| `CartContext` | Carrinho de compras | localStorage + sync com backend |
+| Context | Escopo | Provider em | Persistência |
+|---------|--------|-------------|-------------|
+| `AuthContext` | Sessão do usuário da loja | `src/app/layout.tsx` (root) | Cookie HttpOnly `auth_token` |
+| `AdminAuthContext` | Sessão do administrador | `src/app/admin/layout.tsx` | Cookie HttpOnly `adminToken` |
+| `CorretoraAuthContext` | Sessão do usuário de corretora (+ impersonação admin) | `src/app/painel/corretora/layout.tsx` | Cookie HttpOnly próprio |
+| `ProducerAuthContext` | Sessão do produtor (magic-link) | `src/app/painel/produtor/layout.tsx` | Cookie HttpOnly próprio |
+| `CartContext` | Carrinho de compras | `src/app/layout.tsx` (root) | localStorage + sync com backend |
+
+Regras:
+- **Nunca** chame `useAdminAuth()` dentro de `/painel/corretora/*`, `useCorretoraAuth()` dentro de `/admin/*`, etc. Os providers não se cruzam.
+- Cada contexto tem `loadSession()`, `markLoggedIn(user)` e `logout()` com assinatura semelhante. `CorretoraAuthContext` tem `exitImpersonation()` a mais (usada pelo banner quando um admin entra no painel da corretora).
+- `AdminAuthContext` é o único com RBAC (`hasPermission`, `hasRole`) — os demais só têm sessão/login.
 
 O `CartContext` é composto por 4 sub-hooks em `src/context/cart/`:
 - `useCartPersistence` — Persiste no localStorage, isolado por userId
@@ -322,38 +329,74 @@ try {
 
 ## Autenticação
 
-### Fluxo de login do usuário
+O projeto tem **quatro fluxos de autenticação independentes**, um por persona. Cada um emite um cookie HttpOnly próprio; eles não se cruzam.
+
+### Fluxo 1 — Usuário da loja (`AuthContext`)
 
 ```
-1. Usuário preenche email/senha
-2. POST /api/login → backend retorna cookie HttpOnly + dados do usuário
+1. Usuário preenche email/senha em /login
+2. POST /api/login → backend retorna cookie HttpOnly auth_token + dados do usuário
 3. extractAuthUser(response) → valida via Zod AuthUserSchema
 4. Se válido: setUser(validated) → state populado
 5. Se inválido: schema rejeita → usuário não é autenticado
 6. Redirect para página anterior (ou home)
 ```
 
-### Fluxo de login admin
+Registro: `POST /api/users/register` + tentativa de login automático. Recuperação de senha: `POST /api/password-reset/request` + `/api/password-reset/confirm`. Verificação de e-mail: `POST /api/verify-email`.
+
+### Fluxo 2 — Administrador (`AdminAuthContext`)
 
 ```
-1. Admin preenche email/senha
-2. POST /api/admin/login → backend retorna cookie adminToken
+1. Admin preenche email/senha em /admin/login
+2. POST /api/admin/login → backend retorna cookie adminToken (HttpOnly)
 3. loadSession() → GET /api/admin/me → AdminUserSchema.safeParse(response)
-4. Se válido: setAdminUser(validated) → permissões carregadas do servidor
+4. Se válido: setAdminUser(validated) → role + permissions carregados do servidor
 5. Se inválido: clearState() → redirect para /admin/login
 ```
 
-### Expiração de sessão
+Middleware Edge `middleware.ts` checa presença do cookie em `/admin/**` para redirecionar cedo; validação real é no backend.
+
+### Fluxo 3 — Corretora (`CorretoraAuthContext`)
+
+```
+1. Usuário de corretora preenche email/senha em /painel/corretora/login
+2. POST /api/corretora/login → backend emite cookie HttpOnly de corretora
+3. loadSession() → GET /api/corretora/me → popula user state
+4. Se 401/403: redirect para /painel/corretora/login
+```
+
+Possui também:
+- `POST /api/corretora/magic-link` (fluxo alternativo via e-mail)
+- `POST /api/corretora/exit-impersonation` — usado quando um **admin** entra impersonando uma corretora via `/admin/mercado-do-cafe/corretora/[id]`; o banner do painel chama esse endpoint para voltar ao admin.
+- `POST /api/corretora/totp/setup` e `/totp/verify` — 2FA opcional.
+- `POST /api/corretora/password-reset/request` e `/confirm`.
+
+### Fluxo 4 — Produtor (`ProducerAuthContext`) — magic-link
+
+```
+1. Produtor digita e-mail em /produtor/entrar
+2. POST /api/public/produtor/magic-link { email } → backend envia e-mail
+3. Produtor clica no link → navega para /verificar/[token] (ou rota de callback)
+4. Frontend chama GET /api/produtor/verify/:token → backend emite cookie HttpOnly
+5. loadSession() → GET /api/produtor/me → popula user state
+6. Logout: POST /api/produtor/logout
+```
+
+Não existe senha para o produtor — toda a autenticação passa por magic-link. Também suporta solicitações LGPD: `POST /api/producer/data-request`, `/api/producer/data-deletion`.
+
+### Expiração de sessão (transversal)
 
 ```
 Qualquer request → apiClient recebe 401
   → dispatchAuthExpired(url)
     → window.dispatchEvent(new CustomEvent("auth:expired"))
-      → AuthContext/AdminAuthContext ouvem o evento
-        → Limpam state → Redirect para login
+      → Qualquer AuthContext ativo ouve o evento
+        → Limpa state → Redirect para a tela de login correspondente
 ```
 
-### Permissões admin
+### Permissões admin (RBAC)
+
+Apenas o `AdminAuthContext` carrega permissões granulares:
 
 ```typescript
 const { hasPermission, hasRole } = useAdminAuth();
@@ -362,6 +405,19 @@ if (hasPermission("products_manage")) { /* ... */ }
 if (hasRole(["master", "gerente"])) { /* ... */ }
 // Role "master" bypassa todas as verificações de permissão
 ```
+
+Os demais contextos (corretora, produtor) não têm RBAC — um usuário de corretora logado tem acesso a todos os endpoints do painel dela (gate adicional no backend via `verifyCorretora` + `requirePermission("mercado_cafe_leads.gerenciar")` quando aplicável).
+
+### Separação de áreas e redirect automático
+
+| Área | Layout | Provider exigido | Tela de login se ausente |
+|------|--------|------------------|--------------------------|
+| Loja pública | `src/app/layout.tsx` | `AuthProvider` (opcional — rotas públicas funcionam sem user) | `/login` |
+| Admin | `src/app/admin/layout.tsx` | `AdminAuthProvider` | `/admin/login` |
+| Painel corretora | `src/app/painel/corretora/layout.tsx` | `CorretoraAuthProvider` | `/painel/corretora/login` |
+| Painel produtor | `src/app/painel/produtor/layout.tsx` | `ProducerAuthProvider` | `/produtor/entrar` |
+| Mercado do Café público | `src/app/mercado-do-cafe/**` | nenhum | — (rota pública) |
+| News, Drones | `src/app/{news,drones}/**` | nenhum | — (rotas públicas) |
 
 ---
 

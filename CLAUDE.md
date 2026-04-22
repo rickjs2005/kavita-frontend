@@ -78,30 +78,55 @@ absUrl(produto.image)   // converte qualquer formato para URL absoluta
 
 O backend salva caminhos como `/uploads/modulo/arquivo.ext`. O `absUrl` trata todos os formatos possíveis: path com barra inicial, sem barra, filename puro, URL absoluta, `data:`, backslashes Windows. Nunca construa URL de upload manualmente com `${API_BASE}${campo}` — isso quebra se a env var tiver trailing slash.
 
-### Autenticação: dois contextos independentes
+### Autenticação: quatro contextos independentes
 
-| Contexto | Arquivo | Para quem | Mecanismo |
-|---|---|---|---|
-| `AuthContext` | `src/context/AuthContext.tsx` | usuários loja | cookie HttpOnly via `/api/auth` |
-| `AdminAuthContext` | `src/context/AdminAuthContext.tsx` | administradores | cookie HttpOnly via `/api/admin/auth` |
+O projeto tem **quatro contextos de auth isolados**, cada um com cookie HttpOnly próprio. Nunca misture o hook de um contexto com a árvore de outro.
 
-O layout admin (`src/app/admin/layout.tsx`) usa `AdminAuthProvider` e faz redirect automático para `/admin/login` sem sessão válida. Não misture os dois contextos.
+| Contexto | Arquivo | Provider usado em | Para quem | Cookie/Endpoint |
+|---|---|---|---|---|
+| `AuthContext` | `src/context/AuthContext.tsx` | `src/app/layout.tsx` (root) | usuários da loja | cookie `auth_token` via `/api/login`, `/api/users/register` |
+| `AdminAuthContext` | `src/context/AdminAuthContext.tsx` | `src/app/admin/layout.tsx` | administradores | cookie `adminToken` via `/api/admin/login`, `/api/admin/me` |
+| `CorretoraAuthContext` | `src/context/CorretoraAuthContext.tsx` | `src/app/painel/corretora/layout.tsx` | usuários de corretora | cookie próprio via `/api/corretora/login`, `/api/corretora/me`; também suporta **impersonação** (admin entra no painel) via `/api/corretora/exit-impersonation` |
+| `ProducerAuthContext` | `src/context/ProducerAuthContext.tsx` | `src/app/painel/produtor/layout.tsx` | produtor rural | **magic-link** via `/api/public/produtor/magic-link` → cookie emitido em `/api/produtor/verify/:token`; sessão lida em `/api/produtor/me` |
+
+Cada layout faz redirect automático para sua tela de login quando a sessão não existe:
+- `/admin/*` → `/admin/login`
+- `/painel/corretora/*` → `/painel/corretora/login`
+- `/painel/produtor/*` → `/produtor/entrar` (magic-link)
+
+Middleware Edge (`middleware.ts`) só protege `/admin/**` cosmeticamente (checa presença do cookie). Validação real é no backend.
 
 ### Estrutura de rotas
 
 ```
 src/app/
-├── (raiz)           → home pública (HomeClient)
-├── produtos/        → listagem + [id]
-├── servicos/        → listagem + [id]
-├── drones/          → landing + [id]
-├── news/            → Kavita News
+├── (raiz)                    → home pública (HomeClient)
+├── produtos/                 → listagem + [id]
+├── servicos/                 → listagem + [id]
+├── drones/                   → landing + [id]
+├── news/                     → Kavita News (posts + clima + cotações)
 ├── categorias/[category]
-├── checkout/        → fluxo de compra
-├── admin/           → painel admin (layout próprio com auth guard)
+├── mercado-do-cafe/          → hub público + corretoras, cidade, cadastro,
+│                               lead-status, lote-vendido, verificação
+├── checkout/                 → fluxo de compra (+ sucesso, pendente, erro)
+├── favoritos/                → requer auth loja
+├── meus-dados/               → perfil, endereços (auth loja)
+├── pedidos/                  → meus pedidos + [id] (auth loja)
+├── admin/                    → painel admin (AdminAuthProvider)
 │   ├── produtos, servicos, drones, pedidos, clientes, ...
-│   └── configuracoes, logs, equipe, frete, cupons, ...
-└── login, register, forgot-password, reset-password
+│   ├── carrinhos, cupons, destaques, frete, relatorios, ...
+│   ├── mercado-do-cafe/      → moderação corretoras, planos, KYC, métricas
+│   └── kavita-news, configuracoes, logs, auditoria, equipe
+├── painel/
+│   ├── corretora/            → dashboard, leads, contratos, reviews,
+│   │                           planos, equipe, analytics, notificações
+│   │                           (CorretoraAuthProvider)
+│   └── produtor/             → dashboard, perfil, meus-dados, contratos
+│                               (ProducerAuthProvider, magic-link)
+├── produtor/entrar           → formulário público magic-link
+├── login, register,
+   forgot-password,
+   reset-password             → fluxo auth da loja
 ```
 
 ### next.config.ts

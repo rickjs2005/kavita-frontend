@@ -84,16 +84,18 @@ Ao rodar `npm run test:run` pela primeira vez, **~46 testes falham em 8 arquivos
 
 ## Entendendo o projeto
 
-Kavita é uma plataforma de e-commerce agrícola com duas áreas:
+Kavita é uma plataforma agro multi-módulo com **quatro áreas distintas**:
 
-- **Área pública** (`/`): loja com produtos, serviços, drones, Kavita News, checkout com MercadoPago
-- **Painel admin** (`/admin`): gestão completa de conteúdo, pedidos, clientes, relatórios
+- **Loja pública** (`/`, `/produtos`, `/servicos`, `/drones`, `/news`, `/checkout`): catálogo + checkout MercadoPago
+- **Mercado do Café público** (`/mercado-do-cafe/*`): corretoras de café, leads, guia editorial, ticker CEPEA
+- **Painel admin** (`/admin/*`): gestão completa de catálogo, pedidos, clientes, moderação do Mercado do Café, KYC, relatórios
+- **Painéis privados** (`/painel/corretora/*`, `/painel/produtor/*`): área logada de corretoras e produtores rurais
 
 O frontend é um Next.js 15 (App Router) que consome uma API REST Express em repositório separado (`kavita-backend`). Autenticação é por cookies HttpOnly — o frontend não armazena tokens.
 
 ### Conceitos-chave
 
-Estes são os pilares do projeto. Entender esses 7 itens desbloqueia o resto:
+Estes são os pilares do projeto. Entender esses itens desbloqueia o resto:
 
 | Conceito | O que é | Arquivo |
 |----------|---------|---------|
@@ -101,6 +103,8 @@ Estes são os pilares do projeto. Entender esses 7 itens desbloqueia o resto:
 | `absUrl()` | Normaliza URLs de imagens/uploads para URL absoluta | `src/utils/absUrl.ts` |
 | `AuthContext` | Autenticação da loja (cookie HttpOnly, Zod validation) | `src/context/AuthContext.tsx` |
 | `AdminAuthContext` | Autenticação do admin (permissões do servidor, nunca localStorage) | `src/context/AdminAuthContext.tsx` |
+| `CorretoraAuthContext` | Autenticação do painel de corretora; suporta impersonação | `src/context/CorretoraAuthContext.tsx` |
+| `ProducerAuthContext` | Autenticação do produtor (magic-link, sem senha) | `src/context/ProducerAuthContext.tsx` |
 | `CartContext` | Carrinho (composto por 5 sub-hooks em `context/cart/`) | `src/context/CartContext.tsx` |
 | Server Data | Fetchers server-side para dados públicos (RSC) | `src/server/data/*.ts` |
 | Schemas Zod | Validação de respostas da API em fluxos críticos | `src/lib/schemas/api.ts` |
@@ -197,20 +201,23 @@ Para dados públicos renderizados no servidor (home, detalhe de produto, news), 
 
 ## Autenticação — o que você precisa saber
 
-Existem **dois sistemas de autenticação completamente independentes**:
+Existem **quatro sistemas de autenticação completamente independentes**, um por persona. Cada um tem seu próprio cookie HttpOnly, seu próprio provider e sua própria tela de login. Os providers **não se cruzam** — você nunca terá mais de um ativo ao mesmo tempo em uma mesma rota.
 
-| | Loja | Admin |
-|---|---|---|
-| **Context** | `AuthContext` | `AdminAuthContext` |
-| **Hook** | `useAuth()` | `useAdminAuth()` |
-| **Cookie** | HttpOnly padrão | `adminToken` (HttpOnly) |
-| **Login** | `POST /api/login` | `POST /api/admin/login` |
+| | Loja | Admin | Corretora | Produtor |
+|---|---|---|---|---|
+| **Context** | `AuthContext` | `AdminAuthContext` | `CorretoraAuthContext` | `ProducerAuthContext` |
+| **Hook** | `useAuth()` | `useAdminAuth()` | `useCorretoraAuth()` | `useProducerAuth()` |
+| **Cookie** | `auth_token` (HttpOnly) | `adminToken` (HttpOnly) | cookie próprio (HttpOnly) | cookie próprio (HttpOnly) |
+| **Login** | `POST /api/login` | `POST /api/admin/login` | `POST /api/corretora/login` | magic-link (`/api/public/produtor/magic-link`) |
+| **Provider vive em** | `src/app/layout.tsx` (root) | `src/app/admin/layout.tsx` | `src/app/painel/corretora/layout.tsx` | `src/app/painel/produtor/layout.tsx` |
+| **Tela de login** | `/login` | `/admin/login` | `/painel/corretora/login` | `/produtor/entrar` |
+| **Tem RBAC?** | não | sim (`hasPermission`, `hasRole`) | não | não |
 
-**Nunca** misture `useAuth()` em contexto admin ou `useAdminAuth()` em contexto de loja.
+**Nunca** misture um hook com o layout de outro contexto (ex.: `useAdminAuth()` dentro de `/painel/corretora/*`). Os providers não se cruzam — o hook lançará erro.
 
-O middleware Edge (`middleware.ts` na raiz) protege todas as rotas `/admin/*` verificando presença do cookie. A validação real (JWT, permissões) é no backend.
+O middleware Edge (`middleware.ts` na raiz) só protege `/admin/**` cosmeticamente (checa presença do cookie). A validação real (JWT, expiração, permissões) é sempre no backend.
 
-Veja [Fluxos Críticos](./critical-flows.md#login-do-usuário) para detalhes dos fluxos de login.
+Veja [Fluxos Críticos](./critical-flows.md#login-do-usuário) para os 4 fluxos detalhados (incluindo magic-link do produtor e impersonação de corretora pelo admin).
 
 ---
 
@@ -334,7 +341,7 @@ Os erros mais frequentes para quem chega no projeto:
 
 - Usar `fetch()` direto em vez de `apiClient`
 - Importar `server/data/` em Client Component (são `server-only`)
-- Misturar `useAuth()` e `useAdminAuth()` (são independentes)
+- Misturar hooks de contextos diferentes — os 4 contextos de auth (`useAuth`, `useAdminAuth`, `useCorretoraAuth`, `useProducerAuth`) são independentes; cada um só funciona dentro do seu próprio provider
 - Usar hex hardcoded em Tailwind em vez de design tokens
 - Construir URL de imagem manualmente em vez de `absUrl()`
 

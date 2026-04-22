@@ -92,11 +92,18 @@ Problemas comuns encontrados durante desenvolvimento e como resolvê-los.
 
 **Solução:** O cookie `adminToken` precisa ter `path=/` para ser acessível pelo middleware do Next.js.
 
-### useAuth() retorna null em componente dentro do admin
+### useAuth() retorna null em componente dentro do admin (ou painel corretora/produtor)
 
-**Causa:** Dentro do layout admin, apenas `AdminAuthContext` está disponível. `AuthContext` é o contexto da loja.
+**Causa:** Cada área da aplicação tem seu próprio provider. Os 4 contextos (`AuthContext`, `AdminAuthContext`, `CorretoraAuthContext`, `ProducerAuthContext`) são independentes e não se cruzam — se você chamar `useAuth()` dentro de `/admin/**`, vai receber `null`.
 
-**Solução:** Use `useAdminAuth()` em componentes admin. Os dois contextos são independentes.
+**Solução:** Use o hook correto para a área onde o componente vive:
+
+| Área | Hook |
+|------|------|
+| `/` (loja pública), `/checkout`, `/meus-dados` | `useAuth()` |
+| `/admin/**` | `useAdminAuth()` |
+| `/painel/corretora/**` | `useCorretoraAuth()` |
+| `/painel/produtor/**` | `useProducerAuth()` |
 
 ---
 

@@ -8,17 +8,25 @@ Documentação dos fluxos mais importantes do frontend: como funcionam, quais ar
 
 - [Login do usuário](#login-do-usuário)
 - [Login do administrador](#login-do-administrador)
+- [Login da corretora](#login-da-corretora)
+- [Login do produtor (magic-link)](#login-do-produtor-magic-link)
+- [Impersonação de corretora pelo admin](#impersonação-de-corretora-pelo-admin)
 - [Registro de usuário](#registro-de-usuário)
 - [Expiração de sessão](#expiração-de-sessão)
 - [Navegação pública e catálogo](#navegação-pública-e-catálogo)
 - [Carrinho de compras](#carrinho-de-compras)
 - [Checkout](#checkout)
+- [Carrinhos abandonados (admin)](#carrinhos-abandonados-admin)
 - [Gestão de pedidos (admin)](#gestão-de-pedidos-admin)
 - [CRUD admin (padrão geral)](#crud-admin-padrão-geral)
 - [Upload de imagens (admin)](#upload-de-imagens-admin)
 - [Hero section / banners](#hero-section--banners)
 - [Favoritos](#favoritos)
 - [Endereços do usuário](#endereços-do-usuário)
+- [Mercado do Café — lead público](#mercado-do-café--lead-público)
+- [Mercado do Café — painel corretora](#mercado-do-café--painel-corretora)
+- [KYC/AML da corretora](#kycaml-da-corretora)
+- [Contratos digitais (Fase 10.1)](#contratos-digitais-fase-101)
 
 ---
 
@@ -86,6 +94,94 @@ Documentação dos fluxos mais importantes do frontend: como funcionam, quais ar
 - `safeInternalRedirect()` previne open redirect no parâmetro `from`
 - Race conditions prevenidas via `inflightRef` (dedup de requests simultâneos)
 - Role `master` bypassa todas as verificações de permissão
+
+---
+
+## Login da corretora
+
+### Arquivos envolvidos
+- `src/app/painel/corretora/login/` — formulário
+- `src/app/painel/corretora/layout.tsx` — `CorretoraAuthProvider` + guard de rota
+- `src/context/CorretoraAuthContext.tsx` — `loadSession`, `markLoggedIn`, `logout`, `exitImpersonation`
+
+### Fluxo (senha)
+
+```
+1. Usuário de corretora preenche email + senha em /painel/corretora/login
+2. POST /api/corretora/login → backend emite cookie HttpOnly próprio (corretoraToken)
+3. markLoggedIn(user) e redirect para /painel/corretora
+4. loadSession() depois busca GET /api/corretora/me para manter state atualizado
+5. Se 401/403 em qualquer request: redirect para /painel/corretora/login
+```
+
+### Fluxo (magic-link alternativo)
+```
+POST /api/corretora/magic-link { email } → e-mail com token
+clique no link → GET /api/corretora/verify/:token → cookie emitido
+```
+
+### Diferenças em relação ao admin
+
+- Não tem RBAC — um usuário de corretora logado tem acesso a todas as telas do painel dela. Permissões granulares (ex.: `mercado_cafe_leads.gerenciar`) são aplicadas apenas no **backend** em endpoints sensíveis.
+- Multi-user: `corretora_users` suporta roles `owner`/`manager`/`sales`/`viewer`, mas o frontend ainda não as diferencia.
+- 2FA opcional via TOTP (`/api/corretora/totp/setup`, `/totp/verify`).
+- Reset de senha: `/api/corretora/password-reset/request` e `/confirm`.
+
+---
+
+## Login do produtor (magic-link)
+
+### Arquivos envolvidos
+- `src/app/produtor/entrar/EntrarClient.tsx` — formulário público (só e-mail)
+- `src/app/verificar/[token]/` ou rota callback — consome o token
+- `src/app/painel/produtor/layout.tsx` — `ProducerAuthProvider` + guard
+- `src/context/ProducerAuthContext.tsx` — `loadSession`, `markLoggedIn`, `logout`
+
+### Fluxo (não existe senha)
+
+```
+1. Produtor digita e-mail em /produtor/entrar
+2. POST /api/public/produtor/magic-link { email } → backend envia e-mail com token assinado
+3. Produtor clica no link → frontend consome GET /api/produtor/verify/:token
+4. Backend valida HMAC + expiração → emite cookie HttpOnly de produtor
+5. loadSession() → GET /api/produtor/me → popula user state
+6. Redirect para /painel/produtor
+7. Logout: POST /api/produtor/logout (cookie limpo; state zerado)
+```
+
+### Operações sensíveis
+- LGPD: `POST /api/producer/data-request`, `POST /api/producer/data-deletion` (Fase 10.3)
+- Listagem de contratos: `GET /api/producer/contratos`
+
+### Observações
+- O produtor não cria conta tradicional — o cadastro acontece quando ele é associado a um lead de corretora ou a um contrato.
+- Link tem TTL curto (definido no backend) — se expirar, o produtor pede um novo.
+
+---
+
+## Impersonação de corretora pelo admin
+
+### Arquivos envolvidos
+- `src/app/admin/mercado-do-cafe/corretora/[id]/page.tsx` — botão "Impersonar"
+- `src/context/CorretoraAuthContext.tsx` — `exitImpersonation()`
+
+### Fluxo
+
+```
+1. Admin em /admin/mercado-do-cafe/corretora/[id] clica "Entrar como corretora"
+2. POST /api/admin/corretoras/:id/impersonate → backend emite cookie de corretora
+   (o adminToken continua válido, é um cookie independente)
+3. Admin navega para /painel/corretora → vê tudo como se fosse a corretora
+4. Banner dourado no topo indica "Você está impersonando — Sair"
+5. Clique em "Sair" → exitImpersonation() → POST /api/corretora/exit-impersonation
+6. Backend limpa o cookie de corretora (adminToken permanece intacto)
+7. Redirect de volta para /admin/mercado-do-cafe/corretora/[id]
+```
+
+### Proteções
+- Toda ação em impersonação é gravada em `admin_audit_logs` (backend).
+- O botão "Sair" nunca deve ser escondido/disable — é o único caminho seguro de volta.
+- `CorretoraAuthContext.exitImpersonation` é distinto de `logout`: o primeiro limpa só o cookie de corretora, o segundo faz logout total.
 
 ---
 
@@ -610,3 +706,150 @@ Se o usuário altera endereços em `/meus-dados`, o checkout refletirá na próx
 - Todas as mutations fazem `throw err` após o toast de erro — isso permite que o caller (página) também reaja ao erro (ex: manter formulário aberto).
 - O `AddressForm` é compartilhado entre checkout e meus-dados — alterações nele afetam os dois contextos.
 - Os endpoints usam constantes centralizadas (`ENDPOINTS.USERS.ADDRESSES`) — não hardcode URLs.
+
+---
+
+## Carrinhos abandonados (admin)
+
+### Arquivos envolvidos
+- `src/app/admin/carrinhos/page.tsx` — listagem, botão "Buscar carrinhos abandonados agora", ações por carrinho
+- Backend: `routes/admin/adminCarts.js`, `services/cartsAdminService.js`, `jobs/abandonedCartsScanJob.js`
+
+### Detecção (automática + manual)
+
+```
+1. Job abandonedCartsScanJob roda a cada ABANDONED_CART_SCAN_INTERVAL_MS (default 15min)
+2. Pega carrinhos com status='aberto' e idade > ABANDONED_CART_MIN_HOURS (default 24h)
+3. Copia snapshot (itens + total) para carrinhos_abandonados e agenda 3 notificações
+   (whatsapp +1h, email +4h, whatsapp +24h)
+4. Admin abre /admin/carrinhos → GET /api/admin/carrinhos → lista populada
+5. Botão "Buscar carrinhos abandonados agora" → POST /api/admin/carrinhos/scan
+   devolve { candidates, inserted, skippedEmpty, skippedError, minHours }
+   registra em admin_audit_logs (action: carrinhos.scan)
+```
+
+### Ações por carrinho
+
+| Ação | Endpoint | Efeito |
+|------|----------|--------|
+| Registrar WhatsApp | `POST /api/admin/carrinhos/:id/notificar { tipo: "whatsapp" }` | insere notificação pending (worker **não envia** whatsapp — só registra) |
+| Abrir WhatsApp | `GET /api/admin/carrinhos/:id/whatsapp-link` | retorna `wa.me/...` com mensagem pronta; abre em nova aba |
+| Registrar e-mail | `POST /api/admin/carrinhos/:id/notificar { tipo: "email" }` | worker `abandonedCartNotificationsWorker` envia o e-mail automaticamente |
+
+### Recuperação
+Quando o cliente finaliza a compra, `checkoutService.markAbandonedCartRecovered()` marca `recuperado=1` e o worker cancela notificações pendentes.
+
+---
+
+## Mercado do Café — lead público
+
+### Arquivos envolvidos
+- `src/app/mercado-do-cafe/corretoras/[slug]/page.tsx` — detalhe da corretora (RSC)
+- `src/components/mercado-do-cafe/LeadContactForm.tsx` — formulário público
+- Backend: `routes/public/publicCorretoras.js`, `controllers/corretorasLeadsPublicController.js`
+
+### Fluxo
+
+```
+1. Produtor encontra corretora em /mercado-do-cafe/corretoras/[slug]
+2. Preenche formulário (nome, telefone, e-mail, produto, volume, cidade)
+3. POST /api/public/corretoras/:id/leads → backend valida Turnstile (invisible) + rate limit
+4. Lead entra em corretora_leads com status="novo"
+5. Corretora é notificada (e-mail + sino)
+6. Produtor recebe link com token para acompanhar status em
+   /mercado-do-cafe/lead-status/[id]/[token] — público, lido via HMAC
+```
+
+### Proteções
+- Cloudflare Turnstile invisible (verifyTurnstile no backend)
+- Rate limit global (Redis)
+- Token HMAC para consulta pública de status sem autenticação
+
+---
+
+## Mercado do Café — painel corretora
+
+### Arquivos envolvidos
+- `src/app/painel/corretora/leads/page.tsx` — inbox de leads
+- `src/app/painel/corretora/leads/[id]/page.tsx` — detalhe de lead
+- `src/components/painel-corretora/*` — LeadsTable, QuickRepliesDropdown, StatsCards, LiveMarketQuotes
+- Backend: `routes/corretoraPanel/corretoraLeads.js`, `services/corretoraLeadsService.js` (1182 linhas)
+
+### Fluxo do lead (do lado da corretora)
+
+```
+1. Corretora vê novo lead na inbox (/painel/corretora/leads)
+2. Abre o lead → GET /api/corretora/leads/:id
+3. Ações:
+   - mudar status: PUT /api/corretora/leads/:id/status (todo evento grava em corretora_lead_events)
+   - adicionar nota interna: POST /api/corretora/leads/:id/notes
+   - broadcast "lote vendido": backend envia link público HMAC para produtor
+   - gerar contrato: POST /api/corretora/contratos (bloqueado se KYC pendente — ver KYC abaixo)
+4. Atualização em tempo (quase) real: polling 60s em /api/corretora/notifications
+   (migração para SSE/WebSocket é roadmap)
+```
+
+### Ticker CEPEA/ICE
+Componente `LiveMarketQuotes` consome `GET /api/public/market-quotes` (Fase 10.4). Atualização visual a cada ~60s.
+
+---
+
+## KYC/AML da corretora
+
+### Arquivos envolvidos
+- `src/hooks/useMyKycStatus.ts` — status da própria corretora
+- `src/app/mercado-do-cafe/verificacao/page.tsx` — página pública informativa
+- `src/app/admin/mercado-do-cafe/page.tsx` — tab de KYC admin
+- Backend: `services/corretoraKycService.js`, `routes/admin/adminCorretoraKyc.js`
+
+### Estados possíveis (FSM)
+
+```
+pending → in_review → { verified | rejected }
+```
+
+### Gate de contrato
+
+```
+Corretora clica "Gerar contrato" no lead
+  → backend checa corretora_kyc.status
+  → se != "verified" → 400 { code: "KYC_REQUIRED" }
+  → frontend mostra banner "Conclua a verificação para emitir contratos"
+  → link para /mercado-do-cafe/verificacao
+```
+
+### Admin
+- `/admin/mercado-do-cafe` tab KYC: listar, aprovar, rejeitar, ver `provider_response_raw`
+- Providers: `kycMockAdapter` (dev) ou `kycBigdatacorpAdapter` (prod)
+- Toda ação grava em `admin_audit_logs`
+
+---
+
+## Contratos digitais (Fase 10.1)
+
+### Arquivos envolvidos
+- `src/hooks/useLeadContratos.ts` — contratos do lead
+- `src/hooks/useProducerContratos.ts` — contratos do produtor
+- `src/components/painel-corretora/ContratoCard.tsx`
+- Backend: `services/contratoService.js` (610L), `services/contratoSignerService.js`, `routes/public/publicContratoVerificacao.js`
+
+### Fluxo (corretora gera, produtor assina)
+
+```
+1. Corretora clica "Gerar contrato" no lead → POST /api/corretora/contratos
+2. Backend monta PDF com Puppeteer + SHA-256 hash + token QR único
+3. contrato entra em status="draft" → gera signed_pdf_url provisório
+4. Envia para ClickSign via contratoSignerService (provider configurável)
+5. ClickSign envia e-mail ao produtor → status="sent"
+6. Produtor assina na plataforma ClickSign
+7. Webhook POST /api/webhooks/clicksign → status="signed" + hash final registrado
+8. Verificação pública: /api/public/verificar-contrato/:token lê o QR
+   e confirma integridade (hash do PDF == registrado)
+```
+
+### Proteções
+- PDF impresso tem **QR Code + últimos 8 chars do SHA-256** no rodapé.
+- Webhook valida assinatura HMAC do ClickSign.
+- Em dev: `CONTRATO_SIGNER_PROVIDER=stub` usa mock local.
+- Status change grava em `subscription_events` e `admin_audit_logs`.
+
