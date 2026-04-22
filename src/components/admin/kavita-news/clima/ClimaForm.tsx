@@ -137,6 +137,10 @@ export default function ClimaForm({
 
   const isResettingRef = useRef(false);
 
+  // Flag que trava a auto-geração do slug assim que o usuário edita
+  // o campo slug na mão. Reset em clearFormData / startEdit.
+  const userEditedSlugRef = useRef(false);
+
   const ibgeHint = useMemo(() => {
     if (!showIbgeUi) return null;
     if (ibgeError) return ibgeError;
@@ -163,6 +167,7 @@ export default function ClimaForm({
 
   function clearFormData() {
     isResettingRef.current = true;
+    userEditedSlugRef.current = false;
 
     try {
       ibgeAbortRef.current?.abort();
@@ -389,6 +394,21 @@ export default function ClimaForm({
     }
   }
 
+  // Auto-gera slug a partir da cidade enquanto o usuário não editar
+  // manualmente. Funciona em ambos os modos (Manual e IBGE) e para
+  // novos cadastros. Em modo edição, não sobrescreve o slug existente.
+  useEffect(() => {
+    if (isResettingRef.current) return;
+    if (isEdit) return;
+    if (userEditedSlugRef.current) return;
+
+    const generated = normalizeSlug(form.city_name || "");
+    if (generated && generated !== form.slug) {
+      setForm((p) => ({ ...p, slug: generated }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.city_name, isEdit]);
+
   useEffect(() => {
     if (!showIbgeUi) return;
     if (isResettingRef.current) return;
@@ -559,7 +579,13 @@ export default function ClimaForm({
             <label className={labelBase}>Slug</label>
             <input
               value={form.slug}
-              onChange={(e) => set("slug", e.target.value)}
+              onChange={(e) => {
+                // marca como editado manualmente para interromper a
+                // auto-geração; se o usuário apagar tudo, volta a auto-gerar
+                const v = e.target.value;
+                userEditedSlugRef.current = v.trim().length > 0;
+                set("slug", v);
+              }}
               className={inputBase}
               placeholder="Ex: uberlandia"
               disabled={showIbgeUi}
