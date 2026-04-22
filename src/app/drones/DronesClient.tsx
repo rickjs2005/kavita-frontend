@@ -110,6 +110,64 @@ type RootResponse = {
   comments?: any;
 };
 
+// ─── Key-specs extraídos do model_data (cadastrados pelo admin) ─────
+// O admin cadastra specs em grupos (SpecsGroup[]): cada grupo tem
+// title + items[string]. Na landing principal queremos MOSTRAR as 3-4
+// specs mais comerciais (capacidade, vazão, largura). Esta função
+// achata todos os grupos e escolhe até 3 items (com prioridade para
+// termos-chave). Se o admin ainda não preencheu, retorna [] e o card
+// cai no fallback estático (MODEL_COPY.benefits).
+type ModelData = {
+  specs_title?: string | null;
+  specs_items_json?: Array<{ title?: string; items?: string[] }> | null;
+} | null;
+
+function extractKeySpecs(md: ModelData, max = 3): string[] {
+  if (!md?.specs_items_json || !Array.isArray(md.specs_items_json)) return [];
+
+  const flat: string[] = [];
+  for (const group of md.specs_items_json) {
+    if (!group?.items) continue;
+    for (const item of group.items) {
+      if (typeof item === "string" && item.trim()) flat.push(item.trim());
+    }
+  }
+  if (!flat.length) return [];
+
+  // Prioriza termos comerciais (capacidade/tanque/vazão/largura/velocidade).
+  const priorityRe =
+    /capacidade|tanque|vaz[ãa]o|largura|velocidade|autonomia|hectare/i;
+  const priority = flat.filter((s) => priorityRe.test(s));
+  const rest = flat.filter((s) => !priorityRe.test(s));
+
+  return [...priority, ...rest].slice(0, max);
+}
+
+/**
+ * Divide "Rótulo: valor" em { label, value } para ficar bonito no card.
+ * Se não tiver ":", usa a primeira palavra como label e o resto como value.
+ * Trunca valores muito longos (>40 chars) com reticências para não
+ * quebrar o grid de 3 colunas do card.
+ */
+function splitSpec(s: string): { label: string; value: string } {
+  const MAX_VALUE = 40;
+  const shorten = (v: string) =>
+    v.length > MAX_VALUE ? `${v.slice(0, MAX_VALUE - 1).trim()}…` : v;
+
+  const idx = s.indexOf(":");
+  if (idx > 0) {
+    const label = s.slice(0, idx).trim();
+    const value = s.slice(idx + 1).trim();
+    return { label, value: shorten(value) };
+  }
+  // Fallback: primeira palavra como label, resto como value
+  const parts = s.split(/\s+/);
+  return {
+    label: parts[0] || "",
+    value: shorten(parts.slice(1).join(" ") || s),
+  };
+}
+
 function extractArray(v: any): any[] {
   if (Array.isArray(v)) return v;
   if (v?.items && Array.isArray(v.items)) return v.items;
@@ -240,15 +298,23 @@ function MiniStat({ label, value }: { label: string; value: string }) {
 
 function ModelCard({
   model,
+  modelData,
   onOpen,
+  onTalkToRep,
   isFirst,
 }: {
   model: DroneModel;
+  modelData: ModelData;
   onOpen: (key: string) => void;
+  onTalkToRep: (modelKey: string) => void;
   isFirst: boolean;
 }) {
   const { url, type } = resolveCardMedia(model);
   const copy = getModelCopy(model.key);
+
+  // Prefere specs reais do admin; cai no copy estático se ainda não tiver.
+  const realSpecs = extractKeySpecs(modelData, 3);
+  const useRealSpecs = realSpecs.length > 0;
 
   return (
     <div className="relative w-[84vw] sm:w-[430px] md:w-[470px] shrink-0 snap-start">
@@ -348,20 +414,36 @@ function ModelCard({
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
-            {copy.benefits.map((b) => (
-              <MiniStat key={b.label} label={b.label} value={b.value} />
-            ))}
+            {useRealSpecs
+              ? realSpecs.map((s, i) => {
+                  const { label, value } = splitSpec(s);
+                  return <MiniStat key={`${label}-${i}`} label={label} value={value} />;
+                })
+              : copy.benefits.map((b) => (
+                  <MiniStat key={b.label} label={b.label} value={b.value} />
+                ))}
           </div>
 
-          <div className="mt-5 flex items-center gap-3">
+          {/* CTA duplo: conversa direta (WhatsApp) vs. conhecer detalhes.
+              A ordem destaca o comercial — Fase 1 do redesign. */}
+          <div className="mt-5 grid grid-cols-2 gap-2">
             <button
-              onClick={() => onOpen(model.key)}
-              className="relative inline-flex flex-1 items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold text-white
+              onClick={() => onTalkToRep(model.key)}
+              className="relative inline-flex items-center justify-center rounded-2xl px-3 py-3 text-sm font-extrabold text-white
                          bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400
                          shadow-[0_18px_60px_-25px_rgba(16,185,129,0.95)]
                          hover:brightness-[1.05] active:scale-[0.99]"
+              title={`Falar com representante sobre ${model.label}`}
             >
-              <span className="relative">Ver detalhes</span>
+              Falar sobre este modelo
+            </button>
+            <button
+              onClick={() => onOpen(model.key)}
+              className="relative inline-flex items-center justify-center rounded-2xl px-3 py-3 text-sm font-extrabold text-slate-100
+                         border border-white/15 bg-white/[0.04]
+                         hover:bg-white/[0.08] active:scale-[0.99]"
+            >
+              Ver detalhes
             </button>
           </div>
 
@@ -384,12 +466,16 @@ function ModelCard({
 
 function ModelsCarouselSection({
   models,
+  modelDataByKey,
   onOpenModel,
-  onTalkToRep,
+  onTalkToRepGeneric,
+  onTalkToRepForModel,
 }: {
   models: DroneModel[];
+  modelDataByKey: Record<string, ModelData>;
   onOpenModel: (key: string) => void;
-  onTalkToRep: () => void;
+  onTalkToRepGeneric: () => void;
+  onTalkToRepForModel: (modelKey: string) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
@@ -461,7 +547,9 @@ function ModelsCarouselSection({
               <ModelCard
                 key={m.key}
                 model={m}
+                modelData={modelDataByKey[m.key] ?? null}
                 onOpen={onOpenModel}
+                onTalkToRep={onTalkToRepForModel}
                 isFirst={i === 0}
               />
             ))}
@@ -473,7 +561,7 @@ function ModelsCarouselSection({
             </div>
 
             <button
-              onClick={onTalkToRep}
+              onClick={onTalkToRepGeneric}
               className="inline-flex items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-extrabold text-emerald-200 hover:bg-emerald-500/15"
             >
               Fale com um representante
@@ -570,6 +658,10 @@ export default function DronesPublicPage() {
 
   const [landing, setLanding] = useState<any>(null);
   const [modelData, setModelData] = useState<any>(null);
+  // Mapa de model_data por key — usado pelo carrossel de cards da landing
+  // para mostrar specs reais (capacidade, vazão, etc.) em cada cartão,
+  // em vez do benefits estático do MODEL_COPY.
+  const [modelDataByKey, setModelDataByKey] = useState<Record<string, ModelData>>({});
   const [comments, setComments] = useState<any[]>([]);
   const [representatives, setRepresentatives] = useState<any[]>([]);
 
@@ -680,10 +772,28 @@ export default function DronesPublicPage() {
 
       setSelectedModel(initial);
 
-      const root = await fetchPage(initial);
+      // Busca landing + model_data do modelo selecionado (fluxo original).
+      // Em paralelo, busca model_data de TODOS os modelos ativos para
+      // alimentar os cards do carrossel com specs reais. Cada request
+      // falha silenciosamente — fallback para copy.benefits no card.
+      const activeKeys = modelsDb
+        .filter((m) => String(m.is_active ?? 1) === "1")
+        .map((m) => m.key);
+
+      const [root, perModelRoots] = await Promise.all([
+        fetchPage(initial),
+        Promise.all(activeKeys.map((k) => fetchPage(k))),
+      ]);
+
       setLanding(root?.landing || null);
       setModelData(root?.model_data || null);
       setComments(extractArray(root?.comments));
+
+      const map: Record<string, ModelData> = {};
+      activeKeys.forEach((k, idx) => {
+        map[k] = (perModelRoots[idx]?.model_data as ModelData) ?? null;
+      });
+      setModelDataByKey(map);
 
       setLoading(false);
     })();
@@ -753,8 +863,20 @@ export default function DronesPublicPage() {
     models: (
       <ModelsCarouselSection
         models={models.filter((m) => String(m.is_active ?? 1) === "1")}
+        modelDataByKey={modelDataByKey}
         onOpenModel={(key) => router.push(`/drones/${key}`)}
-        onTalkToRep={() => {
+        onTalkToRepGeneric={() => {
+          const el = document.getElementById("drones-representatives");
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        onTalkToRepForModel={(key) => {
+          // Atalho: muda a URL para o modelo escolhido e rola até o form
+          // de interesse, que já usa o modelo selecionado no payload
+          // pré-qualificado do WhatsApp.
+          if (key !== selectedModel) {
+            setSelectedModel(key);
+            router.replace(`/drones?model=${key}`);
+          }
           const el = document.getElementById("drones-representatives");
           if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
         }}
