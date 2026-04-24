@@ -88,7 +88,7 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
       ) : null}
 
       {/* Title */}
-      <Heading className="text-[2.25rem] sm:text-[clamp(2rem,6vw,4.5rem)] font-black leading-[0.92] -tracking-[0.01em] sm:tracking-tight text-white [text-shadow:0_1px_12px_rgba(0,0,0,0.7)]">
+      <Heading className="text-[clamp(1.75rem,7.5vw,2.5rem)] sm:text-[clamp(2rem,6vw,4.5rem)] font-black leading-[0.92] -tracking-[0.01em] sm:tracking-tight text-white [text-shadow:0_1px_12px_rgba(0,0,0,0.7)]">
         {titleText}
       </Heading>
 
