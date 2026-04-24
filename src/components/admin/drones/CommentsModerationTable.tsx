@@ -163,17 +163,19 @@ export default function CommentsModerationTable() {
                       return m.media_type === "VIDEO" ? (
                         <video
                           key={m.id}
-                          className="w-full rounded-xl border border-white/10"
+                          className="block aspect-video w-full rounded-xl border border-white/10 bg-black/40 object-cover"
                           src={src}
                           controls
                           playsInline
+                          preload="metadata"
                         />
                       ) : (
                         <img
                           key={m.id}
-                          className="w-full rounded-xl border border-white/10 object-cover"
+                          className="block aspect-video w-full rounded-xl border border-white/10 bg-black/40 object-cover"
                           src={src}
                           alt="mídia do comentário"
+                          loading="lazy"
                         />
                       );
                     })}

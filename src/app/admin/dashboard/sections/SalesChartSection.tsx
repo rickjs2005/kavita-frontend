@@ -46,10 +46,13 @@ export function SalesChartSection({
 
   return (
     <section className={`grid grid-cols-1 gap-4 ${showLogs ? "lg:grid-cols-3" : ""}`}>
-      {/* Sales chart */}
+      {/* Sales chart — em mobile landscape (alturas de ~375px)
+          o max-h de 340px cortava o grafico. Removemos o cap
+          e deixamos o conteudo definir a altura, mantendo max-h
+          apenas em lg+ onde divide espaco com o painel de logs. */}
       <div
-        className={`col-span-1 flex max-h-[340px] flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60 ${
-          showLogs ? "lg:col-span-2" : ""
+        className={`col-span-1 flex flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60 ${
+          showLogs ? "lg:col-span-2 lg:max-h-[340px]" : ""
         }`}
       >
         <div className="mb-2 flex items-center justify-between gap-2">
@@ -94,7 +97,7 @@ export function SalesChartSection({
         </div>
 
         <div className="mt-3 flex-1 overflow-y-auto">
-          <div className="h-[260px] w-full">
+          <div className="h-[220px] w-full sm:h-[260px]">
             {chartLoading ? (
               <div className="flex h-full items-center justify-center text-xs text-slate-400">
                 <LoadingSpinner size="sm" />
@@ -136,7 +139,7 @@ export function SalesChartSection({
 
       {/* Audit logs — only rendered for roles with access */}
       {showLogs && (
-        <div className="col-span-1 flex max-h-[340px] flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60">
+        <div className="col-span-1 flex max-h-[360px] flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60 lg:max-h-[340px]">
           <div className="mb-2 flex items-center justify-between gap-2">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-sky-300">
