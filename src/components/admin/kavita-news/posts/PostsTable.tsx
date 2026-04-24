@@ -85,9 +85,15 @@ export default function PostsTable({
   const safeTotalPages = Math.max(Number(totalPages || 1), 1);
   const safePage = Math.min(Math.max(Number(page || 1), 1), safeTotalPages);
 
+  const btnBase =
+    "rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 hover:bg-gray-50 active:bg-gray-100";
+  const btnDanger =
+    "rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-100 active:bg-red-200";
+
   return (
     <div className="w-full overflow-hidden rounded-xl border bg-white">
-      <div className="overflow-x-auto">
+      {/* ── Desktop: tabela ── */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="border-b bg-gray-50">
             <tr>
@@ -155,42 +161,21 @@ export default function PostsTable({
 
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 hover:bg-gray-50 active:bg-gray-100"
-                          onClick={() => onPreview(p)}
-                        >
+                        <button type="button" className={btnBase} onClick={() => onPreview(p)}>
                           Prévia
                         </button>
-
-                        <button
-                          type="button"
-                          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 hover:bg-gray-50 active:bg-gray-100"
-                          onClick={() => onEdit(p)}
-                        >
+                        <button type="button" className={btnBase} onClick={() => onEdit(p)}>
                           Editar
                         </button>
-
                         <button
                           type="button"
-                          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 hover:bg-gray-50 active:bg-gray-100"
+                          className={btnBase}
                           onClick={() => onTogglePublish(p)}
-                          title={
-                            p.status === "published"
-                              ? "Despublicar"
-                              : "Publicar"
-                          }
+                          title={p.status === "published" ? "Despublicar" : "Publicar"}
                         >
-                          {p.status === "published"
-                            ? "Despublicar"
-                            : "Publicar"}
+                          {p.status === "published" ? "Despublicar" : "Publicar"}
                         </button>
-
-                        <button
-                          type="button"
-                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-100 active:bg-red-200"
-                          onClick={() => onDelete(p)}
-                        >
+                        <button type="button" className={btnDanger} onClick={() => onDelete(p)}>
                           Excluir
                         </button>
                       </div>
@@ -201,6 +186,87 @@ export default function PostsTable({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* ── Mobile: cards ── */}
+      <div className="divide-y md:hidden">
+        {isLoading ? (
+          <div className="space-y-3 p-4">
+            <div className="h-4 w-40 animate-pulse rounded bg-gray-200" />
+            <div className="h-3 w-full animate-pulse rounded bg-gray-100" />
+            <div className="flex gap-2">
+              <div className="h-8 w-full animate-pulse rounded bg-gray-100" />
+              <div className="h-8 w-full animate-pulse rounded bg-gray-100" />
+            </div>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="p-6 text-center text-sm text-gray-600">
+            Nenhum post encontrado.
+          </div>
+        ) : (
+          items.map((p) => {
+            const anyP: any = p as any;
+            const updated = pickUpdatedAt(anyP);
+            const slug = anyP?.slug ? String(anyP.slug) : "-";
+            const category = anyP?.category ? String(anyP.category) : "-";
+
+            return (
+              <article key={p.id} className="space-y-3 p-4">
+                <header className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-sm font-semibold text-gray-900">
+                      {p.title}
+                    </h3>
+                    {p.excerpt ? (
+                      <p className="mt-0.5 line-clamp-2 text-xs text-gray-600">
+                        {p.excerpt}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className={`${badge(p.status)} shrink-0`}>
+                    {p.status}
+                  </span>
+                </header>
+
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                  <div className="min-w-0">
+                    <dt className="text-gray-500">Slug</dt>
+                    <dd className="truncate font-mono text-gray-800">{slug}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-gray-500">Categoria</dt>
+                    <dd className="truncate text-gray-800">{category}</dd>
+                  </div>
+                  <div className="col-span-2 min-w-0">
+                    <dt className="text-gray-500">Atualizado</dt>
+                    <dd className="truncate text-gray-700">
+                      {updated ? updated.toLocaleString("pt-BR") : "-"}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" className={btnBase} onClick={() => onPreview(p)}>
+                    Prévia
+                  </button>
+                  <button type="button" className={btnBase} onClick={() => onEdit(p)}>
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className={btnBase}
+                    onClick={() => onTogglePublish(p)}
+                  >
+                    {p.status === "published" ? "Despublicar" : "Publicar"}
+                  </button>
+                  <button type="button" className={btnDanger} onClick={() => onDelete(p)}>
+                    Excluir
+                  </button>
+                </div>
+              </article>
+            );
+          })
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-2 border-t bg-white p-3">
