@@ -21,7 +21,7 @@ export default function MainNavCategories({ categories }: Props) {
 
   return (
     <nav
-      className="flex items-center gap-x-1 overflow-x-auto scrollbar-hide whitespace-nowrap"
+      className="flex items-center gap-x-1 overflow-x-auto overscroll-x-contain scrollbar-hide whitespace-nowrap"
       aria-label="Categorias da loja"
     >
       {/* Categorias da loja */}
