@@ -129,50 +129,65 @@ type ModelData = {
   specs_items_json?: Array<{ title?: string; items?: string[] }> | null;
 } | null;
 
+// Limites de formato para aceitar um spec como "apresentável" no card:
+// label até 22 chars, valor até 22 chars, com ":" separando.
+// Specs longos e descritivos (típicos de manual técnico — "Peso 26 kg
+// (pulverização sem bateria) 33 kg (com bateria)") são DESCARTADOS
+// aqui e o card cai no fallback estático do MODEL_COPY.benefits,
+// que tem formato curto e comercial.
+const SPEC_LABEL_MAX = 22;
+const SPEC_VALUE_MAX = 22;
+
 function extractKeySpecs(md: ModelData, max = 3): string[] {
   if (!md?.specs_items_json || !Array.isArray(md.specs_items_json)) return [];
 
-  const flat: string[] = [];
+  const accepted: string[] = [];
   for (const group of md.specs_items_json) {
     if (!group?.items) continue;
     for (const item of group.items) {
-      if (typeof item === "string" && item.trim()) flat.push(item.trim());
+      if (typeof item !== "string") continue;
+      const trimmed = item.trim();
+      if (!trimmed) continue;
+
+      const colonIdx = trimmed.indexOf(":");
+      if (colonIdx <= 0) continue; // sem ":" → texto descritivo, descarta
+
+      const label = trimmed.slice(0, colonIdx).trim();
+      const value = trimmed.slice(colonIdx + 1).trim();
+
+      // Label/valor precisam ser curtos para caber no grid de 3 colunas.
+      if (!label || label.length > SPEC_LABEL_MAX) continue;
+      if (!value || value.length > SPEC_VALUE_MAX) continue;
+
+      accepted.push(trimmed);
     }
   }
-  if (!flat.length) return [];
+  if (!accepted.length) return [];
 
   // Prioriza termos comerciais (capacidade/tanque/vazão/largura/velocidade).
   const priorityRe =
     /capacidade|tanque|vaz[ãa]o|largura|velocidade|autonomia|hectare/i;
-  const priority = flat.filter((s) => priorityRe.test(s));
-  const rest = flat.filter((s) => !priorityRe.test(s));
+  const priority = accepted.filter((s) => priorityRe.test(s));
+  const rest = accepted.filter((s) => !priorityRe.test(s));
 
   return [...priority, ...rest].slice(0, max);
 }
 
 /**
- * Divide "Rótulo: valor" em { label, value } para ficar bonito no card.
- * Se não tiver ":", usa a primeira palavra como label e o resto como value.
- * Trunca valores muito longos (>40 chars) com reticências para não
- * quebrar o grid de 3 colunas do card.
+ * Divide "Rótulo: valor" em { label, value }. O extractKeySpecs já
+ * rejeita formatos ruins antes de chegar aqui — essa função apenas
+ * separa as duas metades com confiança.
  */
 function splitSpec(s: string): { label: string; value: string } {
-  const MAX_VALUE = 40;
-  const shorten = (v: string) =>
-    v.length > MAX_VALUE ? `${v.slice(0, MAX_VALUE - 1).trim()}…` : v;
-
   const idx = s.indexOf(":");
   if (idx > 0) {
-    const label = s.slice(0, idx).trim();
-    const value = s.slice(idx + 1).trim();
-    return { label, value: shorten(value) };
+    return {
+      label: s.slice(0, idx).trim(),
+      value: s.slice(idx + 1).trim(),
+    };
   }
-  // Fallback: primeira palavra como label, resto como value
-  const parts = s.split(/\s+/);
-  return {
-    label: parts[0] || "",
-    value: shorten(parts.slice(1).join(" ") || s),
-  };
+  // Fallback defensivo (não deveria cair aqui pós-filtro, mas seguro):
+  return { label: "Spec", value: s.trim() };
 }
 
 function extractArray(v: any): any[] {
@@ -320,8 +335,9 @@ function ModelCard({
   const copy = getModelCopy(model.key);
 
   // Prefere specs reais do admin; cai no copy estático se ainda não tiver.
+  // Exige 3 specs válidos completos, senão a grade de 3 colunas fica torta.
   const realSpecs = extractKeySpecs(modelData, 3);
-  const useRealSpecs = realSpecs.length > 0;
+  const useRealSpecs = realSpecs.length >= 3;
 
   return (
     <div className="relative w-[84vw] sm:w-[430px] md:w-[470px] shrink-0 snap-start">
@@ -671,9 +687,13 @@ function buildShowcaseEntries(
       const md = modelDataByKey[m.key] ?? null;
       const realSpecs = extractKeySpecs(md, 3);
 
-      const specs = realSpecs.length
-        ? realSpecs.map((s) => splitSpec(s))
-        : copy.benefits;
+      // Só usa specs reais do admin se tivermos os 3 slots completos —
+      // caso contrário a grade fica torta (1 card com 1 stat, outros
+      // com 3). Melhor cair no fallback estático consistente.
+      const specs =
+        realSpecs.length >= 3
+          ? realSpecs.map((s) => splitSpec(s))
+          : copy.benefits;
 
       // Extrai hero_media_path do _raw (backend retorna em /models).
       // Usado como fallback pelo ModelShowcaseCard quando o admin
