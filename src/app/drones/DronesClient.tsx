@@ -675,6 +675,19 @@ function buildShowcaseEntries(
         ? realSpecs.map((s) => splitSpec(s))
         : copy.benefits;
 
+      // Extrai hero_media_path do _raw (backend retorna em /models).
+      // Usado como fallback pelo ModelShowcaseCard quando o admin
+      // selecionou apenas a midia de HERO e nao a de CARD.
+      const raw = (m._raw as Record<string, unknown> | undefined) || {};
+      const heroMediaPath =
+        typeof raw.hero_media_path === "string"
+          ? (raw.hero_media_path as string)
+          : undefined;
+      const heroMediaType =
+        typeof raw.hero_media_type === "string"
+          ? (raw.hero_media_type as string)
+          : undefined;
+
       return {
         model: {
           key: m.key,
@@ -686,6 +699,8 @@ function buildShowcaseEntries(
           card_media_type: m.card_media_type
             ? String(m.card_media_type)
             : undefined,
+          hero_media_path: heroMediaPath,
+          hero_media_type: heroMediaType,
           _raw: m._raw,
         },
         badge: copy.badge,

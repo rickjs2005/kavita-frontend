@@ -24,6 +24,11 @@ export type ModelShowcaseModel = {
   card_media_url?: string;
   card_media_path?: string;
   card_media_type?: string;
+  // Fallback: quando o admin seleciona so a midia de HERO (destaque
+  // grande), usamos essa aqui se card_media_* estiver vazio. Assim o
+  // card nao fica sem imagem quando ja existe uma midia cadastrada.
+  hero_media_path?: string;
+  hero_media_type?: string;
   _raw?: unknown;
 };
 
@@ -126,18 +131,30 @@ function normalizeMediaType(raw: unknown, url: string): MediaTypeLower | "" {
 
 function resolveCardMedia(model: ModelShowcaseModel) {
   const raw = (model._raw as Record<string, unknown> | undefined) || {};
-  const url = absUrl(
-    String(
-      model.card_media_url ||
-        model.card_media_path ||
-        (raw.media_url as string) ||
-        (raw.image_url as string) ||
-        (raw.cover_url as string) ||
-        "",
-    ),
-  );
+
+  // Prioridade: card_media_url (frontend resolvido) → card_media_path
+  // (backend) → hero_media_path (fallback se admin selecionou so hero)
+  // → campos legados do _raw. Assim o card nunca fica sem imagem
+  // desde que qualquer midia de destaque tenha sido cadastrada.
+  const pathCandidate =
+    model.card_media_url ||
+    model.card_media_path ||
+    model.hero_media_path ||
+    (raw.card_media_url as string) ||
+    (raw.card_media_path as string) ||
+    (raw.hero_media_path as string) ||
+    (raw.media_url as string) ||
+    (raw.image_url as string) ||
+    (raw.cover_url as string) ||
+    "";
+
+  const url = absUrl(String(pathCandidate));
   const type = normalizeMediaType(
-    model.card_media_type ?? (raw.media_type as string),
+    model.card_media_type ??
+      model.hero_media_type ??
+      (raw.card_media_type as string) ??
+      (raw.hero_media_type as string) ??
+      (raw.media_type as string),
     url,
   );
   return { url, type };
