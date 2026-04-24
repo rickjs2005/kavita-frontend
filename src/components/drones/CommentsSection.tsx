@@ -1,33 +1,98 @@
 "use client";
 
-import { useMemo, useState } from "react";
+// Seção "Relatos de clientes" — formulário para enviar comentário
+// com mídias + lista dos relatos aprovados.
+//
+// Usada tanto na landing /drones quanto no detalhe /drones/[id].
+// Aceita `accent` opcional para tingir CTAs e avatar com a cor do
+// modelo no detalhe; na landing cai em emerald neutro.
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  Quote,
+  ImagePlus,
+  Send,
+  X,
+  MessageSquare,
+  Film,
+  Image as ImageIcon,
+  LogIn,
+} from "lucide-react";
+
 import type { DroneComment } from "@/types/drones";
+import type { Accent } from "./detail/accent";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { isApiError } from "@/lib/errors";
 
+const TEXT_MAX = 800;
+const MAX_FILES = 6;
+
 function redirectToPublicLogin() {
   if (typeof window !== "undefined") window.location.assign("/login");
+}
+
+function initialsOf(name: string): string {
+  const clean = String(name || "").trim();
+  if (!clean) return "??";
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
+function formatDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
 }
 
 type Props = {
   comments: DroneComment[];
   modelKey?: string | null;
   onCreated?: () => void;
+  accent?: Accent;
 };
 
 export default function CommentsSection({
   comments,
   modelKey,
   onCreated,
+  accent,
 }: Props) {
   const [text, setText] = useState("");
-  const [files, setFiles] = useState<FileList | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // ✅ garante que o React sempre tenha keys estáveis mesmo se id vier null/duplicado
+  // Previews locais (URLs blob) pras miniaturas antes do upload.
+  // Revogamos quando substitui ou desmonta, pra não vazar memória.
+  const previews = useMemo(
+    () =>
+      files.map((f) => ({
+        key: `${f.name}-${f.size}-${f.lastModified}`,
+        url: URL.createObjectURL(f),
+        isVideo: f.type.startsWith("video/"),
+        name: f.name,
+      })),
+    [files],
+  );
+
+  useEffect(() => {
+    return () => {
+      previews.forEach((p) => URL.revokeObjectURL(p.url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Garante keys estáveis no React mesmo se o backend mandar id null/duplicado.
   const normalizedComments = useMemo(() => {
     return (comments ?? []).map((c, cIdx) => {
       const commentKey =
@@ -44,42 +109,60 @@ export default function CommentsSection({
     });
   }, [comments]);
 
+  // Paleta base — accent do modelo se passado; senao emerald default.
+  const eyebrowColor = accent?.text ?? "text-emerald-300";
+  const avatarRing = accent?.badgeBorder ?? "border-emerald-400/30";
+  const avatarBg = accent?.badgeBg ?? "bg-emerald-500/15";
+  const avatarText = accent?.text ?? "text-emerald-200";
+  const focusRing = accent ? "focus:ring-white/30" : "focus:ring-emerald-400/40";
+  const primaryGradient =
+    accent?.primaryGradient ?? "from-emerald-500 via-emerald-400 to-teal-400";
+  const primaryShadow =
+    accent?.primaryShadow ?? "shadow-[0_18px_50px_-20px_rgba(16,185,129,0.8)]";
+  const quoteColor = accent?.text ?? "text-emerald-300";
+
+  function handleFilesChange(fl: FileList | null) {
+    if (!fl) return;
+    const arr = Array.from(fl).slice(0, MAX_FILES);
+    setFiles(arr);
+  }
+
+  function removeFileAt(idx: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
   async function submit() {
     setMsg(null);
 
     if (!text.trim()) {
-      setMsg("Digite seu comentário.");
+      setMsg("Digite seu relato antes de enviar.");
       return;
     }
 
     const fd = new FormData();
     fd.append("comment_text", text.trim());
 
-    // ✅ alinhamento com backend novo: amarra comentário ao modelo selecionado
     if (modelKey) fd.append("model_key", modelKey);
 
-    if (files) {
-      const max = Math.min(files.length, 6);
-      for (let i = 0; i < max; i++) fd.append("media", files[i]);
+    for (let i = 0; i < Math.min(files.length, MAX_FILES); i++) {
+      fd.append("media", files[i]);
     }
 
     setSending(true);
     try {
-      await apiClient.post(
-        "/api/public/drones/comentarios",
-        fd,
-        { skipContentType: true }, // FormData: não sobrescrever Content-Type
-      );
+      await apiClient.post("/api/public/drones/comentarios", fd, {
+        skipContentType: true,
+      });
 
-      setMsg("Comentário enviado com sucesso!");
+      setMsg("Relato enviado! Vai aparecer na lista após aprovação.");
       setText("");
-      setFiles(null);
+      setFiles([]);
       onCreated?.();
     } catch (err: unknown) {
       if (isApiError(err) && (err.status === 401 || err.status === 403)) {
-        setMsg("Você precisa estar logado para postar comentários e anexar mídias.");
+        setMsg("Você precisa estar logado para postar relatos com mídia.");
       } else {
-        const ui = formatApiError(err, "Falha ao enviar comentário.");
+        const ui = formatApiError(err, "Falha ao enviar relato.");
         setMsg(ui.message);
       }
     } finally {
@@ -87,65 +170,174 @@ export default function CommentsSection({
     }
   }
 
+  const charCount = text.length;
+  const charNearLimit = charCount > TEXT_MAX * 0.85;
+  const charOver = charCount > TEXT_MAX;
+
+  const count = normalizedComments.length;
+  const needsLogin = Boolean(msg && msg.toLowerCase().includes("logado"));
+
   return (
-    <section className="mx-auto max-w-6xl px-5 py-10 sm:py-12">
-      <h2 className="text-xl sm:text-2xl font-extrabold text-white">
-        Relatos de clientes
-      </h2>
-      <p className="mt-2 text-sm text-slate-300">
-        Para postar relatos com fotos/vídeos, é necessário estar logado.
-        {modelKey ? (
-          <span className="ml-2 text-xs text-slate-400">
-            Modelo:{" "}
-            <span className="text-slate-200 font-semibold">{modelKey}</span>
-          </span>
-        ) : null}
-      </p>
+    <section className="mx-auto max-w-6xl px-5 py-14 sm:py-18">
+      {/* Header */}
+      <div className="flex flex-wrap items-end justify-between gap-5">
+        <div className="max-w-2xl">
+          <p
+            className={[
+              "font-mono text-[11px] font-semibold uppercase tracking-[0.24em]",
+              eyebrowColor,
+            ].join(" ")}
+          >
+            Prova social
+          </p>
+          <h2 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white">
+            Relatos de quem opera no campo
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-slate-300">
+            Depoimentos reais de produtores e prestadores de serviço que usam
+            a linha DJI Agras no dia a dia da lavoura.
+          </p>
+        </div>
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        {/* Form */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-          <h3 className="text-sm font-extrabold text-white">Enviar relato</h3>
+        <div
+          className={[
+            "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-extrabold backdrop-blur",
+            accent?.badgeBorder ?? "border-emerald-400/25",
+            accent?.badgeBg ?? "bg-emerald-500/10",
+            accent?.badgeText ?? "text-emerald-200",
+          ].join(" ")}
+        >
+          <MessageSquare className="h-3.5 w-3.5" aria-hidden />
+          {count} {count === 1 ? "relato publicado" : "relatos publicados"}
+        </div>
+      </div>
 
-          <div className="mt-4 grid gap-3">
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Escreva seu relato..."
-              className="min-h-[140px] w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-sm text-slate-100 outline-none focus:ring-2 focus:ring-emerald-400/40"
-            />
+      <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_1.15fr]">
+        {/* ─── Formulário ─────────────────────────────────────── */}
+        <div className="rounded-3xl border border-white/10 bg-dark-850/60 p-6 backdrop-blur-xl">
+          <h3 className="text-sm font-extrabold text-white">
+            Compartilhe sua experiência
+          </h3>
+          <p className="mt-1 text-xs leading-relaxed text-slate-400">
+            Conte como o drone se encaixa na sua operação. Fotos e vídeos
+            reais ajudam outros produtores a decidir.
+          </p>
 
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-              <p className="text-xs font-semibold text-slate-200">
-                Adicionar fotos/vídeos (até 6 arquivos)
-              </p>
-              <p className="mt-1 text-[11px] text-slate-400">
-                Formatos: JPG/PNG/WEBP e MP4.
-              </p>
-              <input
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/webp,video/mp4"
-                onChange={(e) => setFiles(e.target.files)}
-                className="mt-3 text-sm text-slate-200"
+          <div className="mt-5 grid gap-4">
+            {/* Textarea + contador */}
+            <div className="relative">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value.slice(0, TEXT_MAX + 50))}
+                placeholder="Escreva seu relato — como foi a operação, o que mudou na lavoura, o que o representante ajudou…"
+                className={[
+                  "min-h-[160px] w-full resize-y rounded-2xl border border-white/10 bg-black/30 px-4 py-3 pr-20 text-sm text-slate-100 outline-none transition focus:ring-2",
+                  focusRing,
+                ].join(" ")}
               />
-              {files?.length ? (
-                <p className="mt-2 text-xs text-slate-300">
-                  Selecionados: {files.length} arquivo(s)
-                </p>
-              ) : null}
+              <span
+                className={[
+                  "pointer-events-none absolute bottom-3 right-3 text-[11px] font-bold tabular-nums",
+                  charOver
+                    ? "text-rose-300"
+                    : charNearLimit
+                      ? "text-amber-300"
+                      : "text-slate-500",
+                ].join(" ")}
+              >
+                {charCount}/{TEXT_MAX}
+              </span>
             </div>
 
+            {/* Upload de mídia — estilizado */}
+            <div>
+              <label
+                htmlFor="drones-comments-media"
+                className={[
+                  "group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-6 text-center transition hover:border-white/30 hover:bg-black/30",
+                ].join(" ")}
+              >
+                <div
+                  className={[
+                    "inline-flex h-10 w-10 items-center justify-center rounded-xl border",
+                    avatarRing,
+                    avatarBg,
+                  ].join(" ")}
+                >
+                  <ImagePlus className={["h-5 w-5", avatarText].join(" ")} aria-hidden />
+                </div>
+                <p className="text-sm font-semibold text-slate-200">
+                  Adicionar fotos ou vídeos
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Até {MAX_FILES} arquivos · JPG, PNG, WEBP, MP4
+                </p>
+                <input
+                  id="drones-comments-media"
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp,video/mp4"
+                  onChange={(e) => handleFilesChange(e.target.files)}
+                  className="sr-only"
+                />
+              </label>
+
+              {/* Previews com botão de remover */}
+              {previews.length > 0 && (
+                <div className="mt-3 grid gap-2 grid-cols-3 sm:grid-cols-4">
+                  {previews.map((p, idx) => (
+                    <div
+                      key={p.key}
+                      className="group relative overflow-hidden rounded-xl border border-white/10 bg-black/30 aspect-square"
+                    >
+                      {p.isVideo ? (
+                        <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-slate-800 to-dark-900">
+                          <Film className="h-4 w-4 text-slate-300" aria-hidden />
+                          <span className="line-clamp-1 px-2 text-[10px] text-slate-400">
+                            {p.name}
+                          </span>
+                        </div>
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={p.url}
+                          alt={`preview ${idx + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeFileAt(idx)}
+                        aria-label={`Remover ${p.name}`}
+                        className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition group-hover:opacity-100 focus:opacity-100"
+                      >
+                        <X className="h-3 w-3" aria-hidden />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Mensagem de erro/sucesso */}
             {msg ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-slate-200">
-                {msg}{" "}
-                {msg.includes("logado") ? (
+              <div
+                className={[
+                  "flex items-start gap-3 rounded-2xl border p-3 text-sm",
+                  needsLogin
+                    ? "border-amber-400/25 bg-amber-500/10 text-amber-100"
+                    : "border-white/10 bg-white/[0.04] text-slate-200",
+                ].join(" ")}
+              >
+                <span className="flex-1">{msg}</span>
+                {needsLogin ? (
                   <button
                     type="button"
                     onClick={redirectToPublicLogin}
-                    className="ml-2 underline text-emerald-300 hover:text-emerald-200"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-extrabold text-white hover:bg-white/15"
                   >
-                    Fazer login
+                    <LogIn className="h-3 w-3" aria-hidden />
+                    Entrar
                   </button>
                 ) : null}
               </div>
@@ -153,70 +345,115 @@ export default function CommentsSection({
 
             <button
               onClick={submit}
-              disabled={sending}
-              className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white hover:brightness-110 transition disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+              disabled={sending || charOver}
+              className={[
+                "inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-extrabold text-white transition disabled:opacity-50",
+                "bg-gradient-to-r",
+                primaryGradient,
+                primaryShadow,
+                "hover:brightness-[1.08] active:scale-[0.99]",
+              ].join(" ")}
             >
-              {sending ? "Enviando..." : "Enviar"}
+              <Send className="h-4 w-4" aria-hidden />
+              {sending ? "Enviando…" : "Enviar relato"}
             </button>
           </div>
         </div>
 
-        {/* Publicados */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-          <h3 className="text-sm font-extrabold text-white">Publicados</h3>
+        {/* ─── Lista de relatos publicados ─────────────────────── */}
+        <div className="grid gap-4">
+          {normalizedComments.length ? (
+            normalizedComments.map((c: any) => (
+              <article
+                key={c.__key}
+                className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.05]"
+              >
+                {/* Aspas decorativas no canto */}
+                <Quote
+                  className={[
+                    "pointer-events-none absolute right-4 top-4 h-10 w-10 opacity-15",
+                    quoteColor,
+                  ].join(" ")}
+                  aria-hidden
+                />
 
-          <div className="mt-4 grid gap-4">
-            {normalizedComments.length ? (
-              normalizedComments.map((c: any) => (
-                <div
-                  key={c.__key}
-                  className="rounded-2xl border border-white/10 bg-black/25 p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-white truncate">
+                <header className="flex items-start gap-3">
+                  <div
+                    className={[
+                      "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-extrabold",
+                      avatarRing,
+                      avatarBg,
+                      avatarText,
+                    ].join(" ")}
+                    aria-hidden
+                  >
+                    {initialsOf(c.display_name)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-white">
                       {c.display_name}
                     </p>
-                    <p className="text-xs text-slate-400 shrink-0">
-                      {new Date(c.created_at).toLocaleDateString()}
+                    <p className="text-[11px] text-slate-400">
+                      {formatDate(c.created_at)}
                     </p>
                   </div>
+                </header>
 
-                  <p className="mt-2 text-sm text-slate-200 leading-relaxed">
-                    {c.comment_text}
-                  </p>
+                <p className="mt-4 text-[14px] leading-relaxed text-slate-200 whitespace-pre-wrap">
+                  {c.comment_text}
+                </p>
 
-                  {c.media?.length ? (
-                    <div className="mt-4 grid gap-2 grid-cols-2 sm:grid-cols-3">
-                      {c.media.map((m: any) => {
-                        const src = absUrl(m.media_path);
-                        return m.media_type === "VIDEO" ? (
-                          <video
-                            key={m.__key}
-                            className="w-full rounded-xl aspect-video object-cover bg-black/40 border border-white/10"
-                            src={src}
-                            controls
-                            playsInline
-                          />
-                        ) : (
-                          <img
-                            key={m.__key}
-                            className="w-full rounded-xl aspect-video object-cover bg-black/40 border border-white/10"
-                            src={src}
-                            alt="mídia do comentário"
-                            loading="lazy"
-                          />
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-              ))
-            ) : (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-                Ainda não há comentários publicados.
+                {c.media?.length ? (
+                  <div
+                    className={[
+                      "mt-4 grid gap-2",
+                      c.media.length === 1
+                        ? "grid-cols-1"
+                        : c.media.length === 2
+                          ? "grid-cols-2"
+                          : "grid-cols-2 sm:grid-cols-3",
+                    ].join(" ")}
+                  >
+                    {c.media.map((m: any) => {
+                      const src = absUrl(m.media_path);
+                      return m.media_type === "VIDEO" ? (
+                        <video
+                          key={m.__key}
+                          className="block w-full aspect-video rounded-xl border border-white/10 bg-black/40 object-cover"
+                          src={src}
+                          controls
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={m.__key}
+                          className="block w-full aspect-video rounded-xl border border-white/10 bg-black/40 object-cover"
+                          src={src}
+                          alt={`Mídia do relato de ${c.display_name}`}
+                          loading="lazy"
+                        />
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </article>
+            ))
+          ) : (
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
+              <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5">
+                <ImageIcon className="h-5 w-5 text-slate-400" aria-hidden />
               </div>
-            )}
-          </div>
+              <p className="mt-3 text-sm font-extrabold text-white">
+                Ainda sem relatos publicados
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                Seja o primeiro a compartilhar como o drone se encaixou na
+                sua operação.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </section>
