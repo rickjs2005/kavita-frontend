@@ -273,11 +273,16 @@ export default function ModelShowcaseCard({
               imagem respirar mais, especialmente em mídias escuras. */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
 
-          {/* Badge comercial no topo esquerdo */}
+          {/* Badge comercial no topo esquerdo.
+              Padding e tracking calibrados para nao inchar em palavras
+              curtas (ex: "Versatil" 8 chars) vs longas (ex: "Alta
+              Performance" 16 chars). tracking-[0.04em] e mais sutil que
+              tracking-wide; leading-none impede altura extra em bold. */}
           <div className="absolute left-4 top-4">
             <span
               className={[
-                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide",
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[5px]",
+                "text-[10.5px] font-extrabold uppercase leading-none tracking-[0.04em]",
                 accent.badgeBg,
                 accent.badgeBorder,
                 accent.badgeText,
