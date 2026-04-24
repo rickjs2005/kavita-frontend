@@ -19,6 +19,9 @@ import WhyDrones from "@/components/drones/WhyDrones";
 import WhoIsFor from "@/components/drones/WhoIsFor";
 import HowItWorks from "@/components/drones/HowItWorks";
 import DronesFAQ from "@/components/drones/DronesFAQ";
+import ModelsShowcase, {
+  type ModelShowcaseEntry,
+} from "@/components/drones/ModelsShowcase";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 
@@ -36,10 +39,10 @@ type ModelCopy = {
 
 const MODEL_COPY: Record<string, ModelCopy> = {
   t25p: {
-    badge: "Pequenas e médias operações",
+    badge: "Versátil",
     tagline: "Pulverização precisa para relevos variados",
     description:
-      "Ideal para propriedades menores, agricultura familiar e áreas com relevo irregular.",
+      "Ideal para propriedades menores, agricultura familiar e áreas com relevo irregular. Compacto, cabe na picape e voa em qualquer talhão.",
     benefits: [
       { label: "Operação", value: "Compacta" },
       { label: "Precisão", value: "Alta" },
@@ -47,10 +50,10 @@ const MODEL_COPY: Record<string, ModelCopy> = {
     ],
   },
   t70p: {
-    badge: "Produtividade elevada",
+    badge: "Alta Performance",
     tagline: "Mais hectares por dia sem perder precisão",
     description:
-      "Para quem precisa cobrir mais área na janela de safra com economia de insumos.",
+      "Para quem precisa cobrir mais área na janela de safra com economia de insumos. Produtividade elevada e vazão estável.",
     benefits: [
       { label: "Capacidade", value: "70 kg" },
       { label: "Autonomia", value: "Longa" },
@@ -58,10 +61,10 @@ const MODEL_COPY: Record<string, ModelCopy> = {
     ],
   },
   t100: {
-    badge: "Grandes áreas e alta demanda",
+    badge: "Potência Máxima",
     tagline: "Máximo desempenho para operações intensas",
     description:
-      "Desenhado para grandes lavouras, cooperativas e prestadores de serviço de alta vazão.",
+      "Desenhado para grandes lavouras, cooperativas e prestadores de serviço de alta vazão. Carga, alcance e tecnologia no topo da linha.",
     benefits: [
       { label: "Capacidade", value: "100 kg" },
       { label: "Vazão", value: "Máxima" },
@@ -653,6 +656,46 @@ function TrustSection() {
   );
 }
 
+// Converte o array de modelos + mapa de model_data em entries prontas
+// para o <ModelsShowcase>. Cada entry já vem com badge/tagline/description
+// do MODEL_COPY e 3 specs reais (se o admin preencheu) ou o fallback
+// dos benefits estáticos.
+function buildShowcaseEntries(
+  models: DroneModel[],
+  modelDataByKey: Record<string, ModelData>,
+): ModelShowcaseEntry[] {
+  return models
+    .filter((m) => String(m.is_active ?? 1) === "1")
+    .map((m) => {
+      const copy = getModelCopy(m.key);
+      const md = modelDataByKey[m.key] ?? null;
+      const realSpecs = extractKeySpecs(md, 3);
+
+      const specs = realSpecs.length
+        ? realSpecs.map((s) => splitSpec(s))
+        : copy.benefits;
+
+      return {
+        model: {
+          key: m.key,
+          label: m.label,
+          is_active: m.is_active,
+          sort_order: m.sort_order,
+          card_media_url: m.card_media_url,
+          card_media_path: m.card_media_path,
+          card_media_type: m.card_media_type
+            ? String(m.card_media_type)
+            : undefined,
+          _raw: m._raw,
+        },
+        badge: copy.badge,
+        tagline: copy.tagline,
+        description: copy.description,
+        specs,
+      };
+    });
+}
+
 export default function DronesPublicPage() {
   const router = useRouter();
   const search = useSearchParams();
@@ -890,18 +933,14 @@ export default function DronesPublicPage() {
     faq: <DronesFAQ />,
 
     models: (
-      <ModelsCarouselSection
-        models={models.filter((m) => String(m.is_active ?? 1) === "1")}
-        modelDataByKey={modelDataByKey}
+      <ModelsShowcase
+        entries={buildShowcaseEntries(models, modelDataByKey)}
         onOpenModel={(key) => router.push(`/drones/${key}`)}
         onTalkToRepGeneric={() => {
           const el = document.getElementById("drones-representatives");
           if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
         }}
         onTalkToRepForModel={(key) => {
-          // Atalho: muda a URL para o modelo escolhido e rola até o form
-          // de interesse, que já usa o modelo selecionado no payload
-          // pré-qualificado do WhatsApp.
           if (key !== selectedModel) {
             setSelectedModel(key);
             router.replace(`/drones?model=${key}`);
