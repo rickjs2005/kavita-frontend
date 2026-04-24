@@ -579,10 +579,10 @@ export default function DroneModelPage() {
         }))}
       />
 
-      {/* ✅ reps tipados */}
       <RepresentativesSection
         page={pageSettings}
         representatives={representatives}
+        accent={accent}
       />
     </div>
   );
