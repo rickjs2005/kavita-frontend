@@ -200,11 +200,20 @@ export default function ModelShowcaseCard({
           accent.ring,
         ].join(" ")}
       >
-        {/* Mídia hero do card — 4:3, protagonista, overlay só na parte de baixo */}
+        {/* Mídia hero do card — 4:3, protagonista, overlay só na parte de baixo.
+            As classes de filtro (brightness/saturate/contrast) padronizam
+            a percepção visual entre os 3 modelos: imagens mais escuras
+            (caso do T25P) ganham realce; imagens claras não estouram.
+            Zoom inicial de 1.02 + object-center enquadra melhor imagens
+            onde o drone nao está perfeitamente centralizado. */}
         <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-white/5 via-white/2 to-transparent">
           {url && type === "video" ? (
             <video
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              className="h-full w-full object-cover object-center
+                         brightness-[1.08] saturate-[1.1] contrast-[1.05]
+                         scale-[1.02]
+                         transition-[transform,filter] duration-700
+                         group-hover:scale-[1.05] group-hover:brightness-[1.12]"
               src={url}
               muted
               playsInline
@@ -215,7 +224,11 @@ export default function ModelShowcaseCard({
           ) : url && type === "image" ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              className="h-full w-full object-cover object-center
+                         brightness-[1.08] saturate-[1.1] contrast-[1.05]
+                         scale-[1.02]
+                         transition-[transform,filter] duration-700
+                         group-hover:scale-[1.05] group-hover:brightness-[1.12]"
               src={url}
               alt={`${model.label} — drone agrícola DJI Agras`}
               loading={isFirst ? "eager" : "lazy"}
@@ -254,8 +267,11 @@ export default function ModelShowcaseCard({
             </div>
           )}
 
-          {/* Gradiente só embaixo, pra imagem respirar */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+          {/* Gradiente inferior — preserva legibilidade do nome do modelo
+              sem esmagar a imagem. Valores calibrados após padronização:
+              from-black/70 (antes /80) + via-black/5 (antes /10) deixa a
+              imagem respirar mais, especialmente em mídias escuras. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
 
           {/* Badge comercial no topo esquerdo */}
           <div className="absolute left-4 top-4">
