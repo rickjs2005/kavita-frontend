@@ -17,6 +17,8 @@ import GallerySection from "@/components/drones/GallerySection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import ModelHero from "@/components/drones/detail/ModelHero";
 import KeyMetrics, { type Metric } from "@/components/drones/detail/KeyMetrics";
+import ModelOverview from "@/components/drones/detail/ModelOverview";
+import RelatedModels from "@/components/drones/detail/RelatedModels";
 import { getAccent } from "@/components/drones/detail/accent";
 import {
   getModelCopy,
@@ -547,6 +549,13 @@ export default function DroneModelPage() {
       {/* Faixa de métricas-chave sobreposta entre hero e specs */}
       <KeyMetrics metrics={metrics} accent={accent} />
 
+      {/* Overview narrativa: para quem é + 3 pilares */}
+      <ModelOverview
+        modelKey={modelKey}
+        longDescription={copy.longDescription}
+        accent={accent}
+      />
+
       <div id="drones-model-specs" className="scroll-mt-24">
         <SpecsSection page={pageSettings} />
       </div>
@@ -568,6 +577,17 @@ export default function DroneModelPage() {
         {/* ✅ agora items é DroneGalleryItem[] */}
         <GallerySection items={galleryItems} />
       </div>
+
+      {/* Rodapé "veja também" — outros modelos da linha */}
+      <RelatedModels
+        currentKey={modelKey}
+        models={models.map((m) => ({
+          key: m.key,
+          label: m.label,
+          mediaUrl: m.card_media_url ? absUrl(m.card_media_url) : undefined,
+          mediaType: m.card_media_type,
+        }))}
+      />
 
       {/* ✅ reps tipados */}
       <RepresentativesSection
