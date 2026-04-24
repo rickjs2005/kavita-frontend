@@ -557,24 +557,14 @@ export default function DroneModelPage() {
       />
 
       <div id="drones-model-specs" className="scroll-mt-24">
-        <SpecsSection page={pageSettings} />
-      </div>
-      <div className="max-w-6xl mx-auto px-5">
-        <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <SpecsSection page={pageSettings} accent={accent} />
       </div>
 
-      <FeaturesSection page={pageSettings} />
-      <div className="max-w-6xl mx-auto px-5">
-        <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      </div>
+      <FeaturesSection page={pageSettings} accent={accent} />
 
-      <BenefitsSection page={pageSettings} />
-      <div className="max-w-6xl mx-auto px-5">
-        <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      </div>
+      <BenefitsSection page={pageSettings} accent={accent} />
 
       <div id="drones-model-gallery">
-        {/* ✅ agora items é DroneGalleryItem[] */}
         <GallerySection items={galleryItems} />
       </div>
 
