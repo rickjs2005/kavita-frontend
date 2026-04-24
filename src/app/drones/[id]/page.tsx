@@ -6,15 +6,23 @@ import {
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 import SpecsSection from "@/components/drones/SpecsSection";
 import FeaturesSection from "@/components/drones/FeaturesSection";
 import BenefitsSection from "@/components/drones/BenefitsSection";
 import GallerySection from "@/components/drones/GallerySection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
+import ModelHero from "@/components/drones/detail/ModelHero";
+import KeyMetrics, { type Metric } from "@/components/drones/detail/KeyMetrics";
+import { getAccent } from "@/components/drones/detail/accent";
+import {
+  getModelCopy,
+  extractKeySpecs,
+  splitSpec,
+} from "@/lib/drones/modelCopy";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 import { isApiError } from "@/lib/errors";
@@ -182,14 +190,6 @@ function resolveGalleryHero(
   const caption = pickCaption(picked);
 
   return { url, type, caption };
-}
-
-function Badge({ children }: { children: ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-extrabold text-slate-200">
-      {children}
-    </span>
-  );
 }
 
 /**
@@ -447,11 +447,29 @@ export default function DroneModelPage() {
     return { url: fallbackUrl, type: fallbackType, caption: "" } as const;
   }, [selectedHero, heroFromGallery, selectedCard, modelFromList]);
 
-  const heroCaption = useMemo(() => {
-    return String(
-      selectedHero?.caption || heroFromGallery?.caption || "",
-    ).trim();
-  }, [selectedHero, heroFromGallery]);
+  // Copy editorial por modelo (tagline, descrição, benefits fallback).
+  // Fonte: src/lib/drones/modelCopy.ts — mesma usada nos cards da landing.
+  const copy = useMemo(() => getModelCopy(modelKey), [modelKey]);
+  const accent = useMemo(() => getAccent(modelKey), [modelKey]);
+
+  // Specs reais do admin — se tiver 3 válidos, vira chip do hero +
+  // strip de métricas. Senão cai no benefits estático do MODEL_COPY.
+  const metrics = useMemo<Metric[]>(() => {
+    const realSpecs = extractKeySpecs(
+      (modelData as Dict | null)?.specs_items_json as
+        | Array<{ title?: string; items?: string[] }>
+        | null
+        | undefined,
+      4,
+    );
+    if (realSpecs.length >= 3) {
+      return realSpecs.map((s) => splitSpec(s));
+    }
+    return copy.benefits.map((b) => ({ label: b.label, value: b.value }));
+  }, [modelData, copy]);
+
+  // Chips do hero: até 3 primeiras métricas, para não poluir o topo.
+  const heroChips = useMemo(() => metrics.slice(0, 3), [metrics]);
 
   if (loading && !landing) {
     return (
@@ -461,158 +479,77 @@ export default function DroneModelPage() {
     );
   }
 
+  const scrollToSpecs = () => {
+    const el = document.getElementById("drones-model-specs");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const scrollToReps = () => {
+    const el = document.getElementById("representantes");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="min-h-screen bg-dark-900 text-slate-100">
       <style>{`
         html { scroll-behavior: smooth; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .animate-scan { animation: scan 3.6s ease-in-out infinite; }
-        @keyframes scan {
-          0% { transform: translateX(-30%) rotate(12deg); }
-          50% { transform: translateX(160%) rotate(12deg); }
-          100% { transform: translateX(-30%) rotate(12deg); }
-        }
       `}</style>
 
+      {/* Top bar minimalista — voltar + nome + CTA accent */}
       <div className="sticky top-0 z-40 bg-black/60 backdrop-blur border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-5 py-3 flex items-center justify-between gap-3">
           <button
             onClick={() => router.push("/drones")}
-            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-extrabold text-slate-200 hover:bg-white/10"
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-extrabold text-slate-200 hover:bg-white/10"
           >
-            ← Voltar
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+            Voltar
           </button>
 
-          <div className="min-w-0 text-center">
-            <div className="text-[11px] text-slate-400 font-semibold">
-              Modelo
+          <div className="hidden sm:block min-w-0 text-center">
+            <div className={["text-[10px] font-bold uppercase tracking-[0.22em]", accent.text].join(" ")}>
+              DJI Agras
             </div>
-            <div className="text-sm sm:text-base font-extrabold truncate">
-              {modelLabel}
-            </div>
+            <div className="text-sm font-extrabold truncate">{modelLabel}</div>
           </div>
 
-          <a
-            href="#representantes"
-            className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-sm font-extrabold text-emerald-200 hover:bg-emerald-500/15"
+          <button
+            onClick={scrollToReps}
+            className={[
+              "inline-flex items-center justify-center rounded-2xl border px-4 py-2 text-sm font-extrabold backdrop-blur",
+              accent.badgeBorder,
+              accent.badgeBg,
+              accent.badgeText,
+              "hover:brightness-[1.1]",
+            ].join(" ")}
           >
             Fale com representante
-          </a>
+          </button>
         </div>
       </div>
 
-      <section className="pt-8 sm:pt-10 pb-8">
-        <div className="max-w-6xl mx-auto px-5">
-          <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-dark-850/80 shadow-[0_30px_90px_-50px_rgba(0,0,0,0.95)] backdrop-blur-xl">
-            <div className="pointer-events-none absolute -inset-10 bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.18),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(59,130,246,0.14),transparent_55%)] blur-2xl opacity-90" />
+      {/* Hero premium com accent por modelo */}
+      <ModelHero
+        modelLabel={modelLabel}
+        eyebrow={`DJI Agras · ${copy.badge}`}
+        tagline={copy.tagline}
+        description={copy.description}
+        heroUrl={hero.url}
+        heroType={hero.type}
+        accent={accent}
+        chips={heroChips}
+        onTalkToRep={scrollToReps}
+        onScrollToSpecs={scrollToSpecs}
+      />
 
-            <div className="relative aspect-[16/9] bg-gradient-to-br from-white/10 via-white/5 to-transparent">
-              {hero.url && hero.type === "video" ? (
-                <video
-                  className="h-full w-full object-cover"
-                  src={hero.url}
-                  muted
-                  playsInline
-                  autoPlay
-                  loop
-                />
-              ) : hero.url && hero.type === "image" ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  className="h-full w-full object-cover"
-                  src={hero.url}
-                  alt={modelLabel}
-                />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center">
-                  <div className="text-center px-6">
-                    <div className="text-sm text-slate-200 font-extrabold">
-                      Sem mídia destacada
-                    </div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      Selecione o Destaque (Hero) no admin para este modelo.
-                    </div>
-                  </div>
-                </div>
-              )}
+      {/* Faixa de métricas-chave sobreposta entre hero e specs */}
+      <KeyMetrics metrics={metrics} accent={accent} />
 
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(16,185,129,0.20),transparent_45%),radial-gradient(circle_at_80%_60%,rgba(59,130,246,0.16),transparent_55%)]" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-              <div className="pointer-events-none absolute inset-0 opacity-70">
-                <div className="absolute -left-1/3 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent rotate-12 translate-x-[-30%] animate-scan" />
-              </div>
-
-              <div className="absolute left-5 top-5 right-5 flex items-start justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge>🚀 Inovação</Badge>
-                  <Badge>🌱 AgroTech</Badge>
-                  <Badge>🛰️ Precisão</Badge>
-                </div>
-
-                <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 text-[11px] font-extrabold text-emerald-200">
-                  MODELO
-                </span>
-              </div>
-
-              <div className="absolute left-5 right-5 bottom-5">
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                  <div className="min-w-0">
-                    <div className="inline-flex max-w-full flex-col gap-2 rounded-3xl border border-white/10 bg-black/35 px-4 py-3 backdrop-blur">
-                      <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white truncate">
-                        {modelLabel}
-                      </h1>
-                      <p className="text-sm text-slate-200/90">
-                        {heroCaption ||
-                          "Especificações, funcionalidades, benefícios e galeria completa."}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 sm:justify-end">
-                    <a
-                      href="#representantes"
-                      className="inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-extrabold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 shadow-[0_18px_60px_-25px_rgba(16,185,129,0.95)] hover:brightness-[1.05] active:scale-[0.99]"
-                    >
-                      Fale com representante
-                    </a>
-
-                    <button
-                      onClick={() => {
-                        const el = document.getElementById(
-                          "drones-model-gallery",
-                        );
-                        if (el)
-                          el.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start",
-                          });
-                      }}
-                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-extrabold text-slate-200 hover:bg-white/10"
-                    >
-                      Ver galeria
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-4 h-px w-full bg-gradient-to-r from-transparent via-white/12 to-transparent" />
-
-                <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="font-bold">Kavita Drones • Tecnologia</span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400/80" />
-                    sistema verificado
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ✅ agora passa o tipo certo */}
-      <SpecsSection page={pageSettings} />
+      <div id="drones-model-specs" className="scroll-mt-24">
+        <SpecsSection page={pageSettings} />
+      </div>
       <div className="max-w-6xl mx-auto px-5">
         <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>

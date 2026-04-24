@@ -24,70 +24,11 @@ import ModelsShowcase, {
 } from "@/components/drones/ModelsShowcase";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
-
-// ─── Copy por modelo ────────────────────────────────────────────────
-// Conteúdo dos cards da linha DJI Agras. Mantido aqui (não no admin)
-// porque os modelos são catálogo da DJI, não conteúdo editorial.
-// Se a DJI lançar novo modelo, adicionar entrada aqui ou cair no
-// default genérico.
-type ModelCopy = {
-  badge: string;
-  tagline: string;
-  description: string;
-  benefits: Array<{ label: string; value: string }>;
-};
-
-const MODEL_COPY: Record<string, ModelCopy> = {
-  t25p: {
-    badge: "Versátil",
-    tagline: "Pulverização precisa para relevos variados",
-    description:
-      "Ideal para propriedades menores, agricultura familiar e áreas com relevo irregular. Compacto, cabe na picape e voa em qualquer talhão.",
-    benefits: [
-      { label: "Operação", value: "Compacta" },
-      { label: "Precisão", value: "Alta" },
-      { label: "Manejo", value: "Ágil" },
-    ],
-  },
-  t70p: {
-    badge: "Alta Performance",
-    tagline: "Mais hectares por dia sem perder precisão",
-    description:
-      "Para quem precisa cobrir mais área na janela de safra com economia de insumos. Produtividade elevada e vazão estável.",
-    benefits: [
-      { label: "Capacidade", value: "70 kg" },
-      { label: "Autonomia", value: "Longa" },
-      { label: "Economia", value: "Insumos" },
-    ],
-  },
-  t100: {
-    badge: "Potência Máxima",
-    tagline: "Máximo desempenho para operações intensas",
-    description:
-      "Desenhado para grandes lavouras, cooperativas e prestadores de serviço de alta vazão. Carga, alcance e tecnologia no topo da linha.",
-    benefits: [
-      { label: "Capacidade", value: "100 kg" },
-      { label: "Vazão", value: "Máxima" },
-      { label: "Alcance", value: "Amplo" },
-    ],
-  },
-};
-
-const MODEL_COPY_DEFAULT: ModelCopy = {
-  badge: "Drone agrícola DJI Agras",
-  tagline: "Pulverização com tecnologia DJI",
-  description:
-    "Fale com um representante para conhecer especificações e adequação à sua propriedade.",
-  benefits: [
-    { label: "Precisão", value: "DJI" },
-    { label: "Suporte", value: "Regional" },
-    { label: "Tecnologia", value: "Agras" },
-  ],
-};
-
-function getModelCopy(key: string): ModelCopy {
-  return MODEL_COPY[key?.toLowerCase?.() ?? ""] ?? MODEL_COPY_DEFAULT;
-}
+import {
+  getModelCopy,
+  extractKeySpecs,
+  splitSpec,
+} from "@/lib/drones/modelCopy";
 
 type MediaTypeLower = "image" | "video";
 type MediaTypeUpper = "IMAGE" | "VIDEO";
@@ -117,78 +58,11 @@ type RootResponse = {
   comments?: any;
 };
 
-// ─── Key-specs extraídos do model_data (cadastrados pelo admin) ─────
-// O admin cadastra specs em grupos (SpecsGroup[]): cada grupo tem
-// title + items[string]. Na landing principal queremos MOSTRAR as 3-4
-// specs mais comerciais (capacidade, vazão, largura). Esta função
-// achata todos os grupos e escolhe até 3 items (com prioridade para
-// termos-chave). Se o admin ainda não preencheu, retorna [] e o card
-// cai no fallback estático (MODEL_COPY.benefits).
+// Tipo local — o helper shared recebe só o specs_items_json direto.
 type ModelData = {
   specs_title?: string | null;
   specs_items_json?: Array<{ title?: string; items?: string[] }> | null;
 } | null;
-
-// Limites de formato para aceitar um spec como "apresentável" no card:
-// label até 22 chars, valor até 22 chars, com ":" separando.
-// Specs longos e descritivos (típicos de manual técnico — "Peso 26 kg
-// (pulverização sem bateria) 33 kg (com bateria)") são DESCARTADOS
-// aqui e o card cai no fallback estático do MODEL_COPY.benefits,
-// que tem formato curto e comercial.
-const SPEC_LABEL_MAX = 22;
-const SPEC_VALUE_MAX = 22;
-
-function extractKeySpecs(md: ModelData, max = 3): string[] {
-  if (!md?.specs_items_json || !Array.isArray(md.specs_items_json)) return [];
-
-  const accepted: string[] = [];
-  for (const group of md.specs_items_json) {
-    if (!group?.items) continue;
-    for (const item of group.items) {
-      if (typeof item !== "string") continue;
-      const trimmed = item.trim();
-      if (!trimmed) continue;
-
-      const colonIdx = trimmed.indexOf(":");
-      if (colonIdx <= 0) continue; // sem ":" → texto descritivo, descarta
-
-      const label = trimmed.slice(0, colonIdx).trim();
-      const value = trimmed.slice(colonIdx + 1).trim();
-
-      // Label/valor precisam ser curtos para caber no grid de 3 colunas.
-      if (!label || label.length > SPEC_LABEL_MAX) continue;
-      if (!value || value.length > SPEC_VALUE_MAX) continue;
-
-      accepted.push(trimmed);
-    }
-  }
-  if (!accepted.length) return [];
-
-  // Prioriza termos comerciais (capacidade/tanque/vazão/largura/velocidade).
-  const priorityRe =
-    /capacidade|tanque|vaz[ãa]o|largura|velocidade|autonomia|hectare/i;
-  const priority = accepted.filter((s) => priorityRe.test(s));
-  const rest = accepted.filter((s) => !priorityRe.test(s));
-
-  return [...priority, ...rest].slice(0, max);
-}
-
-/**
- * Divide "Rótulo: valor" em { label, value }. O extractKeySpecs já
- * rejeita formatos ruins antes de chegar aqui — essa função apenas
- * separa as duas metades com confiança.
- */
-function splitSpec(s: string): { label: string; value: string } {
-  const idx = s.indexOf(":");
-  if (idx > 0) {
-    return {
-      label: s.slice(0, idx).trim(),
-      value: s.slice(idx + 1).trim(),
-    };
-  }
-  // Fallback defensivo (não deveria cair aqui pós-filtro, mas seguro):
-  return { label: "Spec", value: s.trim() };
-}
 
 function extractArray(v: any): any[] {
   if (Array.isArray(v)) return v;
@@ -336,7 +210,7 @@ function ModelCard({
 
   // Prefere specs reais do admin; cai no copy estático se ainda não tiver.
   // Exige 3 specs válidos completos, senão a grade de 3 colunas fica torta.
-  const realSpecs = extractKeySpecs(modelData, 3);
+  const realSpecs = extractKeySpecs(modelData?.specs_items_json, 3);
   const useRealSpecs = realSpecs.length >= 3;
 
   return (
@@ -685,7 +559,7 @@ function buildShowcaseEntries(
     .map((m) => {
       const copy = getModelCopy(m.key);
       const md = modelDataByKey[m.key] ?? null;
-      const realSpecs = extractKeySpecs(md, 3);
+      const realSpecs = extractKeySpecs(md?.specs_items_json, 3);
 
       // Só usa specs reais do admin se tivermos os 3 slots completos —
       // caso contrário a grade fica torta (1 card com 1 stat, outros
