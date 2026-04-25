@@ -29,6 +29,9 @@ type ProdutoEditado = {
   shipping_free_from_qty?: number | null;
 
   shipping_prazo_dias?: number | null;
+
+  // A3 — ponto de reposição (estoque baixo)
+  reorder_point?: number | null;
 };
 
 type Props = {
@@ -67,6 +70,10 @@ export default function ProdutoForm({
     useState<string>("");
 
   const [shippingPrazoDiasStr, setShippingPrazoDiasStr] = useState<string>("");
+
+  // A3 — ponto de reposição. Vazio = usa default global do backend (5).
+  // Preenchido = override por produto.
+  const [reorderPointStr, setReorderPointStr] = useState<string>("");
 
   useEffect(() => {
     apiClient
@@ -132,6 +139,13 @@ export default function ProdutoForm({
           ? String(produtoEditado.shipping_prazo_dias)
           : "",
       );
+
+      // A3 — ponto de reposição
+      setReorderPointStr(
+        produtoEditado.reorder_point != null
+          ? String(produtoEditado.reorder_point)
+          : "",
+      );
     } else {
       resetForm();
     }
@@ -184,6 +198,7 @@ export default function ProdutoForm({
     setShippingFree(false);
     setShippingFreeFromQtyStr("");
     setShippingPrazoDiasStr("");
+    setReorderPointStr("");
   }
 
   function validate(): string | null {
@@ -203,6 +218,13 @@ export default function ProdutoForm({
       const n = Number(shippingPrazoDiasStr);
       if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
         return "Prazo do produto (dias): informe um número inteiro válido (ex: 3).";
+      }
+    }
+
+    if (reorderPointStr.trim()) {
+      const n = Number(reorderPointStr);
+      if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) {
+        return "Ponto de reposição: informe um número inteiro positivo (ex: 5).";
       }
     }
 
@@ -253,6 +275,8 @@ export default function ProdutoForm({
     fd.append("shippingFree", shippingFree ? "1" : "0");
     fd.append("shippingFreeFromQtyStr", shippingFreeFromQtyStr.trim());
     fd.append("shippingPrazoDiasStr", shippingPrazoDiasStr.trim());
+    // A3 — vazio = backend usa default global (DEFAULT_REORDER_POINT)
+    fd.append("reorderPoint", reorderPointStr.trim());
 
     newFiles.forEach((file) => fd.append("images", file));
 
@@ -489,6 +513,32 @@ export default function ProdutoForm({
               setShippingPrazoDiasStr(next.shippingPrazoDiasStr ?? "");
             }}
           />
+
+          {/* A3 — Ponto de reposição (estoque baixo) */}
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-4">
+            <label
+              htmlFor="reorderPoint"
+              className="block text-sm font-semibold text-gray-200"
+            >
+              Ponto de reposição
+            </label>
+            <p className="mt-1 text-xs text-gray-400">
+              Quando o estoque chega neste valor, o produto entra no widget de
+              "Estoque baixo" do dashboard. Deixe vazio para usar o padrão da
+              loja (5 unidades).
+            </p>
+            <input
+              id="reorderPoint"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              step={1}
+              value={reorderPointStr}
+              onChange={(e) => setReorderPointStr(e.target.value)}
+              placeholder="Ex: 10 (vazio = padrão)"
+              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900/40 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+            />
+          </div>
         </div>
       </div>
 

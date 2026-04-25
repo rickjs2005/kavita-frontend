@@ -13,6 +13,8 @@ export type Product = {
   image?: string | null; // capa vinda do banco (ex.: "/uploads/abc.jpg")
   images?: string[]; // urls adicionais (ex.: ["/uploads/1.jpg", ...])
   is_active?: number | boolean; // 1/0 ou true/false
+  // A3 — ponto de reposição. NULL = usa default global (5).
+  reorder_point?: number | null;
 };
 
 type Props = {
@@ -24,6 +26,8 @@ type Props = {
   readOnly?: boolean;
   /** Permite controlar margens no grid/página (ex.: "mt-6") */
   className?: string;
+  /** A3 — threshold global pra calcular badge "Estoque baixo" */
+  defaultReorderPoint?: number;
 };
 
 const PLACEHOLDER = "/placeholder.png";
@@ -44,6 +48,7 @@ export default function ProdutoCard({
   confirmText = "Tem certeza que deseja remover este produto?",
   readOnly = false,
   className = "",
+  defaultReorderPoint = 5,
 }: Props) {
   const [removing, setRemoving] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -54,6 +59,13 @@ export default function ProdutoCard({
 
   const price = useMemo(() => Number(produto.price) || 0, [produto.price]);
   const qty = useMemo(() => Number(produto.quantity) || 0, [produto.quantity]);
+
+  // A3 — calcula se está em estoque baixo (não esgotado, mas perto).
+  const effectiveReorderPoint =
+    produto.reorder_point != null
+      ? Number(produto.reorder_point)
+      : defaultReorderPoint;
+  const isLowStock = isActive && qty > 0 && qty <= effectiveReorderPoint;
 
   // Monta lista de imagens (capa + extras) normalizando para URL absoluta e removendo duplicatas
   const images = useMemo(() => {
@@ -100,6 +112,14 @@ export default function ProdutoCard({
         {isActive && qty <= 0 && (
           <span className="absolute left-2 top-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
             Sem estoque
+          </span>
+        )}
+        {isLowStock && (
+          <span
+            className="absolute left-2 top-2 rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white"
+            title={`${qty} de ${effectiveReorderPoint} em estoque`}
+          >
+            Estoque baixo
           </span>
         )}
       </div>

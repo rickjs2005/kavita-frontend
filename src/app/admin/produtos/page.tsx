@@ -1,6 +1,7 @@
 "use client";
 
-import { JSX, useEffect, useRef, useState } from "react";
+import { JSX, useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import CustomButton from "@/components/buttons/CustomButton";
@@ -11,6 +12,13 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { API_BASE } from "@/utils/absUrl";
+
+// A3 — resposta do endpoint /api/admin/produtos/estoque-baixo
+type LowStockResp = {
+  items: Product[];
+  default_threshold: number;
+  total: number;
+};
 
 const ProdutoForm = dynamic(
   () => import("@/components/admin/produtos/produtoform"),
@@ -27,25 +35,45 @@ const ProdutoForm = dynamic(
 const ProdutoFormAny = ProdutoForm as unknown as (props: any) => JSX.Element;
 
 export default function ProdutosPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [produtos, setProdutos] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [produtoEditado, setProdutoEditado] = useState<Product | null>(null);
+  // A3 — filtro "apenas estoque baixo" controlado por ?lowStock=1 na URL
+  const lowStockOnly = searchParams.get("lowStock") === "1";
+  // A3 — threshold global pra passar pros cards (badge "Estoque baixo")
+  const [defaultThreshold, setDefaultThreshold] = useState<number>(5);
   const formRef = useRef<HTMLDivElement>(null);
 
-  async function carregarProdutos() {
+  const carregarProdutos = useCallback(async () => {
     setLoading(true);
     setErro(null);
 
     try {
-      const data = await apiClient.get<Product[]>("/api/admin/produtos");
-      const arr = Array.isArray(data) ? data : [];
-
-      const parsed: Product[] = arr.map((p: any) => ({
-        ...p,
-        price: Number(p.price),
-        quantity: Number(p.quantity),
-      }));
+      let parsed: Product[] = [];
+      if (lowStockOnly) {
+        // A3 — usa endpoint específico que já filtra e ordena por urgência
+        const resp = await apiClient.get<LowStockResp>(
+          "/api/admin/produtos/estoque-baixo?limit=200",
+        );
+        if (resp?.default_threshold) setDefaultThreshold(resp.default_threshold);
+        parsed = (resp?.items || []).map((p: any) => ({
+          ...p,
+          price: Number(p.price),
+          quantity: Number(p.quantity),
+        }));
+      } else {
+        const data = await apiClient.get<Product[]>("/api/admin/produtos");
+        const arr = Array.isArray(data) ? data : [];
+        parsed = arr.map((p: any) => ({
+          ...p,
+          price: Number(p.price),
+          quantity: Number(p.quantity),
+        }));
+      }
 
       setProdutos(parsed);
     } catch (e: any) {
@@ -59,11 +87,22 @@ export default function ProdutosPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [lowStockOnly]);
 
   useEffect(() => {
     carregarProdutos();
-  }, []);
+  }, [carregarProdutos]);
+
+  function toggleLowStockFilter() {
+    const params = new URLSearchParams(searchParams.toString());
+    if (lowStockOnly) {
+      params.delete("lowStock");
+    } else {
+      params.set("lowStock", "1");
+    }
+    const qs = params.toString();
+    router.replace(qs ? `/admin/produtos?${qs}` : "/admin/produtos");
+  }
 
   function handleEditarProduto(produto: Product) {
     setProdutoEditado(produto);
@@ -168,33 +207,58 @@ export default function ProdutosPage() {
 
         {!loading && erro && <ErrorState message={erro} />}
 
-        {!loading && !erro && produtos.length === 0 && (
-          <EmptyState message="Nenhum produto cadastrado." />
-        )}
-
-        {!loading && !erro && produtos.length > 0 && (
+        {!loading && !erro && (
           <section className="space-y-3 sm:space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-lg font-semibold text-gray-50">
-                Lista de produtos
+                {lowStockOnly ? "Produtos com estoque baixo" : "Lista de produtos"}
               </h3>
-              <span className="text-sm text-gray-300">
-                {produtos.length} itens
-              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={toggleLowStockFilter}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    lowStockOnly
+                      ? "border-amber-400/60 bg-amber-500/15 text-amber-200 hover:bg-amber-500/20"
+                      : "border-slate-700 bg-slate-900/40 text-slate-300 hover:border-amber-500/40 hover:text-amber-200"
+                  }`}
+                  title={
+                    lowStockOnly
+                      ? "Mostrar todos os produtos"
+                      : `Filtrar produtos com estoque <= ${defaultThreshold} (ou ponto de reposição configurado)`
+                  }
+                >
+                  {lowStockOnly ? "✓ Estoque baixo" : "Apenas estoque baixo"}
+                </button>
+                <span className="text-sm text-gray-300">
+                  {produtos.length} {produtos.length === 1 ? "item" : "itens"}
+                </span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {produtos.map((p) => (
-                <ProdutoCard
-                  key={p.id}
-                  produto={p}
-                  className="mt-0"
-                  onEditar={handleEditarProduto}
-                  onRemover={removerProduto}
-                  onToggleStatus={toggleStatus}
-                />
-              ))}
-            </div>
+            {produtos.length === 0 ? (
+              <EmptyState
+                message={
+                  lowStockOnly
+                    ? "Nenhum produto com estoque baixo agora."
+                    : "Nenhum produto cadastrado."
+                }
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {produtos.map((p) => (
+                  <ProdutoCard
+                    key={p.id}
+                    produto={p}
+                    className="mt-0"
+                    onEditar={handleEditarProduto}
+                    onRemover={removerProduto}
+                    onToggleStatus={toggleStatus}
+                    defaultReorderPoint={defaultThreshold}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         )}
       </div>
