@@ -27,7 +27,13 @@ export default function NovaRotaPage() {
   const [regiaoLabel, setRegiaoLabel] = useState("");
   const [kmEstimado, setKmEstimado] = useState<string>("");
   const [observacoes, setObservacoes] = useState("");
+
+  // Filtros do picker (Fase 3 UX)
   const [filtroCidade, setFiltroCidade] = useState("");
+  const [filtroBairro, setFiltroBairro] = useState("");
+  const [filtroAte, setFiltroAte] = useState(""); // data ate (yyyy-mm-dd)
+  const [filtroBusca, setFiltroBusca] = useState(""); // client-side: id, nome, ponto referencia
+
   const [selecionados, setSelecionados] = useState<number[]>([]); // ordem de seleção = ordem da rota
 
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
@@ -43,13 +49,16 @@ export default function NovaRotaPage() {
       .catch(() => toast.error("Falha ao carregar motoristas."));
   }, []);
 
-  // Carrega pedidos disponíveis
+  // Carrega pedidos disponíveis (filtros server-side: cidade, bairro, ate)
   async function reloadPedidos() {
     setLoadingPedidos(true);
     try {
-      const url = filtroCidade.trim()
-        ? `/api/admin/rotas/disponiveis?cidade=${encodeURIComponent(filtroCidade.trim())}`
-        : "/api/admin/rotas/disponiveis";
+      const params = new URLSearchParams();
+      if (filtroCidade.trim()) params.set("cidade", filtroCidade.trim());
+      if (filtroBairro.trim()) params.set("bairro", filtroBairro.trim());
+      if (filtroAte) params.set("ate", filtroAte);
+      const qs = params.toString();
+      const url = qs ? `/api/admin/rotas/disponiveis?${qs}` : "/api/admin/rotas/disponiveis";
       const data = await apiClient.get<PedidoDisponivel[]>(url);
       setPedidos(data ?? []);
     } catch (err) {
@@ -62,7 +71,7 @@ export default function NovaRotaPage() {
   useEffect(() => {
     reloadPedidos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtroCidade]);
+  }, [filtroCidade, filtroBairro, filtroAte]);
 
   function toggleSelecao(id: number) {
     setSelecionados((prev) =>
@@ -79,6 +88,78 @@ export default function NovaRotaPage() {
     });
     return Array.from(set).sort();
   }, [pedidos]);
+
+  // Bairros existentes (do filtro server-side ou client-side fallback)
+  const bairrosDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    pedidos.forEach((p) => {
+      const e = parseEnderecoPedido(p.endereco);
+      if (e?.bairro) set.add(e.bairro);
+    });
+    return Array.from(set).sort();
+  }, [pedidos]);
+
+  // Filtragem client-side adicional: busca por id, nome, ponto_referencia
+  const pedidosVisiveis = useMemo(() => {
+    if (!filtroBusca.trim()) return pedidos;
+    const q = filtroBusca.trim().toLowerCase();
+    return pedidos.filter((p) => {
+      if (String(p.id).includes(q)) return true;
+      if ((p.usuario_nome ?? "").toLowerCase().includes(q)) return true;
+      if ((p.usuario_telefone ?? "").includes(q)) return true;
+      const e = parseEnderecoPedido(p.endereco);
+      if (e?.ponto_referencia?.toLowerCase().includes(q)) return true;
+      if (e?.bairro?.toLowerCase().includes(q)) return true;
+      if (e?.cidade?.toLowerCase().includes(q)) return true;
+      return false;
+    });
+  }, [pedidos, filtroBusca]);
+
+  /**
+   * Sugestao de agrupamento: reordena `selecionados` agrupando pedidos
+   * pelo bairro (fallback cidade). Pedidos sem bairro/cidade vao pro
+   * fim. Dentro de cada bucket, ordem original e' preservada.
+   *
+   * Pura local — admin pode rejeitar com "Limpar selecao" se nao gostar.
+   */
+  function sugerirAgrupamento() {
+    if (selecionados.length < 2) {
+      toast("Selecione pelo menos 2 pedidos para agrupar.");
+      return;
+    }
+    const indexById: Record<number, PedidoDisponivel | undefined> = {};
+    pedidos.forEach((p) => {
+      indexById[p.id] = p;
+    });
+    const buckets = new Map<string, number[]>();
+    const semBucket: number[] = [];
+    selecionados.forEach((id) => {
+      const p = indexById[id];
+      if (!p) {
+        semBucket.push(id);
+        return;
+      }
+      const e = parseEnderecoPedido(p.endereco);
+      const chave = e?.bairro?.trim() || e?.cidade?.trim() || "";
+      if (!chave) {
+        semBucket.push(id);
+        return;
+      }
+      const norm = chave.toLowerCase();
+      if (!buckets.has(norm)) buckets.set(norm, []);
+      buckets.get(norm)!.push(id);
+    });
+    const ordenadas = Array.from(buckets.keys()).sort();
+    const novaOrdem: number[] = [];
+    ordenadas.forEach((k) => {
+      novaOrdem.push(...(buckets.get(k) ?? []));
+    });
+    novaOrdem.push(...semBucket);
+    setSelecionados(novaOrdem);
+    toast.success(
+      `Agrupado em ${ordenadas.length} ${ordenadas.length === 1 ? "região" : "regiões"}.`,
+    );
+  }
 
   async function salvar(targetStatus: "rascunho" | "pronta") {
     if (!data_programada) {
@@ -265,19 +346,111 @@ export default function NovaRotaPage() {
           <h2 className="text-sm font-semibold text-white">
             Selecionar pedidos · {selecionados.length} selecionado
             {selecionados.length === 1 ? "" : "s"}
+            {filtroBusca || filtroCidade || filtroBairro || filtroAte ? (
+              <span className="text-[11px] text-gray-500 ml-2">
+                ({pedidosVisiveis.length} de {pedidos.length} visíveis)
+              </span>
+            ) : null}
           </h2>
-          <select
-            value={filtroCidade}
-            onChange={(e) => setFiltroCidade(e.target.value)}
-            className="rounded-lg bg-dark-900 border border-white/10 px-3 py-1.5 text-sm text-white"
-          >
-            <option value="">Todas as cidades</option>
-            {cidadesDisponiveis.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={sugerirAgrupamento}
+              disabled={selecionados.length < 2}
+              className="text-xs px-3 py-1.5 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Agrupa selecionados por bairro / cidade"
+            >
+              🧭 Sugerir agrupamento
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelecionados([])}
+              disabled={selecionados.length === 0}
+              className="text-xs px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 disabled:opacity-40"
+            >
+              Limpar seleção
+            </button>
+          </div>
+        </div>
+
+        {/* Filtros expandidos */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <div>
+            <label
+              htmlFor="filtro-cidade"
+              className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
+              Cidade
+            </label>
+            <select
+              id="filtro-cidade"
+              value={filtroCidade}
+              onChange={(e) => {
+                setFiltroCidade(e.target.value);
+                setFiltroBairro(""); // reset bairro pra evitar inconsistencia
+              }}
+              className="w-full rounded-lg bg-dark-900 border border-white/10 px-3 py-1.5 text-sm text-white"
+            >
+              <option value="">Todas</option>
+              {cidadesDisponiveis.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="filtro-bairro"
+              className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
+              Bairro
+            </label>
+            <select
+              id="filtro-bairro"
+              value={filtroBairro}
+              onChange={(e) => setFiltroBairro(e.target.value)}
+              className="w-full rounded-lg bg-dark-900 border border-white/10 px-3 py-1.5 text-sm text-white"
+            >
+              <option value="">Todos</option>
+              {bairrosDisponiveis.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="filtro-ate"
+              className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
+              Pedidos até
+            </label>
+            <input
+              id="filtro-ate"
+              type="date"
+              value={filtroAte}
+              onChange={(e) => setFiltroAte(e.target.value)}
+              className="w-full rounded-lg bg-dark-900 border border-white/10 px-3 py-1.5 text-sm text-white"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="filtro-busca"
+              className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
+              Buscar
+            </label>
+            <input
+              id="filtro-busca"
+              type="text"
+              value={filtroBusca}
+              onChange={(e) => setFiltroBusca(e.target.value)}
+              placeholder="ID, cliente, telefone…"
+              className="w-full rounded-lg bg-dark-900 border border-white/10 px-3 py-1.5 text-sm text-white placeholder:text-gray-500"
+            />
+          </div>
         </div>
 
         {loadingPedidos ? (
@@ -286,9 +459,13 @@ export default function NovaRotaPage() {
           <p className="text-sm text-gray-400 py-4 text-center">
             Nenhum pedido pago disponível no momento.
           </p>
+        ) : pedidosVisiveis.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4 text-center">
+            Nenhum pedido bate com os filtros atuais.
+          </p>
         ) : (
           <div className="space-y-2 max-h-[480px] overflow-y-auto">
-            {pedidos.map((p) => {
+            {pedidosVisiveis.map((p) => {
               const endereco = parseEnderecoPedido(p.endereco);
               const ordem = selecionados.indexOf(p.id);
               const selected = ordem !== -1;

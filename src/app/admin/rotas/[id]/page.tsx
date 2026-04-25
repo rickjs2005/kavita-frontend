@@ -8,13 +8,29 @@ import { formatApiError } from "@/lib/formatApiError";
 import toast from "react-hot-toast";
 import { LoadingState } from "@/components/ui/LoadingState";
 import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import {
   type RotaCompleta,
   type RotaStatus,
   type MagicLinkResult,
-  parseEnderecoPedido,
-  formatEnderecoOneLine,
+  type ParadaCompleta,
 } from "@/lib/rotas/types";
-import { RotaStatusBadge, ParadaStatusBadge } from "../_components/StatusBadge";
+import { RotaStatusBadge } from "../_components/StatusBadge";
+import SortableParadaRow from "../_components/SortableParadaRow";
 
 const NEXT_TRANSITIONS: Record<RotaStatus, Array<{ status: RotaStatus; label: string; danger?: boolean }>> = {
   rascunho: [
@@ -92,6 +108,47 @@ export default function RotaDetalhePage() {
       load();
     } catch (err) {
       toast.error(formatApiError(err, "Falha ao remover.").message);
+    }
+  }
+
+  // Sensores DND: pointer (mouse) + touch + keyboard. Activation distance
+  // baixa pra mouse + delay pra touch (evita conflitar com scroll).
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  async function handleDragEnd(e: DragEndEvent) {
+    if (!rota) return;
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = rota.paradas.findIndex((p) => p.id === active.id);
+    const newIndex = rota.paradas.findIndex((p) => p.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    // Optimismo: aplica reorder visual imediato
+    const reordered = arrayMove(rota.paradas, oldIndex, newIndex).map(
+      (p, i): ParadaCompleta => ({ ...p, ordem: i + 1 }),
+    );
+    const previousParadas = rota.paradas;
+    setRota({ ...rota, paradas: reordered });
+
+    // Persiste no backend
+    try {
+      const ordens = reordered.map((p) => ({
+        pedido_id: p.pedido_id,
+        ordem: p.ordem,
+      }));
+      await apiClient.put(`/api/admin/rotas/${rota.id}/paradas/ordem`, {
+        ordens,
+      });
+      toast.success("Ordem atualizada.");
+    } catch (err) {
+      // Rollback
+      setRota({ ...rota, paradas: previousParadas });
+      toast.error(formatApiError(err, "Falha ao salvar ordem.").message);
     }
   }
 
@@ -286,66 +343,43 @@ export default function RotaDetalhePage() {
 
       {/* Lista de paradas */}
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-white">
-          Paradas ({rota.paradas.length})
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white">
+            Paradas ({rota.paradas.length})
+          </h2>
+          {!isReadOnly && rota.paradas.length > 1 && (
+            <p className="text-[11px] text-gray-500 italic">
+              Arraste pela alça para reordenar
+            </p>
+          )}
+        </div>
         {rota.paradas.length === 0 ? (
           <p className="text-sm text-gray-500 italic">Nenhuma parada nesta rota.</p>
         ) : (
-          <div className="space-y-2">
-            {rota.paradas.map((p) => {
-              const endereco = parseEnderecoPedido(p.pedido_endereco);
-              return (
-                <div
-                  key={p.id}
-                  className="rounded-xl bg-dark-800 ring-1 ring-white/10 p-3"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-block text-xs px-2 py-0.5 bg-primary text-white rounded-full font-bold">
-                          {p.ordem}
-                        </span>
-                        <span className="text-white text-sm font-semibold">
-                          Pedido #{p.pedido_id} · {p.usuario_nome || "Sem nome"}
-                        </span>
-                        <ParadaStatusBadge status={p.status} />
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">
-                        📍 {formatEnderecoOneLine(endereco)}
-                      </p>
-                      {p.usuario_telefone && (
-                        <p className="text-xs text-gray-500">📞 {p.usuario_telefone}</p>
-                      )}
-                      {p.entregue_em && (
-                        <p className="text-[11px] text-emerald-400 mt-0.5">
-                          ✓ Entregue em {new Date(p.entregue_em).toLocaleString("pt-BR")}
-                        </p>
-                      )}
-                      {p.observacao_motorista && (
-                        <p className="text-[11px] text-gray-400 italic mt-1">
-                          Motorista: “{p.observacao_motorista}”
-                        </p>
-                      )}
-                      {p.ocorrencia_id && (
-                        <p className="text-[11px] text-rose-400 mt-1">
-                          ⚠ Ocorrência aberta #{p.ocorrencia_id}
-                        </p>
-                      )}
-                    </div>
-                    {!isReadOnly && rota.status !== "em_rota" && (
-                      <button
-                        onClick={() => removerParada(p.pedido_id)}
-                        className="self-start text-xs px-2 py-1 rounded border border-rose-500/40 text-rose-300 hover:bg-rose-500/10"
-                      >
-                        Remover
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={rota.paradas.map((p) => p.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {rota.paradas.map((p, idx) => (
+                  <SortableParadaRow
+                    key={p.id}
+                    parada={p}
+                    index={idx + 1}
+                    draggable={!isReadOnly}
+                    onRemove={
+                      !isReadOnly ? () => removerParada(p.pedido_id) : undefined
+                    }
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>
