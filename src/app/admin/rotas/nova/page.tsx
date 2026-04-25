@@ -153,10 +153,14 @@ export default function NovaRotaPage() {
         <h2 className="text-sm font-semibold text-white">Dados da rota</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+            <label
+              htmlFor="rota-data"
+              className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
               Data programada
             </label>
             <input
+              id="rota-data"
               type="date"
               value={data_programada}
               onChange={(e) => setData(e.target.value)}
@@ -165,10 +169,14 @@ export default function NovaRotaPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+            <label
+              htmlFor="rota-motorista"
+              className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
               Motorista
             </label>
             <select
+              id="rota-motorista"
               value={motoristaId}
               onChange={(e) =>
                 setMotoristaId(e.target.value === "" ? "" : Number(e.target.value))
@@ -184,10 +192,14 @@ export default function NovaRotaPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+            <label
+              htmlFor="rota-veiculo"
+              className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
               Veículo
             </label>
             <input
+              id="rota-veiculo"
               type="text"
               value={veiculo}
               onChange={(e) => setVeiculo(e.target.value)}
@@ -196,10 +208,14 @@ export default function NovaRotaPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+            <label
+              htmlFor="rota-regiao"
+              className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
               Região (rótulo livre)
             </label>
             <input
+              id="rota-regiao"
               type="text"
               value={regiaoLabel}
               onChange={(e) => setRegiaoLabel(e.target.value)}
@@ -208,10 +224,14 @@ export default function NovaRotaPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+            <label
+              htmlFor="rota-km"
+              className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
               Km estimado (opcional)
             </label>
             <input
+              id="rota-km"
               type="number"
               min={0}
               step={0.1}
@@ -222,10 +242,14 @@ export default function NovaRotaPage() {
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+            <label
+              htmlFor="rota-obs"
+              className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
               Observações (opcional)
             </label>
             <textarea
+              id="rota-obs"
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               rows={2}

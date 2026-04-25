@@ -73,10 +73,14 @@ export default function AdminRotasPage() {
       {/* Filtros */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center bg-dark-800 ring-1 ring-white/10 rounded-xl p-3">
         <div className="flex flex-col">
-          <label className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+          <label
+            htmlFor="filtro-data"
+            className="text-[10px] font-semibold uppercase tracking-wide text-gray-400"
+          >
             Data
           </label>
           <input
+            id="filtro-data"
             type="date"
             value={filtroData}
             onChange={(e) => setFiltroData(e.target.value)}
@@ -84,10 +88,14 @@ export default function AdminRotasPage() {
           />
         </div>
         <div className="flex flex-col">
-          <label className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+          <label
+            htmlFor="filtro-status"
+            className="text-[10px] font-semibold uppercase tracking-wide text-gray-400"
+          >
             Status
           </label>
           <select
+            id="filtro-status"
             value={filtroStatus}
             onChange={(e) => setFiltroStatus(e.target.value as RotaStatus | "")}
             className="rounded-lg bg-dark-900 border border-white/10 px-3 py-1.5 text-sm text-white"

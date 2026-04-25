@@ -48,12 +48,15 @@ export default function MotoristaLoginPage() {
 
         {!sent ? (
           <form onSubmit={submit} className="space-y-3">
-            <label className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300/80">
+            <label
+              htmlFor="motorista-login-telefone"
+              className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300/80"
+            >
               Telefone (DDD + número)
             </label>
             <input
+              id="motorista-login-telefone"
               type="tel"
-              autoFocus
               required
               value={telefone}
               onChange={(e) => setTelefone(e.target.value)}

@@ -159,7 +159,7 @@ function isNetworkError(err: unknown): boolean {
   return err instanceof TypeError;
 }
 
-export interface ExecuteOptions<T> {
+export interface ExecuteOptions {
   endpoint: string;
   method?: "POST" | "PUT" | "PATCH" | "DELETE";
   payload?: unknown;
@@ -183,7 +183,7 @@ export interface ExecuteResult<T> {
  * rede, enfileira pro replay automatico depois.
  */
 export async function executeWithOffline<T = unknown>(
-  opts: ExecuteOptions<T>,
+  opts: ExecuteOptions,
 ): Promise<ExecuteResult<T>> {
   const idempotencyKey = safeUuid();
   const method = opts.method ?? "POST";

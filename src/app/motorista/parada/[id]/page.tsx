@@ -102,6 +102,38 @@ export default function ParadaDetalhePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // G4 — auto-marca a parada como em_andamento ao motorista abrir.
+  // Backend e' idempotente:
+  //   - se status='pendente' -> updateStatus('em_andamento')
+  //   - se ja' em outro status -> no-op (servico verifica antes do UPDATE)
+  //   - se rota nao esta em_rota -> 409 (silencioso, motorista nem deveria
+  //     ter aberto a parada nesse caso). enqueueOnNetworkError mantem
+  //     funcionamento offline.
+  useEffect(() => {
+    if (!parada) return;
+    if (parada.status !== "pendente") return;
+    executeWithOffline({
+      endpoint: `/api/motorista/paradas/${parada.id}/abrir`,
+      method: "POST",
+      label: `Abrir parada #${parada.id}`,
+      enqueueOnNetworkError: true,
+    }).catch(() => {
+      // Silencioso — falha aqui nao deve confundir o motorista.
+      // Caso comum de erro: rota nao iniciada (motorista clicou parada
+      // antes de "Iniciar rota"). UI ja exibe o estado correto.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parada?.id]);
+
+  // Reseta o estado do modal ao abrir/fechar pra evitar reaproveitamento
+  // de tipo/observacao da tentativa anterior.
+  useEffect(() => {
+    if (problemaOpen) {
+      setProblemaTipo("cliente_ausente");
+      setProblemaObs("");
+    }
+  }, [problemaOpen]);
+
   async function marcarEntregue() {
     if (!parada) return;
     const obs = window.prompt("Observação (opcional):", "") ?? "";
@@ -336,35 +368,72 @@ export default function ParadaDetalhePage() {
 
       {/* Modal problema */}
       {problemaOpen && (
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="problema-title"
           className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4"
           onClick={() => setProblemaOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setProblemaOpen(false);
+          }}
+          tabIndex={-1}
         >
-          <div
+          {/* onClick/onKeyDown stopPropagation: evitam que clicks/teclas
+              no form fechem o modal. */}
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              reportarProblema();
+            }}
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
             className="w-full max-w-md bg-stone-900 ring-1 ring-white/10 rounded-2xl p-4 space-y-3"
           >
-            <h3 className="text-base font-semibold">O que aconteceu?</h3>
-            <select
-              value={problemaTipo}
-              onChange={(e) => setProblemaTipo(e.target.value as ProblemaTipo)}
-              className="w-full rounded-lg bg-stone-800 border border-white/10 px-3 py-2 text-stone-100"
-            >
-              {PROBLEMA_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-            <textarea
-              value={problemaObs}
-              onChange={(e) => setProblemaObs(e.target.value)}
-              rows={3}
-              placeholder="Detalhe (opcional)…"
-              className="w-full rounded-lg bg-stone-800 border border-white/10 px-3 py-2 text-stone-100 text-sm"
-            />
+            <h3 id="problema-title" className="text-base font-semibold">
+              O que aconteceu?
+            </h3>
+            <div>
+              <label
+                htmlFor="problema-tipo"
+                className="block text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1"
+              >
+                Tipo do problema
+              </label>
+              <select
+                id="problema-tipo"
+                value={problemaTipo}
+                onChange={(e) => setProblemaTipo(e.target.value as ProblemaTipo)}
+                className="w-full rounded-lg bg-stone-800 border border-white/10 px-3 py-2 text-stone-100"
+              >
+                {PROBLEMA_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="problema-obs"
+                className="block text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1"
+              >
+                Detalhe (opcional)
+              </label>
+              <textarea
+                id="problema-obs"
+                value={problemaObs}
+                onChange={(e) => setProblemaObs(e.target.value)}
+                rows={3}
+                placeholder="O que voce viu na hora?"
+                className="w-full rounded-lg bg-stone-800 border border-white/10 px-3 py-2 text-stone-100 text-sm"
+              />
+            </div>
             <div className="flex gap-2 justify-end">
               <button
+                type="button"
                 onClick={() => setProblemaOpen(false)}
                 disabled={acting}
                 className="px-4 py-2 rounded-lg text-stone-300 hover:bg-white/5"
@@ -372,14 +441,14 @@ export default function ParadaDetalhePage() {
                 Cancelar
               </button>
               <button
-                onClick={reportarProblema}
+                type="submit"
                 disabled={acting}
                 className="px-4 py-2 rounded-lg bg-rose-500 text-stone-950 font-semibold disabled:opacity-60"
               >
                 Confirmar
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </main>
