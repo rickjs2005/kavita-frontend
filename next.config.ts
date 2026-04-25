@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Deriva hostname e protocol diretamente de NEXT_PUBLIC_API_URL para que
 // next/image aceite imagens do backend em qualquer ambiente (dev, staging, prod).
@@ -215,4 +216,31 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrapper Sentry — comportamento "no-op friendly":
+//   - Sem NEXT_PUBLIC_SENTRY_DSN setado, o wrapper roda mas nao injeta
+//     nada (sem upload de source map, sem tracing). Build identico.
+//   - Com SENTRY_AUTH_TOKEN setado em CI, faz upload de source map
+//     durante build. Sem o token, nao tenta upload e nao falha.
+export default withSentryConfig(nextConfig, {
+  // Org/project — usados na URL do dashboard e no upload de source map.
+  org: process.env.SENTRY_ORG || undefined,
+  project: process.env.SENTRY_PROJECT || undefined,
+  authToken: process.env.SENTRY_AUTH_TOKEN || undefined,
+
+  // Silencia o logger do plugin durante o build.
+  silent: true,
+  disableLogger: true,
+
+  // Apaga os .map do bundle servido (mantem upload pra Sentry, mas
+  // browser publico nao acessa). Reduz superficie de revelacao de
+  // codigo-fonte.
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+
+  // Nao injeta auto-instrumentation no codigo (mantem bundle leve).
+  // O instrumentation.ts cuida do que importa.
+  autoInstrumentServerFunctions: false,
+  autoInstrumentMiddleware: false,
+  autoInstrumentAppDirectory: false,
+});
