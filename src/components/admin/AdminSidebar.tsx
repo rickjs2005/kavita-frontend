@@ -32,6 +32,8 @@ const navGroups: NavGroup[] = [
       { label: "Ocorrências", href: "/admin/ocorrencias", icon: "📋", permission: "orders_view" },
       { label: "Carrinhos", href: "/admin/carrinhos", icon: "🛒", permission: "carts_view" },
       { label: "Clientes", href: "/admin/clientes", icon: "👥", permission: "customers_view" },
+      { label: "Rotas de Entrega", href: "/admin/rotas", icon: "🛻", permission: "rotas.view" },
+      { label: "Motoristas", href: "/admin/motoristas", icon: "🧑‍✈️", permission: "motoristas.view" },
     ],
   },
   {
