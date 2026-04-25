@@ -11,6 +11,7 @@ import { KpiSection } from "./dashboard/sections/KpiSection";
 import { AlertsAndMetricsSection } from "./dashboard/sections/AlertsAndMetricsSection";
 import { OperationsSection } from "./dashboard/sections/OperationsSection";
 import { ModulesStatusSection } from "./dashboard/sections/ModulesStatusSection";
+import LowStockWidget from "./dashboard/sections/LowStockWidget";
 
 const SalesChartSection = dynamic(
   () => import("./dashboard/sections/SalesChartSection").then((m) => m.SalesChartSection),
@@ -241,6 +242,9 @@ export default function AdminDashboardPage() {
               status={modulesStatus}
               loading={modulesLoading}
             />
+
+            {/* A3 — alerta de estoque baixo. Largura total como ModulesStatus. */}
+            <LowStockWidget />
 
             <AlertsAndMetricsSection
               topClientes={topClientes}

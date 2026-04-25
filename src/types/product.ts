@@ -19,6 +19,8 @@ export type Product = {
   shipping_free?: number | boolean; // 1 | 0
   shipping_free_from_qty?: number | null; // ex: 5
   is_active?: number | boolean;
+  // A3 — ponto de reposição. NULL = usa default global do admin (5).
+  reorder_point?: number | null;
 };
 
 /**
