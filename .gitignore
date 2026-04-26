@@ -34,7 +34,28 @@ tests-baseline/
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.cer
+secrets/
+credentials/
+
+# editores / IDE
+.idea/
+.vscode/
+
+# Claude Code (config local)
+.claude/
+
+# cache geral / monorepo tooling
+.cache/
+.tmp/
+.turbo/
+.eslintcache
 
 # debug
 npm-debug.log*
