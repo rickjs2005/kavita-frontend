@@ -8,7 +8,7 @@ import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 import type { Coupon, CouponRestriction } from "@/types/coupon";
 import { emptyCoupon } from "@/types/coupon";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatDateTime } from "@/utils/formatters";
 
 export default function CuponsPage() {
   const [cupons, setCupons] = useState<Coupon[]>([]);
@@ -545,7 +545,7 @@ export default function CuponsPage() {
                           <>
                             {" "}
                             · expira em{" "}
-                            {new Date(c.expiracao).toLocaleString("pt-BR")}
+                            {formatDateTime(c.expiracao)}
                           </>
                         )}
                       </div>

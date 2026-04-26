@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { NewsPostListItem } from "@/types/kavita-news";
+import { formatDateTime } from "@/utils/formatters";
 
 type Props = {
   items: NewsPostListItem[];
@@ -156,7 +157,7 @@ export default function PostsTable({
                     <td className="px-4 py-3 text-gray-800">{category}</td>
 
                     <td className="px-4 py-3 text-gray-700">
-                      {updated ? updated.toLocaleString("pt-BR") : "-"}
+                      {updated ? formatDateTime(updated) : "-"}
                     </td>
 
                     <td className="px-4 py-3">
@@ -240,7 +241,7 @@ export default function PostsTable({
                   <div className="col-span-2 min-w-0">
                     <dt className="text-gray-500">Atualizado</dt>
                     <dd className="truncate text-gray-700">
-                      {updated ? updated.toLocaleString("pt-BR") : "-"}
+                      {updated ? formatDateTime(updated) : "-"}
                     </dd>
                   </div>
                 </dl>

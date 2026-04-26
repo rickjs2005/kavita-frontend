@@ -22,7 +22,7 @@ import type {
   AptidaoOferta,
   PrioridadeComercial,
 } from "@/types/lead";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, buildWaMeLink } from "@/utils/formatters";
 
 // ─── Catálogo de classificações ────────────────────────────────────
 
@@ -190,9 +190,6 @@ function buildLaudoWhatsAppUrl(
   corretoraNome: string,
   corretoraNomeEmpresa: string,
 ): string {
-  const digits = lead.telefone.replace(/\D/g, "").replace(/^0+/, "");
-  const phone = digits.startsWith("55") ? digits : `55${digits}`;
-
   const meta = lead.bebida_classificacao
     ? CLASSIFICACOES[lead.bebida_classificacao]
     : null;
@@ -219,7 +216,8 @@ function buildLaudoWhatsAppUrl(
   }
 
   lines.push("", "Podemos conversar sobre oferta?");
-  return `https://wa.me/${phone}?text=${encodeURIComponent(lines.join("\n"))}`;
+  // Telefone invalido cai num link "vazio" string — caller checa.
+  return buildWaMeLink(lead.telefone, lines.join("\n")) || "";
 }
 
 // ─── Classes compartilhadas ────────────────────────────────────────

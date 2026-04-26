@@ -28,6 +28,7 @@ import {
   fetchPublicFeatures,
 } from "@/server/data/corretoras";
 import { absUrl } from "@/utils/absUrl";
+import { formatCurrency, formatNumber } from "@/utils/formatters";
 import { CorretoraContactChannels } from "@/components/mercado-do-cafe/CorretoraContactChannels";
 import { CorretoraRegionalTrust } from "@/components/mercado-do-cafe/CorretoraRegionalTrust";
 import { LeadContactForm } from "@/components/mercado-do-cafe/LeadContactForm";
@@ -458,9 +459,7 @@ export default async function CorretoraDetailPage({ params }: Props) {
                   <p className="text-[13px] text-stone-300">
                     ≈{" "}
                     <span className="font-semibold tabular-nums text-stone-100">
-                      {new Intl.NumberFormat("pt-BR").format(
-                        trackRecord.estimated_sacas,
-                      )}
+                      {formatNumber(trackRecord.estimated_sacas)}
                     </span>{" "}
                     sacas negociadas
                   </p>
@@ -973,10 +972,7 @@ function ArabicaTicker({
     source_url: string | null;
   };
 }) {
-  const priceBrl = new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(spot.price_cents / 100);
+  const priceBrl = formatCurrency(spot.price_cents / 100);
 
   const variation = spot.variation_pct;
   const variationTone =

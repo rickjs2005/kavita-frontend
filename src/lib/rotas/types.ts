@@ -274,12 +274,9 @@ export function formatBRL(v: string | number | null | undefined): string {
   });
 }
 
-/** Constroi um link wa.me a partir de um telefone BR (com ou sem mask). */
-export function buildWaMeLink(telefone: string | null | undefined): string | null {
-  if (!telefone) return null;
-  const digits = String(telefone).replace(/\D/g, "");
-  if (digits.length < 10) return null;
-  // Garante o 55 do BR
-  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
-  return `https://wa.me/${withCountry}`;
-}
+/**
+ * Re-export do helper central. Mantido aqui pra preservar import sites
+ * que já usavam `from "@/lib/rotas/types"`. Quando refatorar imports,
+ * passar a usar `@/utils/formatters` diretamente.
+ */
+export { buildWaMeLink } from "@/utils/formatters";

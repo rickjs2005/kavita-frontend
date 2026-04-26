@@ -8,6 +8,7 @@ import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { isApiError } from "@/lib/errors";
 import { absUrl } from "@/utils/absUrl";
+import { formatDateTime } from "@/utils/formatters";
 
 const COLABORADORES_PATH = "/api/admin/colaboradores";
 
@@ -221,7 +222,7 @@ export default function ColaboradoresPendentesPage() {
 
                       <p className="mt-2 text-[11px] text-gray-400">
                         Criado em:{" "}
-                        {new Date(c.created_at).toLocaleString("pt-BR")}
+                        {formatDateTime(c.created_at)}
                       </p>
                     </div>
                   </div>

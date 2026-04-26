@@ -5,12 +5,7 @@ import HeroAtendimento from "./components/HeroAtendimento";
 import AtalhoAjuda from "./components/AtalhoAjuda";
 import FormularioContato from "./components/FormularioContato";
 import BlocoConfianca from "./components/BlocoConfianca";
-import { onlyDigits } from "@/utils/formatters";
-
-function toWaMe(phone: string) {
-  const d = onlyDigits(phone);
-  return d ? `https://wa.me/${d.startsWith("55") ? d : `55${d}`}` : "";
-}
+import { buildWaMeLink } from "@/utils/formatters";
 
 type Metrics = {
   total_mensagens: number;
@@ -48,7 +43,8 @@ export default async function AtendimentoPage() {
   const whatsappUrl =
     shop?.social_whatsapp_url ||
     shop?.footer?.social_whatsapp_url ||
-    (whatsapp ? toWaMe(whatsapp) : "");
+    buildWaMeLink(whatsapp) ||
+    "";
 
   return (
     <main className="min-h-screen bg-gray-50">

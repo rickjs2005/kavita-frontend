@@ -266,6 +266,36 @@ export function formatPhoneMask(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
 }
 
+/**
+ * Constrói um link `https://wa.me/...` a partir de um telefone BR (com
+ * ou sem máscara). Adiciona o `55` se ausente.
+ *
+ * Retorna `null` quando o telefone tem menos de 10 dígitos (DDD + 8) —
+ * caller pode renderizar fallback (texto cru, esconder botão WhatsApp,
+ * etc.). Não joga exceção.
+ *
+ * Único helper centralizado para `wa.me` no projeto. Substitui os
+ * inlines `toWaMe` que existiam em ~4 arquivos (contato, footer,
+ * LaudoPanel, WhatsAppFloatingButton).
+ *
+ * @param telefone   "33998093331", "(33) 99809-3331", "+55 33 99809-3331"
+ * @param mensagem   opcional — texto pré-preenchido (URL-encoded)
+ */
+export function buildWaMeLink(
+  telefone: string | null | undefined,
+  mensagem?: string,
+): string | null {
+  if (!telefone) return null;
+  const digits = onlyDigits(telefone);
+  if (digits.length < 10) return null;
+  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
+  const base = `https://wa.me/${withCountry}`;
+  if (mensagem && mensagem.length > 0) {
+    return `${base}?text=${encodeURIComponent(mensagem)}`;
+  }
+  return base;
+}
+
 /* =========================================================
  *  CONTATO / TEXTO
  * ======================================================= */

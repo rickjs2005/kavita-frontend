@@ -8,6 +8,7 @@ import GalleryForm from "./GalleryForm";
 
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { formatDateTime } from "@/utils/formatters";
 
 type DroneModelRow = {
   key: string;
@@ -50,10 +51,7 @@ function extractItemsArray<T>(payload: any): T[] {
 }
 
 function fmtDateTime(v?: string) {
-  if (!v) return null;
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  return formatDateTime(v) || null;
 }
 
 function StatusPill({ active }: { active: boolean }) {

@@ -2,22 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { FaWhatsapp } from "react-icons/fa";
-import { onlyDigits } from "@/utils/formatters";
+import { buildWaMeLink } from "@/utils/formatters";
 
 type Props = {
   phone?: string;
   url?: string;
 };
 
-function toWaMe(phone: string) {
-  const d = onlyDigits(phone);
-  return d ? `https://wa.me/${d.startsWith("55") ? d : `55${d}`}` : "";
-}
-
 export default function WhatsAppFloatingButton({ phone, url }: Props) {
   const [visible, setVisible] = useState(false);
 
-  const href = url || (phone ? toWaMe(phone) : "");
+  const href = url || buildWaMeLink(phone) || "";
 
   useEffect(() => {
     if (!href) return;

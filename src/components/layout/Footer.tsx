@@ -7,7 +7,7 @@ import { HiOutlineMapPin } from "react-icons/hi2";
 import Link from "next/link";
 import type { PublicShopSettings } from "@/server/data/shopSettings";
 import { sanitizeUrl } from "@/lib/sanitizeHtml";
-import { onlyDigits } from "@/utils/formatters";
+import { onlyDigits, buildWaMeLink } from "@/utils/formatters";
 
 type FooterProps = {
   shop?: PublicShopSettings;
@@ -26,11 +26,6 @@ function formatCnpj(v: string) {
     8,
     12,
   )}-${d.slice(12, 14)}`;
-}
-
-function toWaMe(phone: string) {
-  const d = onlyDigits(phone);
-  return d ? `https://wa.me/${d.startsWith("55") ? d : `55${d}`}` : "";
 }
 
 function buildAddress(
@@ -131,7 +126,8 @@ export default function Footer({ shop }: FooterProps) {
   const whatsappUrl = sanitizeUrl(
     (shop as any)?.social_whatsapp_url ||
     footer.social_whatsapp_url ||
-    (whatsapp ? toWaMe(whatsapp) : ""),
+    buildWaMeLink(whatsapp) ||
+    "",
   );
 
   // Endereço (flat ou compat)

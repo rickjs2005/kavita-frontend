@@ -19,6 +19,7 @@ import {
   readCachedRota,
 } from "@/lib/rotas/offline";
 import { ParadaStatusBadge } from "@/app/admin/rotas/_components/StatusBadge";
+import { formatDateTime } from "@/utils/formatters";
 import OfflineBanner from "../../_components/OfflineBanner";
 import MiniMapOSM from "../../_components/MiniMapOSM";
 import ComprovanteSheet, {
@@ -398,7 +399,7 @@ export default function ParadaDetalhePage() {
 
         {parada.entregue_em && (
           <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-3 text-sm text-emerald-300">
-            ✓ Entregue em {new Date(parada.entregue_em).toLocaleString("pt-BR")}
+            ✓ Entregue em {formatDateTime(parada.entregue_em)}
             {parada.observacao_motorista && (
               <p className="text-[11px] text-emerald-200/80 mt-1 italic">
                 “{parada.observacao_motorista}”
