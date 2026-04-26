@@ -1,5 +1,17 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import withSerwistInit from "@serwist/next";
+
+// Fase 5 — PWA via Serwist (sucessor recomendado do next-pwa em Next 15).
+// Apenas /motorista/* e' cacheado. Sem prompt de install (silencioso).
+// Service worker apenas em production build (NODE_ENV=production).
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/motorista-sw.ts",
+  swDest: "public/sw.js",
+  // Disable em dev — service worker quebra HMR
+  disable: process.env.NODE_ENV === "development",
+  cacheOnNavigation: true,
+});
 
 // Deriva hostname e protocol diretamente de NEXT_PUBLIC_API_URL para que
 // next/image aceite imagens do backend em qualquer ambiente (dev, staging, prod).
@@ -221,7 +233,7 @@ const nextConfig: NextConfig = {
 //     nada (sem upload de source map, sem tracing). Build identico.
 //   - Com SENTRY_AUTH_TOKEN setado em CI, faz upload de source map
 //     durante build. Sem o token, nao tenta upload e nao falha.
-export default withSentryConfig(nextConfig, {
+export default withSentryConfig(withSerwist(nextConfig), {
   // Org/project — usados na URL do dashboard e no upload de source map.
   org: process.env.SENTRY_ORG || undefined,
   project: process.env.SENTRY_PROJECT || undefined,

@@ -1,0 +1,19 @@
+{
+  "name": "Kavita · Entregas",
+  "short_name": "Kavita Entregas",
+  "description": "Painel mobile do motorista para entregas Kavita",
+  "start_url": "/motorista/rota",
+  "scope": "/motorista/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c0a09",
+  "theme_color": "#f59e0b",
+  "icons": [
+    {
+      "src": "/icons/motorista.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ]
+}

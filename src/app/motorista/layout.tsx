@@ -10,12 +10,19 @@ import "@/app/globals.css";
 export const metadata: Metadata = {
   title: "Kavita · Entregas",
   description: "Painel de entregas do motorista Kavita",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Kavita Entregas",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  themeColor: "#f59e0b",
 };
 
 export default function MotoristaLayout({

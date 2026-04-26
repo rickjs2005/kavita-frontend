@@ -23,6 +23,12 @@ tests-baseline/
 /.next/
 /out/
 
+# serwist (PWA service worker — build artifact, regenerado por build)
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js
+/public/swe-worker-*.js.map
+
 # production
 /build
 
