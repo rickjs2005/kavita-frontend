@@ -20,6 +20,7 @@ import {
 } from "@/lib/rotas/offline";
 import { ParadaStatusBadge } from "@/app/admin/rotas/_components/StatusBadge";
 import OfflineBanner from "../../_components/OfflineBanner";
+import MiniMapOSM from "../../_components/MiniMapOSM";
 
 const PROBLEMA_OPTIONS: Array<{ value: ProblemaTipo; label: string }> = [
   { value: "cliente_ausente", label: "Cliente ausente" },
@@ -270,6 +271,9 @@ export default function ParadaDetalhePage() {
             </p>
           )}
         </div>
+
+        {/* Fase 4 — mini-mapa OSM, so' renderiza quando ha lat/lng */}
+        <MiniMapOSM lat={parada.pedido_lat} lng={parada.pedido_lng} />
 
         {/* Botões grandes */}
         <div className="grid grid-cols-2 gap-2">

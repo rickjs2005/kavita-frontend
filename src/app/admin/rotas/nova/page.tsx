@@ -161,6 +161,94 @@ export default function NovaRotaPage() {
     );
   }
 
+  /**
+   * Fase 4 — agrupamento por proximidade real (greedy nearest-neighbor /
+   * TSP guloso). So' funciona quando TODOS os selecionados tem lat/lng;
+   * caso contrario, botao desabilitado e usuario usa o agrupamento por
+   * bairro como fallback.
+   *
+   * Algoritmo:
+   *   1. Comeca pelo pedido mais ao norte-oeste (menor lat+lng) como semente
+   *   2. A cada passo, adiciona o pedido nao-visitado mais proximo (haversine)
+   *   3. Termina quando todos visitados
+   * Resultado: sequencia que aproxima a melhor rota visualmente.
+   * NAO e' otimo, mas e' simples e bom o suficiente pra zona da mata.
+   */
+  const todosSelecionadosTemGeo = (() => {
+    if (selecionados.length < 2) return false;
+    const indexById: Record<number, PedidoDisponivel | undefined> = {};
+    pedidos.forEach((p) => {
+      indexById[p.id] = p;
+    });
+    return selecionados.every((id) => {
+      const p = indexById[id];
+      return Boolean(
+        p?.endereco_latitude && p?.endereco_longitude,
+      );
+    });
+  })();
+
+  function sugerirPorProximidade() {
+    if (!todosSelecionadosTemGeo) {
+      toast.error("Todos os selecionados precisam ter lat/lng para usar essa opção.");
+      return;
+    }
+    type Pt = { id: number; lat: number; lng: number };
+    const indexById: Record<number, PedidoDisponivel | undefined> = {};
+    pedidos.forEach((p) => {
+      indexById[p.id] = p;
+    });
+    const pontos: Pt[] = selecionados.map((id) => {
+      const p = indexById[id]!;
+      return {
+        id,
+        lat: Number(p.endereco_latitude),
+        lng: Number(p.endereco_longitude),
+      };
+    });
+
+    // Haversine simplificado (suficiente pra distancia relativa).
+    function dist(a: Pt, b: Pt) {
+      const dLat = a.lat - b.lat;
+      const dLng = a.lng - b.lng;
+      // Aproximacao plana — ok pra sub-100km.
+      return Math.sqrt(dLat * dLat + dLng * dLng);
+    }
+
+    // Semente: ponto mais ao norte-oeste (maior lat, menor lng)
+    let seed = pontos[0];
+    for (const p of pontos) {
+      if (p.lat > seed.lat || (p.lat === seed.lat && p.lng < seed.lng)) {
+        seed = p;
+      }
+    }
+
+    const visitados = new Set<number>([seed.id]);
+    const ordem: number[] = [seed.id];
+    let atual = seed;
+    while (visitados.size < pontos.length) {
+      let proximo: Pt | null = null;
+      let melhorDist = Infinity;
+      for (const p of pontos) {
+        if (visitados.has(p.id)) continue;
+        const d = dist(atual, p);
+        if (d < melhorDist) {
+          melhorDist = d;
+          proximo = p;
+        }
+      }
+      if (!proximo) break;
+      visitados.add(proximo.id);
+      ordem.push(proximo.id);
+      atual = proximo;
+    }
+
+    setSelecionados(ordem);
+    toast.success(
+      `Reordenado por proximidade (${ordem.length} paradas).`,
+    );
+  }
+
   async function salvar(targetStatus: "rascunho" | "pronta") {
     if (!data_programada) {
       toast.error("Informe a data programada.");
@@ -358,9 +446,22 @@ export default function NovaRotaPage() {
               onClick={sugerirAgrupamento}
               disabled={selecionados.length < 2}
               className="text-xs px-3 py-1.5 rounded-lg border border-primary/40 text-primary hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed"
-              title="Agrupa selecionados por bairro / cidade"
+              title="Agrupa selecionados por bairro / cidade (sempre disponivel)"
             >
-              🧭 Sugerir agrupamento
+              🧭 Por bairro
+            </button>
+            <button
+              type="button"
+              onClick={sugerirPorProximidade}
+              disabled={!todosSelecionadosTemGeo}
+              className="text-xs px-3 py-1.5 rounded-lg border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
+              title={
+                todosSelecionadosTemGeo
+                  ? "Reordena por proximidade GPS real (greedy nearest-neighbor)"
+                  : "Disponivel quando todos os selecionados tem lat/lng — capturado pelo motorista nas entregas"
+              }
+            >
+              🛰️ Por proximidade
             </button>
             <button
               type="button"

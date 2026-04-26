@@ -127,6 +127,26 @@ export interface MagicLinkResult {
   sent: boolean;
 }
 
+/** Fase 4 — payload do GET /admin/rotas/stale. */
+export interface StaleRotaItem {
+  id: number;
+  data_programada: string;
+  motorista_id: number | null;
+  motorista_nome: string | null;
+  motorista_telefone: string | null;
+  iniciada_em: string | null;
+  total_paradas: number;
+  total_entregues: number;
+  ultima_atualizacao: string;
+  horas_paradas: number;
+}
+
+export interface StaleRotaResult {
+  items: StaleRotaItem[];
+  threshold_hours: number;
+  count: number;
+}
+
 /** Helper: parseia o JSON do endereco do pedido com fallback seguro. */
 export function parseEnderecoPedido(
   raw: string | null | undefined,

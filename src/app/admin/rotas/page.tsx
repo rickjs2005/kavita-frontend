@@ -9,6 +9,7 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { RotaResumo, RotaStatus } from "@/lib/rotas/types";
 import { RotaStatusBadge } from "./_components/StatusBadge";
+import StaleRotasBanner from "./_components/StaleRotasBanner";
 
 const STATUS_OPTIONS: Array<{ value: RotaStatus | ""; label: string }> = [
   { value: "", label: "Todos" },
@@ -69,6 +70,9 @@ export default function AdminRotasPage() {
           + Nova rota
         </Link>
       </div>
+
+      {/* Fase 4 — alerta de rotas paradas (em_rota sem update > 6h) */}
+      <StaleRotasBanner />
 
       {/* Filtros */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center bg-dark-800 ring-1 ring-white/10 rounded-xl p-3">
