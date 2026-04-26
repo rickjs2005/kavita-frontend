@@ -3,7 +3,7 @@ import type { Product, ProductPromotion } from "@/types/product";
 import Gallery from "@/components/ui/Gallery";
 import ProductBuyBox from "@/components/products/ProductBuyBox";
 import ProductReviews from "./ProductReviews";
-import { absUrl, API_BASE } from "@/utils/absUrl";
+import { absUrl } from "@/utils/absUrl";
 import { computeProductPrice } from "@/utils/pricing";
 import { formatCurrency } from "@/utils/formatters";
 
@@ -11,19 +11,37 @@ import { formatCurrency } from "@/utils/formatters";
 // Product data changes infrequently; promotions are cached server-side.
 export const revalidate = 60;
 
-const API = API_BASE;
+// Server Component: fetch roda no Node.js, precisa de URL absoluta.
+// @/utils/absUrl exporta API_BASE="" (vazio, funciona via rewrite do Next
+// apenas no browser). Aqui usamos o mesmo padrão da page /servicos/[id]
+// e dos fetchers em src/server/data/*.ts — URL absoluta com fallback
+// pra dev local. Sem isso, fetch("/api/products/130") lanca
+// "Failed to parse URL from /api/products/130" em SSR, getProduto
+// retorna null silenciosamente, notFound() dispara — mas o usuario
+// via skeleton sem fim em vez do 404 por causa de cache RSC stale.
+const SERVER_API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.API_BASE ||
+  process.env.NEXT_PUBLIC_API_BASE ||
+  "http://localhost:5000"
+).replace(/\/$/, "");
 
 async function getProduto(id: string): Promise<Product | null> {
   try {
-    const res = await fetch(`${API}/api/products/${id}`, {
+    const res = await fetch(`${SERVER_API_BASE}/api/products/${id}`, {
       next: { revalidate: 60 },
     });
-    if (!res.ok) return null;
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      console.error(`[produto/${id}] backend respondeu ${res.status}`);
+      return null;
+    }
     const raw = await res.json();
     // Unwrap envelope { ok: true, data: ... } from lib/response.js
     const data = raw?.ok === true && raw?.data !== undefined ? raw.data : raw;
     return data as Product;
-  } catch {
+  } catch (err) {
+    console.error(`[produto/${id}] fetch falhou:`, err);
     return null;
   }
 }
@@ -33,17 +51,21 @@ async function getPromocaoProduto(
   id: string,
 ): Promise<ProductPromotion | null> {
   try {
-    const res = await fetch(`${API}/api/public/promocoes/${id}`, {
+    const res = await fetch(`${SERVER_API_BASE}/api/public/promocoes/${id}`, {
       next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     const raw = await res.json();
-    // Unwrap envelope { ok: true, data: ... } from lib/response.js
+    // Unwrap envelope { ok: true, data: ... } from lib/response.js.
+    // Backend retorna 200 + { data: null } quando produto nao tem promo
+    // (ver controllers/promocoesPublicController.js).
     const data = raw?.ok === true && raw?.data !== undefined ? raw.data : raw;
+    if (data == null) return null;
     return Array.isArray(data)
       ? ((data[0] as ProductPromotion) ?? null)
       : (data as ProductPromotion);
   } catch {
+    // Sem promo nao bloqueia render do produto
     return null;
   }
 }
