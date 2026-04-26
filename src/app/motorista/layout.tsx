@@ -6,6 +6,8 @@
 
 import type { Metadata } from "next";
 import "@/app/globals.css";
+// Nota: SwKillSwitch ja e' renderizado pelo root layout — cobre todas as
+// rotas (incluindo admin que tambem foi afetado pelo SW antigo).
 
 export const metadata: Metadata = {
   title: "Kavita · Entregas",

@@ -6,6 +6,7 @@ import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
 import Header from "../components/layout/Header";
 import AuthExpiredHandler from "@/components/auth/AuthExpiredHandler";
+import SwKillSwitch from "@/components/system/SwKillSwitch";
 import ConditionalHeader from "@/components/layout/ConditionalHeader";
 import ConditionalFloatingWidgets from "@/components/layout/ConditionalFloatingWidgets";
 import WhatsAppFloatingButton from "@/components/ui/WhatsAppFloatingButton";
@@ -67,6 +68,10 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR">
       <body className="min-h-screen bg-white text-gray-900 antialiased">
+        {/* Hotfix Fase 5: limpa SW antigo automaticamente quando PWA esta off
+            (default). Renderiza nada visivel; pula totalmente quando
+            NEXT_PUBLIC_ENABLE_PWA=true. Cobre todas as rotas (admin/motorista/etc). */}
+        <SwKillSwitch />
         <AuthProvider>
           <CartProvider>
             <ConditionalHeader>

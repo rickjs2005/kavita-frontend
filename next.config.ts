@@ -2,16 +2,41 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import withSerwistInit from "@serwist/next";
 
-// Fase 5 — PWA via Serwist (sucessor recomendado do next-pwa em Next 15).
-// Apenas /motorista/* e' cacheado. Sem prompt de install (silencioso).
-// Service worker apenas em production build (NODE_ENV=production).
+// Fase 5 — PWA via Serwist. OPT-IN via NEXT_ENABLE_PWA=true.
+//
+// Por que opt-in (Fase 5 hotfix):
+//   - SW de build antigo cacheia HTML referenciando chunks com hash que
+//     nao existem mais apos rebuild. Browser recebe 404 servido como
+//     text/plain → "Algo deu errado" / chunks 404.
+//   - SW pode interceptar /api/csrf-token e cachear sem propagar
+//     Set-Cookie → 403 em mutacoes admin (e.g., enviar-link).
+//   - Quando disable=true, Serwist GERA UM SW QUE SE AUTO-DESREGISTRA
+//     no proximo carregamento, limpando clients que tinham SW antigo.
+//
+// Ativar PWA em prod: setar NEXT_ENABLE_PWA=true no env do deploy.
+// Default off + dev off → npm start / build local funcionam sem SW.
+const PWA_ENABLED = process.env.NEXT_ENABLE_PWA === "true";
 const withSerwist = withSerwistInit({
   swSrc: "src/app/motorista-sw.ts",
   swDest: "public/sw.js",
-  // Disable em dev — service worker quebra HMR
-  disable: process.env.NODE_ENV === "development",
+  disable: !PWA_ENABLED || process.env.NODE_ENV === "development",
   cacheOnNavigation: true,
 });
+
+// output: standalone tambem e' OPT-IN via NEXT_OUTPUT_STANDALONE=true.
+//
+// Por que opt-in:
+//   - standalone gera .next/standalone/server.js mas NAO copia
+//     .next/static nem public/. Sem copia manual, chunks viram 404
+//     servidos com Content-Type: text/plain.
+//   - "next start" emite warning e nao roda corretamente quando
+//     output=standalone esta ativo.
+//
+// Default off → "next start" funciona normal.
+// Em Docker/deploy: setar NEXT_OUTPUT_STANDALONE=true + Dockerfile copia
+// .next/static + public pra .next/standalone/. Rodar com:
+//   node .next/standalone/server.js  (ou npm run start:standalone)
+const STANDALONE_ENABLED = process.env.NEXT_OUTPUT_STANDALONE === "true";
 
 // Deriva hostname e protocol diretamente de NEXT_PUBLIC_API_URL para que
 // next/image aceite imagens do backend em qualquer ambiente (dev, staging, prod).
@@ -34,9 +59,9 @@ function apiRemotePattern(): import("next/dist/shared/lib/image-config").RemoteP
 const envPattern = apiRemotePattern();
 
 const nextConfig: NextConfig = {
-  // Standalone output for Docker — produces a self-contained server.js
-  // that bundles only the required node_modules (smaller image, no npm ci in runtime).
-  output: "standalone",
+  // Standalone output e' opt-in via NEXT_OUTPUT_STANDALONE=true (ver acima).
+  // Default undefined -> "next start" funciona normalmente.
+  ...(STANDALONE_ENABLED ? { output: "standalone" as const } : {}),
 
   eslint: {
     // Impede que o ESLint quebre o build
