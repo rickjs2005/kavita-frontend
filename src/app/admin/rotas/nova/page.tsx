@@ -15,7 +15,12 @@ import {
 } from "@/lib/rotas/types";
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  // YYYY-MM-DD em LOCAL TIME (BRT no Brasil), nao UTC.
+  // Antes era new Date().toISOString().slice(0, 10) — depois das 21h
+  // BRT, isso retornava o dia seguinte em UTC e o admin criava rota
+  // com data errada (off-by-one). Resultado: motorista NAO via a rota
+  // hoje porque backend filtra por CURDATE() (BRT do servidor).
+  return new Date().toLocaleDateString("en-CA");
 }
 
 export default function NovaRotaPage() {

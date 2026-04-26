@@ -21,7 +21,9 @@ const STATUS_OPTIONS: Array<{ value: RotaStatus | ""; label: string }> = [
 ];
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  // YYYY-MM-DD em LOCAL TIME (BRT), nao UTC. Mesmo motivo do
+  // /admin/rotas/nova/page.tsx — toISOString() retorna UTC.
+  return new Date().toLocaleDateString("en-CA");
 }
 
 export default function AdminRotasPage() {
