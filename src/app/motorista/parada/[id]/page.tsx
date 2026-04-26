@@ -21,6 +21,9 @@ import {
 import { ParadaStatusBadge } from "@/app/admin/rotas/_components/StatusBadge";
 import OfflineBanner from "../../_components/OfflineBanner";
 import MiniMapOSM from "../../_components/MiniMapOSM";
+import ComprovanteSheet, {
+  type ComprovanteResult,
+} from "../../_components/ComprovanteSheet";
 
 const PROBLEMA_OPTIONS: Array<{ value: ProblemaTipo; label: string }> = [
   { value: "cliente_ausente", label: "Cliente ausente" },
@@ -59,6 +62,7 @@ export default function ParadaDetalhePage() {
   const [problemaOpen, setProblemaOpen] = useState(false);
   const [problemaTipo, setProblemaTipo] = useState<ProblemaTipo>("cliente_ausente");
   const [problemaObs, setProblemaObs] = useState("");
+  const [comprovanteOpen, setComprovanteOpen] = useState(false);
 
   // Função para encontrar a parada no cache (offline) ou na API.
   // O backend não tem endpoint /paradas/:id direto — pegamos via rota-hoje.
@@ -135,15 +139,60 @@ export default function ParadaDetalhePage() {
     }
   }, [problemaOpen]);
 
-  async function marcarEntregue() {
+  // Fluxo entrega Fase 5:
+  //   1. Abre ComprovanteSheet
+  //   2. Motorista preenche (ou pula) foto/assinatura/obs
+  //   3. Se houver foto OU assinatura -> POST /comprovante (multipart, online-only)
+  //   4. POST /entregue com observacao (sempre — funciona offline)
+  //
+  // Por que comprovante e' online-only? Foto pode ter ate 100MB e assinatura
+  // PNG ~100KB; nao cabe na fila offline localStorage 5MB. Entrega em si
+  // continua resiliente. Em proxima fase, considerar IndexedDB + background
+  // sync API pra cobrir o caso rural completo.
+  async function confirmarEntrega(payload: ComprovanteResult) {
     if (!parada) return;
-    const obs = window.prompt("Observação (opcional):", "") ?? "";
     setActing(true);
     try {
+      // 1. Tenta enviar comprovante PRIMEIRO (se tiver algo). Falha de
+      //    upload aqui nao bloqueia a entrega — apenas avisa.
+      if (payload.fotoFile || payload.assinaturaBase64) {
+        try {
+          const fd = new FormData();
+          if (payload.fotoFile) fd.append("foto", payload.fotoFile);
+          if (payload.assinaturaBase64) {
+            fd.append("assinaturaBase64", payload.assinaturaBase64);
+          }
+          await apiClient.request(
+            `/api/motorista/paradas/${parada.id}/comprovante`,
+            {
+              method: "POST",
+              body: fd,
+              skipContentType: true, // multer set boundary
+              headers: { "x-idempotency-key": crypto.randomUUID() },
+            },
+          );
+        } catch (err) {
+          // Comprovante falhou — avisa mas nao trava
+          if (
+            err instanceof ApiError &&
+            (err.status === 0 || err.code === "TIMEOUT")
+          ) {
+            toast(
+              "Comprovante não enviado (sem conexão). Entrega segue normal.",
+            );
+          } else {
+            toast.error(
+              formatApiError(err, "Comprovante não foi salvo.").message,
+            );
+          }
+        }
+      }
+
+      // 2. Marca entregue (resiliente offline via fila)
       const r = await executeWithOffline({
         endpoint: `/api/motorista/paradas/${parada.id}/entregue`,
         method: "POST",
-        payload: { observacao: obs.trim() || null },
+        payload: { observacao: payload.observacao },
         label: `Marcar entregue parada #${parada.id}`,
       });
       if (r.enqueued) {
@@ -151,6 +200,7 @@ export default function ParadaDetalhePage() {
       } else {
         toast.success("Entrega registrada.");
       }
+      setComprovanteOpen(false);
       router.push("/motorista/rota");
     } catch (err) {
       toast.error(formatApiError(err, "Falha ao registrar.").message);
@@ -353,7 +403,7 @@ export default function ParadaDetalhePage() {
         {!isClosed && (
           <div className="space-y-2 pt-2">
             <button
-              onClick={marcarEntregue}
+              onClick={() => setComprovanteOpen(true)}
               disabled={acting}
               className="w-full py-4 rounded-2xl bg-emerald-500 text-stone-950 font-bold uppercase tracking-wider text-sm shadow-lg disabled:opacity-60"
             >
@@ -369,6 +419,14 @@ export default function ParadaDetalhePage() {
           </div>
         )}
       </section>
+
+      {/* Fase 5 — sheet de comprovante (foto + assinatura + obs) */}
+      <ComprovanteSheet
+        open={comprovanteOpen}
+        busy={acting}
+        onClose={() => setComprovanteOpen(false)}
+        onConfirm={confirmarEntrega}
+      />
 
       {/* Modal problema */}
       {problemaOpen && (
