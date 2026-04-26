@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import toast from "react-hot-toast";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
-import type { RotaResumo, RotaStatus } from "@/lib/rotas/types";
-import { RotaStatusBadge } from "./_components/StatusBadge";
+import { calcRotaAlertas, type RotaResumo, type RotaStatus } from "@/lib/rotas/types";
 import StaleRotasBanner from "./_components/StaleRotasBanner";
+import RotaCard from "./_components/RotaCard";
 
 const STATUS_OPTIONS: Array<{ value: RotaStatus | ""; label: string }> = [
   { value: "", label: "Todos" },
@@ -135,6 +135,9 @@ export default function AdminRotasPage() {
         </div>
       </div>
 
+      {/* KPIs operacionais agregados */}
+      {!loading && data.length > 0 && <RotasKPIs rotas={data} />}
+
       {loading ? (
         <LoadingState message="Carregando rotas…" />
       ) : data.length === 0 ? (
@@ -142,50 +145,81 @@ export default function AdminRotasPage() {
       ) : (
         <div className="space-y-3">
           {data.map((r) => (
-            <Link
-              key={r.id}
-              href={`/admin/rotas/${r.id}`}
-              className="block rounded-xl bg-dark-800 ring-1 ring-white/10 hover:ring-primary/40 p-4 transition"
-            >
-              <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-start">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-white font-semibold">
-                      Rota #{r.id}
-                    </span>
-                    <RotaStatusBadge status={r.status} />
-                    <span className="text-xs text-gray-400">
-                      📅 {r.data_programada}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {r.regiao_label || "Sem região"}
-                    {r.motorista_nome ? ` · 🧑‍✈️ ${r.motorista_nome}` : " · Sem motorista"}
-                    {r.veiculo ? ` · 🚗 ${r.veiculo}` : ""}
-                  </p>
-                </div>
-                <div className="flex flex-col items-start sm:items-end gap-1 text-xs text-gray-300">
-                  <div>
-                    {r.total_entregues}/{r.total_paradas}{" "}
-                    {r.total_paradas === 1 ? "entrega" : "entregas"}
-                  </div>
-                  {r.tempo_total_minutos != null && (
-                    <div className="text-gray-500">
-                      ⏱ {Math.floor(r.tempo_total_minutos / 60)}h
-                      {String(r.tempo_total_minutos % 60).padStart(2, "0")}min
-                    </div>
-                  )}
-                  {(r.km_real ?? r.km_estimado) && (
-                    <div className="text-gray-500">
-                      🛣 {r.km_real ? `${r.km_real} km` : `~${r.km_estimado} km`}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Link>
+            <RotaCard key={r.id} rota={r} />
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Strip de KPIs em cima da lista — operador entende a saude do dia
+ * sem precisar percorrer cards.
+ */
+function RotasKPIs({ rotas }: { rotas: RotaResumo[] }) {
+  const stats = useMemo(() => {
+    const byStatus: Record<RotaStatus, number> = {
+      rascunho: 0,
+      pronta: 0,
+      em_rota: 0,
+      finalizada: 0,
+      cancelada: 0,
+    };
+    let entregues = 0;
+    let pendentes = 0;
+    let problemas = 0;
+    let comAlerta = 0;
+    for (const r of rotas) {
+      byStatus[r.status]++;
+      entregues += Number(r.paradas_entregues) || 0;
+      pendentes += Number(r.paradas_pendentes) || 0;
+      problemas += Number(r.paradas_problema) || 0;
+      if (calcRotaAlertas(r).some((a) => a.level !== "info")) comAlerta++;
+    }
+    return { byStatus, entregues, pendentes, problemas, comAlerta };
+  }, [rotas]);
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <KPI label="Em rota" value={stats.byStatus.em_rota} accent="emerald" />
+      <KPI label="Prontas" value={stats.byStatus.pronta} accent="primary" />
+      <KPI
+        label="Problemas"
+        value={stats.problemas}
+        accent={stats.problemas > 0 ? "rose" : "muted"}
+      />
+      <KPI
+        label="Com alerta"
+        value={stats.comAlerta}
+        accent={stats.comAlerta > 0 ? "amber" : "muted"}
+      />
+    </div>
+  );
+}
+
+function KPI({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent: "primary" | "emerald" | "rose" | "amber" | "muted";
+}) {
+  const tone = {
+    primary: "text-primary",
+    emerald: "text-emerald-300",
+    rose: "text-rose-300",
+    amber: "text-amber-300",
+    muted: "text-gray-400",
+  }[accent];
+  return (
+    <div className="rounded-xl bg-dark-800 ring-1 ring-white/10 px-4 py-2">
+      <div className="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">
+        {label}
+      </div>
+      <div className={`text-xl font-semibold ${tone}`}>{value}</div>
     </div>
   );
 }

@@ -87,6 +87,31 @@
   scrollbar-width: none;
 }
 
+/*
+ * Scrollbar discreta para painéis internos (sidebar admin, listas em modais).
+ * Em vez de esconder por completo (que esconde affordance de scroll), deixa
+ * uma barra fina com baixo contraste — não compete visualmente com o conteúdo
+ * mas mantém a indicação de "tem mais coisa".
+ */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.45);
+}
+
 /* Animação de slide para menus mobile */
 @keyframes slideInLeft {
   from {

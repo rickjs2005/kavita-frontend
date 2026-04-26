@@ -125,8 +125,10 @@ export default function AdminSidebar({
         </div>
       </div>
 
-      {/* ÁREA SCROLLÁVEL (nav) */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-4">
+      {/* ÁREA SCROLLÁVEL (nav) — scrollbar fina via globals.css pra nao
+          poluir visualmente. Em viewports altos a barra praticamente
+          desaparece; em viewports curtos fica discreta. */}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-3 pb-4">
         <nav className="space-y-1 text-sm">
           {navGroups.map((group) => {
             const visibleItems = group.items.filter((item) =>

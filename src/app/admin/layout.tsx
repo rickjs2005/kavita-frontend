@@ -83,8 +83,12 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   // Sessão válida: renderiza shell do admin
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-50">
-      {/* Sidebar desktop */}
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-64 md:flex-col md:shrink-0 md:border-r md:border-slate-900 md:bg-slate-950">
+      {/* Sidebar desktop — sem `sticky`. O wrapper externo ja' eh
+          h-screen+overflow-hidden+flex, entao o aside precisa apenas de
+          h-screen pra ocupar a viewport e shrink-0 pra nao ser comprimido.
+          `sticky` aqui era no-op (parent nao rola) e introduzia comportamento
+          inconsistente em alguns browsers (gap de 1px / scroll-anchor). */}
+      <aside className="hidden md:flex md:h-screen md:w-64 md:flex-col md:shrink-0 md:border-r md:border-slate-900 md:bg-slate-950">
         <AdminSidebar />
       </aside>
 
@@ -142,7 +146,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto scrollbar-thin p-3 sm:p-4 lg:p-6">
           {children}
         </main>
       </div>

@@ -31,6 +31,8 @@ import {
 } from "@/lib/rotas/types";
 import { RotaStatusBadge } from "../_components/StatusBadge";
 import SortableParadaRow from "../_components/SortableParadaRow";
+import RotaTimeline from "../_components/RotaTimeline";
+import { buildWaMeLink } from "@/lib/rotas/types";
 
 const NEXT_TRANSITIONS: Record<RotaStatus, Array<{ status: RotaStatus; label: string; danger?: boolean }>> = {
   rascunho: [
@@ -238,29 +240,72 @@ export default function RotaDetalhePage() {
           {rota.regiao_label || "Sem região"}
           {rota.veiculo ? ` · 🚗 ${rota.veiculo}` : ""}
         </div>
-        <div className="text-sm text-gray-300">
-          🧑‍✈️{" "}
+        <div className="text-sm text-gray-300 flex flex-wrap items-center gap-2">
+          <span>🧑‍✈️</span>
           {rota.motorista_nome ? (
             <>
-              {rota.motorista_nome}
-              {rota.motorista_telefone ? ` · ${rota.motorista_telefone}` : ""}
+              <span className="font-medium">{rota.motorista_nome}</span>
+              {rota.motorista_telefone && (
+                <>
+                  <span className="text-gray-500">·</span>
+                  <span className="text-gray-400">{rota.motorista_telefone}</span>
+                  {(() => {
+                    const wa = buildWaMeLink(rota.motorista_telefone);
+                    return wa ? (
+                      <a
+                        href={wa}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-700/40 hover:bg-emerald-600/60 text-emerald-100 font-semibold"
+                      >
+                        WhatsApp
+                      </a>
+                    ) : null;
+                  })()}
+                </>
+              )}
             </>
           ) : (
             <span className="text-gray-500">Sem motorista atribuído</span>
           )}
         </div>
-        <div className="text-xs text-gray-500">
-          {rota.total_entregues}/{rota.total_paradas} entregas
-          {rota.tempo_total_minutos != null
-            ? ` · ⏱ ${Math.floor(rota.tempo_total_minutos / 60)}h${String(
-                rota.tempo_total_minutos % 60,
-              ).padStart(2, "0")}min`
-            : ""}
-          {rota.km_real
-            ? ` · 🛣 ${rota.km_real} km`
-            : rota.km_estimado
-              ? ` · 🛣 ~${rota.km_estimado} km`
-              : ""}
+
+        {/* Contadores discriminados */}
+        <div className="flex flex-wrap gap-1.5 text-[11px]">
+          <span className="px-2 py-0.5 rounded-full bg-white/5 text-gray-200">
+            📦 {rota.total_paradas}{" "}
+            {rota.total_paradas === 1 ? "parada" : "paradas"}
+          </span>
+          {rota.paradas_entregues > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/30">
+              ✓ {rota.paradas_entregues} entregue
+              {rota.paradas_entregues === 1 ? "" : "s"}
+            </span>
+          )}
+          {rota.paradas_pendentes > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-200 ring-1 ring-sky-500/30">
+              ⏳ {rota.paradas_pendentes} pendente
+              {rota.paradas_pendentes === 1 ? "" : "s"}
+            </span>
+          )}
+          {rota.paradas_problema > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-200 ring-1 ring-rose-500/30">
+              ⚠ {rota.paradas_problema}{" "}
+              {rota.paradas_problema === 1 ? "problema" : "problemas"}
+            </span>
+          )}
+          {rota.tempo_total_minutos != null && (
+            <span className="px-2 py-0.5 rounded-full bg-white/5 text-gray-300">
+              ⏱ {Math.floor(rota.tempo_total_minutos / 60)}h
+              {String(rota.tempo_total_minutos % 60).padStart(2, "0")}min
+            </span>
+          )}
+          {(rota.km_real ?? rota.km_estimado) && (
+            <span className="px-2 py-0.5 rounded-full bg-white/5 text-gray-300">
+              🛣{" "}
+              {rota.km_real ? `${rota.km_real} km` : `~${rota.km_estimado} km`}
+            </span>
+          )}
         </div>
         {rota.observacoes && (
           <p className="text-xs text-gray-400 italic mt-1">
@@ -310,6 +355,9 @@ export default function RotaDetalhePage() {
           </button>
         )}
       </div>
+
+      {/* Timeline operacional */}
+      <RotaTimeline rota={rota} />
 
       {/* Magic-link gerado */}
       {linkResult?.link && (

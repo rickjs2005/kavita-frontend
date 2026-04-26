@@ -11,8 +11,12 @@ import {
   type PedidoDisponivel,
   type RotaCompleta,
   parseEnderecoPedido,
-  formatEnderecoOneLine,
+  hoursAgo,
 } from "@/lib/rotas/types";
+import PedidoCard from "../_components/PedidoCard";
+import RouteSummary, {
+  type RouteValidationIssue,
+} from "../_components/RouteSummary";
 
 function todayIso() {
   // YYYY-MM-DD em LOCAL TIME (BRT no Brasil), nao UTC.
@@ -38,6 +42,8 @@ export default function NovaRotaPage() {
   const [filtroBairro, setFiltroBairro] = useState("");
   const [filtroAte, setFiltroAte] = useState(""); // data ate (yyyy-mm-dd)
   const [filtroBusca, setFiltroBusca] = useState(""); // client-side: id, nome, ponto referencia
+  const [filtroPagamento, setFiltroPagamento] = useState(""); // client-side
+  const [antigosPrimeiro, setAntigosPrimeiro] = useState(false); // ordenacao client-side
 
   const [selecionados, setSelecionados] = useState<number[]>([]); // ordem de seleção = ordem da rota
 
@@ -104,21 +110,44 @@ export default function NovaRotaPage() {
     return Array.from(set).sort();
   }, [pedidos]);
 
-  // Filtragem client-side adicional: busca por id, nome, ponto_referencia
-  const pedidosVisiveis = useMemo(() => {
-    if (!filtroBusca.trim()) return pedidos;
-    const q = filtroBusca.trim().toLowerCase();
-    return pedidos.filter((p) => {
-      if (String(p.id).includes(q)) return true;
-      if ((p.usuario_nome ?? "").toLowerCase().includes(q)) return true;
-      if ((p.usuario_telefone ?? "").includes(q)) return true;
-      const e = parseEnderecoPedido(p.endereco);
-      if (e?.ponto_referencia?.toLowerCase().includes(q)) return true;
-      if (e?.bairro?.toLowerCase().includes(q)) return true;
-      if (e?.cidade?.toLowerCase().includes(q)) return true;
-      return false;
+  // Formas de pagamento disponiveis (extraidas da resposta atual)
+  const formasPagamento = useMemo(() => {
+    const set = new Set<string>();
+    pedidos.forEach((p) => {
+      if (p.forma_pagamento) set.add(p.forma_pagamento);
     });
-  }, [pedidos, filtroBusca]);
+    return Array.from(set).sort();
+  }, [pedidos]);
+
+  // Filtragem client-side: busca livre + pagamento + ordenacao por idade.
+  const pedidosVisiveis = useMemo(() => {
+    let list = pedidos;
+    if (filtroBusca.trim()) {
+      const q = filtroBusca.trim().toLowerCase();
+      list = list.filter((p) => {
+        if (String(p.id).includes(q)) return true;
+        if ((p.usuario_nome ?? "").toLowerCase().includes(q)) return true;
+        if ((p.usuario_telefone ?? "").includes(q)) return true;
+        const e = parseEnderecoPedido(p.endereco);
+        if (e?.ponto_referencia?.toLowerCase().includes(q)) return true;
+        if (e?.bairro?.toLowerCase().includes(q)) return true;
+        if (e?.cidade?.toLowerCase().includes(q)) return true;
+        return false;
+      });
+    }
+    if (filtroPagamento) {
+      list = list.filter((p) => p.forma_pagamento === filtroPagamento);
+    }
+    if (antigosPrimeiro) {
+      // Comparacao por timestamp; mais antigo primeiro.
+      list = [...list].sort((a, b) => {
+        const ta = new Date(a.data_pedido).getTime() || 0;
+        const tb = new Date(b.data_pedido).getTime() || 0;
+        return ta - tb;
+      });
+    }
+    return list;
+  }, [pedidos, filtroBusca, filtroPagamento, antigosPrimeiro]);
 
   /**
    * Sugestao de agrupamento: reordena `selecionados` agrupando pedidos
@@ -254,17 +283,118 @@ export default function NovaRotaPage() {
     );
   }
 
+  /**
+   * Resumo + validacoes calculadas. Ficam fora do salvar() pra alimentar
+   * o painel lateral em tempo real e mostrar quais issues bloqueiam o
+   * "marcar pronta" antes do click.
+   */
+  const summary = useMemo(() => {
+    const indexById: Record<number, PedidoDisponivel | undefined> = {};
+    pedidos.forEach((p) => {
+      indexById[p.id] = p;
+    });
+    const pedidosSelecionados = selecionados
+      .map((id) => indexById[id])
+      .filter((p): p is PedidoDisponivel => Boolean(p));
+
+    const motorista =
+      motoristaId === ""
+        ? null
+        : motoristas.find((m) => m.id === Number(motoristaId)) || null;
+
+    const issues: RouteValidationIssue[] = [];
+
+    // BLOQUEIOS — sem isso nao deixamos marcar como pronta
+    if (!data_programada) {
+      issues.push({ level: "block", label: "Defina a data programada." });
+    }
+    if (!motorista) {
+      issues.push({ level: "block", label: "Atribua um motorista." });
+    }
+    if (pedidosSelecionados.length === 0) {
+      issues.push({ level: "block", label: "Selecione pelo menos 1 pedido." });
+    }
+
+    // Telefone do motorista e' essencial pro magic-link no WhatsApp.
+    // Sem isso, motorista nao consegue logar e operar a rota.
+    if (motorista && !motorista.telefone) {
+      issues.push({
+        level: "block",
+        label: "Motorista sem telefone — impossivel enviar magic-link.",
+      });
+    }
+
+    // Pedidos sem endereco utilizavel — motorista nao tem para onde ir
+    const semEndereco = pedidosSelecionados.filter((p) => {
+      const e = parseEnderecoPedido(p.endereco);
+      return !e?.rua && !e?.bairro && !e?.cidade;
+    });
+    if (semEndereco.length > 0) {
+      issues.push({
+        level: "block",
+        label: `${semEndereco.length} pedido(s) sem endereco valido (#${semEndereco
+          .map((p) => p.id)
+          .join(", #")}).`,
+      });
+    }
+
+    // AVISOS — nao bloqueiam mas sinalizam
+    if (!veiculo.trim()) {
+      issues.push({
+        level: "warn",
+        label: "Veiculo nao informado — confirme antes de sair.",
+      });
+    }
+    if (!regiaoLabel.trim()) {
+      issues.push({
+        level: "warn",
+        label: "Regiao nao definida — facilita acompanhamento.",
+      });
+    }
+    const antigos = pedidosSelecionados.filter((p) => {
+      const h = hoursAgo(p.data_pedido);
+      return h !== null && h > 48;
+    });
+    if (antigos.length > 0) {
+      issues.push({
+        level: "warn",
+        label: `${antigos.length} pedido(s) com mais de 48h — priorize na ordem.`,
+      });
+    }
+
+    return {
+      pedidosSelecionados,
+      motorista,
+      data: data_programada,
+      veiculo,
+      regiaoLabel,
+      kmEstimado,
+      issues,
+    };
+  }, [
+    selecionados,
+    pedidos,
+    motoristaId,
+    motoristas,
+    data_programada,
+    veiculo,
+    regiaoLabel,
+    kmEstimado,
+  ]);
+
+  const blocksDoSummary = summary.issues.filter((i) => i.level === "block");
+  const podeMarcarPronta = blocksDoSummary.length === 0;
+
   async function salvar(targetStatus: "rascunho" | "pronta") {
+    // Rascunho ainda exige data programada (precondicao do INSERT).
     if (!data_programada) {
       toast.error("Informe a data programada.");
       return;
     }
-    if (selecionados.length === 0 && targetStatus === "pronta") {
-      toast.error("Selecione pelo menos 1 pedido para marcar a rota como pronta.");
-      return;
-    }
-    if (targetStatus === "pronta" && !motoristaId) {
-      toast.error("Atribua um motorista para marcar a rota como pronta.");
+    // Pra marcar como pronta, todos os bloqueios do summary precisam estar
+    // resolvidos. Mostramos um toast por issue pra clareza.
+    if (targetStatus === "pronta" && blocksDoSummary.length > 0) {
+      blocksDoSummary.forEach((b) => toast.error(b.label));
       return;
     }
 
@@ -321,6 +451,10 @@ export default function NovaRotaPage() {
           Selecione pedidos pagos disponíveis. A ordem de seleção será a ordem das paradas.
         </p>
       </div>
+
+      {/* Layout: form + picker à esquerda, resumo lateral à direita (em desktop) */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6 min-w-0">
 
       {/* Bloco 1 — Dados da rota */}
       <div className="rounded-xl bg-dark-800 ring-1 ring-white/10 p-4 space-y-3">
@@ -480,7 +614,7 @@ export default function NovaRotaPage() {
         </div>
 
         {/* Filtros expandidos */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
           <div>
             <label
               htmlFor="filtro-cidade"
@@ -543,6 +677,27 @@ export default function NovaRotaPage() {
           </div>
           <div>
             <label
+              htmlFor="filtro-pagamento"
+              className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1"
+            >
+              Pagamento
+            </label>
+            <select
+              id="filtro-pagamento"
+              value={filtroPagamento}
+              onChange={(e) => setFiltroPagamento(e.target.value)}
+              className="w-full rounded-lg bg-dark-900 border border-white/10 px-3 py-1.5 text-sm text-white"
+            >
+              <option value="">Todos</option>
+              {formasPagamento.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label
               htmlFor="filtro-busca"
               className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1"
             >
@@ -559,6 +714,22 @@ export default function NovaRotaPage() {
           </div>
         </div>
 
+        {/* Toggle de ordenacao por idade */}
+        <label className="flex items-center gap-2 text-[11px] text-gray-400 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={antigosPrimeiro}
+            onChange={(e) => setAntigosPrimeiro(e.target.checked)}
+            className="accent-primary"
+          />
+          <span>
+            Pedidos antigos primeiro{" "}
+            <span className="text-gray-500">
+              (prioriza quem está há mais tempo no pool)
+            </span>
+          </span>
+        </label>
+
         {loadingPedidos ? (
           <LoadingState message="Carregando pedidos disponíveis…" />
         ) : pedidos.length === 0 ? (
@@ -570,58 +741,15 @@ export default function NovaRotaPage() {
             Nenhum pedido bate com os filtros atuais.
           </p>
         ) : (
-          <div className="space-y-2 max-h-[480px] overflow-y-auto">
-            {pedidosVisiveis.map((p) => {
-              const endereco = parseEnderecoPedido(p.endereco);
-              const ordem = selecionados.indexOf(p.id);
-              const selected = ordem !== -1;
-              return (
-                <label
-                  key={p.id}
-                  className={`flex gap-3 items-start p-3 rounded-lg border cursor-pointer transition ${
-                    selected
-                      ? "bg-primary/10 border-primary/50"
-                      : "bg-dark-900 border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected}
-                    onChange={() => toggleSelecao(p.id)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-white font-semibold text-sm">
-                        Pedido #{p.id}
-                      </span>
-                      {selected && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-white font-bold">
-                          {ordem + 1}ª parada
-                        </span>
-                      )}
-                      {p.tipo_endereco === "rural" && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-700/30 text-amber-300">
-                          rural
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {p.usuario_nome || "Sem nome"}
-                      {p.usuario_telefone ? ` · ${p.usuario_telefone}` : ""}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">
-                      📍 {formatEnderecoOneLine(endereco)}
-                    </p>
-                    {p.observacao_entrega && (
-                      <p className="text-[11px] text-amber-400 mt-0.5 italic">
-                        “{p.observacao_entrega}”
-                      </p>
-                    )}
-                  </div>
-                </label>
-              );
-            })}
+          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+            {pedidosVisiveis.map((p) => (
+              <PedidoCard
+                key={p.id}
+                pedido={p}
+                ordem={selecionados.indexOf(p.id)}
+                onToggle={() => toggleSelecao(p.id)}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -644,11 +772,24 @@ export default function NovaRotaPage() {
         </button>
         <button
           onClick={() => salvar("pronta")}
-          disabled={submitting}
-          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold"
+          disabled={submitting || !podeMarcarPronta}
+          title={
+            !podeMarcarPronta
+              ? "Resolva os bloqueios indicados no resumo lateral."
+              : undefined
+          }
+          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting ? "Salvando…" : "Marcar pronta"}
         </button>
+      </div>
+
+        </div>{/* fim coluna principal */}
+
+        {/* Aside lateral — em mobile vai pra cima dos botoes via order, em desktop fica fixo */}
+        <aside className="lg:row-span-1 order-first lg:order-none">
+          <RouteSummary summary={summary} />
+        </aside>
       </div>
     </div>
   );
