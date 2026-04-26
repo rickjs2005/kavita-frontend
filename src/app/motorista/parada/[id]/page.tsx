@@ -71,12 +71,22 @@ export default function ParadaDetalhePage() {
       const rota = await apiClient.get<RotaCompleta | null>(
         "/api/motorista/rota-hoje",
       );
-      if (!rota) {
+      // Defensivo:
+      //   - rota null = motorista nao tem rota ativa hoje
+      //   - rota objeto sem id = backend mandou envelope vazio
+      //     (response.ok(res, null, "msg") nao inclui data; apiClient
+      //      legacy devolve o envelope { ok: true, message })
+      const rotaValida =
+        rota && typeof (rota as RotaCompleta).id === "number"
+          ? (rota as RotaCompleta)
+          : null;
+      if (!rotaValida) {
         toast.error("Você não tem rota ativa hoje.");
         router.replace("/motorista/rota");
         return;
       }
-      const found = rota.paradas.find((p) => p.id === id) ?? null;
+      const paradas = Array.isArray(rotaValida.paradas) ? rotaValida.paradas : [];
+      const found = paradas.find((p) => p.id === id) ?? null;
       if (!found) {
         toast.error("Parada não encontrada na sua rota.");
         router.replace("/motorista/rota");
@@ -84,13 +94,21 @@ export default function ParadaDetalhePage() {
       }
       setParada(found);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
+      // Sessao invalida/ausente -> redirecionar pra login (cobre 401, 403, AUTH_ERROR)
+      if (
+        err instanceof ApiError &&
+        (err.status === 401 ||
+          err.status === 403 ||
+          err.code === "AUTH_ERROR" ||
+          err.code === "UNAUTHORIZED")
+      ) {
         router.replace("/motorista/login");
         return;
       }
-      // Tenta cache
+      // Tenta cache (defensivo: cache pode estar inconsistente)
       const cached = readCachedRota<RotaCompleta>();
-      const found = cached?.paradas.find((p) => p.id === id) ?? null;
+      const cachedParadas = Array.isArray(cached?.paradas) ? cached!.paradas : [];
+      const found = cachedParadas.find((p) => p.id === id) ?? null;
       if (found) {
         setParada(found);
         toast("Mostrando dados salvos. Sem conexão.");
@@ -362,8 +380,8 @@ export default function ParadaDetalhePage() {
           )}
         </div>
 
-        {/* Itens */}
-        {parada.itens && parada.itens.length > 0 && (
+        {/* Itens — defensivo: nem sempre vem (cache antigo, etc) */}
+        {Array.isArray(parada.itens) && parada.itens.length > 0 && (
           <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-3">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 mb-2">
               Itens do pedido

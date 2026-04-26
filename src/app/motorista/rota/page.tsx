@@ -26,20 +26,56 @@ export default function MotoristaRotaPage() {
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
 
+  /**
+   * Normaliza shape da rota.
+   *
+   * 2 casos a tratar:
+   *
+   *   (a) Backend retorna response.ok(res, null, "Sem rota para hoje.")
+   *       → envelope no wire vira { ok: true, message: "..." } SEM data.
+   *       apiClient nao desempacota (falta campo "data") e devolve o
+   *       envelope inteiro. Sem o id detectamos esse caso e retornamos
+   *       null — frontend renderiza "Sem rota para hoje".
+   *
+   *   (b) Cache antigo do localStorage de versao anterior do app pode
+   *       nao ter paradas:[]. Garantimos array sempre pra .map nao
+   *       explodir.
+   */
+  function _normalizeRota(raw: unknown): RotaCompleta | null {
+    if (!raw || typeof raw !== "object") return null;
+    const r = raw as Partial<RotaCompleta>;
+    // Sem id valido = nao e' uma rota real (provavelmente envelope sem data)
+    if (typeof r.id !== "number") return null;
+    return {
+      ...(r as RotaCompleta),
+      paradas: Array.isArray(r.paradas) ? r.paradas : [],
+    };
+  }
+
   async function load() {
     try {
       const data = await apiClient.get<RotaCompleta | null>(
         "/api/motorista/rota-hoje",
       );
-      setRota(data);
-      if (data) cacheRota(data);
+      const normalized = _normalizeRota(data);
+      setRota(normalized);
+      if (normalized) cacheRota(normalized);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
+      // Sessao invalida/ausente -> SEMPRE redirecionar pra login.
+      // Cobre 401, 403 e AUTH_ERROR sem deixar quebrar a pagina inteira.
+      if (
+        err instanceof ApiError &&
+        (err.status === 401 ||
+          err.status === 403 ||
+          err.code === "AUTH_ERROR" ||
+          err.code === "UNAUTHORIZED")
+      ) {
         router.replace("/motorista/login");
         return;
       }
-      // Tenta cache local em caso de offline
-      const cached = readCachedRota<RotaCompleta>();
+      // Tenta cache local em caso de offline (normaliza tambem, cache
+      // pode ter sido salvo por versao antiga do app)
+      const cached = _normalizeRota(readCachedRota());
       if (cached) {
         setRota(cached);
         toast("Mostrando dados salvos. Sem conexão.");
@@ -199,39 +235,49 @@ export default function MotoristaRotaPage() {
           )}
 
           <section className="space-y-2">
-            {rota.paradas.map((p) => {
-              const endereco = parseEnderecoPedido(p.pedido_endereco);
-              return (
-                <Link
-                  key={p.id}
-                  href={`/motorista/parada/${p.id}`}
-                  className="block rounded-2xl bg-white/[0.04] border border-white/10 p-3 hover:bg-white/[0.08] transition"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-9 h-9 rounded-full bg-amber-400/20 text-amber-200 flex items-center justify-center font-bold text-sm">
-                      {p.ordem}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-stone-50 font-semibold text-sm truncate">
-                          {p.usuario_nome || "Sem nome"}
-                        </span>
-                        <ParadaStatusBadge status={p.status} />
-                      </div>
-                      <p className="text-xs text-stone-400 mt-0.5 truncate">
-                        {formatEnderecoOneLine(endereco)}
-                      </p>
-                      {p.pedido_observacao_entrega && (
-                        <p className="text-[11px] text-amber-300 italic mt-0.5 truncate">
-                          “{p.pedido_observacao_entrega}”
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-stone-500 text-2xl shrink-0">›</div>
+            {(() => {
+              const paradas = Array.isArray(rota.paradas) ? rota.paradas : [];
+              if (paradas.length === 0) {
+                return (
+                  <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 text-center text-sm text-stone-400">
+                    Esta rota ainda não tem paradas.
                   </div>
-                </Link>
-              );
-            })}
+                );
+              }
+              return paradas.map((p) => {
+                const endereco = parseEnderecoPedido(p.pedido_endereco);
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/motorista/parada/${p.id}`}
+                    className="block rounded-2xl bg-white/[0.04] border border-white/10 p-3 hover:bg-white/[0.08] transition"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-amber-400/20 text-amber-200 flex items-center justify-center font-bold text-sm">
+                        {p.ordem}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-stone-50 font-semibold text-sm truncate">
+                            {p.usuario_nome || "Sem nome"}
+                          </span>
+                          <ParadaStatusBadge status={p.status} />
+                        </div>
+                        <p className="text-xs text-stone-400 mt-0.5 truncate">
+                          {formatEnderecoOneLine(endereco)}
+                        </p>
+                        {p.pedido_observacao_entrega && (
+                          <p className="text-[11px] text-amber-300 italic mt-0.5 truncate">
+                            “{p.pedido_observacao_entrega}”
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-stone-500 text-2xl shrink-0">›</div>
+                    </div>
+                  </Link>
+                );
+              });
+            })()}
           </section>
         </div>
       )}
