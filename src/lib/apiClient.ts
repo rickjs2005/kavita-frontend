@@ -33,18 +33,57 @@ function dispatchAuthExpired(url: string) {
 // ---------------------------------------------------------------------------
 
 const CSRF_TTL_MS = 10 * 60 * 1000; // 10 minutos
+const CSRF_COOKIE_NAME = "csrf_token";
 
 let _csrfToken: string | null = null;
 let _csrfFetchedAt: number | null = null;
 let _csrfInflight: Promise<string | null> | null = null;
 
+/**
+ * Le o cookie csrf_token diretamente do document.cookie (browser).
+ * Retorna null no server-side ou se cookie nao estiver presente.
+ *
+ * Usado pra detectar divergencia entre cache em memoria do apiClient e
+ * cookie real do browser — pode acontecer quando:
+ *   - Outra tab abriu e fez GET /csrf-token (server gera novo token,
+ *     seta novo cookie; primeira tab tem cookie novo mas cache JS velho)
+ *   - User limpou cookies manualmente (DevTools, modo anonimo, etc.)
+ *   - Backend reiniciou e proximo GET /csrf-token gerou outro
+ */
+function _readCsrfCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const m = document.cookie.match(
+    new RegExp(`(?:^|;\\s*)${CSRF_COOKIE_NAME}=([^;]+)`),
+  );
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+/** Forca proxima chamada a refetch o token (limpa cache). */
+function _invalidateCsrfCache() {
+  _csrfToken = null;
+  _csrfFetchedAt = null;
+}
+
 /** Obtém o token CSRF do backend (com cache de 10 min e dedup). Falha silenciosamente. */
 async function fetchCsrfToken(baseUrl: string): Promise<string | null> {
   const now = Date.now();
 
-  // cache ainda válido
-  if (_csrfToken && _csrfFetchedAt && now - _csrfFetchedAt < CSRF_TTL_MS) {
+  // Cache valido SE: nao expirou E cookie real bate com cache.
+  // Sem o cookie check, divergencia (cache stale + cookie atualizado por
+  // outra tab) gera "CSRF token invalido" em mutacoes.
+  const cookieAtual = _readCsrfCookie();
+  if (
+    _csrfToken &&
+    _csrfFetchedAt &&
+    now - _csrfFetchedAt < CSRF_TTL_MS &&
+    cookieAtual === _csrfToken
+  ) {
     return _csrfToken;
+  }
+
+  // Cookie divergiu — invalida e refetch
+  if (cookieAtual && cookieAtual !== _csrfToken) {
+    _invalidateCsrfCache();
   }
 
   // dedup: se já tem requisição em andamento, reutiliza
@@ -360,6 +399,25 @@ export async function apiRequest<T = any>(
     // Despacha evento global para tratamento centralizado de sessão expirada
     if (res.status === 401) {
       dispatchAuthExpired(url);
+    }
+
+    // Retry transparente em 403 com mensagem de CSRF.
+    // Cobre cenarios em que o cookie csrf_token foi atualizado entre
+    // o fetchCsrfToken (cache) e o POST (outra tab, server restart, etc.).
+    // Marca _csrfRetry=true pra evitar loop infinito.
+    if (
+      res.status === 403 &&
+      CSRF_METHODS.has(method) &&
+      typeof message === "string" &&
+      /csrf/i.test(message) &&
+      !(options as { _csrfRetry?: boolean })._csrfRetry
+    ) {
+      _invalidateCsrfCache();
+      return apiRequest<T>(path, {
+        ...options,
+        // marker pra nao retry de novo
+        ...({ _csrfRetry: true } as object),
+      });
     }
 
     throw new ApiError({
