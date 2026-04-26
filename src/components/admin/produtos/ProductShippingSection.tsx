@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { onlyDigits } from "@/utils/formatters";
 
 export type ShippingRules = {
   shippingFree: boolean;
@@ -15,9 +16,6 @@ type Props = {
   onChange: (next: ShippingRules) => void;
 };
 
-function onlyDigits(v: string) {
-  return (v || "").replace(/\D/g, "");
-}
 
 export default function ProductShippingSection({ value, onChange }: Props) {
   function patch(next: Partial<ShippingRules>) {

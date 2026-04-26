@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { CorretoraSubmission } from "@/types/corretora";
+import { formatDateWithYear } from "@/utils/formatters";
 
 type Props = {
   rows: CorretoraSubmission[];
@@ -18,11 +19,7 @@ type Props = {
 
 function formatDate(dateStr?: string | null) {
   if (!dateStr) return "—";
-  try {
-    return new Date(dateStr).toLocaleDateString("pt-BR");
-  } catch {
-    return "—";
-  }
+  return formatDateWithYear(dateStr) || "—";
 }
 
 export default function SubmissionsTable({

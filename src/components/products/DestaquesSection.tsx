@@ -67,7 +67,7 @@ import Image from "next/image";
 import { Product } from "@/types/product";
 import apiClient from "@/lib/apiClient";
 import { absUrl } from "@/utils/absUrl";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatDateShort } from "@/utils/formatters";
 
 type PromoProduct = Product & {
   image?: string | null;
@@ -494,13 +494,7 @@ export default function PromocoesHero() {
                   <circle cx="12" cy="12" r="9" />
                   <path d="M12 7v5l3 2" />
                 </svg>
-                <span>
-                  Válido até{" "}
-                  {new Date(endsAt).toLocaleDateString("pt-BR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                  })}
-                </span>
+                <span>Válido até {formatDateShort(endsAt)}</span>
                 <span className="hidden text-white/30 md:inline">·</span>
                 <span className="hidden font-normal text-white/60 md:inline">
                   enquanto durarem os estoques

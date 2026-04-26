@@ -9,6 +9,7 @@ import {
   formatEnderecoOneLine,
   formatBRL,
 } from "@/lib/rotas/types";
+import { formatDateTime } from "@/utils/formatters";
 import { absUrl } from "@/utils/absUrl";
 import { ParadaStatusBadge } from "./StatusBadge";
 
@@ -134,7 +135,7 @@ export default function SortableParadaRow({
             )}
             {parada.entregue_em && (
               <p className="text-[11px] text-emerald-400 mt-0.5">
-                ✓ Entregue em {new Date(parada.entregue_em).toLocaleString("pt-BR")}
+                ✓ Entregue em {formatDateTime(parada.entregue_em)}
               </p>
             )}
             {parada.observacao_motorista && (

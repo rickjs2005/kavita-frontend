@@ -6,6 +6,7 @@ import CustomButton from "@/components/buttons/CustomButton";
 import { toast } from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { formatDateWithYear } from "@/utils/formatters";
 
 type ProductReviewsProps = {
   produtoId: number;
@@ -239,7 +240,7 @@ export default function ProductReviews({
                         <span key={i}>{rev.nota >= i + 1 ? "★" : "☆"}</span>
                       ))}
                       <span className="ml-1 text-[11px] text-gray-500">
-                        {new Date(rev.created_at).toLocaleDateString("pt-BR")}
+                        {formatDateWithYear(rev.created_at)}
                       </span>
                     </div>
 

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { formatCurrency, formatDateTime } from "@/utils/formatters";
 import { ContratosSection } from "@/components/painel-corretora/ContratosSection";
 import type {
   CorretoraLead,
@@ -416,26 +417,12 @@ const EVENT_TONE: Record<
 
 function formatDate(iso: string | null | undefined) {
   if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "America/Sao_Paulo",
-    });
-  } catch {
-    return iso;
-  }
+  return formatDateTime(iso) || iso;
 }
 
 function formatBrl(v: number | null | undefined) {
   if (v == null) return "—";
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(Number(v));
+  return formatCurrency(v);
 }
 
 function toIsoDatetimeLocal(value: string) {

@@ -10,26 +10,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/AuthContext";
 import CloseButton from "@/components/buttons/CloseButton";
 import LoadingButton from "@/components/buttons/LoadingButton";
-
-// helper: formata CPF enquanto o usuário digita
-function formatCpfMask(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return digits.replace(/(\d{3})(\d{0,3})/, "$1.$2");
-  if (digits.length <= 9)
-    return digits.replace(/(\d{3})(\d{3})(\d{0,3})/, "$1.$2.$3");
-
-  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4");
-}
-
-function onlyDigits(v: string) {
-  return (v || "").replace(/\D/g, "");
-}
-
-function normalizeEmail(v: string) {
-  return (v || "").trim().toLowerCase();
-}
+import {
+  formatCpfMask,
+  normalizeEmail,
+  onlyDigits,
+} from "@/utils/formatters";
 
 /**
  * Segurança (front): não vazar “email já cadastrado” (evita enumeração).

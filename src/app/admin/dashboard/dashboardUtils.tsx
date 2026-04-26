@@ -1,38 +1,37 @@
 // Pure functions and shared UI primitives for the admin dashboard.
 
 import type { AlertNivel } from "./dashboardTypes";
+import {
+  formatNumber as _formatNumber,
+  formatCurrency,
+  formatDateShort,
+  formatDateWithYear,
+} from "@/utils/formatters";
 
 // ---------------------------------------------------------------------------
-// Formatters
+// Formatters — delegam aos helpers centrais (utils/formatters) pra manter
+// uma única fonte de verdade. Mantemos os nomes locais por compat com o
+// resto do dashboard (varios componentes importam daqui).
 // ---------------------------------------------------------------------------
 
 export function formatNumber(n: number) {
-  return new Intl.NumberFormat("pt-BR").format(n || 0);
+  return _formatNumber(n);
 }
 
 export function formatMoney(n: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 2,
-  }).format(n || 0);
+  return formatCurrency(n);
 }
 
 export function formatShortDate(dateStr: string) {
+  // Mantém o parsing manual local porque a entrada vem como "YYYY-MM-DD"
+  // sem hora; new Date(yyyy-mm-dd) interpreta como UTC e desloca o dia.
   const [y, m, d] = dateStr.split("-").map((v) => parseInt(v, 10));
   const dt = new Date(y || 2000, (m || 1) - 1, d || 1);
-  return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return formatDateShort(dt);
 }
 
 export function formatLogDate(dateStr: string) {
-  const dt = new Date(dateStr);
-  if (Number.isNaN(dt.getTime())) return "—";
-  return dt.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    timeZone: "America/Sao_Paulo",
-  });
+  return formatDateWithYear(dateStr) || "—";
 }
 
 export function calcVariation(current: number, previous: number): number | null {

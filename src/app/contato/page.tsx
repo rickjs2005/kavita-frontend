@@ -5,10 +5,7 @@ import HeroAtendimento from "./components/HeroAtendimento";
 import AtalhoAjuda from "./components/AtalhoAjuda";
 import FormularioContato from "./components/FormularioContato";
 import BlocoConfianca from "./components/BlocoConfianca";
-
-function onlyDigits(v: string) {
-  return (v || "").replace(/\D/g, "");
-}
+import { onlyDigits } from "@/utils/formatters";
 
 function toWaMe(phone: string) {
   const d = onlyDigits(phone);

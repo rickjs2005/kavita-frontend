@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { absUrl } from "@/utils/absUrl";
+import { formatCurrency } from "@/utils/formatters";
 
 export type Product = {
   id: number;
@@ -31,14 +32,6 @@ type Props = {
 };
 
 const PLACEHOLDER = "/placeholder.png";
-
-function toBRL(n: number) {
-  try {
-    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  } catch {
-    return `R$ ${n.toFixed(2)}`;
-  }
-}
 
 export default function ProdutoCard({
   produto,
@@ -145,7 +138,7 @@ export default function ProdutoCard({
 
         <div className="mt-1 flex items-center justify-between">
           <span className="text-sm font-semibold text-secondary">
-            {toBRL(price)}
+            {formatCurrency(price)}
           </span>
           <span className="text-xs text-gray-500">Qtde: {qty}</span>
         </div>

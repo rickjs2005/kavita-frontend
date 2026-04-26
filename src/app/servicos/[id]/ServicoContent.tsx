@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { formatDateWithYear, onlyDigits } from "@/utils/formatters";
 
 const PLACEHOLDER = "/placeholder.png";
 
@@ -40,8 +41,6 @@ function coerceImages(imagem?: unknown, images?: unknown): string[] {
 
   return Array.from(new Set(all));
 }
-
-const onlyDigits = (s?: string | null) => (s ?? "").replace(/\D/g, "");
 
 // Tipo das avaliações com nome do autor
 type Avaliacao = {
@@ -259,7 +258,7 @@ export default function ServicoContent({ servico }: { servico: Service }) {
                           )}
                         </div>
                         <span className="text-[10px] text-slate-400">
-                          {new Date(av.created_at).toLocaleDateString("pt-BR")}
+                          {formatDateWithYear(av.created_at)}
                         </span>
                       </div>
                       {av.comentario && (

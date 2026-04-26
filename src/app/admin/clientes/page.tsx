@@ -9,14 +9,10 @@ import { useRouter } from "next/navigation";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { CustomerRow } from "@/types/admin";
+import { onlyDigits } from "@/utils/formatters";
 
 function padId(id: number) {
   return `#${String(id).padStart(4, "0")}`;
-}
-
-function onlyDigits(v?: string | null) {
-  if (!v) return "";
-  return v.replace(/\D/g, "");
 }
 
 function formatTelefone(v?: string | null) {

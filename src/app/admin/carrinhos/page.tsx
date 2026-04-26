@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import apiClient from "@/lib/apiClient";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatDateTime, onlyDigits } from "@/utils/formatters";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
@@ -51,15 +51,7 @@ type ScanReport = {
 
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return String(iso || "");
-  return d.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso) || String(iso || "");
 }
 
 function resumoItens(itens: AbandonedCartItem[]) {
@@ -84,10 +76,6 @@ function initials(name: string) {
 }
 
 /* ----------------------- telefone/whatsapp ------------------------- */
-
-function onlyDigits(v: string) {
-  return String(v || "").replace(/\D+/g, "");
-}
 
 function toE164BR(phoneRaw: string | null) {
   const digits = onlyDigits(phoneRaw || "");

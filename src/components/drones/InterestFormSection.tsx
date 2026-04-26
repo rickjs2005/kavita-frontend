@@ -14,6 +14,7 @@
 
 import { useMemo, useState } from "react";
 import type { DroneRepresentative } from "@/types/drones";
+import { onlyDigits } from "@/utils/formatters";
 
 type DroneModel = {
   key: string;
@@ -25,10 +26,6 @@ type Props = {
   representative?: DroneRepresentative;
   messageTemplate?: string | null;
 };
-
-function onlyDigits(s: string): string {
-  return String(s || "").replace(/\D/g, "");
-}
 
 function buildWaHref(opts: {
   phone: string;

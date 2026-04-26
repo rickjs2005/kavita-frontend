@@ -5,7 +5,7 @@ import ProductBuyBox from "@/components/products/ProductBuyBox";
 import ProductReviews from "./ProductReviews";
 import { absUrl } from "@/utils/absUrl";
 import { computeProductPrice } from "@/utils/pricing";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatDateShort } from "@/utils/formatters";
 
 // Revalidate every 60 seconds — balances freshness with performance.
 // Product data changes infrequently; promotions are cached server-side.
@@ -183,12 +183,8 @@ export default async function Page({ params }: ProductPageProps) {
 
               {promoEndsAt && (
                 <p className="text-xs text-amber-700">
-                  Promoção válida até{" "}
-                  {new Date(promoEndsAt).toLocaleDateString("pt-BR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                  })}
-                  , ou enquanto durarem os estoques.
+                  Promoção válida até {formatDateShort(promoEndsAt)}, ou
+                  enquanto durarem os estoques.
                 </p>
               )}
             </div>

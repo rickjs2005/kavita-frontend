@@ -25,6 +25,7 @@ import {
 } from "recharts";
 import apiClient from "@/lib/apiClient";
 import { ApiError } from "@/lib/errors";
+import { formatNumber } from "@/utils/formatters";
 
 type Range = "7d" | "30d" | "90d";
 
@@ -204,12 +205,12 @@ export default function MetricsClient() {
             <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
               <Kpi
                 label="Leads"
-                value={data.totals.leads.toLocaleString("pt-BR")}
+                value={formatNumber(data.totals.leads)}
                 delta={data.totals.delta.leads}
               />
               <Kpi
                 label="Respondidos"
-                value={data.totals.leads_responded.toLocaleString("pt-BR")}
+                value={formatNumber(data.totals.leads_responded)}
                 sub={
                   data.rates.response_rate !== null
                     ? `${data.rates.response_rate}% do total`
@@ -229,7 +230,7 @@ export default function MetricsClient() {
               />
               <Kpi
                 label="Reviews aprovadas"
-                value={data.totals.reviews_approved.toLocaleString("pt-BR")}
+                value={formatNumber(data.totals.reviews_approved)}
                 sub={
                   data.totals.reviews_pending > 0
                     ? `+${data.totals.reviews_pending} pendentes`
@@ -243,7 +244,7 @@ export default function MetricsClient() {
             <section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
               <Kpi
                 label="SLA — Amostra"
-                value={data.sla.count.toLocaleString("pt-BR")}
+                value={formatNumber(data.sla.count)}
                 sub="leads com resposta registrada"
               />
               <Kpi

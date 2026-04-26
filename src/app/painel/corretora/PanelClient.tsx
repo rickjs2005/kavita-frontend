@@ -31,6 +31,7 @@ import { LiveMarketQuotes } from "@/components/painel-corretora/LiveMarketQuotes
 import { formatSafraAtualLabel } from "@/lib/safra";
 import { useCorretoraAuth } from "@/context/CorretoraAuthContext";
 import type { CorretoraLead, LeadsSummary } from "@/types/lead";
+import { formatCurrency } from "@/utils/formatters";
 
 const EMPTY_SUMMARY: LeadsSummary = {
   total: 0,
@@ -82,10 +83,7 @@ type PlanUsageLite = {
 
 function formatBrl(v: number | null | undefined) {
   if (v == null || v === 0) return "—";
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(Number(v));
+  return formatCurrency(v);
 }
 
 function formatHoursAgo(iso?: string) {

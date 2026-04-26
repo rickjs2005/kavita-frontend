@@ -22,6 +22,7 @@ import type {
   AptidaoOferta,
   PrioridadeComercial,
 } from "@/types/lead";
+import { formatCurrency } from "@/utils/formatters";
 
 // ─── Catálogo de classificações ────────────────────────────────────
 
@@ -214,11 +215,7 @@ function buildLaudoWhatsAppUrl(
     lines.push(`• Mercado indicado: ${MERCADO_LABELS[lead.mercado_indicado]}`);
   }
   if (lead.preco_referencia_saca != null) {
-    const fmt = new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(lead.preco_referencia_saca);
-    lines.push(`• Referência: ${fmt}/saca`);
+    lines.push(`• Referência: ${formatCurrency(lead.preco_referencia_saca)}/saca`);
   }
 
   lines.push("", "Podemos conversar sobre oferta?");

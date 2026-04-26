@@ -7,6 +7,7 @@ import { HiOutlineMapPin } from "react-icons/hi2";
 import Link from "next/link";
 import type { PublicShopSettings } from "@/server/data/shopSettings";
 import { sanitizeUrl } from "@/lib/sanitizeHtml";
+import { onlyDigits } from "@/utils/formatters";
 
 type FooterProps = {
   shop?: PublicShopSettings;
@@ -17,10 +18,6 @@ type FooterLinkItem = {
   href: string;
   highlight?: boolean;
 };
-
-function onlyDigits(v: string) {
-  return (v || "").replace(/\D/g, "");
-}
 
 function formatCnpj(v: string) {
   const d = onlyDigits(v).slice(0, 14);

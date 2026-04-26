@@ -46,6 +46,58 @@ export function formatPercent(
   return `${num.toFixed(decimals).replace(".", ",")}%`;
 }
 
+/**
+ * Formata número simples com separador de milhar pt-BR e SEM símbolo.
+ *   1234        -> "1.234"
+ *   1234567     -> "1.234.567"
+ *   1234.5      -> "1.234,5" (decimals defaults a 0)
+ *   1234.567, 2 -> "1.234,57"
+ *
+ * Usado em métricas (sacas, leads, contagens, pontuação SCA, etc.)
+ * onde o símbolo R$/US$ ficaria estranho e o leitor precisa ler o
+ * número limpo.
+ */
+export function formatNumber(
+  value: NumericInput,
+  decimals: number = 0,
+): string {
+  const num = toNumber(value);
+  return num.toLocaleString("pt-BR", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+/**
+ * Formata moeda estrangeira (USD, EUR, etc.) sempre em locale pt-BR
+ * pra manter a separação consistente com o resto da UI.
+ *   formatForeignCurrency(123.45)         -> "US$ 123,45"
+ *   formatForeignCurrency(123.45, "EUR")  -> "€ 123,45"
+ *   formatForeignCurrency(123.45, "USD")  -> "US$ 123,45"
+ *
+ * Usado em ticker ICE C, NY, cotações de dólar e outros indicadores
+ * que vêm em moeda diferente de BRL.
+ */
+export function formatForeignCurrency(
+  value: NumericInput,
+  currency: string = "USD",
+): string {
+  const num = toNumber(value);
+  try {
+    return num.toLocaleString("pt-BR", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+    });
+  } catch {
+    // Currency inválida cai num fallback simples para nunca quebrar render.
+    return `${currency} ${num.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+}
+
 /* =========================================================
  *  DATAS / HORÁRIOS
  * ======================================================= */
@@ -134,8 +186,11 @@ export const formatFullDateShortYear = formatDateShortYear;
  *  DOCUMENTOS / MASKS (CPF, CNPJ, CEP, TELEFONE)
  * ======================================================= */
 
-/** Remove tudo que não for número */
-export function onlyDigits(value: string): string {
+/**
+ * Remove tudo que não for número. Aceita null/undefined retornando ""
+ * (vários call sites do projeto passam campos opcionais da API).
+ */
+export function onlyDigits(value: string | null | undefined): string {
   return (value || "").replace(/\D/g, "");
 }
 

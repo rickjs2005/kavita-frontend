@@ -14,6 +14,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { formatDateTime } from "@/utils/formatters";
 import { PanelCard } from "./PanelCard";
 import { LeadStatusBadge } from "./LeadStatusBadge";
 import { NextActionChip } from "./NextActionChip";
@@ -92,12 +93,7 @@ const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
 
 function formatDate(iso: string) {
   try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTime(iso) || iso;
   } catch {
     return iso;
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import type { RotaCompleta } from "@/lib/rotas/types";
+import { formatDateTime } from "@/utils/formatters";
 
 interface Step {
   label: string;
@@ -11,12 +12,7 @@ interface Step {
 
 function fmt(at: string | null): string {
   if (!at) return "—";
-  return new Date(at).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(at) || "—";
 }
 
 /**

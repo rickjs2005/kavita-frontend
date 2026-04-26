@@ -10,6 +10,7 @@ import apiClient from "@/lib/apiClient";
 import { isApiError } from "@/lib/errors";
 import { formatApiError } from "@/lib/formatApiError";
 import { absUrl } from "@/utils/absUrl";
+import { formatDateTime } from "@/utils/formatters";
 import type { CorretoraSubmission } from "@/types/corretora";
 
 // Extrai a causa exibível de um erro da API de admin. Prioriza:
@@ -38,17 +39,7 @@ function describeAdminError(err: unknown, fallback: string): string {
 
 function formatDate(dateStr?: string | null) {
   if (!dateStr) return "—";
-  try {
-    return new Date(dateStr).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "—";
-  }
+  return formatDateTime(dateStr) || "—";
 }
 
 export default function SubmissionReviewPage() {

@@ -6,7 +6,7 @@ import ProductReviews from "./ProductReviews";
 import { absUrl } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 import { computeProductPrice } from "@/utils/pricing";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatDateShort } from "@/utils/formatters";
 
 interface Props {
   produto: Product;
@@ -132,12 +132,8 @@ export default function ProdutoContent({ produto }: Props) {
 
             {promoEndsAt && (
               <p className="text-xs text-amber-700">
-                Promoção válida até{" "}
-                {new Date(promoEndsAt).toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                })}
-                , ou enquanto durarem os estoques.
+                Promoção válida até {formatDateShort(promoEndsAt)}, ou enquanto
+                durarem os estoques.
               </p>
             )}
           </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import apiClient from "@/lib/apiClient";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatDateTime } from "@/utils/formatters";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -80,15 +80,7 @@ const STATUS_OPTIONS: StatusOcorrencia[] = [
 
 // ----- Helpers -----
 function formatDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso) || iso;
 }
 
 function parseEndereco(raw: string | null): Record<string, string> | null {

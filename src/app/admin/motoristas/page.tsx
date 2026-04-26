@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { Motorista, MagicLinkResult } from "@/lib/rotas/types";
+import { formatDateTime } from "@/utils/formatters";
 import MotoristaFormModal from "./_components/MotoristaFormModal";
 
 export default function AdminMotoristasPage() {
@@ -179,8 +180,7 @@ export default function AdminMotoristasPage() {
                     )}
                     {m.ultimo_login_em && (
                       <p className="text-[11px] text-gray-600 mt-0.5">
-                        Último acesso:{" "}
-                        {new Date(m.ultimo_login_em).toLocaleString("pt-BR")}
+                        Último acesso: {formatDateTime(m.ultimo_login_em)}
                       </p>
                     )}
                   </div>

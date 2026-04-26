@@ -8,6 +8,7 @@ import CustomButton from "@/components/buttons/CustomButton";
 import CloseButton from "@/components/buttons/CloseButton";
 import type { Coupon, CouponRestriction } from "@/types/coupon";
 import { emptyCoupon } from "@/types/coupon";
+import { formatCurrency } from "@/utils/formatters";
 
 export default function CuponsPage() {
   const [cupons, setCupons] = useState<Coupon[]>([]);
@@ -526,9 +527,9 @@ export default function CuponsPage() {
                             <>
                               {c.tipo === "percentual"
                                 ? `Desconto de ${valor}%`
-                                : `Desconto de R$ ${valor.toFixed(2)}`}
+                                : `Desconto de ${formatCurrency(valor)}`}
                               {minimo > 0 && (
-                                <> · Mínimo R$ {minimo.toFixed(2)}</>
+                                <> · Mínimo {formatCurrency(minimo)}</>
                               )}
                             </>
                           );

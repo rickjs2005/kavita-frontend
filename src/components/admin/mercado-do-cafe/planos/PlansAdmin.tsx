@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import apiClient from "@/lib/apiClient";
 import { ApiError } from "@/lib/errors";
+import { formatCurrency } from "@/utils/formatters";
 
 type Capabilities = {
   max_users?: number;
@@ -53,10 +54,7 @@ type BroadcastPreview = {
 };
 
 function formatPrice(cents: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format((cents || 0) / 100);
+  return formatCurrency((cents || 0) / 100);
 }
 
 function emptyDraft(): Partial<Plan> {

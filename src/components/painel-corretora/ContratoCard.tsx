@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { API_BASE } from "@/utils/absUrl";
+import { formatDateTime } from "@/utils/formatters";
 import type { Contrato } from "@/types/contrato";
 import { CONTRATO_TIPO_LABEL } from "@/types/contrato";
 import { ContratoStatusBadge } from "./ContratoStatusBadge";
@@ -24,18 +25,7 @@ type Props = {
 
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return String(iso);
-  }
+  return formatDateTime(iso) || String(iso);
 }
 
 export function ContratoCard({ contrato, onChanged }: Props) {

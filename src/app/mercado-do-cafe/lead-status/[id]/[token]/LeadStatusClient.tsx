@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { formatDateTime } from "@/utils/formatters";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
 
 type StatusResponse = {
@@ -63,13 +64,7 @@ const TONE_CLASSES = {
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTime(iso) || iso;
   } catch {
     return iso;
   }

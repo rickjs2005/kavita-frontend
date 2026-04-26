@@ -14,6 +14,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { formatCurrency, formatDateTime } from "@/utils/formatters";
 
 type SummaryResponse = {
   webhook_events: {
@@ -69,26 +70,12 @@ type EventFilter = "all" | "failed" | "unprocessed" | "processed";
 
 function formatDate(iso: string | null | undefined) {
   if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "America/Sao_Paulo",
-    });
-  } catch {
-    return iso;
-  }
+  return formatDateTime(iso) || iso;
 }
 
 function formatBrl(cents: number | null | undefined) {
   if (cents == null) return "—";
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100);
+  return formatCurrency(cents / 100);
 }
 
 export default function ReconciliacaoClient() {

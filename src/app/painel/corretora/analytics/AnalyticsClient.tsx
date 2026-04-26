@@ -26,6 +26,7 @@ import {
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import toast from "react-hot-toast";
+import { formatNumber } from "@/utils/formatters";
 
 type Range = "7d" | "30d" | "90d";
 
@@ -296,12 +297,12 @@ export default function AnalyticsClient() {
           <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <KpiCard
               label="Leads recebidos"
-              value={data.totals.leads.toLocaleString("pt-BR")}
+              value={formatNumber(data.totals.leads)}
               delta={data.totals.delta.leads}
             />
             <KpiCard
               label="Respondidos"
-              value={data.totals.leads_responded.toLocaleString("pt-BR")}
+              value={formatNumber(data.totals.leads_responded)}
               sub={
                 data.rates.response_rate !== null
                   ? `${data.rates.response_rate}% dos leads`

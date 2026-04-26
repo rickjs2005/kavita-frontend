@@ -10,6 +10,7 @@ import CloseButton from "@/components/buttons/CloseButton";
 import apiClient from "@/lib/apiClient";
 import { handleAdminError } from "@/lib/adminErrorHandler";
 import { absUrl } from "@/utils/absUrl";
+import { formatCurrency } from "@/utils/formatters";
 
 type Promocao = {
   id: number;
@@ -298,7 +299,7 @@ export default function MarketingPromocoesPage() {
                   {formProductName}{" "}
                   {formBasePrice != null && (
                     <span className="ml-1 text-[11px] text-slate-400">
-                      (Preço cheio: R$ {formBasePrice.toFixed(2)})
+                      (Preço cheio: {formatCurrency(formBasePrice)})
                     </span>
                   )}
                 </p>
@@ -530,11 +531,11 @@ export default function MarketingPromocoesPage() {
                     <div className="mt-2 flex flex-col gap-1 text-sm">
                       {original > final && (
                         <span className="text-xs text-gray-400 line-through">
-                          R$ {original.toFixed(2)}
+                          {formatCurrency(original)}
                         </span>
                       )}
                       <span className="text-base font-bold text-emerald-700">
-                        R$ {final.toFixed(2)}
+                        {formatCurrency(final)}
                       </span>
                     </div>
 

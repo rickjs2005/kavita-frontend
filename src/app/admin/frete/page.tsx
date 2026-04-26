@@ -8,6 +8,7 @@ import LoadingButton from "@/components/buttons/LoadingButton";
 import DeleteButton from "@/components/buttons/DeleteButton";
 import apiClient from "@/lib/apiClient";
 import { useCep, type CepResult } from "@/hooks/useCep";
+import { formatCurrency } from "@/utils/formatters";
 
 type ShippingZone = {
   id: number;
@@ -761,7 +762,7 @@ export default function FreteAdminPage() {
 
               <Field
                 label="Valor do frete"
-                hint={`Interpretação: R$ ${normalizeMoneyToNumber(form.priceStr).toFixed(2)}`}
+                hint={`Interpretação: ${formatCurrency(normalizeMoneyToNumber(form.priceStr))}`}
               >
                 <input
                   value={form.priceStr}
@@ -932,9 +933,7 @@ export default function FreteAdminPage() {
                             : "bg-blue-50 text-blue-700"
                         }`}
                       >
-                        {z.is_free
-                          ? "Grátis"
-                          : `R$ ${Number(z.price || 0).toFixed(2)}`}
+                        {z.is_free ? "Grátis" : formatCurrency(z.price || 0)}
                       </span>
 
                       <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
@@ -1029,7 +1028,7 @@ export default function FreteAdminPage() {
                             </span>
                           ) : (
                             <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
-                              R$ {Number(z.price || 0).toFixed(2)}
+                              {formatCurrency(z.price || 0)}
                             </span>
                           )}
                         </td>

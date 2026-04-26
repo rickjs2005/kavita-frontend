@@ -8,13 +8,11 @@
 
 import { useMarketQuotes } from "@/hooks/useMarketQuotes";
 import { MarketStripItem, MarketStripDivider } from "./PanelOrnaments";
+import { formatCurrency } from "@/utils/formatters";
 
 // Formato pt-BR: vírgula decimal + ponto como agrupador de milhar.
-const BRL_FMT = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 2,
-});
+// PCT_FMT mantém-se local porque usa signDisplay="exceptZero" (UI de
+// variação sempre com +/-) — comportamento ausente no helper central.
 const PCT_FMT = new Intl.NumberFormat("pt-BR", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -23,7 +21,7 @@ const PCT_FMT = new Intl.NumberFormat("pt-BR", {
 
 function fmtBRL(cents: number | null | undefined) {
   if (cents == null) return null;
-  return BRL_FMT.format(cents / 100);
+  return formatCurrency(cents / 100);
 }
 
 function fmtUSCents(cents: number | null | undefined) {

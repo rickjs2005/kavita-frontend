@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import apiClient from "@/lib/apiClient";
 import { ApiError } from "@/lib/errors";
+import { formatDateTime, formatDateWithYear } from "@/utils/formatters";
 
 type AuditLog = {
   id: number;
@@ -155,11 +156,7 @@ function formatRelative(iso: string): string {
     const diffD = Math.floor(diffH / 24);
     if (diffD === 1) return "ontem";
     if (diffD < 7) return `há ${diffD} dias`;
-    return date.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDateWithYear(date) || iso;
   } catch {
     return iso;
   }
@@ -167,13 +164,7 @@ function formatRelative(iso: string): string {
 
 function formatAbsolute(iso: string): string {
   try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatDateTime(iso) || iso;
   } catch {
     return iso;
   }

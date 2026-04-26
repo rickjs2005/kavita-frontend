@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { FaWhatsapp } from "react-icons/fa";
+import { onlyDigits } from "@/utils/formatters";
 
 type Props = {
   phone?: string;
   url?: string;
 };
-
-function onlyDigits(v: string) {
-  return (v || "").replace(/\D/g, "");
-}
 
 function toWaMe(phone: string) {
   const d = onlyDigits(phone);
