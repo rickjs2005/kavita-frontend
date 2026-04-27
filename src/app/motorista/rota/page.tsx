@@ -1,5 +1,18 @@
 "use client";
 
+// TODO(sprint-pos-go-live): Frontend test suite tem 182/1572
+// falhas pré-existentes na main (~12%). Cobertura de
+// 25 arquivos comprometida (Header, Quotes, AddressForm,
+// Footer, etc.). Suite nesse estado perde valor como sinal
+// de regressão — comparação manual antes/depois foi necessária
+// para validar este bug. Auditoria dedicada da suíte
+// recomendada antes do go-live ou logo após.
+//
+// Investigar: qual a categoria das falhas (testes contra código
+// antigo? regressão real? mock obsoleto?), priorizar correção
+// ou exclusão consciente, restabelecer suite verde como sinal
+// confiável.
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -18,10 +31,13 @@ import {
   executeWithOffline,
 } from "@/lib/rotas/offline";
 import OfflineBanner from "../_components/OfflineBanner";
+import OfflineEmptyState from "../_components/OfflineEmptyState";
+import useOnlineStatus from "@/hooks/useOnlineStatus";
 import { ParadaStatusBadge, RotaStatusBadge } from "@/app/admin/rotas/_components/StatusBadge";
 
 export default function MotoristaRotaPage() {
   const router = useRouter();
+  const isOnline = useOnlineStatus();
   const [rota, setRota] = useState<RotaCompleta | null>(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
@@ -53,6 +69,7 @@ export default function MotoristaRotaPage() {
   }
 
   async function load() {
+    setLoading(true);
     try {
       const data = await apiClient.get<RotaCompleta | null>(
         "/api/motorista/rota-hoje",
@@ -80,7 +97,14 @@ export default function MotoristaRotaPage() {
         setRota(cached);
         toast("Mostrando dados salvos. Sem conexão.");
       } else {
-        toast.error(formatApiError(err, "Falha ao carregar rota.").message);
+        // Offline + sem cache: NAO dispara toast. <OfflineEmptyState />
+        // ja' comunica o estado e oferece retry. Toast em loop quando
+        // motorista refresh-a a pagina rural sem sinal era o bug original.
+        const offlineNow =
+          typeof navigator !== "undefined" && !navigator.onLine;
+        if (!offlineNow) {
+          toast.error(formatApiError(err, "Falha ao carregar rota.").message);
+        }
       }
     } finally {
       setLoading(false);
@@ -167,7 +191,9 @@ export default function MotoristaRotaPage() {
         </button>
       </header>
 
-      {loading ? (
+      {!isOnline && !rota ? (
+        <OfflineEmptyState onRetry={load} isRetrying={loading} />
+      ) : loading ? (
         <p className="px-4 py-8 text-stone-400 text-sm text-center">
           Carregando…
         </p>

@@ -1,5 +1,9 @@
 "use client";
 
+// TODO(sprint-pos-go-live): Add test coverage for online/offline
+// detection, pending queue rendering, and sync trigger. Critical
+// component for driver workflow but currently untested.
+
 import { useEffect, useState } from "react";
 import {
   readQueue,
