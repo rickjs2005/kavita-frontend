@@ -95,8 +95,8 @@ const PRIORIDADE_LABELS: Record<PrioridadeComercial, string> = {
 
 // Style inline para <option> em dark mode
 const OPT_STYLE: React.CSSProperties = {
-  backgroundColor: "#0c0a09",
-  color: "#f5f5f4",
+  backgroundColor: "var(--color-panel-stone-base)",
+  color: "var(--color-panel-stone-text)",
 };
 
 // ─── Badge público ─────────────────────────────────────────────────

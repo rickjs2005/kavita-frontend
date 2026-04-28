@@ -46,7 +46,7 @@ function CorretoraPanelInner({ children }: { children: React.ReactNode }) {
   // e o bottom da viewport.
   useEffect(() => {
     document.body.classList.add("bg-stone-950");
-    document.documentElement.style.backgroundColor = "#0c0a09";
+    document.documentElement.style.backgroundColor = "var(--color-panel-stone-base)";
     return () => {
       document.body.classList.remove("bg-stone-950");
       document.documentElement.style.backgroundColor = "";

@@ -107,6 +107,13 @@ export default {
           border: "var(--color-chart-border)",
           "bar-success": "var(--color-chart-bar-success)",
         },
+
+        /* Painel corretora — gradiente warm */
+        "panel-warm-via": "var(--color-panel-warm-via)",
+
+        /* Certificado de verificação (público) */
+        "certificate-bg": "var(--color-certificate-bg)",
+        "certificate-accent": "var(--color-certificate-accent)",
       },
     },
   },

@@ -33,36 +33,6 @@ function pickErrorMessage(body: any, res: Response) {
   );
 }
 
-// padrão do seu backend adminPostsController: { ok, data, meta }
-type ApiOk<T> = { ok: true; data: T; meta?: any };
-type ApiFail = { ok: false; code?: string; message?: string; details?: any };
-
-async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    credentials: "include",
-    ...init,
-    headers: {
-      ...(init?.headers || {}),
-      "Content-Type": "application/json",
-    },
-  });
-
-  const body = await safeJson(res);
-
-  if (!res.ok) {
-    throw new Error(pickErrorMessage(body, res));
-  }
-
-  // quando backend usa wrapper ok/data:
-  if (body && typeof body === "object" && "ok" in body) {
-    const b = body as ApiOk<T> | ApiFail;
-    if (!b.ok) throw new Error(b.message || "Falha na requisição.");
-    return b.data as T;
-  }
-
-  return body as T;
-}
-
 function qs(params: Record<string, any>) {
   const sp = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {

@@ -208,7 +208,7 @@ describe("RepresentativesSection", () => {
       render(
         <RepresentativesSection
           page={makePage()}
-          // eslint-disable-next-line no-script-url
+           
           representatives={[makeRep({ instagram_url: "javascript:alert(1)" })]}
         />,
       );

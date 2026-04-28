@@ -267,7 +267,7 @@ export default function PanelClient() {
          ============================================================ */}
       <section
         aria-label="Centro de comando"
-        className="kavita-rise-in relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-950 via-[#1f1914] to-stone-900 p-5 shadow-2xl shadow-stone-900/40 ring-1 ring-amber-900/20 sm:p-7 md:p-10"
+        className="kavita-rise-in relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-950 via-panel-warm-via to-stone-900 p-5 shadow-2xl shadow-stone-900/40 ring-1 ring-amber-900/20 sm:p-7 md:p-10"
       >
         {/* Top highlight amber */}
         <span
@@ -445,7 +445,7 @@ export default function PanelClient() {
               hint="Enquanto o primeiro contato não chega, garanta que seu perfil está completo."
             />
 
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-[#1f1914] to-stone-900 p-6 shadow-xl shadow-stone-900/30 ring-1 ring-amber-900/20 md:p-7">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-panel-warm-via to-stone-900 p-6 shadow-xl shadow-stone-900/30 ring-1 ring-amber-900/20 md:p-7">
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/50 to-transparent"
@@ -1016,7 +1016,7 @@ function EducationalEmptyState({ publicUrl }: { publicUrl: string }) {
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-[#1f1914] to-stone-900 p-6 shadow-xl shadow-stone-900/30 ring-1 ring-amber-900/20 sm:p-8 md:p-10">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-panel-warm-via to-stone-900 p-6 shadow-xl shadow-stone-900/30 ring-1 ring-amber-900/20 sm:p-8 md:p-10">
       <span
         aria-hidden
         className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/60 to-transparent"

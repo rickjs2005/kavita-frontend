@@ -149,7 +149,7 @@ export default function ProdutoForm({
     } else {
       resetForm();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [produtoEditado]);
 
   useEffect(() => {

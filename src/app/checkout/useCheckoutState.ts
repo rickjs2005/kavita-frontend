@@ -282,7 +282,7 @@ export function useCheckoutState() {
         setCouponLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [isLoggedIn, normalizedCartItems, subtotal]);
 
   // ---------------------------------------------------------------------------
