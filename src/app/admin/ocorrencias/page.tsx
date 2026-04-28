@@ -272,14 +272,25 @@ function OcorrenciaDetail({
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 px-4 py-8 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Detalhe da ocorrência"
+      role="button"
+      tabIndex={0}
+      aria-label="Fechar detalhe da ocorrência"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClose();
+        }
+      }}
     >
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl shadow-black/60 sm:p-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Detalhe da ocorrência"
+        className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl shadow-black/60 sm:p-6"
+      >
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div>

@@ -85,14 +85,25 @@ export default function InviteUserModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Criar acesso da corretora"
+      role="button"
+      tabIndex={0}
+      aria-label="Fechar diálogo"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClose();
+        }
+      }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl shadow-black/60 sm:p-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Criar acesso da corretora"
+        className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl shadow-black/60 sm:p-6"
+      >
         <header className="mb-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
             Acesso da corretora

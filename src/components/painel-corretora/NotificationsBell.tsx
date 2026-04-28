@@ -523,12 +523,13 @@ function NotificationItem({
   }
 
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className={`cursor-pointer ${baseClass} ${n.read_by_me ? "" : "bg-amber-50/20"}`}
+      className={`w-full text-left ${baseClass} ${n.read_by_me ? "" : "bg-amber-50/20"}`}
     >
       {content}
-    </div>
+    </button>
   );
 }
 

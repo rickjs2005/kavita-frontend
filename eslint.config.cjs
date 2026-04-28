@@ -15,6 +15,7 @@ module.exports = [
       "node_modules/**",
       "coverage/**",
       "eslint.config.cjs",
+      "next-env.d.ts",
     ],
   },
 

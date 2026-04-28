@@ -161,7 +161,7 @@ export function LeadsTable({
   }
 
   return (
-    <ul role="list" className="space-y-2">
+    <ul className="space-y-2">
       {leads.map((lead) => {
           const isExpanded = expandedId === lead.id;
           const saving = savingId === lead.id;

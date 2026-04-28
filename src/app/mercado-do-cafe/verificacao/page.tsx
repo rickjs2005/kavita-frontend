@@ -96,7 +96,7 @@ export default function VerificacaoPage() {
           </h1>
 
           <p className="mt-5 max-w-2xl text-sm leading-relaxed text-stone-300 md:text-base">
-            Cada corretora com selo "Verificada pela Kavita" passou por uma
+            Cada corretora com selo &ldquo;Verificada pela Kavita&rdquo; passou por uma
             análise da nossa equipe antes de aparecer no Mercado do Café.
             Entenda exatamente o que isso significa — e o que{" "}
             <em>não</em> significa.

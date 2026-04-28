@@ -211,7 +211,7 @@ export function CorretoraContactChannels({
         aria-hidden
         className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
       />
-      <ul role="list" className="relative divide-y divide-white/[0.06]">
+      <ul className="relative divide-y divide-white/[0.06]">
         {channels.map((ch, i) => {
           const isPrimary = ch.key === "whatsapp";
           const number = String(i + 1).padStart(2, "0");

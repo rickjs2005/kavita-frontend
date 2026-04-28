@@ -175,14 +175,25 @@ function AddressDisputeModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Informar problema no endereço"
+      role="button"
+      tabIndex={0}
+      aria-label="Fechar diálogo"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClose();
+        }
+      }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-xl sm:p-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Informar problema no endereço"
+        className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-xl sm:p-6"
+      >
         <h3 className="text-lg font-semibold text-gray-900">
           Informar problema no endereço
         </h3>
@@ -434,12 +445,23 @@ function ClientReplyModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Responder solicitação"
+      role="button"
+      tabIndex={0}
+      aria-label="Fechar diálogo"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClose();
+        }
+      }}
     >
-      <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-5 shadow-xl sm:p-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Responder solicitação"
+        className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-5 shadow-xl sm:p-6"
+      >
         <h3 className="text-lg font-semibold text-gray-900">
           Responder solicitação
         </h3>
