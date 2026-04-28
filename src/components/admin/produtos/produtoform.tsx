@@ -524,7 +524,7 @@ export default function ProdutoForm({
             </label>
             <p className="mt-1 text-xs text-gray-400">
               Quando o estoque chega neste valor, o produto entra no widget de
-              "Estoque baixo" do dashboard. Deixe vazio para usar o padrão da
+              &ldquo;Estoque baixo&rdquo; do dashboard. Deixe vazio para usar o padrão da
               loja (5 unidades).
             </p>
             <input

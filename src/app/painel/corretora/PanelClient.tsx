@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { useNow } from "@/hooks/useNow";
 import { StatsCards } from "@/components/painel-corretora/StatsCards";
 import { LeadsTable } from "@/components/painel-corretora/LeadsTable";
 import { PanelBrandMark } from "@/components/painel-corretora/PanelBrand";
@@ -755,6 +756,7 @@ function LeadsCapBanner({ planUsage }: { planUsage: PlanUsageLite }) {
 // o banner fica como "trial expirado" até admin reconciliar.
 
 function TrialEndingBanner({ planUsage }: { planUsage: PlanUsageLite }) {
+  const now = useNow();
   const sub = planUsage.subscription ?? null;
   if (!sub || sub.status !== "trialing") return null;
   if (!sub.trial_ends_at) return null;
@@ -762,7 +764,7 @@ function TrialEndingBanner({ planUsage }: { planUsage: PlanUsageLite }) {
   const endsMs = new Date(sub.trial_ends_at).getTime();
   if (!Number.isFinite(endsMs)) return null;
 
-  const diffMs = endsMs - Date.now();
+  const diffMs = endsMs - now;
   const diffDays = Math.ceil(diffMs / 86_400_000);
 
   // Só renderiza a partir de 7d — antes disso é ruído.

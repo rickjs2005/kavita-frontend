@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { useNow } from "@/hooks/useNow";
 import { formatCurrency, formatDateTime } from "@/utils/formatters";
 import { ContratosSection } from "@/components/painel-corretora/ContratosSection";
 import type {
@@ -296,6 +297,7 @@ function NextActionHighlight({
   lead: LeadDetailResponse["lead"];
   onJumpTab: () => void;
 }) {
+  const now = useNow();
   const terminal = lead.status === "closed" || lead.status === "lost";
   if (terminal) return null;
 
@@ -303,7 +305,7 @@ function NextActionHighlight({
   const when = lead.next_action_at
     ? new Date(lead.next_action_at)
     : null;
-  const overdue = when ? when.getTime() < Date.now() : false;
+  const overdue = when ? when.getTime() < now : false;
 
   const tone = overdue
     ? {
@@ -628,6 +630,7 @@ function LeadDetailBody({
 }) {
   const { lead, notes, events } = detail;
   const [tab, setTab] = useState<LeadTab>("contato");
+  const now = useNow();
 
   // WhatsApp prefill contextual — economia de tempo pra corretora
   const waHref = useMemo(() => {
@@ -664,14 +667,14 @@ function LeadDetailBody({
     if (lead.next_action_at || lead.next_action_text) {
       const overdue =
         lead.next_action_at &&
-        new Date(lead.next_action_at).getTime() < Date.now() &&
+        new Date(lead.next_action_at).getTime() < now &&
         lead.status !== "closed" &&
         lead.status !== "lost";
       b.acao = overdue ? "!" : "✓";
     }
     if (events.length > 0) b.timeline = String(events.length);
     return b;
-  }, [lead, notes.length, events.length]);
+  }, [lead, notes.length, events.length, now]);
 
   return (
     <div className="space-y-4">

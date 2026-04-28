@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import apiClient from "@/lib/apiClient";
@@ -39,6 +39,13 @@ export default function LoginClient() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileHandle>(null);
+  const totpInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (challengeToken) {
+      totpInputRef.current?.focus();
+    }
+  }, [challengeToken]);
 
   const redirectTo = useMemo(
     () => safeInternalRedirect(search.get("from"), "/painel/corretora"),
@@ -169,11 +176,11 @@ export default function LoginClient() {
             </div>
             <div>
               <input
+                ref={totpInputRef}
                 id="totp-code"
                 type="text"
                 inputMode="text"
                 autoComplete="one-time-code"
-                autoFocus
                 value={totpCode}
                 onChange={(e) =>
                   setTotpCode(

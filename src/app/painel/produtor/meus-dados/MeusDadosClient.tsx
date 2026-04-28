@@ -343,9 +343,22 @@ export default function MeusDadosClient() {
       {confirmDelete && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="button"
+          tabIndex={0}
+          aria-label="Fechar diálogo"
           onClick={(e) => {
             if (e.target === e.currentTarget && !submitting)
               setConfirmDelete(false);
+          }}
+          onKeyDown={(e) => {
+            if (
+              e.target === e.currentTarget &&
+              !submitting &&
+              (e.key === "Enter" || e.key === " ")
+            ) {
+              e.preventDefault();
+              setConfirmDelete(false);
+            }
           }}
         >
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl p-6">

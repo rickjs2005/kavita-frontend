@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -18,6 +18,13 @@ export default function EntrarClient({ tokenFromUrl }: Props) {
   const [sent, setSent] = useState(false);
   const [consumeError, setConsumeError] = useState<string | null>(null);
   const [consuming, setConsuming] = useState(Boolean(tokenFromUrl));
+  const emailInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!tokenFromUrl && !sent) {
+      emailInputRef.current?.focus();
+    }
+  }, [tokenFromUrl, sent]);
 
   // Se veio ?token=, consome uma vez e redireciona.
   useEffect(() => {
@@ -155,8 +162,8 @@ export default function EntrarClient({ tokenFromUrl }: Props) {
                     Seu e-mail
                   </label>
                   <input
+                    ref={emailInputRef}
                     type="email"
-                    autoFocus
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

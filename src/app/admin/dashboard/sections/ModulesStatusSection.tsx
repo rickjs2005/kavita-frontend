@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useNow } from "@/hooks/useNow";
 import type { ModulesStatus } from "../dashboardTypes";
 import { LoadingSpinner } from "../dashboardUtils";
 
@@ -65,6 +66,8 @@ function ModuleCard({ icon, title, href, lines }: ModuleCardProps) {
 }
 
 export function ModulesStatusSection({ status, loading }: Props) {
+  const now = useNow();
+
   if (loading) {
     return (
       <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60">
@@ -79,7 +82,7 @@ export function ModulesStatusSection({ status, loading }: Props) {
   if (!status) return null;
 
   const climaSyncAge = status.clima.ultimaSync
-    ? (Date.now() - new Date(status.clima.ultimaSync).getTime()) / 3600000
+    ? (now - new Date(status.clima.ultimaSync).getTime()) / 3600000
     : Infinity;
   const climaDotColor: StatusDotColor =
     climaSyncAge < 6 ? "green" : climaSyncAge < 24 ? "amber" : "slate";

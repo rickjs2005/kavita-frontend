@@ -11,6 +11,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { useNow } from "@/hooks/useNow";
 import SubscriptionEventsTimeline from "@/components/mercado-do-cafe/SubscriptionEventsTimeline";
 
 type Plan = {
@@ -582,10 +583,11 @@ function PendingCheckoutBanner({
   url: string;
   startedAt: string | null;
 }) {
+  const now = useNow();
   const ageLabel = useMemo(() => {
     if (!startedAt) return null;
     try {
-      const ms = Date.now() - new Date(startedAt).getTime();
+      const ms = now - new Date(startedAt).getTime();
       const hrs = Math.floor(ms / 3_600_000);
       if (hrs < 1) return "iniciado há menos de 1h";
       if (hrs < 24) return `iniciado há ${hrs}h`;
@@ -594,11 +596,11 @@ function PendingCheckoutBanner({
     } catch {
       return null;
     }
-  }, [startedAt]);
+  }, [startedAt, now]);
 
   const isStale =
     startedAt &&
-    Date.now() - new Date(startedAt).getTime() > 24 * 3_600_000;
+    now - new Date(startedAt).getTime() > 24 * 3_600_000;
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-amber-400/40 bg-amber-500/[0.06] p-5 shadow-lg shadow-amber-500/10">

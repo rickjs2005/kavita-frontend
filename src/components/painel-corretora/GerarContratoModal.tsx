@@ -124,8 +124,21 @@ export function GerarContratoModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      role="button"
+      tabIndex={0}
+      aria-label="Fechar diálogo"
       onClick={(e) => {
         if (e.target === e.currentTarget && !submitting) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (
+          e.target === e.currentTarget &&
+          !submitting &&
+          (e.key === "Enter" || e.key === " ")
+        ) {
+          e.preventDefault();
+          onClose();
+        }
       }}
     >
       <div className="w-full max-w-2xl rounded-2xl bg-stone-900 ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 max-h-[90vh] overflow-y-auto">

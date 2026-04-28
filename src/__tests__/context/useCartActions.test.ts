@@ -7,6 +7,7 @@
 // são apagadas antes de cada teste. Usar vi.hoisted() para mocks de módulo e
 // reinicializar as implementações no beforeEach.
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderHook } from "@testing-library/react";
 import { useCartActions } from "@/context/cart/useCartActions";
 import type { CartItem } from "@/types/CartCarProps";
 
@@ -62,16 +63,18 @@ function makeActions({
   const openCart = vi.fn();
   const closeCart = vi.fn();
 
-  const actions = useCartActions({
-    userId,
-    cartKey,
-    setCartItems: state.setCartItems,
-    refetchServerCart,
-    openCart,
-    closeCart,
-  });
+  const { result } = renderHook(() =>
+    useCartActions({
+      userId,
+      cartKey,
+      setCartItems: state.setCartItems,
+      refetchServerCart,
+      openCart,
+      closeCart,
+    }),
+  );
 
-  return { ...actions, state, refetchServerCart, openCart, closeCart };
+  return { ...result.current, state, refetchServerCart, openCart, closeCart };
 }
 
 const PROD = { id: 1, name: "Produto A", price: 50 };

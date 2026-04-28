@@ -6,7 +6,7 @@
 // filtro por status e permite aprovar/rejeitar com 1 clique (reject
 // abre prompt para rejection_reason opcional).
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useCorretoraReviewsAdmin } from "@/hooks/useCorretoraReviewsAdmin";
 import type { AdminCorretoraReview } from "@/types/review";
@@ -76,6 +76,13 @@ export default function ReviewsModeration({ onUnauthorized }: Props) {
     useCorretoraReviewsAdmin({ onUnauthorized });
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const rejectInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (rejectingId !== null) {
+      rejectInputRef.current?.focus();
+    }
+  }, [rejectingId]);
 
   const filters: { key: typeof statusFilter; label: string }[] = [
     { key: "pending", label: "Pendentes" },
@@ -204,12 +211,12 @@ export default function ReviewsModeration({ onUnauthorized }: Props) {
                     {rejectingId === r.id ? (
                       <div className="flex flex-col gap-2">
                         <input
+                          ref={rejectInputRef}
                           type="text"
                           value={rejectReason}
                           onChange={(e) => setRejectReason(e.target.value)}
                           placeholder="Motivo (opcional)"
                           className="rounded-lg border border-rose-500/30 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 placeholder:text-slate-500 focus:border-rose-400 focus:outline-none"
-                          autoFocus
                         />
                         <div className="flex gap-1">
                           <button
