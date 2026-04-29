@@ -368,7 +368,7 @@ export function LeadsTable({
                       className="h-9 min-w-[100px] rounded-xl border border-white/10 bg-stone-800 px-3 text-center text-[12px] font-medium text-stone-100 focus:border-amber-400/60 focus:outline-none focus:ring-1 focus:ring-amber-400/25 disabled:opacity-60 [color-scheme:dark]"
                     >
                       {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value} style={{ backgroundColor: "#1c1917", color: "#f5f5f4" }}>
+                        <option key={opt.value} value={opt.value} style={{ backgroundColor: "var(--color-panel-stone-bg)", color: "var(--color-panel-stone-text)" }}>
                           {opt.label}
                         </option>
                       ))}

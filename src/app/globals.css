@@ -77,6 +77,35 @@
   --color-chart-border: #e5e7eb;
   --color-chart-bar-success: #22c55e;
   --color-chart-tick-light: #cbd5f5;
+
+  /* ── Charts: tooltip slate (admin) ── */
+  --color-chart-tooltip-text: #cbd5e1;
+  --color-chart-line-amber: #f59e0b;
+
+  /* ── Charts: stone variants (painel corretora) ── */
+  --color-chart-stone-grid: #292524;
+  --color-chart-stone-tick: #a8a29e;
+  --color-chart-stone-border: #44403c;
+  --color-chart-line-amber-soft: #fbbf24;
+
+  /* ── Painel corretora: paleta stone (toasts, options, tooltips) ── */
+  --color-panel-stone-base: #0c0a09;
+  --color-panel-stone-bg: #1c1917;
+  --color-panel-stone-text: #f5f5f4;
+  --color-panel-stone-muted: #d6d3d1;
+
+  /* ── Painel corretora: gradiente warm via ── */
+  --color-panel-warm-via: #1f1914;
+
+  /* ── Boundary global de erro (global-error.tsx) ── */
+  --color-error-bg: #0b1220;
+  --color-error-text: #e2e8f0;
+  --color-error-muted: #94a3b8;
+  --color-error-action: #10b981;
+
+  /* ── Certificado de verificação (público) ── */
+  --color-certificate-bg: #f7f3e9;
+  --color-certificate-accent: #2e5734;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
@@ -254,7 +283,7 @@ html {
 /* Quando o body recebe bg-stone-950 (painel da corretora dark mode),
    garantir que o overscroll no iOS/Android não revele fundo branco. */
 body.bg-stone-950 {
-  background-color: #0c0a09 !important;
+  background-color: var(--color-panel-stone-base) !important;
 }
 @media (min-width: 768px) {
   html {

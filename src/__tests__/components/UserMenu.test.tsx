@@ -49,7 +49,7 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     cleanup();
   });
 
-  it("quando não autenticado, renderiza link para login/meus pedidos (positivo)", () => {
+  it("quando não autenticado, renderiza link para login (positivo)", () => {
     // Arrange
     mockUser = null;
 
@@ -57,12 +57,14 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     render(<UserMenu />);
 
     // Assert
-    const link = screen.getByRole("link", { name: "Login / Meus Pedidos" });
+    // O CTA mudou para um Link com aria-label="Entrar na conta" (icone +
+    // texto "Entrar" escondido em mobile via `hidden lg:inline`).
+    const link = screen.getByRole("link", { name: "Entrar na conta" });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/login");
   });
 
-  it("quando autenticado, renderiza botão com saudação e nome (positivo)", () => {
+  it("quando autenticado, renderiza botão de menu da conta com nome do usuário", () => {
     // Arrange
     mockUser = { nome: "Rick", email: "rick@kavita.com" };
 
@@ -70,23 +72,27 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     render(<UserMenu />);
 
     // Assert
-    const btn = screen.getByRole("button", { name: "Bem-vindo, Rick" });
+    // O botao usa aria-label="Menu da conta" (texto fixo); o nome
+    // aparece como conteudo visual ao lado do icone.
+    const btn = screen.getByRole("button", { name: "Menu da conta" });
     expect(btn).toBeInTheDocument();
     expect(btn).toHaveAttribute("aria-haspopup", "menu");
     expect(btn).toHaveAttribute("aria-expanded", "false");
+    expect(btn).toHaveTextContent("Rick");
   });
 
-  it("fallback do nome: usa email quando nome não existe (controle)", () => {
-    // Arrange
+  it("fallback do nome: usa 'Usuário' quando nome não existe (controle)", () => {
+    // Arrange — quando user.nome esta ausente, o componente cai em
+    // "Usuario" (fallback hardcoded), nao no email.
     mockUser = { email: "user@kavita.com" };
 
     // Act
     render(<UserMenu />);
 
     // Assert
-    expect(
-      screen.getByRole("button", { name: "Bem-vindo, user@kavita.com" }),
-    ).toBeInTheDocument();
+    const btn = screen.getByRole("button", { name: "Menu da conta" });
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveTextContent("Usuário");
   });
 
   it("abre e fecha o menu ao clicar no botão (positivo)", async () => {
@@ -94,7 +100,7 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     mockUser = { nome: "Rick" };
     render(<UserMenu />);
 
-    const btn = screen.getByRole("button", { name: "Bem-vindo, Rick" });
+    const btn = screen.getByRole("button", { name: "Menu da conta" });
 
     // Act: abre
     await act(async () => {
@@ -123,7 +129,7 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     // Arrange
     mockUser = { nome: "Rick" };
     render(<UserMenu />);
-    const btn = screen.getByRole("button", { name: "Bem-vindo, Rick" });
+    const btn = screen.getByRole("button", { name: "Menu da conta" });
 
     await act(async () => {
       fireEvent.click(btn);
@@ -154,7 +160,7 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
       </div>,
     );
 
-    const btn = screen.getByRole("button", { name: "Bem-vindo, Rick" });
+    const btn = screen.getByRole("button", { name: "Menu da conta" });
 
     await act(async () => {
       fireEvent.click(btn);
@@ -178,7 +184,7 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     // Arrange
     mockUser = { nome: "Rick" };
     render(<UserMenu />);
-    const btn = screen.getByRole("button", { name: "Bem-vindo, Rick" });
+    const btn = screen.getByRole("button", { name: "Menu da conta" });
 
     await act(async () => {
       fireEvent.click(btn);
@@ -204,7 +210,7 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     // Arrange
     mockUser = { nome: "Rick" };
     render(<UserMenu />);
-    const btn = screen.getByRole("button", { name: "Bem-vindo, Rick" });
+    const btn = screen.getByRole("button", { name: "Menu da conta" });
 
     await act(async () => {
       fireEvent.click(btn);
@@ -228,7 +234,7 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     // Arrange
     mockUser = { nome: "Rick" };
     render(<UserMenu />);
-    const btn = screen.getByRole("button", { name: "Bem-vindo, Rick" });
+    const btn = screen.getByRole("button", { name: "Menu da conta" });
 
     await act(async () => {
       fireEvent.click(btn);
@@ -251,7 +257,7 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     // Arrange
     mockUser = { nome: "Rick" };
     render(<UserMenu />);
-    const btn = screen.getByRole("button", { name: "Bem-vindo, Rick" });
+    const btn = screen.getByRole("button", { name: "Menu da conta" });
 
     await act(async () => {
       fireEvent.click(btn);
@@ -274,7 +280,7 @@ describe("UserMenu (src/components/UserMenu.tsx)", () => {
     // Arrange
     mockUser = { nome: "Rick" };
     render(<UserMenu />);
-    const btn = screen.getByRole("button", { name: "Bem-vindo, Rick" });
+    const btn = screen.getByRole("button", { name: "Menu da conta" });
 
     await act(async () => {
       fireEvent.click(btn);

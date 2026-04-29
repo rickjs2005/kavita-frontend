@@ -192,7 +192,7 @@ export default function EquipeClient() {
                           className="rounded-lg border border-white/10 bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-stone-100 shadow-sm focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/25 [color-scheme:dark]"
                         >
                           {ROLE_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value} style={{ backgroundColor: "#1c1917", color: "#f5f5f4" }}>
+                            <option key={opt.value} value={opt.value} style={{ backgroundColor: "var(--color-panel-stone-bg)", color: "var(--color-panel-stone-text)" }}>
                               {opt.label}
                             </option>
                           ))}

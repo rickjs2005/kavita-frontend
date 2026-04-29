@@ -189,8 +189,8 @@ const volumeCardClass =
 // sobre fundo branco (bug de contraste grave). Com este style, o popup
 // nativo vira cinza escuro com texto claro, consistente com o tema.
 const OPTION_STYLE: React.CSSProperties = {
-  backgroundColor: "#0c0a09", // stone-950
-  color: "#f5f5f4", // stone-100
+  backgroundColor: "var(--color-panel-stone-base)",
+  color: "var(--color-panel-stone-text)",
 };
 
 // Fail-closed: se o widget não carregar ou falhar, o submit permanece

@@ -101,7 +101,7 @@ export function CertificadoView({ contrato }: { contrato: ContratoPublico }) {
   const colors = SEAL_COLORS[seal.variant];
 
   return (
-    <main className="min-h-screen bg-[#f7f3e9] py-10 px-4 print:bg-white">
+    <main className="min-h-screen bg-certificate-bg py-10 px-4 print:bg-white">
       <div className="max-w-3xl mx-auto">
         {/* Moldura do certificado */}
         <article
@@ -109,8 +109,8 @@ export function CertificadoView({ contrato }: { contrato: ContratoPublico }) {
           style={{ fontFamily: "Georgia, 'Times New Roman', Times, serif" }}
         >
           {/* Faixa superior — identidade Kavita */}
-          <div className="border-b-2 border-[#2e5734] px-10 pt-10 pb-6 text-center">
-            <div className="text-xs tracking-[0.4em] text-[#2e5734] font-semibold">
+          <div className="border-b-2 border-certificate-accent px-10 pt-10 pb-6 text-center">
+            <div className="text-xs tracking-[0.4em] text-certificate-accent font-semibold">
               KAVITA · MERCADO DO CAFÉ
             </div>
             <div className="mt-1 text-[11px] tracking-[0.2em] uppercase text-stone-500">
@@ -261,7 +261,7 @@ export function CertificadoView({ contrato }: { contrato: ContratoPublico }) {
           </div>
 
           {/* Rodapé do certificado */}
-          <footer className="border-t-2 border-[#2e5734] px-10 py-5 text-center text-[10px] tracking-[0.2em] text-stone-500 uppercase">
+          <footer className="border-t-2 border-certificate-accent px-10 py-5 text-center text-[10px] tracking-[0.2em] text-stone-500 uppercase">
             Verificação realizada em {fmtDateTimeBR(new Date().toISOString())}
           </footer>
         </article>

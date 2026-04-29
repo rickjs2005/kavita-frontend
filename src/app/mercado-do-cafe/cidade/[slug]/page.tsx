@@ -63,10 +63,26 @@ export default async function CidadePage({
   const cidade = getCidadeBySlug(slug);
   if (!cidade) notFound();
 
-  // Busca corretoras da cidade + cotação do café. `city` no filtro
+  // Busca corretoras da cidade + cotacao do cafe. `city` no filtro
   // compara por nome (backend faz match case-insensitive).
+  //
+  // Tolerancia a backend offline: o page e SSG via generateStaticParams,
+  // entao roda no build CI. Se o backend nao estiver disponivel naquele
+  // momento (ECONNREFUSED, timeout, 5xx), caimos no shape vazio padrao
+  // — a UI ja tem estado amigavel "Ainda sem corretoras ativas em X"
+  // logo abaixo. ISR (revalidate=120s definido em src/server/data/*)
+  // atualiza automaticamente quando o backend voltar.
+  const EMPTY_CORRETORAS = {
+    items: [],
+    total: 0,
+    page: 1,
+    limit: 50,
+    totalPages: 0,
+  };
   const [corretorasResult, cotacoes] = await Promise.all([
-    fetchPublicCorretoras({ city: cidade.nome, limit: 50 }),
+    fetchPublicCorretoras({ city: cidade.nome, limit: 50 }).catch(
+      () => EMPTY_CORRETORAS,
+    ),
     fetchPublicCotacoes().catch(() => [] as PublicCotacao[]),
   ]);
 

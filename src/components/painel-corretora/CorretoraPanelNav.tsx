@@ -330,7 +330,7 @@ export function CorretoraPanelNav() {
           {/* Drawer — aside esquerdo com DNA coffee editorial */}
           <aside
             id="corretora-mobile-drawer"
-            className="absolute inset-y-0 left-0 flex w-[88%] max-w-[360px] flex-col overflow-hidden border-r border-amber-900/30 bg-gradient-to-br from-stone-950 via-[#1f1914] to-stone-900 shadow-2xl shadow-black/70 animate-[slideInLeft_0.2s_ease-out]"
+            className="absolute inset-y-0 left-0 flex w-[88%] max-w-[360px] flex-col overflow-hidden border-r border-amber-900/30 bg-gradient-to-br from-stone-950 via-panel-warm-via to-stone-900 shadow-2xl shadow-black/70 animate-[slideInLeft_0.2s_ease-out]"
           >
             {/* Atmospheric glows — profundidade warm-on-dark */}
             <span

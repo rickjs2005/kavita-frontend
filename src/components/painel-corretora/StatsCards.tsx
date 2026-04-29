@@ -69,7 +69,7 @@ export function StatsCards({ summary, loading }: Props) {
           HERO CARD — Total de leads
          ============================================================ */}
       <div
-        className="kavita-rise-in relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-[#1f1914] to-stone-900 p-6 shadow-xl shadow-stone-900/30 ring-1 ring-amber-900/20 md:col-span-3 md:p-8"
+        className="kavita-rise-in relative overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-panel-warm-via to-stone-900 p-6 shadow-xl shadow-stone-900/30 ring-1 ring-amber-900/20 md:col-span-3 md:p-8"
         style={{ animationDelay: "0ms" }}
       >
         {/* Top highlight */}

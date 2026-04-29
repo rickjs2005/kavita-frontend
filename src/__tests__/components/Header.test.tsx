@@ -6,9 +6,21 @@ import userEvent from "@testing-library/user-event";
 
 // ============ Mocks Next ============
 const mockUsePathname = vi.fn();
+const mockRouterPush = vi.fn();
+const mockRouterReplace = vi.fn();
+const mockRouterRefresh = vi.fn();
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockUsePathname(),
+  useRouter: () => ({
+    push: mockRouterPush,
+    replace: mockRouterReplace,
+    refresh: mockRouterRefresh,
+    back: vi.fn(),
+    forward: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("next/link", () => ({
@@ -129,7 +141,10 @@ describe("Header (src/components/layout/Header.tsx)", () => {
     expect(img.getAttribute("src")).toBe("https://cdn.site.com/logo.png");
   });
 
-  it("deve prefixar shop.logo_url relativo com NEXT_PUBLIC_API_URL", () => {
+  it("deve manter shop.logo_url relativo (absUrl agora retorna path relativo)", () => {
+    // absUrl foi refatorado para sempre retornar path relativo (`/uploads/...`),
+    // delegando o proxy para o rewrite do Next.config. Antes prefixava com
+    // NEXT_PUBLIC_API_URL — mudou para evitar hydration mismatch.
     process.env.NEXT_PUBLIC_API_URL = "http://localhost:5000";
     mockUsePathname.mockReturnValue("/");
 
@@ -142,9 +157,7 @@ describe("Header (src/components/layout/Header.tsx)", () => {
     );
 
     const img = screen.getByAltText("Minha Loja") as HTMLImageElement;
-    expect(img.getAttribute("src")).toBe(
-      "http://localhost:5000/uploads/logo.png",
-    );
+    expect(img.getAttribute("src")).toBe("/uploads/logo.png");
   });
 
   it("badge do carrinho: mostra quando cartItems.length > 0 e some quando 0", async () => {
@@ -208,11 +221,12 @@ describe("Header (src/components/layout/Header.tsx)", () => {
     render(<Header />);
 
     await u.click(screen.getByLabelText("Abrir menu"));
-    expect(screen.getByText(/Faça login/i)).toBeInTheDocument();
-    expect(screen.getByText("Login / Meus Pedidos")).toBeInTheDocument();
+    // O texto do link de login mudou de "Faça login" para
+    // "Entrar / Criar conta" — copy mais clara para visitante novo.
+    expect(screen.getByText("Entrar / Criar conta")).toBeInTheDocument();
   });
 
-  it("menu mobile: quando autenticado, mostra saudação e botão Sair que chama logout", async () => {
+  it("menu mobile: quando autenticado, mostra nome do usuário e botão Sair que chama logout", async () => {
     const u = userEvent.setup();
     const logout = vi.fn();
 
@@ -225,7 +239,7 @@ describe("Header (src/components/layout/Header.tsx)", () => {
 
     await u.click(screen.getByLabelText("Abrir menu"));
 
-    expect(screen.getByText(/Olá,/i)).toBeInTheDocument();
+    // Layout atual mostra o nome diretamente (sem "Olá,") + email opcional.
     expect(screen.getByText("Rick")).toBeInTheDocument();
 
     await u.click(screen.getByText("Sair"));

@@ -84,11 +84,67 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
   let restoreFormData: ReturnType<typeof mockGlobalFormData>;
   let restoreObjectUrl: ReturnType<typeof mockObjectUrl>;
 
+  // O componente passou a carregar /api/admin/categorias no mount (useEffect).
+  // Isso conta como uma chamada de fetch que NAO faz parte do submit do form.
+  // Helper abaixo filtra essas chamadas auxiliares (categorias + CSRF prefetch)
+  // para que as assertions continuem cobrindo apenas o submit do produto.
+  function isProdutoFetchCall(url: unknown): boolean {
+    const u = String(url);
+    return u.includes("/api/admin/produtos");
+  }
+
+  function getProdutoFetchCalls() {
+    return fetchMock.mock.calls.filter(([u]) => isProdutoFetchCall(u));
+  }
+
   beforeEach(() => {
     fetchMock = mockGlobalFetch();
     restoreFormData = mockGlobalFormData();
     restoreObjectUrl = mockObjectUrl();
+    // Default: GET /api/admin/categorias retorna lista vazia para nao explodir
+    // o useEffect inicial. Testes que precisam de mock especifico sobrescrevem.
+    fetchMock.mockImplementation((url: string) => {
+      if (String(url).includes("/api/admin/categorias")) {
+        return Promise.resolve(
+          makeFetchResponse({
+            ok: true,
+            status: 200,
+            contentType: "application/json",
+            json: { ok: true, data: [] },
+          }),
+        );
+      }
+      return Promise.resolve(
+        makeFetchResponse({
+          ok: false,
+          status: 404,
+          contentType: "application/json",
+          json: { ok: false },
+        }),
+      );
+    });
     vi.clearAllMocks();
+    // Re-aplica o defaultImplementation depois do clearAllMocks
+    fetchMock.mockImplementation((url: string) => {
+      if (String(url).includes("/api/admin/categorias")) {
+        return Promise.resolve(
+          makeFetchResponse({
+            ok: true,
+            status: 200,
+            contentType: "application/json",
+            json: { ok: true, data: [] },
+          }),
+        );
+      }
+      return Promise.resolve(
+        makeFetchResponse({
+          ok: false,
+          status: 404,
+          contentType: "application/json",
+          json: { ok: false },
+        }),
+      );
+    });
   });
 
   afterEach(() => {
@@ -115,7 +171,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     await submitForm();
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getProdutoFetchCalls()).toHaveLength(0);
     expect(screen.getByText("Informe o nome do produto.")).toBeInTheDocument();
   });
 
@@ -126,7 +182,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     await submitForm();
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getProdutoFetchCalls()).toHaveLength(0);
     expect(screen.getByText("Selecione uma categoria.")).toBeInTheDocument();
   });
 
@@ -151,7 +207,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     await submitForm();
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getProdutoFetchCalls()).toHaveLength(0);
     expect(screen.getByText("Informe um preço válido.")).toBeInTheDocument();
   });
 
@@ -185,7 +241,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     await submitForm();
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getProdutoFetchCalls()).toHaveLength(0);
     expect(
       screen.getByText(
         "Frete grátis por quantidade: informe um número válido (ex: 10).",
@@ -210,23 +266,42 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
       shipping_prazo_dias: 4,
     };
 
-    fetchMock.mockResolvedValueOnce(
-      makeFetchResponse({
-        ok: true,
-        status: 200,
-        contentType: "application/json",
-        json: { token: "test-token" },
-      }),
-    );
-
-    fetchMock.mockResolvedValueOnce(
-      makeFetchResponse({
-        ok: true,
-        status: 200,
-        contentType: "application/json",
-        json: { ok: true },
-      }),
-    );
+    // Sobrescreve o default mock: trata categorias + CSRF + PUT explicitamente.
+    // Endpoints:
+    //   - GET /api/admin/categorias (mount) -> lista vazia
+    //   - GET /api/csrf-token (apiClient prefetch antes do PUT) -> token
+    //   - PUT /api/admin/produtos/99 -> ok
+    fetchMock.mockImplementation((url: string) => {
+      const u = String(url);
+      if (u.includes("/api/admin/categorias")) {
+        return Promise.resolve(
+          makeFetchResponse({
+            ok: true,
+            status: 200,
+            contentType: "application/json",
+            json: { ok: true, data: [] },
+          }),
+        );
+      }
+      if (u.includes("/api/csrf-token")) {
+        return Promise.resolve(
+          makeFetchResponse({
+            ok: true,
+            status: 200,
+            contentType: "application/json",
+            json: { csrfToken: "test-token" },
+          }),
+        );
+      }
+      return Promise.resolve(
+        makeFetchResponse({
+          ok: true,
+          status: 200,
+          contentType: "application/json",
+          json: { ok: true },
+        }),
+      );
+    });
 
     render(
       <ProdutoForm
@@ -258,13 +333,19 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     await submitForm();
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // Apenas 1 chamada para /api/admin/produtos (o PUT do submit).
+    // As outras (categorias do mount + CSRF prefetch) sao auxiliares.
+    const produtoCalls = getProdutoFetchCalls();
+    expect(produtoCalls).toHaveLength(1);
 
-    const [csrfUrl] = fetchMock.mock.calls[0];
-    expect(csrfUrl).toBe("http://localhost:5000/api/csrf-token");
+    const csrfCall = fetchMock.mock.calls.find(([u]) =>
+      String(u).includes("/api/csrf-token"),
+    );
+    expect(csrfCall).toBeDefined();
 
-    const [url, init] = fetchMock.mock.calls[1];
-    expect(url).toBe("http://localhost:5000/api/admin/produtos/99");
+    const [url, init] = produtoCalls[0];
+    // No browser, apiClient usa path relativo (proxy via rewrite do Next).
+    expect(url).toBe("/api/admin/produtos/99");
     expect(init?.method).toBe("PUT");
     expect(init?.credentials).toBe("include");
 
@@ -301,14 +382,38 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
       category_id: 2,
     };
 
-    fetchMock.mockResolvedValueOnce(
-      makeFetchResponse({
-        ok: false,
-        status: 403,
-        contentType: "application/json",
-        json: { message: "Sem permissão (RBAC)" },
-      }),
-    );
+    // Sobrescreve o default: categorias + CSRF passam, PUT retorna 403.
+    fetchMock.mockImplementation((url: string) => {
+      const u = String(url);
+      if (u.includes("/api/admin/categorias")) {
+        return Promise.resolve(
+          makeFetchResponse({
+            ok: true,
+            status: 200,
+            contentType: "application/json",
+            json: { ok: true, data: [] },
+          }),
+        );
+      }
+      if (u.includes("/api/csrf-token")) {
+        return Promise.resolve(
+          makeFetchResponse({
+            ok: true,
+            status: 200,
+            contentType: "application/json",
+            json: { csrfToken: "test-token" },
+          }),
+        );
+      }
+      return Promise.resolve(
+        makeFetchResponse({
+          ok: false,
+          status: 403,
+          contentType: "application/json",
+          json: { message: "Sem permissão (RBAC)" },
+        }),
+      );
+    });
 
     render(
       <ProdutoForm
@@ -324,7 +429,8 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     await submitForm();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // 1 chamada para /api/admin/produtos (o PUT que retornou 403).
+    expect(getProdutoFetchCalls()).toHaveLength(1);
     expect(await screen.findByText("Sem permissão (RBAC)")).toBeInTheDocument();
   });
 
@@ -400,7 +506,7 @@ describe("ProdutoForm (components/admin/ProdutoForm.tsx)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Limpar" }));
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getProdutoFetchCalls()).toHaveLength(0);
     expect(getInputByPlaceholder("Ex.: Ração Premium 10kg").value).toBe("");
     expect(getInputByPlaceholder("Ex.: 200,00").value).toBe("");
     expect(getInputByPlaceholder("Ex.: 10").value).toBe("");

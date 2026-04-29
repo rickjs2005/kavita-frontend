@@ -442,30 +442,30 @@ export default function AnalyticsClient() {
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={data.leadsByDay}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#292524" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-stone-grid)" />
                     <XAxis
                       dataKey="day"
-                      tick={{ fill: "#a8a29e", fontSize: 11 }}
+                      tick={{ fill: "var(--color-chart-stone-tick)", fontSize: 11 }}
                       tickFormatter={(v) => String(v).slice(5)}
                     />
                     <YAxis
-                      tick={{ fill: "#a8a29e", fontSize: 11 }}
+                      tick={{ fill: "var(--color-chart-stone-tick)", fontSize: 11 }}
                       allowDecimals={false}
                     />
                     <Tooltip
                       contentStyle={{
-                        background: "#1c1917",
-                        border: "1px solid #44403c",
+                        background: "var(--color-panel-stone-bg)",
+                        border: "1px solid var(--color-chart-stone-border)",
                         borderRadius: 8,
                         fontSize: 12,
-                        color: "#f5f5f4",
+                        color: "var(--color-panel-stone-text)",
                       }}
-                      labelStyle={{ color: "#d6d3d1" }}
+                      labelStyle={{ color: "var(--color-panel-stone-muted)" }}
                     />
                     <Line
                       type="monotone"
                       dataKey="total"
-                      stroke="#fbbf24"
+                      stroke="var(--color-chart-line-amber-soft)"
                       strokeWidth={2}
                       dot={false}
                     />

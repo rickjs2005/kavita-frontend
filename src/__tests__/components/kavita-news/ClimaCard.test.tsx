@@ -4,24 +4,30 @@ import { render, screen } from "@testing-library/react";
 import type { PublicClima } from "@/lib/newsPublicApi";
 import { ClimaCard } from "@/components/news/ClimaCard";
 
-// Mock de next/link para virar <a> no jsdom
-vi.mock("next/link", () => {
-  return {
-    default: ({
-      href,
-      children,
-      ...props
-    }: {
-      href: string;
-      children: React.ReactNode;
-      [key: string]: any;
-    }) => (
-      <a href={href} {...props}>
-        {children}
-      </a>
-    ),
-  };
-});
+// ClimaCard foi reescrito para layout dark-glass com accent sky-400.
+// Mudanças relevantes nos textos/contratos:
+//   - Eyebrow virou "Monitoramento de chuva" (sem o sufixo "(24h e 7 dias).")
+//   - Pill "Ao vivo" + chip de fonte (em vez de "Atualização contínua")
+//   - CTA virou "Detalhes" (em vez de "Ver detalhes")
+//   - formatMm usa toFixed(1) e fallback "—" (em-dash unicode), nao "-"
+//   - Rodapé virou "Atualizado <data>" (sem ":") ou "Indisponível"
+//   - Nao ha mais texto "Fonte: X"; source aparece como pill independente
+
+vi.mock("next/link", () => ({
+  default: ({
+    href,
+    children,
+    ...props
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: any;
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
 
 function makeItem(partial: Partial<PublicClima> = {}): PublicClima {
   return {
@@ -46,101 +52,73 @@ describe("ClimaCard", () => {
     vi.restoreAllMocks();
   });
 
-  it("deve renderizar link com href e aria-label corretos (positivo)", () => {
-    const item = makeItem({
-      city_name: "Matipó",
-      uf: "MG",
-      slug: "matipo",
-    });
-
+  it("renderiza link com href e aria-label corretos", () => {
+    const item = makeItem({ city_name: "Matipó", uf: "MG", slug: "matipo" });
     render(<ClimaCard item={item} />);
 
     const link = screen.getByRole("link", {
       name: "Ver detalhes do clima em Matipó-MG",
     });
-
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/news/clima/matipo");
-
-    // Conteúdo principal (robusto contra texto "quebrado" por spans/whitespace)
     expect(link.textContent).toContain("Matipó");
     expect(link.textContent).toContain("MG");
-
-    expect(
-      screen.getByText("Monitoramento de chuva (24h e 7 dias)."),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Atualização contínua")).toBeInTheDocument();
-    expect(screen.getByText("Ver detalhes")).toBeInTheDocument();
+    // Eyebrow + CTA do rodape.
+    expect(screen.getByText("Monitoramento de chuva")).toBeInTheDocument();
+    expect(screen.getByText("Detalhes")).toBeInTheDocument();
   });
 
-  it("deve formatar mm (numérico) com 2 casas decimais e exibir unidade mm (positivo)", () => {
-    const item = makeItem({
-      mm_24h: 0.2 as any,
-      mm_7d: "101.1" as any,
-    });
-
+  it("formata mm (numérico) com 1 casa decimal e exibe unidade mm", () => {
+    const item = makeItem({ mm_24h: 0.2 as any, mm_7d: "101.1" as any });
     render(<ClimaCard item={item} />);
 
     expect(screen.getByText("24h")).toBeInTheDocument();
-    expect(screen.getByText("0.20")).toBeInTheDocument();
-
+    expect(screen.getByText("0.2")).toBeInTheDocument();
     expect(screen.getByText("7d")).toBeInTheDocument();
-    expect(screen.getByText("101.10")).toBeInTheDocument();
+    expect(screen.getByText("101.1")).toBeInTheDocument();
 
     const units = screen.getAllByText("mm");
     expect(units.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("deve renderizar '-' quando mm for null/undefined/string vazia (negativo)", () => {
-    const item = makeItem({
-      mm_24h: null as any,
-      mm_7d: "" as any,
-    });
-
+  it("renderiza fallback '—' quando mm for null/undefined/string vazia", () => {
+    const item = makeItem({ mm_24h: null as any, mm_7d: "" as any });
     render(<ClimaCard item={item} />);
-
-    const dashes = screen.getAllByText("-");
+    // Fallback agora e em-dash unicode "—" (single char), em vez de "-".
+    const dashes = screen.getAllByText("—");
     expect(dashes.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("deve renderizar string original quando mm for não-numérico (negativo)", () => {
-    const item = makeItem({
-      mm_24h: "N/A" as any,
-      mm_7d: "abc" as any,
-    });
-
+  it("renderiza string original quando mm for não-numérico", () => {
+    const item = makeItem({ mm_24h: "N/A" as any, mm_7d: "abc" as any });
     render(<ClimaCard item={item} />);
-
     expect(screen.getByText("N/A")).toBeInTheDocument();
     expect(screen.getByText("abc")).toBeInTheDocument();
   });
 
-  it("deve exibir 'Fonte: -' quando source estiver ausente (negativo)", () => {
-    const item = makeItem({ source: null as any });
-
-    render(<ClimaCard item={item} />);
-
-    expect(screen.getByText("Fonte: -")).toBeInTheDocument();
-  });
-
-  it("deve exibir 'Fonte: X' quando source estiver presente (positivo)", () => {
+  it("renderiza pill de fonte quando source estiver presente", () => {
     const item = makeItem({ source: "INMET" as any });
-
     render(<ClimaCard item={item} />);
-
-    expect(screen.getByText("Fonte: INMET")).toBeInTheDocument();
+    // Source agora vira chip standalone (sem prefixo "Fonte:").
+    expect(screen.getByText("INMET")).toBeInTheDocument();
   });
 
-  it("deve exibir 'Atualização: indisponível' quando last_update_at for vazio (negativo)", () => {
+  it("não renderiza pill de fonte quando source for ausente", () => {
+    const item = makeItem({ source: null as any });
+    render(<ClimaCard item={item} />);
+    // Pill "Ao vivo" continua, mas nao ha pill com nome de fonte.
+    expect(screen.getByText(/Ao vivo/i)).toBeInTheDocument();
+    // Garantia minima: nao ha texto literal "Fonte:".
+    expect(screen.queryByText(/Fonte:/i)).not.toBeInTheDocument();
+  });
+
+  it("exibe 'Indisponível' quando last_update_at for vazio", () => {
     const item = makeItem({ last_update_at: null as any });
-
     render(<ClimaCard item={item} />);
-
-    expect(screen.getByText("Atualização: indisponível")).toBeInTheDocument();
+    expect(screen.getByText("Indisponível")).toBeInTheDocument();
   });
 
-  it("deve exibir valor retornado por Intl.DateTimeFormat quando data for válida (positivo/controle estável)", () => {
-    // precisa ser "newable": use function, não arrow
+  it("exibe valor formatado por Intl.DateTimeFormat quando data válida", () => {
     const fmtSpy = vi
       .spyOn(Intl, "DateTimeFormat")
       .mockImplementation(function (this: any) {
@@ -148,18 +126,16 @@ describe("ClimaCard", () => {
       } as any);
 
     const item = makeItem({ last_update_at: "2025-12-19T13:31:51.000Z" });
-
     render(<ClimaCard item={item} />);
 
-    expect(screen.getByText("Atualizado: DATA_FORMATADA")).toBeInTheDocument();
+    // Texto: "Atualizado <data>" (sem ":" agora).
+    expect(screen.getByText(/Atualizado DATA_FORMATADA/)).toBeInTheDocument();
     expect(fmtSpy).toHaveBeenCalled();
   });
 
-  it("deve cair no fallback e exibir string original quando last_update_at for inválida (negativo)", () => {
+  it("cai no fallback e exibe string original quando last_update_at for inválida", () => {
     const item = makeItem({ last_update_at: "data-invalida" as any });
-
     render(<ClimaCard item={item} />);
-
-    expect(screen.getByText("Atualizado: data-invalida")).toBeInTheDocument();
+    expect(screen.getByText(/Atualizado data-invalida/)).toBeInTheDocument();
   });
 });

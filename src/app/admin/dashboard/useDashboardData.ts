@@ -36,7 +36,7 @@ export function useDashboardData({ handleUnauthorized, role }: Props) {
 
   const stableHandleUnauthorized = useCallback(
     handleUnauthorized,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     [],
   );
 

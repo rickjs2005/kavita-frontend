@@ -329,14 +329,16 @@ describe("CartCar", () => {
     // Se o componente passar a refletir desconto no total, aí sim adicionamos esse assert.
   });
 
-  it("applyDiscount: quando success=false, dispara toast.error e não altera total", async () => {
+  it("applyDiscount: quando preview retorna desconto=0 sem cupom, dispara toast.error genérico e não altera total", async () => {
     setCartItems([{ id: 1, name: "Produto A", quantity: 1, price: 100 }]);
     setAuth({ user: { id: 1 }, isAuthenticated: true });
 
-    H.apiClient.post.mockResolvedValueOnce({
-      success: false,
-      message: "Cupom inválido.",
-    });
+    // O CartCar foi refatorado: ele nao mais le `data.success` /
+    // `data.message` do envelope. Em vez disso, verifica desconto>0
+    // OU presença de cupom; se faltar ambos, mostra mensagem generica
+    // ("Não foi possível aplicar este cupom."). O message do backend
+    // só é exibido em caso de exceção (rejected promise).
+    H.apiClient.post.mockResolvedValueOnce({ desconto: 0 });
 
     await renderCartAndReady();
 
@@ -346,7 +348,9 @@ describe("CartCar", () => {
     fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
 
     await waitFor(() =>
-      expect(H.toast.error).toHaveBeenCalledWith("Cupom inválido."),
+      expect(H.toast.error).toHaveBeenCalledWith(
+        "Não foi possível aplicar este cupom.",
+      ),
     );
     expect(
       screen.getAllByText(moneyRegex("R$ 100,00")).length,

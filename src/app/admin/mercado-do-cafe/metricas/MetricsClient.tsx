@@ -271,29 +271,29 @@ export default function MetricsClient() {
               <div className="mt-3 h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={data.leadsByDay}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" />
                     <XAxis
                       dataKey="day"
-                      tick={{ fill: "#94a3b8", fontSize: 11 }}
+                      tick={{ fill: "var(--color-chart-tick)", fontSize: 11 }}
                       tickFormatter={(v) => String(v).slice(5)}
                     />
                     <YAxis
-                      tick={{ fill: "#94a3b8", fontSize: 11 }}
+                      tick={{ fill: "var(--color-chart-tick)", fontSize: 11 }}
                       allowDecimals={false}
                     />
                     <Tooltip
                       contentStyle={{
-                        background: "#0f172a",
-                        border: "1px solid #1e293b",
+                        background: "var(--color-dark-600)",
+                        border: "1px solid var(--color-chart-grid)",
                         borderRadius: 8,
                         fontSize: 12,
                       }}
-                      labelStyle={{ color: "#cbd5e1" }}
+                      labelStyle={{ color: "var(--color-chart-tooltip-text)" }}
                     />
                     <Line
                       type="monotone"
                       dataKey="total"
-                      stroke="#f59e0b"
+                      stroke="var(--color-chart-line-amber)"
                       strokeWidth={2}
                       dot={false}
                     />

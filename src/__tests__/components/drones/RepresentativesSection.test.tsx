@@ -1,23 +1,22 @@
 // src/__tests__/components/drones/RepresentativesSection.test.tsx
 //
-// Risco: RepresentativesSection é o único ponto de busca paginada de
-// representantes. Construção errada do link WhatsApp ou falha na busca sem
-// feedback ao usuário deixam clientes sem canal de contato.
+// Componente reescrito para layout editorial (cards premium com avatar
+// de iniciais, badge "Autorizada", CTA "WhatsApp" + ícone Instagram).
+// Os testes abaixo refletem a UI/copy atual; intenção mantida.
 //
-// O que está sendo coberto:
-//   - Renderização de representantes via prop (SSR inicial)
-//   - Estado vazio sem representantes e sem busca
-//   - Nome, cidade/UF, WhatsApp, CNPJ de cada card
-//   - Link "Falar no WhatsApp" com href correto
-//   - Link Instagram quando instagram_url é válido
-//   - Sem link Instagram quando instagram_url é null
-//   - notes exibido quando presente
-//   - Campo de busca e botão "Buscar" presentes
-//   - Buscar aciona GET /api/public/drones/representantes com query params
-//   - Erro de busca exibe mensagem
-//   - Resultado de busca substitui lista da prop
-//   - Paginação visível quando totalPages > 1 após busca
-//   - Paginação ausente quando totalPages = 1
+// Cobertura:
+//   - Renderização de representantes via prop
+//   - Estado vazio sem busca
+//   - Nome, cidade/UF, telefone formatado, CNPJ
+//   - Link WhatsApp com href wa.me + cta_message_template no payload
+//   - Instagram link presente quando URL valida; ausente quando null/javascript:
+//   - Campo de busca + botão Buscar presentes
+//   - Buscar dispara GET /api/public/drones/representantes com page=1
+//   - Termo de busca incluído no GET
+//   - Resultado substitui lista da prop
+//   - Erro do GET vira mensagem
+//   - Estado loading: botão "Buscando…" desabilitado
+//   - Paginação visivel quando totalPages > 1; ausente quando = 1
 
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -34,8 +33,6 @@ vi.mock("@/lib/apiClient", () => ({
     get: (...args: unknown[]) => mockGet(...args),
   },
 }));
-
-// sanitizeUrl é determinístico — não precisa de mock
 
 // ---- Fixtures --------------------------------------------------------------
 
@@ -95,6 +92,9 @@ function pagedResp(
   };
 }
 
+// O placeholder usa reticencias unicode "…" (single char) em vez de "...".
+const SEARCH_PLACEHOLDER = /^Buscar por nome, cidade ou UF/i;
+
 // ---- Tests -----------------------------------------------------------------
 
 describe("RepresentativesSection", () => {
@@ -103,22 +103,26 @@ describe("RepresentativesSection", () => {
   });
 
   describe("estrutura básica", () => {
-    it("renderiza heading 'Representantes'", () => {
+    it("renderiza heading editorial 'Fale direto com uma loja autorizada'", () => {
       render(<RepresentativesSection page={makePage()} representatives={[]} />);
-      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Representantes");
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+        /loja autorizada/i,
+      );
     });
 
     it("campo de busca e botão 'Buscar' estão presentes", () => {
       render(<RepresentativesSection page={makePage()} representatives={[]} />);
       expect(
-        screen.getByPlaceholderText("Buscar por nome, cidade ou UF..."),
+        screen.getByPlaceholderText(SEARCH_PLACEHOLDER),
       ).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Buscar" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Buscar" }),
+      ).toBeInTheDocument();
     });
   });
 
   describe("renderização de cards (prop inicial)", () => {
-    it("exibe nome e badge 'Loja autorizada' do representante", () => {
+    it("exibe nome e badge 'Autorizada' do representante", () => {
       render(
         <RepresentativesSection
           page={makePage()}
@@ -126,20 +130,31 @@ describe("RepresentativesSection", () => {
         />,
       );
       expect(screen.getByText("Agro Norte")).toBeInTheDocument();
-      expect(screen.getByText("Loja autorizada")).toBeInTheDocument();
+      // O selo "Autorizada" aparece em mais de um lugar (badge superior +
+      // tooltip title). getAllByText evita ambiguidade.
+      const selos = screen.getAllByText(/Autorizada/i);
+      expect(selos.length).toBeGreaterThanOrEqual(1);
     });
 
-    it("exibe cidade, UF, WhatsApp e CNPJ", () => {
+    it("exibe cidade/UF, telefone formatado e CNPJ", () => {
       render(
         <RepresentativesSection
           page={makePage()}
           representatives={[
-            makeRep({ address_city: "Curitiba", address_uf: "PR", whatsapp: "41999990000", cnpj: "12.345.678/0001-99" }),
+            makeRep({
+              address_city: "Curitiba",
+              address_uf: "PR",
+              whatsapp: "41999990000",
+              cnpj: "12.345.678/0001-99",
+            }),
           ]}
         />,
       );
-      expect(screen.getByText(/Curitiba.*PR/)).toBeInTheDocument();
-      expect(screen.getByText(/41999990000/)).toBeInTheDocument();
+      // Cidade e UF aparecem juntos com separador "/".
+      expect(screen.getByText(/Curitiba\s*\/\s*PR/i)).toBeInTheDocument();
+      // Telefone agora e formatado: (41) 99999-0000
+      expect(screen.getByText(/\(41\) 99999-0000/)).toBeInTheDocument();
+      // CNPJ exibido cru.
       expect(screen.getByText(/12\.345\.678/)).toBeInTheDocument();
     });
 
@@ -153,14 +168,15 @@ describe("RepresentativesSection", () => {
       expect(screen.getByText("Atende por agendamento.")).toBeInTheDocument();
     });
 
-    it("link 'Falar no WhatsApp' contém href com wa.me e telefone", () => {
+    it("link 'WhatsApp' contém href com wa.me e telefone", () => {
       render(
         <RepresentativesSection
           page={makePage()}
           representatives={[makeRep({ whatsapp: "21988887777" })]}
         />,
       );
-      const link = screen.getByRole("link", { name: "Falar no WhatsApp" });
+      // O CTA agora se chama apenas "WhatsApp" (icone + texto).
+      const link = screen.getByRole("link", { name: /WhatsApp/i });
       expect(link.getAttribute("href")).toContain("wa.me/5521988887777");
     });
 
@@ -171,7 +187,7 @@ describe("RepresentativesSection", () => {
           representatives={[makeRep({ whatsapp: "11900000000" })]}
         />,
       );
-      const link = screen.getByRole("link", { name: "Falar no WhatsApp" });
+      const link = screen.getByRole("link", { name: /WhatsApp/i });
       expect(link.getAttribute("href")).toContain(
         encodeURIComponent("Olá! Interesse em drones."),
       );
@@ -182,14 +198,16 @@ describe("RepresentativesSection", () => {
         <RepresentativesSection
           page={makePage()}
           representatives={[
-            makeRep({ instagram_url: "https://instagram.com/kavita_agro" }),
+            makeRep({
+              instagram_url: "https://instagram.com/kavita_agro",
+              name: "Loja XYZ",
+            }),
           ]}
         />,
       );
-      // Dois links Instagram aparecem (info + botão)
-      const links = screen.getAllByRole("link", { name: "Instagram" });
-      expect(links.length).toBeGreaterThanOrEqual(1);
-      expect(links[0].getAttribute("href")).toBe(
+      // O botao do Instagram virou icon-only com aria-label "Instagram de <nome>".
+      const link = screen.getByRole("link", { name: /Instagram de Loja XYZ/i });
+      expect(link.getAttribute("href")).toBe(
         "https://instagram.com/kavita_agro",
       );
     });
@@ -198,29 +216,34 @@ describe("RepresentativesSection", () => {
       render(
         <RepresentativesSection
           page={makePage()}
-          representatives={[makeRep({ instagram_url: null })]}
+          representatives={[makeRep({ instagram_url: null, name: "Loja X" })]}
         />,
       );
-      expect(screen.queryByRole("link", { name: "Instagram" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("link", { name: /Instagram de Loja X/i }),
+      ).not.toBeInTheDocument();
     });
 
     it("NÃO exibe link Instagram para URL javascript: (XSS bloqueado)", () => {
       render(
         <RepresentativesSection
           page={makePage()}
-          // eslint-disable-next-line no-script-url
-          representatives={[makeRep({ instagram_url: "javascript:alert(1)" })]}
+          representatives={[
+            makeRep({ instagram_url: "javascript:alert(1)", name: "Loja X" }),
+          ]}
         />,
       );
-      expect(screen.queryByRole("link", { name: "Instagram" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("link", { name: /Instagram de Loja X/i }),
+      ).not.toBeInTheDocument();
     });
   });
 
   describe("estado vazio", () => {
-    it("exibe 'Nenhum representante encontrado.' quando lista está vazia", () => {
+    it("exibe 'Nenhum representante encontrado' quando lista está vazia", () => {
       render(<RepresentativesSection page={makePage()} representatives={[]} />);
       expect(
-        screen.getByText("Nenhum representante encontrado."),
+        screen.getByText(/Nenhum representante encontrado/i),
       ).toBeInTheDocument();
     });
 
@@ -232,7 +255,7 @@ describe("RepresentativesSection", () => {
         />,
       );
       expect(
-        screen.queryByText("Nenhum representante encontrado."),
+        screen.queryByText(/Nenhum representante encontrado/i),
       ).not.toBeInTheDocument();
     });
   });
@@ -253,10 +276,9 @@ describe("RepresentativesSection", () => {
       mockGet.mockResolvedValue(pagedResp([]));
       render(<RepresentativesSection page={makePage()} representatives={[]} />);
 
-      fireEvent.change(
-        screen.getByPlaceholderText("Buscar por nome, cidade ou UF..."),
-        { target: { value: "Goiânia" } },
-      );
+      fireEvent.change(screen.getByPlaceholderText(SEARCH_PLACEHOLDER), {
+        target: { value: "Goiânia" },
+      });
       fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
 
       await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(1));
@@ -293,15 +315,18 @@ describe("RepresentativesSection", () => {
       );
     });
 
-    it("botão mostra 'Buscando...' e fica desabilitado durante GET", async () => {
+    it("botão mostra 'Buscando…' e fica desabilitado durante GET", async () => {
       let resolveGet!: (v: unknown) => void;
       mockGet.mockReturnValueOnce(new Promise((res) => { resolveGet = res; }));
 
       render(<RepresentativesSection page={makePage()} representatives={[]} />);
       fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
 
+      // Reticencias unicode "…" (single char) — nao "..."
       await waitFor(() =>
-        expect(screen.getByRole("button", { name: "Buscando..." })).toBeDisabled(),
+        expect(
+          screen.getByRole("button", { name: /Buscando…/ }),
+        ).toBeDisabled(),
       );
 
       resolveGet(pagedResp([]));
@@ -317,10 +342,16 @@ describe("RepresentativesSection", () => {
       fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
 
       await waitFor(() =>
-        expect(screen.getByText(/Página 1 de 3/)).toBeInTheDocument(),
+        expect(screen.getByText(/Página/i)).toBeInTheDocument(),
       );
-      expect(screen.getByRole("button", { name: "Próxima" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Anterior" })).toBeDisabled();
+      // O label "Página 1 de 3" e montado com elementos aninhados (spans).
+      // Provamos a paginacao funcional via o botao Proxima e o estado do Anterior.
+      expect(
+        screen.getByRole("button", { name: /Próxima/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Anterior/i }),
+      ).toBeDisabled();
     });
 
     it("NÃO exibe paginação quando totalPages = 1", async () => {
@@ -329,9 +360,12 @@ describe("RepresentativesSection", () => {
 
       fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
 
-      await waitFor(() =>
-        expect(screen.queryByText(/Página/)).not.toBeInTheDocument(),
-      );
+      await waitFor(() => expect(mockGet).toHaveBeenCalled());
+      // Garante que o botao Proxima nao aparece (proxy mais robusto que
+      // procurar texto "Página", que pode aparecer em outros contextos).
+      expect(
+        screen.queryByRole("button", { name: /Próxima/i }),
+      ).not.toBeInTheDocument();
     });
 
     it("NÃO exibe paginação antes de qualquer busca (lista vem da prop)", () => {
@@ -341,7 +375,9 @@ describe("RepresentativesSection", () => {
           representatives={[makeRep()]}
         />,
       );
-      expect(screen.queryByText(/Página/)).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /Próxima/i }),
+      ).not.toBeInTheDocument();
     });
   });
 });

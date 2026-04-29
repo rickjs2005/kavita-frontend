@@ -30,8 +30,8 @@ export default function GlobalError({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "#0b1220",
-            color: "#e2e8f0",
+            background: "var(--color-error-bg)",
+            color: "var(--color-error-text)",
             fontFamily: "system-ui, -apple-system, sans-serif",
             padding: "2rem",
           }}
@@ -40,7 +40,7 @@ export default function GlobalError({
             <h2 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.75rem" }}>
               Algo deu errado
             </h2>
-            <p style={{ fontSize: "0.875rem", color: "#94a3b8", marginBottom: "1.5rem" }}>
+            <p style={{ fontSize: "0.875rem", color: "var(--color-error-muted)", marginBottom: "1.5rem" }}>
               Já registramos o erro e vamos investigar. Tente recarregar a página.
             </p>
             <button
@@ -48,7 +48,7 @@ export default function GlobalError({
               onClick={() => window.location.reload()}
               style={{
                 padding: "0.625rem 1.25rem",
-                background: "#10b981",
+                background: "var(--color-error-action)",
                 color: "white",
                 fontWeight: 700,
                 borderRadius: "0.75rem",

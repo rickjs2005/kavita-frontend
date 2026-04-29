@@ -88,38 +88,40 @@ describe("src/lib/api/newsPublicApi.ts", () => {
   // OVERVIEW
   // ===============================
 
+  // O apiClient passou a desempacotar automaticamente o envelope
+  // `{ ok: true, data: ... }` — ver `apiRequest` em src/lib/apiClient.ts.
+  // Por isso o mock devolve direto o que o service consome (array).
+  // E o `overview` retorna PublicOverview puro (sem envelope) — os
+  // metadados foram removidos quando o service estabilizou.
+
   it("overview deve agregar clima + cotacoes + posts corretamente", async () => {
     mockGet
-      .mockResolvedValueOnce({ ok: true, data: [{ id: 1 }] }) // clima
-      .mockResolvedValueOnce({ ok: true, data: [{ id: 2 }] }) // cotacoes
-      .mockResolvedValueOnce({ ok: true, data: [{ id: 3 }] }); // posts
+      .mockResolvedValueOnce([{ id: 1 }]) // clima (ja unwrapped)
+      .mockResolvedValueOnce([{ id: 2 }]) // cotacoes
+      .mockResolvedValueOnce([{ id: 3 }]); // posts
 
     const result = await newsPublicApi.overview(6, "soja");
 
     expect(result).toEqual({
-      ok: true,
-      data: {
-        clima: [{ id: 1 }],
-        cotacoes: [{ id: 2 }],
-        posts: [{ id: 3 }],
-      },
-      meta: {
-        postsLimit: 6,
-        groupKey: "soja",
-      },
+      clima: [{ id: 1 }],
+      cotacoes: [{ id: 2 }],
+      posts: [{ id: 3 }],
     });
   });
 
-  it("overview deve tratar data undefined como []", async () => {
+  it("overview deve tratar resposta nao-array como []", async () => {
+    // Quando o backend retorna algo que nao e array (envelope antigo,
+    // erro silencioso, etc.), os helpers caem para [] — defesa em
+    // profundidade contra regressao no contrato.
     mockGet
-      .mockResolvedValueOnce({ ok: true }) // clima sem data
-      .mockResolvedValueOnce({ ok: true }) // cotacoes
-      .mockResolvedValueOnce({ ok: true }); // posts
+      .mockResolvedValueOnce(null) // clima
+      .mockResolvedValueOnce(undefined) // cotacoes
+      .mockResolvedValueOnce({ unexpected: "shape" }); // posts
 
     const result = await newsPublicApi.overview();
 
-    expect(result.data.clima).toEqual([]);
-    expect(result.data.cotacoes).toEqual([]);
-    expect(result.data.posts).toEqual([]);
+    expect(result.clima).toEqual([]);
+    expect(result.cotacoes).toEqual([]);
+    expect(result.posts).toEqual([]);
   });
 });
