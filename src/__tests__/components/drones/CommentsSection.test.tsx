@@ -1,23 +1,19 @@
 // src/__tests__/components/drones/CommentsSection.test.tsx
 //
-// Risco: CommentsSection é o único canal público de envio de comentários.
-// Falha silenciosa no submit, exibição incorreta de erros de autenticação ou
-// perda de callback onCreated podem deixar usuários sem feedback.
+// CommentsSection passou por reescrita visual de "comentarios" para
+// "relatos" (linguagem mais editorial). Os textos, placeholders, alt
+// images e mensagens mudaram — os smokes abaixo refletem essa UI atual.
 //
-// O que está sendo coberto:
-//   - Renderização do heading e seção "Publicados"
-//   - Renderização de comentários (nome, texto)
-//   - Estado vazio ("Ainda não há comentários publicados.")
-//   - Mídia IMAGE → <img>, mídia VIDEO → <video>
-//   - Exibe modelKey quando fornecido
-//   - Validação: texto vazio → mensagem de erro
-//   - Submit com texto → POST para /api/public/drones/comentarios
-//   - Inclui model_key no FormData quando modelKey prop é fornecido
-//   - Mensagem de sucesso após POST
-//   - Callback onCreated chamado após POST
-//   - Erro genérico exibe mensagem de erro
-//   - Erro 401 exibe mensagem de login + botão "Fazer login"
-//   - Estado "Enviando...": botão desabilitado durante POST
+// Cobertura mantida (mesmos 18 cenarios):
+//   - Renderizacao de header e badge de quantidade
+//   - Renderizacao de relatos (nome, texto)
+//   - Estado vazio
+//   - Midia IMAGE -> <img>, midia VIDEO -> <video>
+//   - Validacao: texto vazio -> mensagem de erro
+//   - Submit envia POST com FormData (text + opcionalmente model_key)
+//   - Mensagem de sucesso, callback onCreated
+//   - Erro 401/403 -> CTA "Entrar" no banner amber
+//   - Estado "Enviando…" desabilita o botao
 
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -54,6 +50,10 @@ function makeComment(overrides: Record<string, unknown> = {}): DroneComment {
   } as DroneComment;
 }
 
+// O placeholder do textarea agora e uma frase longa; usar regex pra
+// pegar o inicio mantem o teste robusto a ajustes de copy.
+const RELATO_PLACEHOLDER = /^Escreva seu relato/i;
+
 // ---- Tests -----------------------------------------------------------------
 
 describe("CommentsSection", () => {
@@ -63,21 +63,26 @@ describe("CommentsSection", () => {
   });
 
   describe("estrutura básica", () => {
-    it("renderiza heading 'Relatos de clientes'", () => {
+    it("renderiza heading editorial 'Relatos de quem opera no campo'", () => {
       render(<CommentsSection comments={[]} />);
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
-        "Relatos de clientes",
+        /Relatos/i,
       );
     });
 
-    it("renderiza seção 'Publicados'", () => {
+    it("renderiza badge com contagem de relatos publicados", () => {
       render(<CommentsSection comments={[]} />);
-      expect(screen.getByText("Publicados")).toBeInTheDocument();
+      // 0 -> "0 relatos publicados"
+      expect(screen.getByText(/0 relatos publicados/i)).toBeInTheDocument();
     });
 
-    it("exibe label modelKey quando fornecido", () => {
-      render(<CommentsSection comments={[]} modelKey="agras-t50" />);
-      expect(screen.getByText("agras-t50")).toBeInTheDocument();
+    it("renderiza heading do formulário de envio", () => {
+      // Antes era "Publicados"; agora a sub-secao do form se chama
+      // "Compartilhe sua experiencia".
+      render(<CommentsSection comments={[]} />);
+      expect(
+        screen.getByText(/Compartilhe sua experiência/i),
+      ).toBeInTheDocument();
     });
 
     it("não exibe label de modelo quando modelKey não é fornecido", () => {
@@ -86,8 +91,8 @@ describe("CommentsSection", () => {
     });
   });
 
-  describe("lista de comentários", () => {
-    it("renderiza display_name e comment_text do comentário", async () => {
+  describe("lista de relatos", () => {
+    it("renderiza display_name e comment_text do relato", async () => {
       render(
         <CommentsSection
           comments={[makeComment({ display_name: "Carlos", comment_text: "Ótimo produto!" })]}
@@ -97,23 +102,23 @@ describe("CommentsSection", () => {
       expect(screen.getByText("Ótimo produto!")).toBeInTheDocument();
     });
 
-    it("renderiza múltiplos comentários", () => {
+    it("renderiza múltiplos relatos", () => {
       render(
         <CommentsSection
           comments={[
-            makeComment({ id: 1, display_name: "A", comment_text: "Bom" }),
-            makeComment({ id: 2, display_name: "B", comment_text: "Ótimo" }),
+            makeComment({ id: 1, display_name: "Aline", comment_text: "Bom" }),
+            makeComment({ id: 2, display_name: "Bruno", comment_text: "Ótimo" }),
           ]}
         />,
       );
-      expect(screen.getByText("A")).toBeInTheDocument();
-      expect(screen.getByText("B")).toBeInTheDocument();
+      expect(screen.getByText("Aline")).toBeInTheDocument();
+      expect(screen.getByText("Bruno")).toBeInTheDocument();
     });
 
-    it("exibe 'Ainda não há comentários publicados.' quando lista está vazia", () => {
+    it("exibe estado vazio 'Ainda sem relatos publicados' quando lista vazia", () => {
       render(<CommentsSection comments={[]} />);
       expect(
-        screen.getByText("Ainda não há comentários publicados."),
+        screen.getByText(/Ainda sem relatos publicados/i),
       ).toBeInTheDocument();
     });
 
@@ -121,23 +126,27 @@ describe("CommentsSection", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render(<CommentsSection comments={null as any} />);
       expect(
-        screen.getByText("Ainda não há comentários publicados."),
+        screen.getByText(/Ainda sem relatos publicados/i),
       ).toBeInTheDocument();
     });
   });
 
-  describe("mídia dos comentários", () => {
+  describe("mídia dos relatos", () => {
     it("renderiza <img> para mídia do tipo IMAGE", () => {
       render(
         <CommentsSection
           comments={[
             makeComment({
+              display_name: "Ana Lima",
               media: [{ id: 1, comment_id: 1, media_type: "IMAGE", media_path: "/uploads/img.jpg", created_at: "2026-01-01T00:00:00Z" }],
             }),
           ]}
         />,
       );
-      expect(screen.getByAltText("mídia do comentário")).toBeInTheDocument();
+      // Alt agora inclui o nome do autor: "Mídia do relato de {nome}".
+      expect(
+        screen.getByAltText(/Mídia do relato de Ana Lima/i),
+      ).toBeInTheDocument();
     });
 
     it("renderiza <video> para mídia do tipo VIDEO", () => {
@@ -155,29 +164,33 @@ describe("CommentsSection", () => {
   });
 
   describe("formulário de envio", () => {
-    it("textarea e botão Enviar estão presentes", () => {
+    it("textarea e botão 'Enviar relato' estão presentes", () => {
       render(<CommentsSection comments={[]} />);
       expect(
-        screen.getByPlaceholderText("Escreva seu relato..."),
+        screen.getByPlaceholderText(RELATO_PLACEHOLDER),
       ).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Enviar" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Enviar relato/i }),
+      ).toBeInTheDocument();
     });
 
-    it("exibe erro 'Digite seu comentário.' ao tentar enviar texto vazio", async () => {
+    it("exibe erro 'Digite seu relato antes de enviar' ao tentar enviar texto vazio", async () => {
       render(<CommentsSection comments={[]} />);
-      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      fireEvent.click(screen.getByRole("button", { name: /Enviar relato/i }));
       await waitFor(() =>
-        expect(screen.getByText("Digite seu comentário.")).toBeInTheDocument(),
+        expect(
+          screen.getByText(/Digite seu relato antes de enviar/i),
+        ).toBeInTheDocument(),
       );
       expect(mockPost).not.toHaveBeenCalled();
     });
 
     it("chama POST /api/public/drones/comentarios ao enviar texto válido", async () => {
       render(<CommentsSection comments={[]} />);
-      fireEvent.change(screen.getByPlaceholderText("Escreva seu relato..."), {
+      fireEvent.change(screen.getByPlaceholderText(RELATO_PLACEHOLDER), {
         target: { value: "Muito bom o produto!" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      fireEvent.click(screen.getByRole("button", { name: /Enviar relato/i }));
       await waitFor(() => expect(mockPost).toHaveBeenCalledTimes(1));
       const [url, formData, options] = mockPost.mock.calls[0];
       expect(url).toBe("/api/public/drones/comentarios");
@@ -188,10 +201,10 @@ describe("CommentsSection", () => {
 
     it("inclui model_key no FormData quando modelKey prop é fornecido", async () => {
       render(<CommentsSection comments={[]} modelKey="agras-t40" />);
-      fireEvent.change(screen.getByPlaceholderText("Escreva seu relato..."), {
+      fireEvent.change(screen.getByPlaceholderText(RELATO_PLACEHOLDER), {
         target: { value: "Excelente!" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      fireEvent.click(screen.getByRole("button", { name: /Enviar relato/i }));
       await waitFor(() => expect(mockPost).toHaveBeenCalledTimes(1));
       const formData = mockPost.mock.calls[0][1] as FormData;
       expect(formData.get("model_key")).toBe("agras-t40");
@@ -199,10 +212,10 @@ describe("CommentsSection", () => {
 
     it("não inclui model_key quando modelKey não é fornecido", async () => {
       render(<CommentsSection comments={[]} />);
-      fireEvent.change(screen.getByPlaceholderText("Escreva seu relato..."), {
+      fireEvent.change(screen.getByPlaceholderText(RELATO_PLACEHOLDER), {
         target: { value: "Bom!" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      fireEvent.click(screen.getByRole("button", { name: /Enviar relato/i }));
       await waitFor(() => expect(mockPost).toHaveBeenCalledTimes(1));
       const formData = mockPost.mock.calls[0][1] as FormData;
       expect(formData.get("model_key")).toBeNull();
@@ -210,13 +223,14 @@ describe("CommentsSection", () => {
 
     it("exibe mensagem de sucesso após POST bem-sucedido", async () => {
       render(<CommentsSection comments={[]} />);
-      fireEvent.change(screen.getByPlaceholderText("Escreva seu relato..."), {
+      fireEvent.change(screen.getByPlaceholderText(RELATO_PLACEHOLDER), {
         target: { value: "Adorei!" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      fireEvent.click(screen.getByRole("button", { name: /Enviar relato/i }));
       await waitFor(() =>
         expect(
-          screen.getByText("Comentário enviado com sucesso!"),
+          // Nova copy: "Relato enviado! Vai aparecer na lista apos aprovacao."
+          screen.getByText(/Relato enviado/i),
         ).toBeInTheDocument(),
       );
     });
@@ -224,77 +238,86 @@ describe("CommentsSection", () => {
     it("chama onCreated após POST bem-sucedido", async () => {
       const onCreated = vi.fn();
       render(<CommentsSection comments={[]} onCreated={onCreated} />);
-      fireEvent.change(screen.getByPlaceholderText("Escreva seu relato..."), {
+      fireEvent.change(screen.getByPlaceholderText(RELATO_PLACEHOLDER), {
         target: { value: "Perfeito!" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      fireEvent.click(screen.getByRole("button", { name: /Enviar relato/i }));
       await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
     });
 
     it("exibe mensagem de erro genérico quando POST falha", async () => {
       mockPost.mockRejectedValueOnce(new Error("Erro de servidor"));
       render(<CommentsSection comments={[]} />);
-      fireEvent.change(screen.getByPlaceholderText("Escreva seu relato..."), {
+      fireEvent.change(screen.getByPlaceholderText(RELATO_PLACEHOLDER), {
         target: { value: "Relato" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      fireEvent.click(screen.getByRole("button", { name: /Enviar relato/i }));
       await waitFor(() =>
-        expect(screen.getByText("Erro de servidor")).toBeInTheDocument(),
+        expect(screen.getByText(/Erro de servidor/i)).toBeInTheDocument(),
       );
     });
 
-    it("exibe mensagem de login e botão 'Fazer login' em erro 401", async () => {
+    it("exibe mensagem de login e botão 'Entrar' em erro 401", async () => {
       const apiError = Object.assign(new Error("Não autorizado"), {
         name: "ApiError",
         status: 401,
       });
       mockPost.mockRejectedValueOnce(apiError);
       render(<CommentsSection comments={[]} />);
-      fireEvent.change(screen.getByPlaceholderText("Escreva seu relato..."), {
+      fireEvent.change(screen.getByPlaceholderText(RELATO_PLACEHOLDER), {
         target: { value: "Relato" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      fireEvent.click(screen.getByRole("button", { name: /Enviar relato/i }));
       await waitFor(() =>
         expect(
           screen.getByText(/Você precisa estar logado/),
         ).toBeInTheDocument(),
       );
-      expect(screen.getByRole("button", { name: "Fazer login" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Entrar/i }),
+      ).toBeInTheDocument();
     });
 
-    it("exibe mensagem de login e botão 'Fazer login' em erro 403", async () => {
+    it("exibe mensagem de login e botão 'Entrar' em erro 403", async () => {
       const apiError = Object.assign(new Error("Proibido"), {
         name: "ApiError",
         status: 403,
       });
       mockPost.mockRejectedValueOnce(apiError);
       render(<CommentsSection comments={[]} />);
-      fireEvent.change(screen.getByPlaceholderText("Escreva seu relato..."), {
+      fireEvent.change(screen.getByPlaceholderText(RELATO_PLACEHOLDER), {
         target: { value: "Relato" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      fireEvent.click(screen.getByRole("button", { name: /Enviar relato/i }));
       await waitFor(() =>
-        expect(screen.getByRole("button", { name: "Fazer login" })).toBeInTheDocument(),
+        expect(
+          screen.getByRole("button", { name: /Entrar/i }),
+        ).toBeInTheDocument(),
       );
     });
 
-    it("botão mostra 'Enviando...' e fica desabilitado durante POST", async () => {
+    it("botão mostra 'Enviando…' e fica desabilitado durante POST", async () => {
       let resolvePost!: () => void;
       mockPost.mockReturnValueOnce(new Promise((res) => { resolvePost = res; }));
 
       render(<CommentsSection comments={[]} />);
-      fireEvent.change(screen.getByPlaceholderText("Escreva seu relato..."), {
+      fireEvent.change(screen.getByPlaceholderText(RELATO_PLACEHOLDER), {
         target: { value: "Relato" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      fireEvent.click(screen.getByRole("button", { name: /Enviar relato/i }));
 
+      // O componente usa reticencias unicode "…" enquanto envia.
       await waitFor(() =>
-        expect(screen.getByRole("button", { name: "Enviando..." })).toBeDisabled(),
+        expect(
+          screen.getByRole("button", { name: /Enviando…/ }),
+        ).toBeDisabled(),
       );
 
       resolvePost();
       await waitFor(() =>
-        expect(screen.getByRole("button", { name: "Enviar" })).not.toBeDisabled(),
+        expect(
+          screen.getByRole("button", { name: /Enviar relato/i }),
+        ).not.toBeDisabled(),
       );
     });
   });

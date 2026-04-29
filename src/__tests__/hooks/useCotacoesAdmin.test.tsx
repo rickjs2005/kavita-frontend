@@ -149,6 +149,9 @@ describe("useCotacoesAdmin", () => {
 
     (globalThis.fetch as any).mockClear();
 
+    // O apiClient agora prefetch o CSRF token antes de POST/PUT/PATCH/DELETE.
+    // Mock 404 = falha silenciosa (apiClient segue sem header CSRF).
+    mockFetchOnce(404, {});
     // POST /sync — provider succeeded
     mockFetchOnce(200, {
       ok: true,
@@ -178,6 +181,8 @@ describe("useCotacoesAdmin", () => {
 
     (globalThis.fetch as any).mockClear();
 
+    // CSRF prefetch (silent fail) — ver justificativa no teste anterior.
+    mockFetchOnce(404, {});
     // POST /sync — provider failed (HTTP 200 but provider.ok=false)
     mockFetchOnce(200, {
       ok: true,

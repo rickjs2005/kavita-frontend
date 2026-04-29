@@ -46,9 +46,13 @@ function makePage(overrides: Partial<DronePageSettings> = {}): DronePageSettings
 
 describe("BenefitsSection", () => {
   describe("título", () => {
-    it("usa 'Benefícios' como título padrão quando benefits_title é null", () => {
+    it("usa 'Por que escolher este modelo' como título padrão quando benefits_title é null", () => {
+      // Default mudou de "Beneficios" generico para uma copy mais
+      // editorial/comercial que casa melhor com a landing.
       render(<BenefitsSection page={makePage()} />);
-      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Benefícios");
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+        "Por que escolher este modelo",
+      );
     });
 
     it("renderiza título customizado", () => {

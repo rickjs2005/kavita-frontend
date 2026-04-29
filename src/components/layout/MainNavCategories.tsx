@@ -51,7 +51,7 @@ export default function MainNavCategories({ categories }: Props) {
       <Link
         href="/servicos"
         className={`text-[13px] font-medium px-3 py-1.5 rounded-full transition-colors ${
-          pathname.startsWith("/servicos")
+          pathname?.startsWith("/servicos")
             ? "bg-white/15 text-white"
             : "text-white/80 hover:text-white hover:bg-white/10"
         }`}
@@ -62,7 +62,7 @@ export default function MainNavCategories({ categories }: Props) {
       <Link
         href="/drones"
         className={`inline-flex items-center gap-1.5 text-[13px] font-bold px-4 py-1.5 rounded-full transition-all border ${
-          pathname.startsWith("/drones")
+          pathname?.startsWith("/drones")
             ? "border-accent-bright/70 bg-accent-bright/20 text-accent-bright shadow-[0_0_10px_rgba(255,122,0,0.2)]"
             : "border-accent-bright/40 text-accent-bright hover:border-accent-bright/70 hover:bg-accent-bright/15 hover:text-accent-bright hover:shadow-[0_0_8px_rgba(255,122,0,0.15)]"
         }`}

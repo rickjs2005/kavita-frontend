@@ -70,8 +70,10 @@ describe("PostsTable", () => {
       />,
     );
 
-    // Assert
-    expect(screen.getByText("Nenhum post encontrado.")).toBeInTheDocument();
+    // Assert — duplicado em mobile cards + desktop table.
+    expect(
+      screen.getAllByText("Nenhum post encontrado.").length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("deve renderizar linha com título, slug, status e categoria (positivo)", () => {
@@ -90,19 +92,27 @@ describe("PostsTable", () => {
       />,
     );
 
-    // Assert
-    expect(screen.getByText("Post 1")).toBeInTheDocument();
-    expect(screen.getByText("post-1")).toBeInTheDocument();
-    expect(screen.getByText("draft")).toBeInTheDocument();
-    expect(screen.getByText("Agro")).toBeInTheDocument();
-    expect(screen.getByText("Resumo curto")).toBeInTheDocument();
+    // Assert — campos aparecem em ambas as variantes responsivas
+    // (mobile cards + desktop table); usamos getAllByText e validamos
+    // ao menos uma ocorrencia por campo.
+    expect(screen.getAllByText("Post 1").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("post-1").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("draft").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Agro").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Resumo curto").length).toBeGreaterThanOrEqual(1);
 
-    expect(screen.getByRole("button", { name: "Prévia" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Editar" })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Publicar" }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Excluir" })).toBeInTheDocument();
+      screen.getAllByRole("button", { name: "Prévia" }).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByRole("button", { name: "Editar" }).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByRole("button", { name: "Publicar" }).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByRole("button", { name: "Excluir" }).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("deve usar '-' quando slug/categoria/updated ausentes (negativo)", () => {
@@ -156,8 +166,10 @@ describe("PostsTable", () => {
       />,
     );
 
-    // Assert: não amarremos no locale completo; basta confirmar que existe uma data “dd/mm/aaaa”
-    expect(screen.getByText(/\d{2}\/\d{2}\/\d{4}/)).toBeInTheDocument();
+    // Assert: data aparece em mobile + desktop; validamos pelo menos 1
+    expect(
+      screen.getAllByText(/\d{2}\/\d{2}\/\d{4}/).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("deve renderizar '-' em updated quando data inválida (negativo)", () => {
@@ -203,11 +215,12 @@ describe("PostsTable", () => {
       />,
     );
 
-    // Act
-    fireEvent.click(screen.getByRole("button", { name: "Prévia" }));
-    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Publicar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
+    // Act — botoes aparecem em duplicata (mobile + desktop). Clicamos
+    // o primeiro de cada e checamos que cada callback foi chamado.
+    fireEvent.click(screen.getAllByRole("button", { name: "Prévia" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Publicar" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Excluir" })[0]);
 
     // Assert
     expect(onPreview).toHaveBeenCalledWith(post);
@@ -234,10 +247,10 @@ describe("PostsTable", () => {
       />,
     );
 
-    // Assert
-    const btn = screen.getByRole("button", { name: "Despublicar" });
-    expect(btn).toBeInTheDocument();
-    expect(btn).toHaveAttribute("title", "Despublicar");
+    // Assert — duplicado em mobile + desktop; validamos o primeiro
+    const buttons = screen.getAllByRole("button", { name: "Despublicar" });
+    expect(buttons.length).toBeGreaterThanOrEqual(1);
+    expect(buttons[0]).toHaveAttribute("title", "Despublicar");
   });
 
   it("deve desabilitar paginação corretamente e clamped page (negativo/controle)", () => {

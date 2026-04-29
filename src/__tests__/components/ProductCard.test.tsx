@@ -177,7 +177,8 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
     );
 
     const img = screen.getByRole("img", { name: "Produto Teste" });
-    expect(img).toHaveAttribute("src", "http://api.test/uploads/p1.png");
+    // absUrl passou a retornar path relativo (proxy via rewrite do Next).
+    expect(img).toHaveAttribute("src", "/uploads/p1.png");
 
     expect(screen.getByTestId("add-to-cart")).not.toBeDisabled();
     expect(addToCartSpy).toHaveBeenCalled();
@@ -253,8 +254,8 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
       />,
     );
 
-    // Assert
-    expect(screen.getByText(/Frete grátis a partir de 5/i)).toBeInTheDocument();
+    // Assert — copy mudou para o formato compacto "Frete grátis 5+ un."
+    expect(screen.getByText(/Frete grátis 5\+ un\./i)).toBeInTheDocument();
   });
 
   it("exibe avaliação (⭐) apenas quando rating_avg > 0 e rating_count > 0", async () => {

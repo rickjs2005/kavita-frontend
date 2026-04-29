@@ -137,7 +137,13 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
     vi.restoreAllMocks();
   });
 
-  it("deve usar base default (http://localhost:5000) quando não houver env e retornar JSON em 200", async () => {
+  // No browser, o apiClient passou a usar baseUrl vazio (path relativo).
+  // O `next.config.ts` faz rewrite pro backend; isso evita problemas de
+  // cookie cross-origin e permite acessar o painel de qualquer host
+  // (localhost, IP, tunel) sem mexer em .env. As 3 specs abaixo cobrem
+  // esse novo contrato no ambiente jsdom (que simula browser).
+
+  it("no browser usa base vazia (path relativo) — proxy via rewrite do Next", async () => {
     delete process.env.NEXT_PUBLIC_API_URL;
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -158,7 +164,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
     expect(result).toEqual({ ok: true, items: [1, 2, 3] });
 
     const { url, init } = getFirstFetchCall();
-    expect(url).toBe("http://localhost:5000/api/ping");
+    expect(url).toBe("/api/ping");
     expect(init.credentials).toBe("include");
 
     // headers são Headers(), em lowercase:
@@ -167,7 +173,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
     expect(headerGet(init.headers, "content-type")).toBeNull();
   });
 
-  it("deve priorizar NEXT_PUBLIC_API_URL sobre NEXT_PUBLIC_API_BASE_URL", async () => {
+  it("no browser ignora NEXT_PUBLIC_API_URL — sempre relativo (host atual)", async () => {
     process.env.NEXT_PUBLIC_API_URL = "https://api.kavita.com";
     process.env.NEXT_PUBLIC_API_BASE_URL = "https://base.kavita.com";
 
@@ -186,10 +192,10 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
     await apiFetch("/v1/health");
 
     const { url } = getFirstFetchCall();
-    expect(url).toBe("https://api.kavita.com/v1/health");
+    expect(url).toBe("/v1/health");
   });
 
-  it("deve montar URL corretamente removendo/evitando barras duplicadas", async () => {
+  it("preserva o path como veio (não duplica barras nem prefixa base)", async () => {
     process.env.NEXT_PUBLIC_API_URL = "https://api.kavita.com/";
 
     vi.resetModules();
@@ -207,7 +213,7 @@ describe("lib/apiClient.ts -> apiFetch()/apiRequest()", () => {
     await apiFetch("/api/produtos");
 
     const { url } = getFirstFetchCall();
-    expect(url).toBe("https://api.kavita.com/api/produtos");
+    expect(url).toBe("/api/produtos");
   });
 
   it("se path já for http(s), deve usar o path diretamente (sem prefixar base)", async () => {

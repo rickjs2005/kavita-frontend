@@ -93,7 +93,8 @@ export async function getProducts(params: GetProductsParams = {}) {
   qs.set("sort", String(sort));
   qs.set("order", String(order));
 
-  if (q) qs.set("q", String(q));
+  const trimmedQ = q != null ? String(q).trim() : "";
+  if (trimmedQ) qs.set("q", trimmedQ);
 
   const cat = normalizeCategory(category);
   if (cat) qs.set("category", cat);

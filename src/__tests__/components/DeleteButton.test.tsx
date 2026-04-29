@@ -73,7 +73,9 @@ describe("DeleteButton", () => {
 
     // Estado loading ativo
     expect(screen.getByRole("button", { name: /removendo/i })).toBeDisabled();
-    expect(button.className).toContain("opacity-50");
+    // O componente passou de opacity-50 para opacity-60 (visualmente
+    // mais distinguivel sem virar fantasma sobre fundo claro).
+    expect(button.className).toContain("opacity-60");
 
     // Finaliza a promise
     resolveConfirm();

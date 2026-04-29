@@ -56,7 +56,9 @@ describe("PostsTab (UI real)", () => {
       expect(listNewsPosts).toHaveBeenCalledTimes(1);
     });
 
-    expect(screen.getByText("Post 1")).toBeInTheDocument();
+    // PostsTable renderiza o titulo em duas variantes (mobile cards +
+    // desktop table). Para evitar ambiguidade usamos getAllByText.
+    expect(screen.getAllByText("Post 1").length).toBeGreaterThanOrEqual(1);
     // tabela real tem cabeçalho "Título"
     expect(screen.getByText("Título")).toBeInTheDocument();
   });
@@ -65,7 +67,7 @@ describe("PostsTab (UI real)", () => {
     // Arrange
     render(<PostsTab />);
 
-    await screen.findByText("Post 1");
+    await screen.findAllByText("Post 1");
 
     const input = screen.getByPlaceholderText(
       "Buscar por título, slug, tag...",
@@ -87,7 +89,7 @@ describe("PostsTab (UI real)", () => {
   it("deve aplicar filtro de status e resetar page para 1 (positivo)", async () => {
     // Arrange
     render(<PostsTab />);
-    await screen.findByText("Post 1");
+    await screen.findAllByText("Post 1");
 
     // O select real não tem label/aria-label: pegue pelo role combobox
     const select = screen.getByRole("combobox") as HTMLSelectElement;
@@ -107,7 +109,7 @@ describe("PostsTab (UI real)", () => {
   it("deve chamar refresh ao clicar em 'Atualizar' (positivo)", async () => {
     // Arrange
     render(<PostsTab />);
-    await screen.findByText("Post 1");
+    await screen.findAllByText("Post 1");
     const before = (listNewsPosts as any).mock.calls.length;
 
     // Act
@@ -122,10 +124,13 @@ describe("PostsTab (UI real)", () => {
   it("deve excluir post quando confirm=true e atualizar listagem (positivo)", async () => {
     // Arrange
     render(<PostsTab />);
-    await screen.findByText("Post 1");
+    await screen.findAllByText("Post 1");
 
     // Act
-    fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
+    // Mesmo padrao: botao "Excluir" pode aparecer em variantes
+    // responsivas (mobile + desktop). Pegamos o primeiro.
+    const excluirBtns = screen.getAllByRole("button", { name: "Excluir" });
+    fireEvent.click(excluirBtns[0]);
 
     // Assert
     await waitFor(() => {
@@ -144,10 +149,11 @@ describe("PostsTab (UI real)", () => {
     (window.confirm as any).mockReturnValue(false);
 
     render(<PostsTab />);
-    await screen.findByText("Post 1");
+    await screen.findAllByText("Post 1");
 
     // Act
-    fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
+    const excluirBtns = screen.getAllByRole("button", { name: "Excluir" });
+    fireEvent.click(excluirBtns[0]);
 
     // Assert
     expect(deleteNewsPost).not.toHaveBeenCalled();
@@ -156,10 +162,11 @@ describe("PostsTab (UI real)", () => {
   it("deve alternar draft -> published ao clicar em 'Publicar' (positivo)", async () => {
     // Arrange
     render(<PostsTab />);
-    await screen.findByText("Post 1");
+    await screen.findAllByText("Post 1");
 
     // Act
-    fireEvent.click(screen.getByRole("button", { name: "Publicar" }));
+    const publicarBtns = screen.getAllByRole("button", { name: "Publicar" });
+    fireEvent.click(publicarBtns[0]);
 
     // Assert
     await waitFor(() => {
@@ -185,7 +192,7 @@ describe("PostsTab (UI real)", () => {
     (listNewsPosts as any).mockResolvedValueOnce(makeList({ totalPages: 3 }));
 
     render(<PostsTab />);
-    await screen.findByText("Post 1");
+    await screen.findAllByText("Post 1");
 
     const nextBtn = screen.getByRole("button", { name: "Próxima" });
     expect(nextBtn).not.toBeDisabled();
@@ -211,7 +218,9 @@ describe("PostsTab (UI real)", () => {
       expect(listNewsPosts).toHaveBeenCalledTimes(1);
     });
 
-    // UI real: a tabela renderiza mensagem de vazio
-    expect(await screen.findByText("Nenhum post encontrado.")).toBeInTheDocument();
+    // UI real: a tabela renderiza mensagem de vazio em duas variantes
+    // (mobile cards + desktop table). Validamos via getAllByText.
+    const empties = await screen.findAllByText("Nenhum post encontrado.");
+    expect(empties.length).toBeGreaterThanOrEqual(1);
   });
 });

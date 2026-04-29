@@ -115,12 +115,13 @@ describe("apiClient – CSRF token injection", () => {
     const { apiClient } = await importClient();
 
     // 1st call: CSRF endpoint
+    // Backend retorna `{ csrfToken }` (camelCase) — o apiClient le essa chave.
     (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
       makeResponse({
         ok: true,
         status: 200,
         headers: { "content-type": "application/json" },
-        json: async () => ({ token: "csrf-abc123" }),
+        json: async () => ({ csrfToken: "csrf-abc123" }),
       }),
     );
 
@@ -149,13 +150,13 @@ describe("apiClient – CSRF token injection", () => {
 
       const { apiClient: client } = await importClient();
 
-      // CSRF call
+      // CSRF call — backend retorna `{ csrfToken }`.
       (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
         makeResponse({
           ok: true,
           status: 200,
           headers: { "content-type": "application/json" },
-          json: async () => ({ token: `token-${method}` }),
+          json: async () => ({ csrfToken: `token-${method}` }),
         }),
       );
 
@@ -230,15 +231,26 @@ describe("apiClient – CSRF token injection", () => {
   });
 
   it("deve usar token CSRF em cache (não refazer fetch dentro do TTL)", async () => {
+    // O cache do CSRF agora valida contra o cookie real (`document.cookie`)
+    // para detectar divergencia (outra tab refresca o cookie sem que esta
+    // saiba). Sem cookie batendo, o cache e invalidado e refetch acontece.
+    // Aqui simulamos o navegador setando o cookie csrf_token apos o backend
+    // responder, igual ao que aconteceria em produçao via Set-Cookie.
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      writable: true,
+      value: "csrf_token=cached-token",
+    });
+
     const { apiClient } = await importClient();
 
-    // First CSRF fetch
+    // First CSRF fetch — backend retorna `{ csrfToken }`.
     (globalThis.fetch as unknown as FetchMock).mockResolvedValueOnce(
       makeResponse({
         ok: true,
         status: 200,
         headers: { "content-type": "application/json" },
-        json: async () => ({ token: "cached-token" }),
+        json: async () => ({ csrfToken: "cached-token" }),
       }),
     );
 

@@ -23,11 +23,17 @@ import {
 } from "@/services/api/services/products";
 
 // ---- Mock apiClient --------------------------------------------------------
+//
+// O service real usa tanto `apiRequest` (named, em getProducts/getProductById)
+// quanto `apiClient.get` (em getProductPromotion/getFavorites). O mock unifica
+// ambos no mesmo `mockGet` para que `capturedUrl()` funcione independente da
+// função chamada — todos os testes só verificam URLs e payloads.
 
 const mockGet = vi.fn();
 
 vi.mock("@/lib/apiClient", () => ({
   apiClient: { get: (...args: unknown[]) => mockGet(...args) },
+  apiRequest: (...args: unknown[]) => mockGet(...args),
   default: { get: (...args: unknown[]) => mockGet(...args) },
 }));
 
@@ -137,18 +143,26 @@ describe("getProducts", () => {
   });
 
   describe("retorno", () => {
-    it("retorna o valor resolvido pelo apiClient", async () => {
-      const fakeData = [{ id: 1, nome: "Produto X" }];
-      mockGet.mockResolvedValueOnce(fakeData);
+    it("retorna lista normalizada via normalizeProduct", async () => {
+      // O service normaliza cada item via normalizeProduct(), garantindo
+      // shape estavel (price number, quantity unificado, images array, etc).
+      const rawList = [
+        { id: 1, name: "Produto X", price: "29.90", quantity: 5 },
+      ];
+      mockGet.mockResolvedValueOnce(rawList);
       const result = await getProducts();
-      expect(result).toEqual(fakeData);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result[0].id).toBe(1);
+      expect(result[0].name).toBe("Produto X");
+      expect(result[0].price).toBe(29.9);
+      expect(result[0].quantity).toBe(5);
     });
   });
 });
 
 describe("getProductById", () => {
   beforeEach(() => {
-    mockGet.mockResolvedValue({ id: 1, nome: "Produto" });
+    mockGet.mockResolvedValue({ id: 1, name: "Produto" });
   });
 
   it("chama /api/products/{id} com id numérico", async () => {
@@ -161,11 +175,16 @@ describe("getProductById", () => {
     expect(capturedUrl()).toBe("/api/products/slug-abc");
   });
 
-  it("retorna o produto resolvido", async () => {
-    const produto = { id: 99, nome: "Phantom" };
-    mockGet.mockResolvedValueOnce(produto);
+  it("retorna o produto normalizado via normalizeProduct", async () => {
+    // Mesma justificativa de getProducts: o retorno passa por
+    // normalizeProduct(), nao volta o raw.
+    const raw = { id: 99, name: "Phantom", price: 1500, quantity: 2 };
+    mockGet.mockResolvedValueOnce(raw);
     const result = await getProductById(99);
-    expect(result).toEqual(produto);
+    expect(result.id).toBe(99);
+    expect(result.name).toBe("Phantom");
+    expect(result.price).toBe(1500);
+    expect(result.quantity).toBe(2);
   });
 });
 

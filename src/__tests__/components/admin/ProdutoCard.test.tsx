@@ -87,7 +87,12 @@ describe("ProdutoCard", () => {
     expect(screen.queryByText(/descrição do produto/i)).not.toBeInTheDocument();
   });
 
-  it("normaliza imagem relativa para URL absoluta e renderiza miniaturas quando há mais de 1 imagem (positivo)", async () => {
+  it("renderiza imagem de capa e miniaturas via absUrl (path relativo)", async () => {
+    // absUrl agora retorna caminho relativo (proxy via rewrite do Next),
+    // ignorando NEXT_PUBLIC_API_URL — comportamento documentado em
+    // src/utils/absUrl.ts. O `.src` lido pelo jsdom resolve contra
+    // window.location (default http://localhost:3000), por isso o teste
+    // valida apenas o pathname final.
     const ProdutoCard = await loadProdutoCard();
     const produto = makeProduct({
       image: "/uploads/capa.jpg",
@@ -99,7 +104,8 @@ describe("ProdutoCard", () => {
     const capa = screen.getByRole("img", {
       name: /ração premium/i,
     }) as HTMLImageElement;
-    expect(capa.src).toBe("http://test.local/uploads/capa.jpg");
+    // pathname e suficiente: ignora o origin que jsdom adiciona.
+    expect(new URL(capa.src).pathname).toBe("/uploads/capa.jpg");
 
     const mini1 = screen.getByRole("img", {
       name: /miniatura 1/i,
@@ -108,8 +114,8 @@ describe("ProdutoCard", () => {
       name: /miniatura 2/i,
     }) as HTMLImageElement;
 
-    expect(mini1.src).toBe("http://test.local/uploads/1.jpg");
-    expect(mini2.src).toBe("http://test.local/uploads/2.jpg");
+    expect(new URL(mini1.src).pathname).toBe("/uploads/1.jpg");
+    expect(new URL(mini2.src).pathname).toBe("/uploads/2.jpg");
   });
 
   it("faz fallback para /placeholder.png quando imagem dispara onError (negativo/controle)", async () => {

@@ -46,7 +46,14 @@ type EnderecoLike = {
   observacoes_acesso?: string;
 };
 
+// O componente passou a chamar /api/public/cep/:cep (proxy do backend)
+// em vez de viacep.com.br direto — evita CORS no admin e centraliza o
+// rate limit. Helpers abaixo cobrem as duas variantes legacy + nova.
+function isCepBackendUrl(url: string) {
+  return url.includes("/api/public/cep/");
+}
 function isViaCepUrl(url: string) {
+  // Mantido para compat com testes nao-tocados.
   return url.startsWith("https://viacep.com.br/ws/");
 }
 function isIbgeUrl(url: string) {
@@ -220,21 +227,25 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
     expect(calls).toContainEqual(["endereco.cep", "12345-678"]);
   });
 
-  it("URBANA: quando CEP tem 8 dígitos, busca ViaCEP e auto-preenche cidade/estado/logradouro/bairro", async () => {
+  it("URBANA: quando CEP tem 8 dígitos, busca backend /api/public/cep e auto-preenche cidade/estado/logradouro/bairro", async () => {
     const onChange = vi.fn();
 
     fetchMock.mockImplementation(async (input: any) => {
       const url = String(input);
-      if (isViaCepUrl(url)) {
+      if (isCepBackendUrl(url)) {
+        // Backend retorna o payload ja unwrapped no formato CepResult.
         return makeFetchResponse({
           ok: true,
           status: 200,
           contentType: "application/json",
           json: {
-            localidade: "São Paulo",
-            uf: "SP",
-            logradouro: "Av. Paulista",
-            bairro: "Bela Vista",
+            ok: true,
+            data: {
+              localidade: "São Paulo",
+              uf: "SP",
+              logradouro: "Av. Paulista",
+              bairro: "Bela Vista",
+            },
           },
         });
       }
@@ -247,9 +258,10 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
     });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "https://viacep.com.br/ws/12345678/json/",
+      const matched = fetchMock.mock.calls.find(([u]) =>
+        String(u).includes("/api/public/cep/12345678"),
       );
+      expect(matched).toBeDefined();
     });
 
     const calls = onChange.mock.calls.map((c) => [c[0], c[1]]);
@@ -259,21 +271,24 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
     expect(calls).toContainEqual(["endereco.bairro", "Bela Vista"]);
   });
 
-  it("RURAL: quando CEP tem 8 dígitos, busca ViaCEP e auto-preenche apenas cidade/estado (não preenche bairro/logradouro)", async () => {
+  it("RURAL: quando CEP tem 8 dígitos, busca backend e auto-preenche apenas cidade/estado", async () => {
     const onChange = vi.fn();
 
     fetchMock.mockImplementation(async (input: any) => {
       const url = String(input);
-      if (isViaCepUrl(url)) {
+      if (isCepBackendUrl(url)) {
         return makeFetchResponse({
           ok: true,
           status: 200,
           contentType: "application/json",
           json: {
-            localidade: "Belo Horizonte",
-            uf: "MG",
-            logradouro: "Rua X",
-            bairro: "Centro",
+            ok: true,
+            data: {
+              localidade: "Belo Horizonte",
+              uf: "MG",
+              logradouro: "Rua X",
+              bairro: "Centro",
+            },
           },
         });
       }
@@ -286,9 +301,10 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
     });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "https://viacep.com.br/ws/30130010/json/",
+      const matched = fetchMock.mock.calls.find(([u]) =>
+        String(u).includes("/api/public/cep/30130010"),
       );
+      expect(matched).toBeDefined();
     });
 
     const calls = onChange.mock.calls.map((c) => [c[0], c[1]]);
@@ -300,17 +316,20 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
     expect(keys).not.toContain("endereco.bairro");
   });
 
-  it("ViaCEP: quando data.erro=true, não auto-preenche (e não quebra)", async () => {
+  it("CEP não encontrado: backend responde 404 e o componente NÃO auto-preenche", async () => {
     const onChange = vi.fn();
 
+    // Antes esse cenario era simulado via `{ erro: true }` no ViaCEP.
+    // Agora o backend retorna 404 (conforme contrato de useCep) e o
+    // hook devolve null — sem onChange.
     fetchMock.mockImplementation(async (input: any) => {
       const url = String(input);
-      if (isViaCepUrl(url)) {
+      if (isCepBackendUrl(url)) {
         return makeFetchResponse({
-          ok: true,
-          status: 200,
+          ok: false,
+          status: 404,
           contentType: "application/json",
-          json: { erro: true },
+          json: { ok: false, message: "CEP nao encontrado" },
         });
       }
       return makeFetchResponse({ ok: false, status: 500 });
@@ -322,9 +341,10 @@ describe("AddressForm (src/components/checkout/AddressForm.tsx)", () => {
     });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "https://viacep.com.br/ws/12345678/json/",
+      const matched = fetchMock.mock.calls.find(([u]) =>
+        String(u).includes("/api/public/cep/12345678"),
       );
+      expect(matched).toBeDefined();
     });
 
     const keys = onChange.mock.calls.map((c) => String(c[0]));
