@@ -28,6 +28,12 @@ function scrubPII(s: string): string {
     .replace(PHONE_RE, "[phone-redacted]");
 }
 
+// Export obrigatorio do @sentry/nextjs >=8.x: hook chamado em toda
+// transicao de rota client-side. No-op quando o DSN nao esta setado
+// (Sentry init nem rodou). Sem esse export, o build emite warning
+// "ACTION REQUIRED" no console.
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+
 if (DSN) {
   Sentry.init({
     dsn: DSN,
