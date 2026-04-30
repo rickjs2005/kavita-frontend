@@ -634,6 +634,15 @@ export function useCheckoutState() {
           return;
         }
 
+        // R8 — rate limit no place-order. Pedido NÃO foi criado, então
+        // não vai para /pagamento-pendente; só toast e mantém na tela.
+        if (isApiError(err) && err.status === 429) {
+          toast.error(
+            "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.",
+          );
+          return;
+        }
+
         toast.error(
           uiErr.message ||
             "Erro ao finalizar a compra. Verifique os dados e tente novamente.",
@@ -719,19 +728,32 @@ export function useCheckoutState() {
             return;
           }
 
-          // URL inválida ou ausente — o pedido existe, encaminhar com indicador de pagamento pendente.
+          // URL inválida ou ausente — o pedido existe, encaminhar para a
+          // página dedicada de pagamento pendente (R8). Não usa /sucesso
+          // para não dar a impressão de que o cliente já pagou.
           console.warn("[checkout] URL de pagamento inválida ou ausente após payment/start.");
           clearCart?.({ silent: true });
-          router.push(`/checkout/sucesso?pedidoId=${pedidoId}&pagamento=pendente`);
+          router.push(`/checkout/pagamento-pendente?pedidoId=${pedidoId}`);
           return;
         } catch (err: unknown) {
           // Pagamento falhou MAS o pedido já existe.
           // Não fazer logout nem redirecionar para /login.
           const uiErr = formatApiError(err, "Erro ao iniciar pagamento.");
-          console.warn("[checkout] payment/start falhou após pedido criado:", uiErr.message);
+
+          // R8 — distingue motivos para que /pagamento-pendente mostre
+          // a mensagem correta e arme cooldown quando for rate limit.
+          let motivo = "erro";
+          if (isApiError(err) && err.status === 429) {
+            motivo = "rate_limit";
+            console.warn("[checkout] payment/start retornou 429 — rate limit absoluto.");
+          } else {
+            console.warn("[checkout] payment/start falhou após pedido criado:", uiErr.message);
+          }
 
           clearCart?.({ silent: true });
-          router.push(`/checkout/sucesso?pedidoId=${pedidoId}&pagamento=pendente`);
+          router.push(
+            `/checkout/pagamento-pendente?pedidoId=${pedidoId}&motivo=${motivo}`,
+          );
           return;
         }
       }
