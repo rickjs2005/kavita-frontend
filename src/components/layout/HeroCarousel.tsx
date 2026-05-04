@@ -108,11 +108,11 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
           href={href}
           className="
             group inline-flex w-full items-center justify-center gap-2
-            rounded-xl bg-primary px-5 py-3 sm:px-7 sm:py-3.5
-            text-[13px] sm:text-[15px] font-bold text-white
-            shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_4px_24px_rgba(53,146,147,0.4)]
+            rounded-xl bg-emerald-600 px-6 py-3 sm:px-7 sm:py-3.5
+            text-[14px] sm:text-[15px] font-semibold text-white
+            shadow-[0_4px_18px_rgba(22,163,74,0.45)]
             active:scale-[0.97]
-            hover:brightness-110 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_6px_28px_rgba(53,146,147,0.5)]
+            hover:bg-emerald-700 hover:shadow-[0_6px_22px_rgba(22,163,74,0.55)]
             transition-all duration-200
             sm:w-auto
             focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80
