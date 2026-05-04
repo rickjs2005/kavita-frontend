@@ -16,8 +16,20 @@ type AdminPageHeaderProps = {
    */
   actions?: React.ReactNode;
   /**
-   * Ação primária da página. Full-width no mobile, auto em sm+.
-   * Use para o CTA principal (ex: "+ Nova Corretora").
+   * Ação primária da página (CTA principal, ex: "+ Nova Corretora").
+   *
+   * IMPORTANTE: o consumer **deve** declarar `w-full sm:w-auto` no
+   * próprio elemento (Link/button). O wrapper aqui não força largura
+   * via arbitrary variant `[&>*]:w-full` porque essa abordagem é
+   * frágil — se o consumer envolver em Fragment ou wrapper extra,
+   * a regra deixa de aplicar e o botão estoura.
+   *
+   * Exemplo correto:
+   * ```tsx
+   * primaryAction={
+   *   <Link className="inline-flex w-full sm:w-auto ..." />
+   * }
+   * ```
    */
   primaryAction?: React.ReactNode;
   /** Slot extra renderizado dentro da coluna do título (ex: badges). */
@@ -55,12 +67,14 @@ export default function AdminPageHeader({
       </div>
 
       {(actions || primaryAction) && (
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+        <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
           {actions && (
-            <div className="flex flex-wrap items-center gap-2">{actions}</div>
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+              {actions}
+            </div>
           )}
           {primaryAction && (
-            <div className="w-full sm:w-auto [&>*]:w-full sm:[&>*]:w-auto">
+            <div className="flex w-full min-w-0 sm:w-auto">
               {primaryAction}
             </div>
           )}
