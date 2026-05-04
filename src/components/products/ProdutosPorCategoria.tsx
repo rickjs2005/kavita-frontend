@@ -88,7 +88,7 @@ export default function ProdutosPorCategoria({ categoria, limit = 12 }: Props) {
 
   return (
     <div className="relative">
-      <div className="rounded-3xl border border-emerald-50 bg-emerald-50/50 px-2 py-3 shadow-sm sm:px-3 lg:px-4">
+      <div className="rounded-2xl border border-emerald-50 bg-emerald-50/40 px-2 py-2 shadow-sm sm:rounded-3xl sm:bg-emerald-50/50 sm:px-3 sm:py-3 lg:px-4">
         <div className="relative group">
           {hasOverflow && (
             <>
@@ -122,7 +122,7 @@ export default function ProdutosPorCategoria({ categoria, limit = 12 }: Props) {
 
           <div
             ref={wrapRef}
-            className="no-scrollbar flex snap-x snap-mandatory scroll-smooth gap-4 overflow-x-auto py-1 pl-1 pr-6 sm:gap-5 sm:py-2 sm:pl-1 sm:pr-8 lg:gap-6 lg:py-3 lg:pl-1 lg:pr-10 [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="no-scrollbar flex snap-x snap-mandatory scroll-smooth gap-3 overflow-x-auto py-1 pl-1 pr-5 sm:gap-5 sm:py-2 sm:pl-1 sm:pr-8 lg:gap-6 lg:py-3 lg:pl-1 lg:pr-10 [-ms-overflow-style:none] [scrollbar-width:none]"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             <style>{`.no-scrollbar::-webkit-scrollbar{display:none}`}</style>
@@ -131,7 +131,7 @@ export default function ProdutosPorCategoria({ categoria, limit = 12 }: Props) {
               skeletons.map((_, i) => (
                 <div
                   key={i}
-                  className="min-w-[220px] max-w-[220px] snap-start rounded-2xl bg-white/90 p-3 shadow-sm ring-1 ring-emerald-100 sm:min-w-[240px] sm:max-w-[240px] lg:min-w-[250px] lg:max-w-[250px]"
+                  className="min-w-[170px] max-w-[170px] snap-start rounded-2xl bg-white/90 p-3 shadow-sm ring-1 ring-emerald-100 sm:min-w-[240px] sm:max-w-[240px] lg:min-w-[250px] lg:max-w-[250px]"
                 >
                   <div className="h-40 w-full animate-pulse rounded-xl bg-emerald-100/80 sm:h-44" />
                   <div className="mt-3 h-4 w-3/4 animate-pulse rounded-full bg-emerald-100/80" />
@@ -157,7 +157,7 @@ export default function ProdutosPorCategoria({ categoria, limit = 12 }: Props) {
               list.map((p) => (
                 <div
                   key={p.id}
-                  className="min-w-[220px] max-w-[220px] snap-start sm:min-w-[240px] sm:max-w-[240px] lg:min-w-[250px] lg:max-w-[250px]"
+                  className="min-w-[170px] max-w-[170px] snap-start sm:min-w-[240px] sm:max-w-[240px] lg:min-w-[250px] lg:max-w-[250px]"
                 >
                   <ProductCard product={p as any} />
                 </div>

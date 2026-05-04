@@ -239,19 +239,28 @@ describe("ServicosSection (src/components/layout/ServicosSection.tsx)", () => {
     );
   });
 
-  it("quando fetch ok retorna vazio, mostra mensagem 'Nenhum serviço cadastrado ainda.' (negativo/sem resultados)", async () => {
+  it("quando fetch ok retorna vazio, mostra empty state profissional com CTAs (negativo/sem resultados)", async () => {
     // Arrange
     apiClientGetMock.mockResolvedValueOnce([]);
 
     // Act
     render(<ServicosSection />);
 
-    // Assert
+    // Assert — empty state com copy profissional + CTAs
+    // ("Quero prestar serviços" também aparece no header da seção, e a
+    //  string "profissionais da sua região" aparece no título e na
+    //  descrição do empty state — daí os getAllBy*.)
     await waitFor(() => {
       expect(
-        screen.getByText(/Nenhum serviço cadastrado ainda\./i),
-      ).toBeInTheDocument();
+        screen.getAllByText(/profissionais da sua região/i).length,
+      ).toBeGreaterThanOrEqual(1);
     });
+    expect(
+      screen.getAllByRole("link", { name: /^Ver profissionais$/i }),
+    ).toHaveLength(1);
+    expect(
+      screen.getAllByRole("link", { name: /Quero prestar serviços/i }).length,
+    ).toBeGreaterThanOrEqual(1);
     expect(ServiceCardMock).not.toHaveBeenCalled();
   });
 

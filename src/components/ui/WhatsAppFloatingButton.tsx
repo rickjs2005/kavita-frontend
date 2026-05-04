@@ -29,10 +29,11 @@ export default function WhatsAppFloatingButton({ phone, url }: Props) {
       rel="noreferrer"
       aria-label="Falar pelo WhatsApp"
       title="Falar pelo WhatsApp"
+      style={{ bottom: "calc(5.25rem + env(safe-area-inset-bottom, 0px))" }}
       className={[
-        "fixed bottom-[5.25rem] right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-whatsapp text-white shadow-lg shadow-black/15",
+        "fixed right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-whatsapp text-white shadow-lg shadow-black/15",
         "transition-all duration-500 hover:scale-110 hover:shadow-xl active:scale-95",
-        "sm:bottom-[5.5rem] sm:right-6",
+        "sm:right-6",
         visible
           ? "translate-y-0 opacity-100"
           : "translate-y-4 opacity-0 pointer-events-none",

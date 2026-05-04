@@ -188,10 +188,42 @@ export default function ServicosSection() {
               <div className="py-6 text-sm text-red-600">{errorMsg}</div>
             )}
 
-            {/* SEM RESULTADOS */}
+            {/* SEM RESULTADOS — empty state profissional */}
             {!loading && !errorMsg && servicos.length === 0 && (
-              <div className="py-6 text-sm text-gray-500">
-                Nenhum serviço cadastrado ainda.
+              <div className="w-full rounded-2xl border border-emerald-100 bg-emerald-50/40 px-5 py-6 sm:py-7">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <span
+                    aria-hidden
+                    className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-base text-emerald-700 sm:h-10 sm:w-10 sm:text-lg"
+                  >
+                    🌱
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-emerald-900 sm:text-[15px]">
+                      Profissionais da sua região, em breve
+                    </p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-emerald-900/75 sm:text-sm">
+                      Ainda estamos cadastrando profissionais da sua região.
+                      Em breve você poderá encontrar veterinários, agrônomos,
+                      mecânicos e prestadores do agro verificados pela
+                      Kavita.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        href="/servicos"
+                        className="inline-flex items-center justify-center rounded-full border border-emerald-600 bg-white px-3.5 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-600 hover:text-white"
+                      >
+                        Ver profissionais
+                      </Link>
+                      <Link
+                        href="/trabalhe-conosco"
+                        className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-500"
+                      >
+                        Quero prestar serviços
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

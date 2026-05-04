@@ -152,9 +152,17 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
 
 // ── Carousel ────────────────────────────────────────────────────────────────
 
-type Props = { slides: HeroSlide[] };
+type Props = {
+  slides: HeroSlide[];
+  /**
+   * Classes extras para o elemento <section> externo. Usado pela home
+   * para aplicar modo card no mobile (rounded + mx + min-h reduzido)
+   * sem reescrever o componente.
+   */
+  className?: string;
+};
 
-export default function HeroCarousel({ slides }: Props) {
+export default function HeroCarousel({ slides, className = "" }: Props) {
   const effectiveSlides = slides.length > 0 ? slides : [FALLBACK_SLIDE];
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -181,10 +189,11 @@ export default function HeroCarousel({ slides }: Props) {
 
   return (
     <section
-      className="
+      className={`
         relative w-full overflow-hidden flex flex-col
         min-h-[52vh] sm:min-h-[80vh] lg:min-h-[92vh]
-      "
+        ${className}
+      `}
       aria-label="Carrossel de destaques"
       aria-roledescription="carousel"
       onMouseEnter={() => setPaused(true)}

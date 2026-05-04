@@ -156,24 +156,26 @@ export default function Footer({ shop }: FooterProps) {
   );
 
   return (
-    <footer className="mt-12 bg-header text-white">
+    <footer className="mt-10 bg-header text-white sm:mt-12">
       {/* Top container */}
-      <div className="mx-auto max-w-6xl px-4 pt-12 pb-10">
+      <div className="mx-auto max-w-6xl px-4 pb-8 pt-8 sm:pb-10 sm:pt-12">
         {/* Grid responsivo: 1 col (mobile), 2 (tablet), 4 (desktop) */}
-        <div className="grid grid-cols-1 gap-8 sm:gap-10 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-7 sm:gap-10 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="space-y-3">
             <div>
-              <h2 className="text-2xl font-extrabold tracking-tight">
+              <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">
                 {storeName}
               </h2>
-              <div className="mt-2 h-[3px] w-12 rounded-full bg-emerald-400/80" />
+              <div className="mt-2 h-[3px] w-10 rounded-full bg-emerald-400/80 sm:w-12" />
             </div>
 
-            <p className="text-sm leading-relaxed text-white/80">{tagline}</p>
+            <p className="text-[13px] leading-relaxed text-white/80 sm:text-sm">
+              {tagline}
+            </p>
 
             {/* micro info */}
-            <div className="pt-2 text-xs text-white/60">
+            <div className="pt-1 text-[11px] text-white/60 sm:pt-2 sm:text-xs">
               Suporte e atendimento pelo WhatsApp e e-mail.
             </div>
           </div>
@@ -313,8 +315,8 @@ export default function Footer({ shop }: FooterProps) {
         </div>
 
         {/* Divider */}
-        <div className="mt-10 border-t border-white/10 pt-6">
-          <div className="flex flex-col gap-3 text-center text-xs text-white/70 sm:flex-row sm:items-center sm:justify-between sm:text-left">
+        <div className="mt-8 border-t border-white/10 pt-5 sm:mt-10 sm:pt-6">
+          <div className="flex flex-col gap-2 text-center text-[11px] text-white/70 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:text-left sm:text-xs">
             <p>
               © {year ?? ""} {storeName} — Todos os direitos reservados.
             </p>
