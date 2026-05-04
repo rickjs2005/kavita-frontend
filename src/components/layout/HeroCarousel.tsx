@@ -70,25 +70,26 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
   const secondaryHref = slide.button_secondary_href ? normalizeHref(slide.button_secondary_href) : null;
 
   const typeAccent: Record<string, string> = {
-    promotional: "border-amber-400/40 text-amber-300",
-    institutional: "border-primary/40 text-primary",
-    informational: "border-sky-400/40 text-sky-300",
+    promotional: "border-amber-400/60 text-amber-200 bg-amber-400/10",
+    institutional: "border-emerald-400/60 text-emerald-200 bg-emerald-400/10",
+    informational: "border-sky-400/60 text-sky-200 bg-sky-400/10",
   };
 
   const Heading = isFirst ? "h1" : "h2";
 
   return (
     <>
-      {/* Badge */}
+      {/* Badge — outline emerald (sem fundo cinza translúcido) */}
       {slide.badge_text ? (
-        <div className={`mb-4 sm:mb-6 inline-flex items-center gap-1.5 rounded-md border bg-black/25 px-2.5 py-1 backdrop-blur-md text-[10px] sm:text-[13px] font-bold tracking-widest uppercase ${typeAccent[slide.slide_type] || "border-primary/40 text-primary"}`}>
-          <span className="h-1 w-1 rounded-full bg-current opacity-70" />
+        <div className={`mb-4 sm:mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] sm:text-[12px] font-bold tracking-widest uppercase ${typeAccent[slide.slide_type] || "border-emerald-400/60 text-emerald-200 bg-emerald-400/10"}`}>
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
           {slide.badge_text}
         </div>
       ) : null}
 
-      {/* Title */}
-      <Heading className="text-[clamp(1.75rem,7.5vw,2.5rem)] sm:text-[clamp(2rem,6vw,4.5rem)] font-black leading-[0.92] -tracking-[0.01em] sm:tracking-tight text-white [text-shadow:0_1px_12px_rgba(0,0,0,0.7)]">
+      {/* Title — capitalize garante que slides com title em lowercase
+          ('kavita drones') renderizem como 'Kavita Drones'. */}
+      <Heading className="text-[clamp(1.75rem,7.5vw,2.5rem)] sm:text-[clamp(2rem,6vw,4.5rem)] font-black capitalize leading-[0.92] -tracking-[0.01em] sm:tracking-tight text-white [text-shadow:0_1px_12px_rgba(0,0,0,0.7)]">
         {titleText}
       </Heading>
 
