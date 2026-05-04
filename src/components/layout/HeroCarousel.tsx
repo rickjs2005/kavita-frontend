@@ -108,8 +108,8 @@ function SlideContent({ slide, isFirst }: { slide: HeroSlide; isFirst: boolean }
           href={href}
           className="
             group inline-flex w-full items-center justify-center gap-2
-            rounded-xl bg-primary px-5 py-3.5 sm:px-7 sm:py-3.5
-            text-[14px] sm:text-[15px] font-bold text-white
+            rounded-xl bg-primary px-5 py-3 sm:px-7 sm:py-3.5
+            text-[13px] sm:text-[15px] font-bold text-white
             shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_4px_24px_rgba(53,146,147,0.4)]
             active:scale-[0.97]
             hover:brightness-110 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_6px_28px_rgba(53,146,147,0.5)]
@@ -253,9 +253,9 @@ export default function HeroCarousel({ slides, className = "" }: Props) {
               ))}
             </div>
 
-            {/* Arrows */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5">
-              <span className="hidden text-sm font-medium tabular-nums text-white/40 sm:inline">
+            {/* Arrows — escondidas no mobile (swipe é suficiente) */}
+            <div className="hidden items-center gap-2.5 sm:flex">
+              <span className="text-sm font-medium tabular-nums text-white/40">
                 {String(current + 1).padStart(2, "0")}
                 <span className="mx-1 text-white/20">/</span>
                 {String(total).padStart(2, "0")}
@@ -264,20 +264,20 @@ export default function HeroCarousel({ slides, className = "" }: Props) {
               <button
                 type="button"
                 onClick={() => goTo(current - 1)}
-                className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/25 bg-white/[0.08] text-white/70 active:bg-white/25 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/[0.08] text-white/70 active:bg-white/25 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
                 aria-label="Slide anterior"
               >
-                <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <button
                 type="button"
                 onClick={() => goTo(current + 1)}
-                className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/25 bg-white/[0.08] text-white/70 active:bg-white/25 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/[0.08] text-white/70 active:bg-white/25 hover:bg-white/15 hover:text-white backdrop-blur-sm transition-all"
                 aria-label="Próximo slide"
               >
-                <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </button>

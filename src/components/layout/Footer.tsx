@@ -156,11 +156,11 @@ export default function Footer({ shop }: FooterProps) {
   );
 
   return (
-    <footer className="mt-10 bg-header text-white sm:mt-12">
+    <footer className="mt-8 bg-header text-white sm:mt-12">
       {/* Top container */}
-      <div className="mx-auto max-w-6xl px-4 pb-8 pt-8 sm:pb-10 sm:pt-12">
+      <div className="mx-auto max-w-6xl px-4 pb-6 pt-6 sm:pb-10 sm:pt-12">
         {/* Grid responsivo: 1 col (mobile), 2 (tablet), 4 (desktop) */}
-        <div className="grid grid-cols-1 gap-7 sm:gap-10 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:gap-10 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="space-y-3">
             <div>
@@ -185,7 +185,7 @@ export default function Footer({ shop }: FooterProps) {
             <h3 className="text-sm font-semibold uppercase tracking-wider text-white/90">
               Navegação
             </h3>
-            <ul className="mt-4 space-y-2 text-sm">
+            <ul className="mt-3 space-y-1.5 text-sm sm:mt-4 sm:space-y-2">
               {links.map((l) => (
                 <li key={`${l.href}-${l.label}`}>
                   <Link
@@ -315,7 +315,7 @@ export default function Footer({ shop }: FooterProps) {
         </div>
 
         {/* Divider */}
-        <div className="mt-8 border-t border-white/10 pt-5 sm:mt-10 sm:pt-6">
+        <div className="mt-6 border-t border-white/10 pt-4 sm:mt-10 sm:pt-6">
           <div className="flex flex-col gap-2 text-center text-[11px] text-white/70 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:text-left sm:text-xs">
             <p>
               © {year ?? ""} {storeName} — Todos os direitos reservados.

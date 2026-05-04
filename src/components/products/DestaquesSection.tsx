@@ -192,19 +192,20 @@ export default function PromocoesHero() {
       aria-roledescription="carousel"
     >
       {/* Grid template areas — fonte de verdade da reorganização */}
+      {/* Mobile compacto: 2 cols (texto à esquerda, imagem 110px à direita).
+          Desktop: 5fr/7fr com imagem grande à esquerda como antes. */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
             .kavita-promo-grid {
               display: grid;
-              grid-template-columns: 1fr;
+              grid-template-columns: minmax(0, 1fr) 112px;
               grid-template-areas:
-                "pill"
-                "title"
-                "product"
-                "cta"
-                "image";
-              gap: 0.75rem;
+                "pill    pill"
+                "product image"
+                "cta     cta";
+              column-gap: 0.75rem;
+              row-gap: 0.5rem;
             }
             @media (min-width: 768px) {
               .kavita-promo-grid {
@@ -266,8 +267,8 @@ export default function PromocoesHero() {
           }}
         />
 
-        {/* ─── Top strip ─────────── */}
-        <div className="relative border-b border-white/10 bg-white/[0.04] backdrop-blur-md">
+        {/* ─── Top strip — escondido no mobile (já temos header fora do card) ─────────── */}
+        <div className="relative hidden border-b border-white/10 bg-white/[0.04] backdrop-blur-md md:block">
           <div className="flex items-center gap-2.5 px-4 py-3 sm:gap-3 sm:px-6 sm:py-3.5 md:px-10">
             <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
               <span
@@ -333,7 +334,7 @@ export default function PromocoesHero() {
         {/* ─── Conteúdo principal — grid template areas ─────────── */}
         <div
           key={produto.id}
-          className="kavita-promo-grid relative animate-[fadeIn_0.6s_ease-out] p-4 sm:p-5 md:p-10 lg:p-12"
+          className="kavita-promo-grid relative animate-[fadeIn_0.6s_ease-out] p-3.5 sm:p-5 md:p-10 lg:p-12"
         >
           {/* ── PILL — título da campanha (admin) com fallback ── */}
           {/*
@@ -357,16 +358,11 @@ export default function PromocoesHero() {
             </p>
           </div>
 
-          {/* ── TITLE — h2 único, dois visuais via responsive classes ── */}
-          {/*
-            Mobile: small kicker style (text-[10px] uppercase tracking-wide
-                    color primary). Não compete com o nome do produto.
-            Desktop: BIG display (text-3xl/4xl extrabold branco) com
-                     sublinhado pintado teal embaixo.
-          */}
+          {/* ── TITLE — h2 oculto no mobile (a seção fora já tem h2 'Ofertas da semana'),
+                    BIG display no desktop. ── */}
           <div
             style={{ gridArea: "title" }}
-            className="mt-1 md:mt-4"
+            className="hidden mt-1 md:mt-4 md:block"
           >
             <div className="relative md:w-fit">
               <span
@@ -411,8 +407,8 @@ export default function PromocoesHero() {
               Em destaque agora
             </p>
 
-            {/* NOME DO PRODUTO — herói visual no mobile */}
-            <p className="text-[1.625rem] font-extrabold leading-[1.1] tracking-tight text-white md:mt-2 md:text-2xl md:font-bold md:leading-tight">
+            {/* NOME DO PRODUTO — compacto 2 linhas no mobile, herói no desktop */}
+            <p className="line-clamp-2 text-[15px] font-bold leading-tight tracking-tight text-white md:mt-2 md:line-clamp-none md:text-2xl md:leading-tight">
               {produto.name}
             </p>
 
@@ -444,7 +440,7 @@ export default function PromocoesHero() {
                     por
                   </span>
                   <span
-                    className="bg-clip-text text-[2.5rem] font-extrabold tabular-nums leading-none tracking-tight text-transparent sm:text-5xl md:text-5xl"
+                    className="bg-clip-text text-[1.65rem] font-extrabold tabular-nums leading-none tracking-tight text-transparent sm:text-5xl md:text-5xl"
                     style={{
                       backgroundImage:
                         "linear-gradient(135deg, #FF7A00 0%, #EC5B20 70%, #d44c19 100%)",
@@ -510,7 +506,7 @@ export default function PromocoesHero() {
           >
             <Link
               href={`/produtos/${produto.id}`}
-              className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-6 py-3.5 text-[13px] font-bold uppercase tracking-[0.12em] text-white shadow-xl transition-all hover:brightness-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-accent-bright)]/40 md:w-auto md:px-7 md:text-sm"
+              className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-5 py-2.5 text-[12px] font-bold uppercase tracking-[0.1em] text-white shadow-xl transition-all hover:brightness-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-accent-bright)]/40 md:w-auto md:px-7 md:py-3.5 md:text-sm md:tracking-[0.12em]"
               style={{
                 background:
                   "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
@@ -545,7 +541,7 @@ export default function PromocoesHero() {
 
             <Link
               href="/produtos"
-              className="text-center text-[11px] font-bold uppercase tracking-[0.14em] text-primary underline-offset-4 transition-colors hover:text-[var(--color-teal-light)] hover:underline md:text-left md:tracking-[0.16em]"
+              className="hidden text-center text-[11px] font-bold uppercase tracking-[0.14em] text-primary underline-offset-4 transition-colors hover:text-[var(--color-teal-light)] hover:underline md:inline md:text-left md:tracking-[0.16em]"
             >
               Ver todas as ofertas →
             </Link>
@@ -560,7 +556,7 @@ export default function PromocoesHero() {
           */}
           <div
             style={{ gridArea: "image" }}
-            className="relative mt-4 md:mt-0 md:self-stretch"
+            className="relative md:mt-0 md:self-stretch"
           >
             <div className="relative md:mx-auto md:max-w-md">
               {/* Halo teal — só desktop */}
@@ -574,20 +570,20 @@ export default function PromocoesHero() {
               />
 
               {/* Frame branco */}
-              <div className="relative overflow-hidden rounded-2xl border-[3px] border-white/95 bg-white shadow-xl shadow-service-from/60 ring-1 ring-primary/20 md:rounded-[2rem] md:border-4 md:shadow-2xl">
+              <div className="relative overflow-hidden rounded-xl border-2 border-white/95 bg-white shadow-lg shadow-service-from/60 ring-1 ring-primary/20 md:rounded-[2rem] md:border-4 md:shadow-2xl">
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-x-8 top-0 z-10 h-px bg-gradient-to-r from-transparent via-primary to-transparent md:inset-x-10"
                 />
 
-                {/* Mobile: banner horizontal h-40 / Desktop: quadrado */}
-                <div className="relative h-40 w-full sm:h-48 md:aspect-square md:h-auto">
+                {/* Mobile: square 110px (coluna fixa do grid) / Desktop: quadrado grande */}
+                <div className="relative aspect-square w-full md:aspect-square md:h-auto">
                   <Image
                     src={imageUrl}
                     alt={produto.name}
                     fill
                     className="object-cover"
-                    sizes="(max-width:640px) 100vw, (max-width:1024px) 45vw, 38vw"
+                    sizes="(max-width:640px) 110px, (max-width:1024px) 45vw, 38vw"
                     priority
                   />
                   <div
@@ -597,19 +593,20 @@ export default function PromocoesHero() {
                 </div>
               </div>
 
-              {/* STICKER de desconto — menor e mais discreto no mobile */}
+              {/* STICKER de desconto — escondido no mobile (já temos badge -XX% OFF
+                  inline com o preço) / mantido no desktop como elemento visual. */}
               {desconto > 0 && (
                 <div
-                  className="absolute -right-2 -top-2 z-20 -rotate-[8deg] md:-right-6 md:-top-6"
+                  className="absolute -right-6 -top-6 z-20 hidden -rotate-[8deg] md:block"
                   aria-hidden
                 >
                   <div className="relative">
                     <div
-                      className="absolute -inset-2 rounded-full blur-lg md:-inset-3"
+                      className="absolute -inset-3 rounded-full blur-lg"
                       style={{ background: "rgba(255,122,0,0.50)" }}
                     />
                     <div
-                      className="relative flex h-[60px] w-[60px] flex-col items-center justify-center rounded-full text-white shadow-xl ring-[3px] ring-white md:h-[108px] md:w-[108px] md:ring-4"
+                      className="relative flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full text-white shadow-xl ring-4 ring-white"
                       style={{
                         background:
                           "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
@@ -617,13 +614,13 @@ export default function PromocoesHero() {
                           "0 12px 30px -8px rgba(236,91,32,0.65), 0 0 0 1px rgba(255,255,255,0.4) inset",
                       }}
                     >
-                      <span className="text-[7px] font-bold uppercase tracking-[0.10em] opacity-95 md:text-[9px] md:tracking-[0.16em]">
+                      <span className="text-[9px] font-bold uppercase tracking-[0.16em] opacity-95">
                         Oferta
                       </span>
-                      <span className="font-mono text-base font-extrabold tabular-nums leading-none tracking-tight md:text-[1.85rem]">
+                      <span className="font-mono text-[1.85rem] font-extrabold tabular-nums leading-none tracking-tight">
                         -{desconto.toFixed(0)}%
                       </span>
-                      <span className="mt-0.5 text-[7px] font-bold uppercase tracking-[0.08em] opacity-95 md:text-[9px] md:tracking-[0.14em]">
+                      <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] opacity-95">
                         Off
                       </span>
                     </div>
@@ -659,11 +656,11 @@ export default function PromocoesHero() {
           </div>
         </div>
 
-        {/* ─── Navegação inferior ─────────── */}
+        {/* ─── Navegação inferior — apenas dots no mobile, full no desktop ─────────── */}
         {total > 1 && (
           <div className="relative border-t border-white/10 bg-white/[0.04] backdrop-blur-md">
-            <div className="flex items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 md:px-10">
-              <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center justify-center gap-3 px-4 py-2.5 sm:justify-between sm:gap-4 sm:px-6 sm:py-4 md:px-10">
+              <div className="hidden items-center gap-1.5 sm:flex sm:gap-2">
                 <button
                   type="button"
                   onClick={() => goTo(current - 1)}

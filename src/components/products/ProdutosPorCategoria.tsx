@@ -131,7 +131,7 @@ export default function ProdutosPorCategoria({ categoria, limit = 12 }: Props) {
               skeletons.map((_, i) => (
                 <div
                   key={i}
-                  className="min-w-[170px] max-w-[170px] snap-start rounded-2xl bg-white/90 p-3 shadow-sm ring-1 ring-emerald-100 sm:min-w-[240px] sm:max-w-[240px] lg:min-w-[250px] lg:max-w-[250px]"
+                  className="min-w-[220px] max-w-[220px] snap-start rounded-2xl bg-white/90 p-3 shadow-sm ring-1 ring-emerald-100 sm:min-w-[240px] sm:max-w-[240px] lg:min-w-[250px] lg:max-w-[250px]"
                 >
                   <div className="h-40 w-full animate-pulse rounded-xl bg-emerald-100/80 sm:h-44" />
                   <div className="mt-3 h-4 w-3/4 animate-pulse rounded-full bg-emerald-100/80" />
@@ -157,7 +157,7 @@ export default function ProdutosPorCategoria({ categoria, limit = 12 }: Props) {
               list.map((p) => (
                 <div
                   key={p.id}
-                  className="min-w-[170px] max-w-[170px] snap-start sm:min-w-[240px] sm:max-w-[240px] lg:min-w-[250px] lg:max-w-[250px]"
+                  className="min-w-[220px] max-w-[220px] snap-start sm:min-w-[240px] sm:max-w-[240px] lg:min-w-[250px] lg:max-w-[250px]"
                 >
                   <ProductCard product={p as any} />
                 </div>

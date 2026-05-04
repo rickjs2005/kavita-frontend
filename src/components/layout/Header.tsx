@@ -191,7 +191,7 @@ export default function Header({ categories, shop }: HeaderProps) {
       <header className="fixed top-0 left-0 w-full z-50 bg-header">
         {/* ── TOP BAR ── */}
         <div className="w-full border-b border-white/[0.06]">
-          <div className="max-w-7xl mx-auto h-[76px] md:h-24 flex items-center px-4 md:px-6 lg:px-8 gap-2 md:gap-6 lg:gap-8">
+          <div className="max-w-7xl mx-auto h-[60px] md:h-24 flex items-center px-3 md:px-6 lg:px-8 gap-2 md:gap-6 lg:gap-8">
             {/* Menu mobile + Logo formam bloco esquerdo no mobile */}
             <button
               aria-label="Abrir menu"
@@ -218,8 +218,8 @@ export default function Header({ categories, shop }: HeaderProps) {
                 width={480}
                 height={130}
                 priority
-                className={`w-auto h-[50px] sm:h-[60px] md:h-[76px] ${isDronePage ? "drop-shadow-[0_1px_16px_rgba(255,255,255,0.45)] brightness-110" : ""}`}
-                sizes="(max-width: 640px) 200px, (max-width: 1024px) 280px, 380px"
+                className={`w-auto h-9 sm:h-[60px] md:h-[76px] ${isDronePage ? "drop-shadow-[0_1px_16px_rgba(255,255,255,0.45)] brightness-110" : ""}`}
+                sizes="(max-width: 640px) 160px, (max-width: 1024px) 280px, 380px"
               />
             </Link>
 
@@ -443,8 +443,8 @@ export default function Header({ categories, shop }: HeaderProps) {
         aria-hidden
         className={
           showCategories && publicActiveCategories.length > 0
-            ? "h-[76px] md:h-[132px]" /* 96px topbar + 36px nav */
-            : "h-[76px] md:h-24"       /* só topbar */
+            ? "h-[60px] md:h-[132px]" /* 96px topbar + 36px nav */
+            : "h-[60px] md:h-24"       /* só topbar */
         }
       />
     </>
@@ -542,7 +542,7 @@ function CartIcon({ size = 22 }: { size?: number }) {
 
 function CartBadge({ count }: { count: number }) {
   return (
-    <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+    <span className="absolute -top-1 -right-1 bg-accent text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 leading-none ring-2 ring-header">
       {count}
     </span>
   );

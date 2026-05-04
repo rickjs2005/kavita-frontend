@@ -47,7 +47,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     <button
       onClick={handleAddToCart}
       disabled={loading || disabled || isOut}
-      className={`w-full py-3 rounded-xl text-white font-semibold transition ${
+      className={`w-full py-2.5 sm:py-3 rounded-xl text-white text-sm font-semibold transition ${
         isOut
           ? "bg-gray-400 cursor-not-allowed"
           : "bg-green-600 hover:bg-green-700 active:bg-green-800"
@@ -56,11 +56,16 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       title={isOut ? "Esgotado" : "Adicionar ao Carrinho"}
       aria-disabled={loading || disabled || isOut || undefined}
     >
-      {loading
-        ? "Adicionando..."
-        : isOut
-          ? "Esgotado"
-          : "Adicionar ao Carrinho"}
+      {loading ? (
+        "Adicionando..."
+      ) : isOut ? (
+        "Esgotado"
+      ) : (
+        <>
+          <span className="sm:hidden">Adicionar</span>
+          <span className="hidden sm:inline">Adicionar ao Carrinho</span>
+        </>
+      )}
     </button>
   );
 };

@@ -21,10 +21,10 @@ type Props = {
 };
 
 const TRUST_ITEMS: { icon: string; title: string; desc: string }[] = [
-  { icon: "🔒", title: "Pagamento seguro", desc: "Pix · Cartão · Boleto" },
-  { icon: "💬", title: "Atendimento", desc: "WhatsApp e e-mail" },
-  { icon: "🚚", title: "Entrega regional", desc: "Cobertura ampliada" },
-  { icon: "✓", title: "Selecionados", desc: "Curados pela Kavita" },
+  { icon: "🔒", title: "Pagamento seguro", desc: "Pix · Cartão" },
+  { icon: "💬", title: "Atendimento", desc: "WhatsApp" },
+  { icon: "🚚", title: "Entrega regional", desc: "Cobertura ampla" },
+  { icon: "✓", title: "Selecionados", desc: "Curados Kavita" },
 ];
 
 export default function HomeClient({ categories, shop, heroSlides }: Props) {
@@ -35,30 +35,30 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
         <div className="overflow-hidden rounded-3xl shadow-[0_18px_40px_-20px_rgba(7,63,67,0.45)] ring-1 ring-slate-200/60 sm:rounded-none sm:shadow-none sm:ring-0">
           <HeroCarousel
             slides={heroSlides}
-            className="!min-h-[44vh] sm:!min-h-[80vh]"
+            className="!min-h-[480px] sm:!min-h-[80vh]"
           />
         </div>
       </div>
 
       {/* ─── TRUST STRIP — 4 cards (2x2 mobile, 4-col desktop) ───────── */}
-      <section className="mx-auto w-full max-w-7xl px-3 pt-5 sm:px-4 sm:pt-7">
-        <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+      <section className="mx-auto w-full max-w-7xl px-3 pt-4 sm:px-4 sm:pt-7">
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
           {TRUST_ITEMS.map((it) => (
             <li
               key={it.title}
-              className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm sm:gap-3 sm:px-4 sm:py-3"
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 shadow-sm sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3"
             >
               <span
                 aria-hidden
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm text-emerald-700 sm:h-10 sm:w-10 sm:text-base"
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[13px] text-emerald-700 sm:h-10 sm:w-10 sm:text-base"
               >
                 {it.icon}
               </span>
               <div className="min-w-0">
-                <p className="text-[12px] font-semibold leading-tight text-slate-900 sm:text-sm">
+                <p className="truncate text-[11.5px] font-semibold leading-tight text-slate-900 sm:text-sm">
                   {it.title}
                 </p>
-                <p className="mt-0.5 text-[11px] leading-tight text-slate-500 sm:text-xs">
+                <p className="mt-0.5 truncate text-[10.5px] leading-tight text-slate-500 sm:text-xs">
                   {it.desc}
                 </p>
               </div>
@@ -68,8 +68,8 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
       </section>
 
       {/* ─── OFERTAS DA SEMANA ───────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-7xl px-3 pt-6 sm:px-4 sm:pt-8">
-        <div className="mb-3 flex items-end justify-between gap-3">
+      <section className="mx-auto w-full max-w-7xl px-3 pt-5 sm:px-4 sm:pt-8">
+        <div className="mb-2.5 flex items-end justify-between gap-3 sm:mb-3">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#FF6B16]">
               Promoções
@@ -85,13 +85,13 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
             Ver todas →
           </Link>
         </div>
-        <div className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
+        <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-3xl sm:p-5">
           <DestaquesSection />
         </div>
       </section>
 
       {/* ─── CATÁLOGO DA LOJA ────────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-7xl px-3 pt-7 sm:px-4 sm:pt-10">
+      <section className="mx-auto w-full max-w-7xl px-3 pt-6 sm:px-4 sm:pt-10">
         <header className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
@@ -136,7 +136,7 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
       </section>
 
       {/* ─── SERVIÇOS ────────────────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-7xl px-3 pb-10 pt-7 sm:px-4 sm:pt-10">
+      <section className="mx-auto w-full max-w-7xl px-3 pb-8 pt-6 sm:px-4 sm:pb-10 sm:pt-10">
         <header className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-600">

@@ -140,7 +140,7 @@ export default function ProductCard({
         "group relative flex h-full flex-col rounded-2xl border border-gray-200 bg-white",
         "shadow-sm hover:shadow-md transition-shadow",
         "ring-1 ring-gray-100 hover:ring-emerald-200/70",
-        "p-3 sm:p-4",
+        "p-2.5 sm:p-4",
         className,
       ].join(" ")}
     >
@@ -151,17 +151,18 @@ export default function ProductCard({
         aria-pressed={isFavorite}
         disabled={favLoading}
         className="
-          absolute right-3 top-3 z-20
-          inline-flex h-9 w-9 items-center justify-center
+          absolute right-2 top-2 z-20
+          inline-flex h-7 w-7 items-center justify-center
           rounded-full bg-white/95
           border border-gray-200
           shadow-sm
           hover:bg-white hover:border-rose-300 hover:text-rose-500
           transition
+          sm:right-3 sm:top-3 sm:h-9 sm:w-9
         "
       >
         <Heart
-          className="h-4 w-4"
+          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
           fill={isFavorite ? "currentColor" : "none"}
         />
       </button>
@@ -173,32 +174,32 @@ export default function ProductCard({
         prefetch={false}
         className="relative block w-full overflow-hidden rounded-xl bg-gray-50"
       >
-        <div className="relative w-full aspect-[4/3] sm:aspect-[16/11]">
+        <div className="relative w-full aspect-[5/4] sm:aspect-[16/11]">
           <Image
             src={cover}
             alt={product.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            sizes="(max-width: 640px) 240px, (max-width: 1024px) 50vw, 33vw"
           />
         </div>
 
         {/* Badges */}
-        <div className="absolute left-2 top-2 z-10 flex flex-col gap-1">
+        <div className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-3rem)] flex-col gap-1">
           {outOfStock && (
-            <span className="rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+            <span className="rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm sm:px-2.5 sm:py-1 sm:text-[10px]">
               Esgotado
             </span>
           )}
 
           {hasDiscount && !outOfStock && (
-            <span className="rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+            <span className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm sm:px-2.5 sm:py-1 sm:text-[10px]">
               -{discountPercent!.toFixed(0)}% OFF
             </span>
           )}
 
           {shippingFree && !outOfStock && (
-            <span className="max-w-[90%] truncate rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+            <span className="max-w-full truncate rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-sm sm:px-2.5 sm:py-1 sm:text-[10px]">
               {shippingFreeFromQty
                 ? `Frete grátis ${shippingFreeFromQty}+ un.`
                 : "Frete grátis"}
@@ -208,11 +209,11 @@ export default function ProductCard({
       </Link>
 
       {/* Conteúdo */}
-      <div className="mt-3 flex flex-1 flex-col">
+      <div className="mt-2.5 flex flex-1 flex-col sm:mt-3">
         <Link
           href={`/produtos/${product.id}`}
           prefetch={false}
-          className="min-h-[44px] line-clamp-2 text-sm sm:text-[15px] font-semibold text-gray-900 hover:underline underline-offset-2"
+          className="min-h-[36px] line-clamp-2 text-[13px] sm:min-h-[44px] sm:text-[15px] font-semibold text-gray-900 hover:underline underline-offset-2"
         >
           {product.name}
         </Link>
@@ -227,25 +228,26 @@ export default function ProductCard({
           </div>
         )}
 
+        {/* Descrição — escondida no mobile (carrossel compacto) */}
         {product.description && (
-          <p className="mt-1 min-h-[36px] line-clamp-2 text-xs sm:text-sm text-gray-600">
+          <p className="mt-1 hidden min-h-[36px] line-clamp-2 text-xs sm:block sm:text-sm text-gray-600">
             {product.description}
           </p>
         )}
 
         {/* Preço + desconto */}
-        <div className="mt-3 space-y-0.5">
+        <div className="mt-2 space-y-0.5 sm:mt-3">
           {hasDiscount && (
-            <div className="text-xs text-gray-400 line-through">
+            <div className="text-[11px] text-gray-400 line-through sm:text-xs">
               {formatCurrency(originalPrice)}
             </div>
           )}
-          <span className="text-lg sm:text-xl font-extrabold text-emerald-600">
+          <span className="text-base font-extrabold text-emerald-600 sm:text-xl">
             {formatCurrency(finalPrice)}
           </span>
         </div>
 
-        <div className="mt-auto pt-4 flex flex-col gap-2">
+        <div className="mt-auto flex flex-col gap-1.5 pt-3 sm:gap-2 sm:pt-4">
           <div className="w-full">
             <AddToCartButton product={productForCart} disabled={outOfStock} />
           </div>
@@ -253,7 +255,7 @@ export default function ProductCard({
           <Link
             href={`/produtos/${product.id}`}
             prefetch={false}
-            className="w-full inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="w-full text-center text-[12px] font-medium text-emerald-700 underline-offset-2 hover:underline sm:inline-flex sm:items-center sm:justify-center sm:rounded-lg sm:border sm:border-gray-300 sm:px-3 sm:py-2 sm:text-sm sm:text-gray-700 sm:no-underline sm:hover:bg-gray-50"
           >
             Ver detalhes
           </Link>
