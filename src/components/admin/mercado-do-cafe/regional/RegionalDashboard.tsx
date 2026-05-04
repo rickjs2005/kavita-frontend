@@ -209,20 +209,20 @@ function KpisRow({
   ];
 
   return (
-    <div>
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <div>
+    <div className="min-w-0">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+        <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300">
             Visão geral · últimos {kpis.days_back} dias
           </p>
-          <h3 className="mt-0.5 text-base font-semibold text-slate-50">
+          <h3 className="mt-0.5 break-words text-base font-semibold text-slate-50">
             Operação Zona da Mata
           </h3>
         </div>
         <button
           type="button"
           onClick={onReload}
-          className="text-[11px] font-semibold text-amber-300 hover:text-amber-200"
+          className="self-start text-[11px] font-semibold text-amber-300 hover:text-amber-200 sm:self-auto"
         >
           Atualizar ↻
         </button>
