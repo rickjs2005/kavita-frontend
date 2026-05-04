@@ -24,7 +24,7 @@ const BENEFITS: { icon: string; title: string }[] = [
   { icon: "🔒", title: "Pagamento seguro" },
   { icon: "💬", title: "Atendimento WhatsApp" },
   { icon: "🚚", title: "Entrega regional" },
-  { icon: "✓", title: "Selecionados" },
+  { icon: "✓", title: "Produtos selecionados" },
 ];
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -65,15 +65,15 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
           {BENEFITS.map((it) => (
             <li
               key={it.title}
-              className="flex flex-col items-center justify-center gap-1.5 px-1.5 py-3 text-center sm:gap-2 sm:py-4"
+              className="flex flex-col items-center justify-center gap-1.5 px-1 py-3 text-center sm:gap-2 sm:px-1.5 sm:py-4"
             >
               <span
                 aria-hidden
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-[14px] text-emerald-700 sm:h-10 sm:w-10 sm:text-base"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-[15px] text-emerald-700 sm:h-10 sm:w-10 sm:text-base"
               >
                 {it.icon}
               </span>
-              <p className="text-[10.5px] font-semibold leading-tight text-slate-800 sm:text-[12px]">
+              <p className="line-clamp-2 text-[10.5px] font-semibold leading-tight text-slate-800 sm:text-[12px]">
                 {it.title}
               </p>
             </li>
