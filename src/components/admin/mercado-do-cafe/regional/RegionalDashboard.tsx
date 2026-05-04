@@ -12,6 +12,7 @@
 //   4. Performance das corretoras (ranking)
 
 import Link from "next/link";
+import KpiGrid from "@/components/admin/shell/KpiGrid";
 import {
   useRegionalStats,
   type LeadsPorCidadeRow,
@@ -227,7 +228,7 @@ function KpisRow({
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+      <KpiGrid variant="wide">
         {cards.map((c, i) => (
           <div
             key={i}
@@ -262,7 +263,7 @@ function KpisRow({
             <p className="mt-0.5 text-[10px] text-slate-500">{c.hint}</p>
           </div>
         ))}
-      </div>
+      </KpiGrid>
     </div>
   );
 }

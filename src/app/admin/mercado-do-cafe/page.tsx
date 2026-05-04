@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAdminAuth } from "@/context/AdminAuthContext";
+import AdminPageHeader from "@/components/admin/shell/AdminPageHeader";
 import MercadoCafeTabs, {
   type MercadoTabKey,
 } from "@/components/admin/mercado-do-cafe/MercadoCafeTabs";
@@ -36,77 +37,72 @@ export default function AdminMercadoDoCafePage() {
     <div className="relative min-h-screen w-full">
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-3 py-3 sm:px-4">
-          <div className="min-w-0">
-            <div className="mb-1 flex flex-wrap items-center gap-2">
+        <div className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-4">
+          <AdminPageHeader
+            badges={
               <span className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300">
                 Kavita Admin
               </span>
-            </div>
-            <h1 className="truncate text-base font-semibold sm:text-lg text-slate-50">
-              Mercado do Café
-            </h1>
-            <p className="mt-0.5 text-[11px] text-slate-400 sm:text-xs">
-              Gerencie corretoras de café e analise solicitações de cadastro.
-            </p>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            {/* Link para o drill-down de auditoria — deixa claro que o
-                histórico de ações pertence a este módulo e não é um
-                recurso separado de sistema. No mobile vira ícone-only
-                para economizar espaço sem sumir. */}
-            <Link
-              href="/admin/mercado-do-cafe/metricas"
-              aria-label="Abrir dashboard de métricas do Mercado do Café"
-              className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
-              title="Leads, SLA, reviews e planos — visão 7/30/90 dias"
-            >
-              <span aria-hidden className="text-sm sm:mr-1.5">
-                📈
-              </span>
-              <span className="hidden sm:inline">Métricas</span>
-            </Link>
-            <Link
-              href="/admin/mercado-do-cafe/reconciliacao"
-              aria-label="Abrir reconciliação de pagamentos Asaas"
-              className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
-              title="Status das assinaturas e eventos de webhook do Asaas"
-            >
-              <span aria-hidden className="text-sm sm:mr-1.5">
-                💳
-              </span>
-              <span className="hidden sm:inline">Reconciliação</span>
-            </Link>
-            <Link
-              href="/admin/mercado-do-cafe/backfill-regional"
-              aria-label="Corretoras com perfil regional incompleto"
-              className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
-              title="Corretoras que ainda não preencheram os 6 campos regionais"
-            >
-              <span aria-hidden className="text-sm sm:mr-1.5">
-                📋
-              </span>
-              <span className="hidden sm:inline">Backfill</span>
-            </Link>
-            <Link
-              href="/admin/auditoria"
-              aria-label="Abrir histórico do Mercado do Café"
-              className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
-              title="Ver tudo que a equipe já fez neste módulo"
-            >
-              <span aria-hidden className="text-sm sm:mr-1.5">
-                🕒
-              </span>
-              <span className="hidden sm:inline">Histórico</span>
-            </Link>
-            <Link
-              href="/admin/mercado-do-cafe/corretoras/nova"
-              className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:px-4"
-            >
-              + Nova Corretora
-            </Link>
-          </div>
+            }
+            title="Mercado do Café"
+            subtitle="Gerencie corretoras de café e analise solicitações de cadastro."
+            actions={
+              <>
+                <Link
+                  href="/admin/mercado-do-cafe/metricas"
+                  aria-label="Abrir dashboard de métricas do Mercado do Café"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
+                  title="Leads, SLA, reviews e planos — visão 7/30/90 dias"
+                >
+                  <span aria-hidden className="text-sm sm:mr-1.5">
+                    📈
+                  </span>
+                  <span className="hidden sm:inline">Métricas</span>
+                </Link>
+                <Link
+                  href="/admin/mercado-do-cafe/reconciliacao"
+                  aria-label="Abrir reconciliação de pagamentos Asaas"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
+                  title="Status das assinaturas e eventos de webhook do Asaas"
+                >
+                  <span aria-hidden className="text-sm sm:mr-1.5">
+                    💳
+                  </span>
+                  <span className="hidden sm:inline">Reconciliação</span>
+                </Link>
+                <Link
+                  href="/admin/mercado-do-cafe/backfill-regional"
+                  aria-label="Corretoras com perfil regional incompleto"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
+                  title="Corretoras que ainda não preencheram os 6 campos regionais"
+                >
+                  <span aria-hidden className="text-sm sm:mr-1.5">
+                    📋
+                  </span>
+                  <span className="hidden sm:inline">Backfill</span>
+                </Link>
+                <Link
+                  href="/admin/auditoria"
+                  aria-label="Abrir histórico do Mercado do Café"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
+                  title="Ver tudo que a equipe já fez neste módulo"
+                >
+                  <span aria-hidden className="text-sm sm:mr-1.5">
+                    🕒
+                  </span>
+                  <span className="hidden sm:inline">Histórico</span>
+                </Link>
+              </>
+            }
+            primaryAction={
+              <Link
+                href="/admin/mercado-do-cafe/corretoras/nova"
+                className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:px-4"
+              >
+                + Nova Corretora
+              </Link>
+            }
+          />
         </div>
       </header>
 
