@@ -139,8 +139,10 @@ export default function ChatAssistant({ whatsappUrl }: Props) {
         onClick={toggleOpen}
         aria-label={open ? "Fechar assistente" : "Abrir assistente virtual"}
         className={[
-          "fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-500",
-          "sm:bottom-6 sm:right-6",
+          "fixed right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-500",
+          // Mobile: acima do bottom nav (64px) + 16px de respiro + safe-area.
+          // Desktop (sm+): bottom-6 padrão (sem bottom nav).
+          "bottom-[calc(80px+env(safe-area-inset-bottom,0px))] sm:bottom-6 sm:right-6",
           open
             ? "bg-gray-800 text-white hover:bg-gray-700"
             : "bg-primary text-white hover:bg-primary-hover",
@@ -161,8 +163,9 @@ export default function ChatAssistant({ whatsappUrl }: Props) {
         <div
           className={[
             "fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl shadow-black/10",
-            // Mobile: full width with margins
-            "bottom-[5.5rem] left-3 right-3",
+            // Mobile: full width, ancorado acima do FAB (que já está acima
+            // do bottom nav). 80px (FAB position) + 56px (FAB height) + 12px gap.
+            "bottom-[calc(148px+env(safe-area-inset-bottom,0px))] left-3 right-3",
             // Desktop: fixed width anchored bottom-right
             "sm:left-auto sm:bottom-[5.5rem] sm:right-6 sm:w-[380px]",
             "max-h-[min(520px,calc(100vh-7rem))]",
