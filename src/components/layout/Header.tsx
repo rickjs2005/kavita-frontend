@@ -210,16 +210,30 @@ export default function Header({ categories, shop }: HeaderProps) {
               </svg>
             </button>
 
-            {/* Logo — centralizado no mobile, âncora esquerda no desktop */}
-            <Link href="/" className="flex items-center justify-center flex-1 md:flex-none md:justify-start shrink-0 min-w-0 sm:min-w-[200px] md:min-w-[280px]">
+            {/* Logo — texto branco + tagline no mobile, imagem no desktop */}
+            <Link
+              href="/"
+              className="flex items-center justify-center flex-1 md:flex-none md:justify-start shrink-0 min-w-0 sm:min-w-[200px] md:min-w-[280px]"
+            >
+              {/* Mobile: lockup textual com alto contraste sobre o gradiente verde */}
+              <span className="flex flex-col items-center md:hidden">
+                <span className="text-[20px] font-extrabold leading-none tracking-tight text-white">
+                  {logoAlt || "Kavita"}
+                </span>
+                <span className="mt-1 text-[10px] font-medium uppercase leading-none tracking-[0.18em] text-white/70">
+                  Conectando o agro
+                </span>
+              </span>
+
+              {/* Desktop: imagem real (mantém branding existente) */}
               <Image
                 src={logoSrc}
                 alt={logoAlt}
                 width={480}
                 height={130}
                 priority
-                className={`w-auto h-9 sm:h-[60px] md:h-[76px] ${isDronePage ? "drop-shadow-[0_1px_16px_rgba(255,255,255,0.45)] brightness-110" : ""}`}
-                sizes="(max-width: 640px) 160px, (max-width: 1024px) 280px, 380px"
+                className={`hidden w-auto md:block md:h-[76px] ${isDronePage ? "drop-shadow-[0_1px_16px_rgba(255,255,255,0.45)] brightness-110" : ""}`}
+                sizes="(max-width: 1024px) 280px, 380px"
               />
             </Link>
 
@@ -522,6 +536,8 @@ function MobileMenuLink({
 }
 
 function CartIcon({ size = 22 }: { size?: number }) {
+  // Cart real (carrinho com rodinhas), em vez do Heroicons shopping-bag
+  // anterior. Match com a referência visual.
   return (
     <svg
       width={size}
@@ -532,10 +548,11 @@ function CartIcon({ size = 22 }: { size?: number }) {
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden
     >
-      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <path d="M16 10a4 4 0 0 1-8 0" />
+      <circle cx="9" cy="20" r="1.4" />
+      <circle cx="17" cy="20" r="1.4" />
+      <path d="M2.5 3.5h2.2l2.4 11.5a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.2L20.5 7H6.2" />
     </svg>
   );
 }
