@@ -188,7 +188,7 @@ export default function Header({ categories, shop }: HeaderProps) {
         Pular para o conteúdo
       </a>
 
-      <header className="fixed top-0 left-0 w-full z-50 bg-header">
+      <header className="fixed top-0 left-0 w-full z-50 bg-gradient-to-br from-[#003b3f] via-[#004f50] to-[#002d2f] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.35)] md:bg-header md:bg-none md:shadow-none">
         {/* ── TOP BAR ── */}
         <div className="w-full border-b border-white/[0.06]">
           <div className="max-w-7xl mx-auto h-[60px] md:h-24 flex items-center px-3 md:px-6 lg:px-8 gap-2 md:gap-6 lg:gap-8">

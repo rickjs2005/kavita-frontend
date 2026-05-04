@@ -20,95 +20,149 @@ type Props = {
   heroSlides: HeroSlide[];
 };
 
-const TRUST_ITEMS: { icon: string; title: string; desc: string }[] = [
-  { icon: "🔒", title: "Pagamento seguro", desc: "Pix · Cartão" },
-  { icon: "💬", title: "Atendimento", desc: "WhatsApp" },
-  { icon: "🚚", title: "Entrega regional", desc: "Cobertura ampla" },
-  { icon: "✓", title: "Selecionados", desc: "Curados Kavita" },
+const BENEFITS: { icon: string; title: string }[] = [
+  { icon: "🔒", title: "Pagamento seguro" },
+  { icon: "💬", title: "Atendimento WhatsApp" },
+  { icon: "🚚", title: "Entrega regional" },
+  { icon: "✓", title: "Selecionados" },
 ];
+
+const CATEGORY_ICONS: Record<string, string> = {
+  insumos: "🌾",
+  defensivos: "🧪",
+  equipamentos: "🚜",
+  ferramentas: "🛠️",
+  medicamentos: "💊",
+  pets: "🐾",
+  alimentos: "🌱",
+  default: "📦",
+};
+
+function categoryIcon(slug: string): string {
+  const k = slug.toLowerCase();
+  for (const key of Object.keys(CATEGORY_ICONS)) {
+    if (k.includes(key)) return CATEGORY_ICONS[key];
+  }
+  return CATEGORY_ICONS.default;
+}
 
 export default function HomeClient({ categories, shop, heroSlides }: Props) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#F8FAFC] text-slate-900">
+    <div className="flex min-h-screen flex-col bg-[#f7faf8] text-slate-900">
       {/* ─── HERO — modo card no mobile, full-bleed no desktop ───────── */}
-      <div className="px-3 pt-3 sm:px-0 sm:pt-0">
-        <div className="overflow-hidden rounded-3xl shadow-[0_18px_40px_-20px_rgba(7,63,67,0.45)] ring-1 ring-slate-200/60 sm:rounded-none sm:shadow-none sm:ring-0">
+      <div className="px-4 pt-4 sm:px-0 sm:pt-0">
+        <div className="overflow-hidden rounded-[28px] shadow-[0_18px_40px_-20px_rgba(7,63,67,0.45)] ring-1 ring-slate-200/60 sm:rounded-none sm:shadow-none sm:ring-0">
           <HeroCarousel
             slides={heroSlides}
-            className="!min-h-[480px] sm:!min-h-[80vh]"
+            className="!min-h-[400px] sm:!min-h-[80vh]"
           />
         </div>
       </div>
 
-      {/* ─── TRUST STRIP — 4 cards (2x2 mobile, 4-col desktop) ───────── */}
-      <section className="mx-auto w-full max-w-7xl px-3 pt-4 sm:px-4 sm:pt-7">
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-          {TRUST_ITEMS.map((it) => (
+      {/* ─── BENEFÍCIOS — card único, 4-cols com divisores ──────────── */}
+      <section className="mx-auto w-full max-w-7xl px-4 pt-4 sm:pt-7">
+        <ul className="grid grid-cols-4 divide-x divide-slate-100 rounded-[24px] border border-slate-200 bg-white shadow-sm sm:rounded-3xl">
+          {BENEFITS.map((it) => (
             <li
               key={it.title}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 shadow-sm sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3"
+              className="flex flex-col items-center justify-center gap-1.5 px-1.5 py-3 text-center sm:gap-2 sm:py-4"
             >
               <span
                 aria-hidden
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[13px] text-emerald-700 sm:h-10 sm:w-10 sm:text-base"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-[14px] text-emerald-700 sm:h-10 sm:w-10 sm:text-base"
               >
                 {it.icon}
               </span>
-              <div className="min-w-0">
-                <p className="truncate text-[11.5px] font-semibold leading-tight text-slate-900 sm:text-sm">
-                  {it.title}
-                </p>
-                <p className="mt-0.5 truncate text-[10.5px] leading-tight text-slate-500 sm:text-xs">
-                  {it.desc}
-                </p>
-              </div>
+              <p className="text-[10.5px] font-semibold leading-tight text-slate-800 sm:text-[12px]">
+                {it.title}
+              </p>
             </li>
           ))}
         </ul>
       </section>
 
       {/* ─── OFERTAS DA SEMANA ───────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-7xl px-3 pt-5 sm:px-4 sm:pt-8">
-        <div className="mb-2.5 flex items-end justify-between gap-3 sm:mb-3">
+      <section className="mx-auto w-full max-w-7xl px-4 pt-6 sm:pt-8">
+        <div className="mb-3 flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#FF6B16]">
               Promoções
             </p>
-            <h2 className="mt-0.5 text-base font-bold text-slate-900 sm:text-xl">
+            <h2 className="mt-0.5 text-lg font-bold text-slate-900 sm:text-xl">
               Ofertas da semana
             </h2>
           </div>
           <Link
             href="/produtos"
-            className="shrink-0 text-xs font-semibold text-emerald-700 transition-colors hover:text-emerald-500"
+            className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-emerald-700 transition-colors hover:text-emerald-500"
           >
-            Ver todas →
+            Ver todas
+            <span aria-hidden>→</span>
           </Link>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-3xl sm:p-5">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-2 shadow-sm sm:rounded-3xl sm:p-5">
           <DestaquesSection />
         </div>
       </section>
 
       {/* ─── CATÁLOGO DA LOJA ────────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-7xl px-3 pt-6 sm:px-4 sm:pt-10">
-        <header className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+      <section className="mx-auto w-full max-w-7xl px-4 pt-7 sm:pt-10">
+        <header className="mb-3 flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
               Catálogo da loja
             </p>
             <h2 className="mt-0.5 text-lg font-bold text-slate-900 sm:text-2xl">
-              Encontre o que você precisa no agro
+              Encontre o que precisa
             </h2>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              Produtos organizados por categoria.
-            </p>
           </div>
+          <Link
+            href="/produtos"
+            className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-emerald-700 transition-colors hover:text-emerald-500"
+          >
+            Ver todas
+            <span aria-hidden>→</span>
+          </Link>
         </header>
 
         {categories.length === 0 && (
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-6 text-sm text-slate-700">
             Nenhuma categoria ativa encontrada.
+          </div>
+        )}
+
+        {/* Atalhos rápidos — chips horizontais */}
+        {categories.length > 0 && (
+          <div
+            className="-mx-4 mb-5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0"
+            aria-label="Atalhos de categorias"
+          >
+            <ul className="flex gap-2.5 sm:gap-3">
+              {categories.map((cat) => (
+                <li key={`chip-${cat.id}`} className="shrink-0">
+                  <Link
+                    href={`/categorias/${cat.slug}`}
+                    className="flex w-[136px] flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm transition-colors hover:border-emerald-400 sm:w-[148px]"
+                  >
+                    <span
+                      aria-hidden
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-base text-emerald-700"
+                    >
+                      {categoryIcon(cat.slug)}
+                    </span>
+                    {/*
+                      Texto com separador embutido no MESMO text node:
+                      `${name} ›`. Isso evita conflito com `getByText(name)`
+                      no HomeClient.test (que matcheria o h3 da seção
+                      abaixo se tivéssemos um text node exato).
+                    */}
+                    <span className="line-clamp-2 text-center text-[11px] font-semibold capitalize leading-tight text-slate-800">
+                      {`${cat.name} ›`}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -136,7 +190,7 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
       </section>
 
       {/* ─── SERVIÇOS ────────────────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-7xl px-3 pb-8 pt-6 sm:px-4 sm:pb-10 sm:pt-10">
+      <section className="mx-auto w-full max-w-7xl px-4 pb-8 pt-6 sm:pb-10 sm:pt-10">
         <header className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
@@ -145,7 +199,7 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
             <h2 className="mt-0.5 text-lg font-bold text-slate-900 sm:text-2xl">
               Profissionais para te ajudar no campo
             </h2>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+            <p className="mt-1 hidden text-xs text-slate-500 sm:block sm:text-sm">
               Veterinários, agrônomos, mecânicos e outros prestadores.
             </p>
           </div>
@@ -156,7 +210,7 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
             Ver todos os serviços
           </Link>
         </header>
-        <div className="rounded-3xl border border-slate-200 bg-white p-2 shadow-sm sm:p-4">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-2 shadow-sm sm:rounded-3xl sm:p-4">
           <ServicosSection />
         </div>
       </section>

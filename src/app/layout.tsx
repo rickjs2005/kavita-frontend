@@ -11,6 +11,7 @@ import ConditionalHeader from "@/components/layout/ConditionalHeader";
 import ConditionalFloatingWidgets from "@/components/layout/ConditionalFloatingWidgets";
 import WhatsAppFloatingButton from "@/components/ui/WhatsAppFloatingButton";
 import ChatAssistant from "@/components/ui/ChatAssistant";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import { CookieBanner } from "@/components/CookieBanner";
 
 import { fetchPublicCategories } from "@/server/data/categories";
@@ -92,6 +93,9 @@ export default async function RootLayout({
                 <ChatAssistant whatsappUrl={whatsappUrl} />
               )}
             </ConditionalFloatingWidgets>
+            <ConditionalHeader>
+              <MobileBottomNav />
+            </ConditionalHeader>
             <Toaster position="top-right" />
             <CookieBanner />
           </CartProvider>
