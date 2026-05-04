@@ -13,8 +13,6 @@
 // número gigante serif, tagline editorial. Os 4 secundários são cards
 // warm (stone-50 gradient) com amber highlights e hover lift.
 
-import { PanelBrandMark } from "./PanelBrand";
-import { BeanScatter } from "./PanelOrnaments";
 import type { LeadsSummary } from "@/types/lead";
 
 type Props = {
@@ -78,7 +76,7 @@ export function StatsCards({ summary, loading }: Props) {
           className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/60 to-transparent"
         />
 
-        {/* Atmospheric glows */}
+        {/* Atmospheric glows — mantidos (ambar quente, não bolas brancas) */}
         <span
           aria-hidden
           className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-amber-500/[0.12] blur-3xl"
@@ -88,16 +86,11 @@ export function StatsCards({ summary, loading }: Props) {
           className="pointer-events-none absolute -bottom-20 -left-12 h-48 w-48 rounded-full bg-amber-700/[0.1] blur-3xl"
         />
 
-        {/* Bean scatter */}
-        <BeanScatter tone="dark" density="heavy" />
-
-        {/* Decorative massive bean */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -bottom-8 -right-4 text-stone-700/25"
-        >
-          <PanelBrandMark className="h-40 w-40" />
-        </span>
+        {/* Removidos: <BeanScatter density="heavy" /> + grão decorativo grande
+            no canto inferior-direito. Os SVGs (PanelBrandMark) tinham
+            stroke="white" strokeOpacity=0.4 sobre fill quase transparente,
+            renderizando como curvas brancas/"bolas" sobre o card no mobile.
+            Sombra, ring e textos do card seguem inalterados. */}
 
         <div className="relative">
           {/* Kicker */}
