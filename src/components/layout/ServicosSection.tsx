@@ -115,16 +115,20 @@ export default function ServicosSection() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          {/* Mobile: empilhados full-width.
+              sm+: lado-a-lado, mesma min-width, primário verde sólido
+              ('Ver todos os profissionais', a ação principal de
+              consumidor) e o secundário em outline. */}
+          <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
             <Link
               href="/servicos"
-              className="inline-flex items-center justify-center rounded-full border border-emerald-600 px-4 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-600 hover:text-white transition-colors"
+              className="inline-flex h-10 min-w-0 items-center justify-center rounded-full bg-emerald-600 px-5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-500 sm:min-w-[200px]"
             >
               Ver todos os profissionais
             </Link>
             <Link
               href="/trabalhe-conosco"
-              className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition-colors"
+              className="inline-flex h-10 min-w-0 items-center justify-center rounded-full border border-emerald-600 px-5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 sm:min-w-[200px]"
             >
               Quero prestar serviços
             </Link>
