@@ -13,7 +13,6 @@ import { useHeaderVariant } from "@/hooks/useHeaderVariant";
 
 import CartCar from "@/components/cart/CartCar";
 import UserMenu from "@/components/ui/UserMenu";
-import MainNavCategories from "@/components/layout/MainNavCategories";
 
 import type { PublicShopSettings } from "@/server/data/shopSettings";
 import { absUrl } from "@/utils/absUrl";
@@ -175,8 +174,6 @@ export default function Header({ categories, shop }: HeaderProps) {
     );
   }
 
-  const showCategories = variant === "ecommerce";
-
   // ─── ECOMMERCE & MODULES HEADER ───
   return (
     <>
@@ -248,38 +245,46 @@ export default function Header({ categories, shop }: HeaderProps) {
             </div>
 
             {/* Navegação direita */}
-            <div className="flex items-center gap-1.5 md:gap-2.5 lg:gap-4 ml-auto shrink-0">
-              {/* Módulos — desktop only, peso visual reduzido.
-                  v1: News e Drones aparecem no menu para acesso direto,
-                  mas as páginas seguem com metadata noindex/nofollow e
-                  fora do sitemap até terem conteúdo / selos
-                  institucionais. Visíveis para o usuário, invisíveis
-                  para o índice de busca. */}
-              <nav className="hidden md:flex items-center gap-0.5 lg:gap-1" aria-label="Módulos">
-                <ModuleLink
-                  href="/mercado-do-cafe"
-                  label="Café"
-                  icon="☕"
-                  active={pathname.startsWith("/mercado-do-cafe")}
-                />
+            <div className="flex items-center gap-1 md:gap-3 lg:gap-5 ml-auto shrink-0">
+              {/* Ecossistema Kavita — desktop only.
+                  Labels curtas em md/lg, prefixo "Kavita" volta em xl+.
+                  Visual minimal — sem pills/bordas; ativo destacado por
+                  cor e underline sutil. */}
+              <nav
+                className="hidden md:flex items-center gap-0.5 lg:gap-1.5"
+                aria-label="Ecossistema Kavita"
+              >
                 <ModuleLink
                   href="/news"
-                  label="News"
+                  shortLabel="News"
+                  longLabel="Kavita News"
                   active={pathname.startsWith("/news")}
                 />
                 <ModuleLink
                   href="/drones"
-                  label="Drones"
+                  shortLabel="Drones"
+                  longLabel="Kavita Drones"
                   active={pathname.startsWith("/drones")}
                 />
                 <ModuleLink
+                  href="/mercado-do-cafe"
+                  shortLabel="Corretoras"
+                  longLabel="Kavita Corretoras"
+                  active={pathname.startsWith("/mercado-do-cafe")}
+                />
+                <ModuleLink
+                  href="/servicos"
+                  shortLabel="Serviços"
+                  active={pathname.startsWith("/servicos")}
+                />
+                <ModuleLink
                   href="/contato"
-                  label="Atendimento"
+                  shortLabel="Atendimento"
                   active={pathname.startsWith("/contato")}
                 />
               </nav>
 
-              {/* Separador */}
+              {/* Separador entre nav e ações de conta */}
               <span className="hidden md:block w-px h-5 bg-white/15" aria-hidden />
 
               {/* User menu desktop */}
@@ -301,15 +306,6 @@ export default function Header({ categories, shop }: HeaderProps) {
             </div>
           </div>
         </div>
-
-        {/* ── NAV CATEGORIAS (apenas ecommerce) ── */}
-        {showCategories && publicActiveCategories.length > 0 && (
-          <nav className="hidden md:block w-full bg-nav/95 backdrop-blur-sm">
-            <div className="max-w-7xl mx-auto h-9 px-4 md:px-6 lg:px-8 flex items-center justify-center">
-              <MainNavCategories categories={publicActiveCategories} />
-            </div>
-          </nav>
-        )}
       </header>
 
       {/* ── BACKDROP MOBILE ── */}
@@ -361,8 +357,49 @@ export default function Header({ categories, shop }: HeaderProps) {
 
           {/* Conteúdo do menu */}
           <div className="flex-1 px-3 py-3 space-y-1">
-            {/* ── Seção: Loja ── */}
+            {/* ── Seção: Ecossistema Kavita ──
+                Os 5 produtos/áreas principais. News e Drones seguem
+                com metadata noindex/nofollow nas páginas, mas o link
+                aparece aqui para acesso direto. */}
+            <MobileMenuSection label="Ecossistema Kavita">
+              <MobileMenuLink
+                href="/news"
+                label="Kavita News"
+                onClick={() => setIsMenuOpen(false)}
+              />
+              <MobileMenuLink
+                href="/drones"
+                label="Kavita Drones"
+                onClick={() => setIsMenuOpen(false)}
+              />
+              <MobileMenuLink
+                href="/mercado-do-cafe"
+                label="Kavita Corretoras"
+                icon="☕"
+                onClick={() => setIsMenuOpen(false)}
+              />
+              <MobileMenuLink
+                href="/servicos"
+                label="Serviços"
+                onClick={() => setIsMenuOpen(false)}
+              />
+              <MobileMenuLink
+                href="/contato"
+                label="Atendimento"
+                onClick={() => setIsMenuOpen(false)}
+              />
+            </MobileMenuSection>
+
+            {/* ── Seção: Loja ──
+                Produtos como entrada principal; categorias logo abaixo
+                como atalho de exploração (continuam vivas em /produtos
+                e /categorias/[slug]). */}
             <MobileMenuSection label="Loja">
+              <MobileMenuLink
+                href="/produtos"
+                label="Produtos"
+                onClick={() => setIsMenuOpen(false)}
+              />
               {publicActiveCategories.map((cat) => (
                 <MobileMenuLink
                   key={cat.id}
@@ -371,54 +408,19 @@ export default function Header({ categories, shop }: HeaderProps) {
                   onClick={() => setIsMenuOpen(false)}
                 />
               ))}
-              <MobileMenuLink
-                href="/servicos"
-                label="Serviços"
-                onClick={() => setIsMenuOpen(false)}
-              />
             </MobileMenuSection>
 
-            {/* ── Seção: Módulos ──
-                v1: News e Drones aparecem no menu, mas as páginas
-                seguem com metadata noindex/nofollow e fora do sitemap
-                até terem conteúdo / selos institucionais. */}
-            <MobileMenuSection label="Módulos">
-              <MobileMenuLink
-                href="/mercado-do-cafe"
-                label="Mercado do Café"
-                icon="☕"
-                onClick={() => setIsMenuOpen(false)}
-              />
-              <MobileMenuLink
-                href="/news"
-                label="Kavita News"
-                onClick={() => setIsMenuOpen(false)}
-              />
-              <Link
-                href="/drones"
-                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold text-accent-bright hover:bg-orange-50 transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-                Kavita Drones
-              </Link>
-            </MobileMenuSection>
-
-            {/* ── Seção: Minha Conta ── */}
-            <MobileMenuSection label="Minha Conta">
+            {/* ── Seção: Minha conta ── */}
+            <MobileMenuSection label="Minha conta">
               {isAuthenticated ? (
                 <>
                   <div className="px-3 py-2 mb-1">
                     <p className="text-sm font-medium text-gray-900">{user?.nome ?? "Usuário"}</p>
                     {user?.email && <p className="text-xs text-gray-500">{user.email}</p>}
                   </div>
-                  <MobileMenuLink href="/meus-dados" label="Meus Dados" onClick={() => setIsMenuOpen(false)} />
+                  <MobileMenuLink href="/meus-dados" label="Meus dados" onClick={() => setIsMenuOpen(false)} />
+                  <MobileMenuLink href="/pedidos" label="Meus pedidos" onClick={() => setIsMenuOpen(false)} />
                   <MobileMenuLink href="/favoritos" label="Favoritos" onClick={() => setIsMenuOpen(false)} />
-                  <MobileMenuLink href="/pedidos" label="Meus Pedidos" onClick={() => setIsMenuOpen(false)} />
                   <button
                     onClick={() => { logout(); setIsMenuOpen(false); }}
                     className="w-full text-left rounded-lg px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -431,25 +433,12 @@ export default function Header({ categories, shop }: HeaderProps) {
               )}
             </MobileMenuSection>
 
-            {/* ── Seção: Área da Corretora ──
-                Espelha o atalho que existe no UserMenu do desktop. O
-                painel tem contexto de auth próprio (cookie corretoraToken);
-                o guard do layout redireciona pro login se não houver
-                sessão de corretora ativa. */}
-            <MobileMenuSection label="Área da Corretora">
+            {/* ── Seção: Mais ──
+                Atalhos institucionais e entrada da corretora. */}
+            <MobileMenuSection label="Mais">
               <MobileMenuLink
                 href="/painel/corretora"
                 label="Painel da corretora"
-                icon="☕"
-                onClick={() => setIsMenuOpen(false)}
-              />
-            </MobileMenuSection>
-
-            {/* ── Seção: Atendimento ── */}
-            <MobileMenuSection label="Atendimento">
-              <MobileMenuLink
-                href="/contato"
-                label="Fale conosco"
                 onClick={() => setIsMenuOpen(false)}
               />
               <MobileMenuLink
@@ -465,15 +454,8 @@ export default function Header({ categories, shop }: HeaderProps) {
       {/* Carrinho lateral */}
       <CartCar isCartOpen={isCartOpen} closeCart={() => setIsCartOpen(false)} />
 
-      {/* Espaçador — topbar + nav (se ecommerce com categorias) */}
-      <div
-        aria-hidden
-        className={
-          showCategories && publicActiveCategories.length > 0
-            ? "h-[60px] md:h-[132px]" /* 96px topbar + 36px nav */
-            : "h-[60px] md:h-24"       /* só topbar */
-        }
-      />
+      {/* Espaçador — header agora é uma linha única */}
+      <div aria-hidden className="h-[60px] md:h-24" />
     </>
   );
 }
@@ -484,26 +466,44 @@ export default function Header({ categories, shop }: HeaderProps) {
 
 function ModuleLink({
   href,
-  label,
+  shortLabel,
+  longLabel,
   icon,
   active,
 }: {
   href: string;
-  label: string;
+  /** Rótulo curto, sempre visível (md+). */
+  shortLabel: string;
+  /** Rótulo longo, exibido em xl+ quando faz sentido (ex.: "Kavita News"). */
+  longLabel?: string;
   icon?: string;
   active: boolean;
 }) {
+  // Visual minimal: sem pill colorido para inativos. Item ativo
+  // ganha apenas cor cheia + sublinhado fino — sem background pesado.
+  const base =
+    "relative inline-flex items-center text-[13px] lg:text-sm font-medium px-1.5 lg:px-2 py-2 transition-colors whitespace-nowrap";
+  const state = active
+    ? "text-white"
+    : "text-white/65 hover:text-white";
+
   return (
-    <Link
-      href={href}
-      className={`text-xs font-medium px-2.5 py-1.5 rounded-full transition-colors whitespace-nowrap ${
-        active
-          ? "bg-white/15 text-white"
-          : "text-white/55 hover:text-white/90 hover:bg-white/10"
-      }`}
-    >
-      {icon && <span className="mr-1">{icon}</span>}
-      {label}
+    <Link href={href} className={`${base} ${state}`}>
+      {icon && <span aria-hidden className="mr-1">{icon}</span>}
+      {longLabel ? (
+        <>
+          <span className="xl:hidden">{shortLabel}</span>
+          <span className="hidden xl:inline">{longLabel}</span>
+        </>
+      ) : (
+        <span>{shortLabel}</span>
+      )}
+      {active && (
+        <span
+          aria-hidden
+          className="absolute inset-x-1.5 lg:inset-x-2 bottom-0.5 h-px bg-white/70"
+        />
+      )}
     </Link>
   );
 }

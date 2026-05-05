@@ -72,14 +72,10 @@ vi.mock("@/components/ui/UserMenu", () => ({
   default: () => <div data-testid="usermenu" />,
 }));
 
-vi.mock("@/components/layout/MainNavCategories", () => ({
-  __esModule: true,
-  default: ({ categories }: any) => (
-    <div data-testid="mainnav">
-      {Array.isArray(categories) ? categories.length : "x"}
-    </div>
-  ),
-}));
+// MainNavCategories não é mais usado pelo Header — a faixa de
+// categorias foi removida do topo (cf. refactor v1 do public header).
+// O componente continua existindo e tem testes próprios em
+// MainNavCategories.test.tsx.
 
 import Header from "@/components/layout/Header";
 
@@ -246,21 +242,27 @@ describe("Header (src/components/layout/Header.tsx)", () => {
     expect(logout).toHaveBeenCalledTimes(1);
   });
 
-  it("deve filtrar categorias: só passa ativas para MainNavCategories", () => {
+  it("deve filtrar categorias ativas no menu mobile (Loja)", async () => {
+    const u = userEvent.setup();
     mockUsePathname.mockReturnValue("/");
 
     render(
       <Header
         categories={[
-          { id: 1, name: "A", slug: "a", is_active: 1 },
-          { id: 2, name: "B", slug: "b", is_active: 0 },
-          { id: 3, name: "C", slug: "c", is_active: true },
-          { id: 4, name: "D", slug: "d" }, // undefined => ativa
+          { id: 1, name: "Ativa A", slug: "a", is_active: 1 },
+          { id: 2, name: "Inativa B", slug: "b", is_active: 0 },
+          { id: 3, name: "Ativa C", slug: "c", is_active: true },
+          { id: 4, name: "Default D", slug: "d" }, // undefined => ativa
         ]}
       />,
     );
 
-    expect(screen.getByTestId("mainnav").textContent).toBe("3");
+    await u.click(screen.getByLabelText("Abrir menu"));
+
+    expect(screen.getByText("Ativa A")).toBeInTheDocument();
+    expect(screen.getByText("Ativa C")).toBeInTheDocument();
+    expect(screen.getByText("Default D")).toBeInTheDocument();
+    expect(screen.queryByText("Inativa B")).not.toBeInTheDocument();
   });
 
   it("ao clicar no botão do carrinho, deve abrir CartCar (isCartOpen=true)", async () => {

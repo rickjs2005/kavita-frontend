@@ -73,7 +73,7 @@ describe("MainNavCategories (props-driven)", () => {
       "/servicos",
     );
 
-    expect(screen.getByRole("link", { name: "Kavita Drone" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Kavita Drones" })).toHaveAttribute(
       "href",
       "/drones",
     );
