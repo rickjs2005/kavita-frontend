@@ -250,15 +250,27 @@ export default function Header({ categories, shop }: HeaderProps) {
             {/* Navegação direita */}
             <div className="flex items-center gap-1.5 md:gap-2.5 lg:gap-4 ml-auto shrink-0">
               {/* Módulos — desktop only, peso visual reduzido.
-                  v1: News e Drones escondidos da navegação até terem
-                  conteúdo público (rotas continuam acessíveis por URL
-                  direta). */}
+                  v1: News e Drones aparecem no menu para acesso direto,
+                  mas as páginas seguem com metadata noindex/nofollow e
+                  fora do sitemap até terem conteúdo / selos
+                  institucionais. Visíveis para o usuário, invisíveis
+                  para o índice de busca. */}
               <nav className="hidden md:flex items-center gap-0.5 lg:gap-1" aria-label="Módulos">
                 <ModuleLink
                   href="/mercado-do-cafe"
                   label="Café"
                   icon="☕"
                   active={pathname.startsWith("/mercado-do-cafe")}
+                />
+                <ModuleLink
+                  href="/news"
+                  label="News"
+                  active={pathname.startsWith("/news")}
+                />
+                <ModuleLink
+                  href="/drones"
+                  label="Drones"
+                  active={pathname.startsWith("/drones")}
                 />
                 <ModuleLink
                   href="/contato"
@@ -367,9 +379,9 @@ export default function Header({ categories, shop }: HeaderProps) {
             </MobileMenuSection>
 
             {/* ── Seção: Módulos ──
-                v1: News e Drones escondidos até terem conteúdo
-                público / selos institucionais. As rotas continuam
-                existindo, só não aparecem no menu. */}
+                v1: News e Drones aparecem no menu, mas as páginas
+                seguem com metadata noindex/nofollow e fora do sitemap
+                até terem conteúdo / selos institucionais. */}
             <MobileMenuSection label="Módulos">
               <MobileMenuLink
                 href="/mercado-do-cafe"
@@ -377,6 +389,23 @@ export default function Header({ categories, shop }: HeaderProps) {
                 icon="☕"
                 onClick={() => setIsMenuOpen(false)}
               />
+              <MobileMenuLink
+                href="/news"
+                label="Kavita News"
+                onClick={() => setIsMenuOpen(false)}
+              />
+              <Link
+                href="/drones"
+                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold text-accent-bright hover:bg-orange-50 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+                Kavita Drones
+              </Link>
             </MobileMenuSection>
 
             {/* ── Seção: Minha Conta ── */}
