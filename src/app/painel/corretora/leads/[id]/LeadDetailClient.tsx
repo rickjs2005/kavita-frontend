@@ -267,7 +267,7 @@ function OperationalChipsRow({
   if (chips.length === 0) return null;
   return (
     <div
-      className="flex flex-wrap items-center gap-1.5"
+      className="flex flex-wrap items-center gap-2"
       role="list"
       aria-label="Estado operacional do lead"
     >
@@ -677,7 +677,7 @@ function LeadDetailBody({
   }, [lead, notes.length, events.length, now]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-32 md:pb-0">
       <Link
         href="/painel/corretora/leads"
         className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300 hover:text-amber-200"
@@ -794,99 +794,118 @@ function LeadHeader({
           };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-stone-900/60 p-5 shadow-xl shadow-black/40">
+    <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#14100e] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] md:p-6">
       <span
         aria-hidden
         className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
       />
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-stone-50 md:text-2xl">
-              {lead.nome}
-            </h1>
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ring-1 ${scoreTone.ring} ${scoreTone.text}`}
-              title={`Score ${score}`}
-            >
-              {scoreTone.label} · {score}
+
+      <div className="flex flex-col gap-4">
+        {/* ── Bloco superior: identidade + dados ── */}
+        <div className="flex min-w-0 flex-col gap-2">
+          <h1 className="break-words text-2xl font-bold leading-tight tracking-tight text-stone-50 md:text-[28px]">
+            {lead.nome}
+          </h1>
+
+          <p
+            className="text-[12px] font-semibold uppercase tracking-[0.16em] text-stone-400"
+            title={`Score ${score}`}
+          >
+            <span className={scoreTone.text}>{scoreTone.label}</span>
+            <span className="mx-1.5 text-stone-600">·</span>
+            <span className="normal-case tracking-normal text-stone-400">
+              recebido em {formatDate(lead.created_at)}
             </span>
-            {lead.recontact_count != null && lead.recontact_count > 0 && (
-              <span
-                className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200 ring-1 ring-amber-400/30"
-                title="Produtor tentou contato novamente"
-              >
-                {lead.recontact_count}× recontato
-              </span>
-            )}
-            {lead.previous_contacts_count != null &&
-              lead.previous_contacts_count > 0 && (
-                <span
-                  className="inline-flex items-center rounded-full bg-white/[0.05] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-300 ring-1 ring-white/10"
-                  title="Leads anteriores do mesmo telefone"
-                >
-                  {lead.previous_contacts_count} lead(s) anteriores
-                </span>
-              )}
-          </div>
-          <p className="mt-1 text-[13px] text-stone-400">
-            {lead.cidade ?? "Sem cidade informada"}
-            {lead.corrego_localidade ? ` · ${lead.corrego_localidade}` : ""} ·
-            recebido em {formatDate(lead.created_at)}
           </p>
-          <p className="mt-2 font-mono text-[12px] font-semibold text-stone-200">
+
+          <p className="text-sm leading-snug text-white/65">
+            {lead.cidade ?? "Sem cidade informada"}
+            {lead.corrego_localidade ? ` · ${lead.corrego_localidade}` : ""}
+          </p>
+
+          <p className="font-mono text-[15px] font-semibold tracking-tight text-stone-100">
             {lead.telefone}
           </p>
+
+          {/* Recontato / leads anteriores — preserva sinais sem poluir o nome */}
+          {((lead.recontact_count ?? 0) > 0 ||
+            (lead.previous_contacts_count ?? 0) > 0) && (
+            <div className="flex flex-wrap gap-2">
+              {lead.recontact_count != null && lead.recontact_count > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200 ring-1 ring-amber-400/30"
+                  title="Produtor tentou contato novamente"
+                >
+                  {lead.recontact_count}× recontato
+                </span>
+              )}
+              {lead.previous_contacts_count != null &&
+                lead.previous_contacts_count > 0 && (
+                  <span
+                    className="inline-flex items-center rounded-full bg-white/[0.05] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-300 ring-1 ring-white/10"
+                    title="Leads anteriores do mesmo telefone"
+                  >
+                    {lead.previous_contacts_count} lead(s) anteriores
+                  </span>
+                )}
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        {/* ── Ações primárias: WhatsApp + Copiar telefone ── */}
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
           <a
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-200 ring-1 ring-emerald-400/30 transition-colors hover:bg-emerald-500/25"
+            className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-emerald-500/15 px-4 text-[12px] font-semibold uppercase tracking-[0.12em] text-emerald-200 ring-1 ring-emerald-400/30 transition-colors hover:bg-emerald-500/25"
           >
             WhatsApp →
           </a>
           <button
             type="button"
             onClick={copyPhone}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white/[0.04] px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-stone-200 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
+            className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-white/[0.04] px-4 text-[12px] font-semibold uppercase tracking-[0.12em] text-stone-200 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
           >
             {copied ? "copiado" : "copiar telefone"}
           </button>
         </div>
-      </div>
 
-      {/* Status pills */}
-      <div className="mt-4 flex flex-wrap items-center gap-1.5">
-        <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-          Status
-        </span>
-        {(["new", "contacted", "closed", "lost"] as LeadStatus[]).map((s) => {
-          const active = lead.status === s;
-          const activeClass =
-            s === "closed"
-              ? "bg-emerald-500/15 text-emerald-200 ring-emerald-400/30"
-              : s === "lost"
-                ? "bg-rose-500/15 text-rose-200 ring-rose-400/30"
-                : "bg-amber-400/15 text-amber-200 ring-amber-400/30";
-          return (
-            <button
-              key={s}
-              type="button"
-              onClick={() => changeStatus(s)}
-              disabled={updating}
-              className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-all disabled:opacity-50 ${
-                active
-                  ? `${activeClass} ring-1`
-                  : "bg-white/[0.03] text-stone-400 ring-1 ring-white/[0.06] hover:text-stone-200"
-              }`}
-            >
-              {STATUS_LABEL[s]}
-            </button>
-          );
-        })}
+        {/* ── Status — título + grid 2x2 com altura consistente ── */}
+        <div>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+            Status
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {(["new", "contacted", "closed", "lost"] as LeadStatus[]).map(
+              (s) => {
+                const active = lead.status === s;
+                const activeClass =
+                  s === "closed"
+                    ? "bg-emerald-500/15 text-emerald-200 ring-emerald-400/40"
+                    : s === "lost"
+                      ? "bg-rose-500/15 text-rose-200 ring-rose-400/40"
+                      : "bg-amber-400/15 text-amber-200 ring-amber-400/40";
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => changeStatus(s)}
+                    disabled={updating}
+                    aria-pressed={active}
+                    className={`inline-flex h-12 items-center justify-center rounded-xl px-3 text-[13px] font-semibold transition-all disabled:opacity-50 ${
+                      active
+                        ? `${activeClass} ring-1`
+                        : "bg-white/[0.03] text-stone-400 ring-1 ring-white/[0.06] hover:text-stone-200"
+                    }`}
+                  >
+                    {STATUS_LABEL[s]}
+                  </button>
+                );
+              },
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
