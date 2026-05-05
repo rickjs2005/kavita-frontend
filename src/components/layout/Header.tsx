@@ -234,59 +234,21 @@ export default function Header({ categories, shop }: HeaderProps) {
               />
             </Link>
 
-            {/* Search (desktop/tablet) — subordinado ao logo */}
+            {/* Search (desktop/tablet) — protagonista da linha 1.
+                Linha 1 e' utilitaria; a navegacao do ecossistema vive
+                na linha 2 (abaixo). Por isso a busca recupera a
+                largura confortavel — nao competimos com pills de nav. */}
             <div
-              className="hidden sm:flex flex-1 justify-center min-w-0 mx-2 md:mx-4"
+              className="hidden sm:flex flex-1 justify-center min-w-0 mx-3 md:mx-6 lg:mx-8"
               suppressHydrationWarning
             >
-              <div className="w-full max-w-[260px] md:max-w-[340px] lg:max-w-[420px] xl:max-w-[480px]">
+              <div className="w-full max-w-[420px] md:max-w-[520px] lg:max-w-[640px] xl:max-w-[720px]">
                 <SearchBar />
               </div>
             </div>
 
-            {/* Navegação direita */}
-            <div className="flex items-center gap-1 md:gap-3 lg:gap-5 ml-auto shrink-0">
-              {/* Ecossistema Kavita — desktop only.
-                  Labels curtas em md/lg, prefixo "Kavita" volta em xl+.
-                  Visual minimal — sem pills/bordas; ativo destacado por
-                  cor e underline sutil. */}
-              <nav
-                className="hidden md:flex items-center gap-0.5 lg:gap-1.5"
-                aria-label="Ecossistema Kavita"
-              >
-                <ModuleLink
-                  href="/news"
-                  shortLabel="News"
-                  longLabel="Kavita News"
-                  active={pathname.startsWith("/news")}
-                />
-                <ModuleLink
-                  href="/drones"
-                  shortLabel="Drones"
-                  longLabel="Kavita Drones"
-                  active={pathname.startsWith("/drones")}
-                />
-                <ModuleLink
-                  href="/mercado-do-cafe"
-                  shortLabel="Corretoras"
-                  longLabel="Kavita Corretoras"
-                  active={pathname.startsWith("/mercado-do-cafe")}
-                />
-                <ModuleLink
-                  href="/servicos"
-                  shortLabel="Serviços"
-                  active={pathname.startsWith("/servicos")}
-                />
-                <ModuleLink
-                  href="/contato"
-                  shortLabel="Atendimento"
-                  active={pathname.startsWith("/contato")}
-                />
-              </nav>
-
-              {/* Separador entre nav e ações de conta */}
-              <span className="hidden md:block w-px h-5 bg-white/15" aria-hidden />
-
+            {/* Acoes de conta + carrinho (linha 1 direita) */}
+            <div className="flex items-center gap-2 md:gap-4 lg:gap-5 ml-auto shrink-0">
               {/* User menu desktop */}
               <div className="hidden md:block">
                 <UserMenu />
@@ -306,6 +268,44 @@ export default function Header({ categories, shop }: HeaderProps) {
             </div>
           </div>
         </div>
+
+        {/* ── LINHA 2: navegacao primaria do ecossistema (desktop) ──
+            Centralizada, baixa, separada da linha 1 por uma borda
+            sutil. Nao traz categorias de produto — esses ficam em
+            /produtos, /categorias/[slug] e na secao "Encontre o que
+            precisa" da home. */}
+        <nav
+          className="hidden md:block w-full border-t border-white/[0.06] bg-header/95"
+          aria-label="Ecossistema Kavita"
+        >
+          <div className="max-w-7xl mx-auto h-12 px-4 md:px-6 lg:px-8 flex items-center justify-center gap-2 lg:gap-6 xl:gap-10">
+            <ModuleLink
+              href="/news"
+              shortLabel="Kavita News"
+              active={pathname.startsWith("/news")}
+            />
+            <ModuleLink
+              href="/drones"
+              shortLabel="Kavita Drones"
+              active={pathname.startsWith("/drones")}
+            />
+            <ModuleLink
+              href="/mercado-do-cafe"
+              shortLabel="Kavita Corretoras"
+              active={pathname.startsWith("/mercado-do-cafe")}
+            />
+            <ModuleLink
+              href="/servicos"
+              shortLabel="Serviços"
+              active={pathname.startsWith("/servicos")}
+            />
+            <ModuleLink
+              href="/contato"
+              shortLabel="Atendimento"
+              active={pathname.startsWith("/contato")}
+            />
+          </div>
+        </nav>
       </header>
 
       {/* ── BACKDROP MOBILE ── */}
@@ -454,8 +454,10 @@ export default function Header({ categories, shop }: HeaderProps) {
       {/* Carrinho lateral */}
       <CartCar isCartOpen={isCartOpen} closeCart={() => setIsCartOpen(false)} />
 
-      {/* Espaçador — header agora é uma linha única */}
-      <div aria-hidden className="h-[60px] md:h-24" />
+      {/* Espaçador — header em 2 niveis no desktop:
+          mobile: 60px (so topbar)
+          desktop: 96px topbar + 48px nav primaria = 144px */}
+      <div aria-hidden className="h-[60px] md:h-[144px]" />
     </>
   );
 }
