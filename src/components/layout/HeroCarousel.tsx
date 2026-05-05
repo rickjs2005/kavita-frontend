@@ -7,7 +7,18 @@ import type { HeroSlide } from "@/types/heroSlide";
 import { absUrl } from "@/utils/absUrl";
 import { sanitizeUrl } from "@/lib/sanitizeHtml";
 
-const DEFAULT_IMG = "/images/drone/fallback-hero1.jpg";
+// v2 substitui o fallback-hero1.jpg que estava com 32 KB para 1920x1080
+// (JPEG quality ~5, ~0.016 B/px) — fonte ja borrada, irrecuperavel via
+// next/image. Versionamento no nome (-v2) garante cache busting no
+// CDN/browser/otimizador (minimumCacheTTL = 1 ano em next.config).
+//
+// IMPORTANTE: o arquivo em si precisa ser colocado manualmente em
+// public/images/drone/fallback-hero-v2.jpg apos esta alteracao.
+// Especificacao minima: 1920x1080 (recomendado 2560x1440), JPEG q85
+// (~300-600 KB) ou WebP (~150-350 KB). Sem isso, o site cai no
+// LEGACY_FALLBACK_IMG via onError defensivo abaixo.
+const DEFAULT_IMG = "/images/drone/fallback-hero-v2.jpg";
+const LEGACY_FALLBACK_IMG = "/images/drone/fallback-hero1.jpg";
 const AUTOPLAY_MS = 5000;
 
 function normalizeHref(href?: string | null) {
@@ -40,8 +51,12 @@ const FALLBACK_SLIDE: HeroSlide = {
 
 function SlideBackground({ slide }: { slide: HeroSlide }) {
   const [videoError, setVideoError] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
   const { videoSrc, imageSrc } = resolveMedia(slide);
-  useEffect(() => setVideoError(false), [slide.id]);
+  useEffect(() => {
+    setVideoError(false);
+    setImgFailed(false);
+  }, [slide.id]);
 
   if (videoSrc && !videoError) {
     return (
@@ -55,17 +70,26 @@ function SlideBackground({ slide }: { slide: HeroSlide }) {
   }
   // Hero usa next/image com fill + sizes="100vw" + priority + quality alta.
   // Em producao isso gera srcSet retina-ready (ate 3840px) e serve AVIF/WebP
-  // automaticamente — antes era <img> cru, qualquer foto < tamanho da tela
-  // ficava esticada/borrada em retina.
+  // automaticamente.
+  //
+  // onError defensivo: se o asset v2 nao foi colocado ainda em
+  // public/images/drone/fallback-hero-v2.jpg, cai no v1 antigo para o
+  // site nao quebrar durante a transicao. Esta logica deve sair quando
+  // o v2 estiver no disco (e o v1 puder ser deletado depois).
+  const src = imgFailed
+    ? LEGACY_FALLBACK_IMG
+    : (sanitizeUrl(imageSrc) || DEFAULT_IMG);
+
   return (
     <Image
-      src={sanitizeUrl(imageSrc) || DEFAULT_IMG}
+      src={src}
       alt=""
       fill
       priority
       quality={90}
       sizes="100vw"
       className="object-cover"
+      onError={() => setImgFailed(true)}
     />
   );
 }
