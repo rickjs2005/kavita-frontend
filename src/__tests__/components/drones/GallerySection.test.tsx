@@ -12,6 +12,17 @@ vi.mock("@/utils/absUrl", () => ({
     raw ? `http://localhost:5000/uploads/${raw}` : "/placeholder.png",
 }));
 
+// Mock next/image — devolve <img> com src direto. O componente real
+// reescreve src para /_next/image?url=... no runtime, o que quebraria
+// asserts de src no jsdom.
+vi.mock("next/image", () => ({
+  __esModule: true,
+  default: ({ src, alt, fill: _fill, priority: _priority, quality: _quality, sizes: _sizes, ...rest }: any) => {
+    const resolvedSrc = typeof src === "string" ? src : src?.src ?? "";
+    return <img src={resolvedSrc} alt={alt} {...rest} />;
+  },
+}));
+
 function makeItem(
   overrides: Partial<DroneGalleryItem> & { id: number },
 ): DroneGalleryItem {
@@ -62,21 +73,19 @@ describe("GallerySection", () => {
     expect(img).toBeInTheDocument();
   });
 
-  it("gallery images have explicit width and height attributes", () => {
+  it("gallery image fica dentro de container com aspect-video", () => {
+    // Apos a migracao para next/image fill, width/height/loading nao
+    // sao mais atributos diretos do <img> — o tamanho vem do container
+    // (className aspect-video). Validamos isso em vez dos atributos
+    // antigos.
     const items = [makeItem({ id: 1 })];
-    render(<GallerySection items={items} />);
+    const { container } = render(<GallerySection items={items} />);
 
     const img = screen.getByAltText("Galeria") as HTMLImageElement;
-    expect(img.getAttribute("width")).toBe("1280");
-    expect(img.getAttribute("height")).toBe("720");
-  });
+    expect(img).toBeInTheDocument();
 
-  it("gallery images use loading=lazy", () => {
-    const items = [makeItem({ id: 1 })];
-    render(<GallerySection items={items} />);
-
-    const img = screen.getByAltText("Galeria") as HTMLImageElement;
-    expect(img.getAttribute("loading")).toBe("lazy");
+    const wrapper = container.querySelector(".aspect-video");
+    expect(wrapper).toBeInTheDocument();
   });
 
   it("shows error fallback when gallery image fails to load", () => {
@@ -104,16 +113,15 @@ describe("GallerySection", () => {
     expect(screen.getByText("CARD")).toBeInTheDocument();
   });
 
-  it("renders MediaBlock for heroItem with eager loading", () => {
+  it("renders MediaBlock for heroItem com a imagem do hero", () => {
     const items = [makeItem({ id: 3, caption: "Hero caption" })];
     render(<GallerySection items={items} heroItemId={3} />);
 
-    // MediaBlock uses caption or title as alt; title is "Destaque"
+    // Apos migrar para next/image, "loading=eager" deixa de ser atributo
+    // direto. O MediaBlock segue renderizando a imagem do hero — checamos
+    // pela presenca da img com a caption esperada.
     const heroImgs = screen.getAllByAltText("Hero caption") as HTMLImageElement[];
-    const eagerImg = heroImgs.find(
-      (img) => img.getAttribute("loading") === "eager",
-    );
-    expect(eagerImg).toBeTruthy();
+    expect(heroImgs.length).toBeGreaterThan(0);
   });
 
   it("renders MediaBlock title label", () => {
@@ -126,26 +134,26 @@ describe("GallerySection", () => {
     const items = [makeItem({ id: 3 })];
     render(<GallerySection items={items} heroItemId={3} />);
 
-    // The MediaBlock img uses alt = caption || title = "Destaque"
-    const heroImg = screen
-      .getAllByRole("img")
-      .find((img) => img.getAttribute("loading") === "eager") as HTMLImageElement;
-    expect(heroImg).toBeTruthy();
-    fireEvent.error(heroImg!);
+    // O MediaBlock usa alt = caption || title = "Destaque"
+    const heroImgs = screen.getAllByAltText("Destaque") as HTMLImageElement[];
+    expect(heroImgs.length).toBeGreaterThan(0);
+
+    fireEvent.error(heroImgs[0]);
 
     expect(screen.getByText("Imagem indisponível")).toBeInTheDocument();
   });
 
-  it("MediaBlock has explicit width and height on image", () => {
+  it("MediaBlock renderiza imagem dentro de container aspect-video", () => {
+    // Apos migrar para next/image fill, width/height nao sao mais
+    // atributos diretos. O container .aspect-video define o tamanho.
     const items = [makeItem({ id: 3 })];
-    render(<GallerySection items={items} heroItemId={3} />);
+    const { container } = render(<GallerySection items={items} heroItemId={3} />);
 
-    const heroImg = screen
-      .getAllByRole("img")
-      .find((img) => img.getAttribute("loading") === "eager") as HTMLImageElement;
-    expect(heroImg).toBeTruthy();
-    expect(heroImg!.getAttribute("width")).toBe("1280");
-    expect(heroImg!.getAttribute("height")).toBe("720");
+    const heroImgs = screen.getAllByAltText("Destaque") as HTMLImageElement[];
+    expect(heroImgs.length).toBeGreaterThan(0);
+
+    const wrapper = container.querySelector(".aspect-video");
+    expect(wrapper).toBeInTheDocument();
   });
 
   it("renders video element for VIDEO media type", () => {

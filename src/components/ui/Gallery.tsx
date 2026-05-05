@@ -36,9 +36,11 @@ export default function Gallery({
         <Image
           src={active}
           alt={alt}
-          width={800}
-          height={800}
+          width={1600}
+          height={1600}
           priority
+          quality={90}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 60vw, 720px"
           className="rounded-xl object-contain max-h-[320px] sm:max-h-[420px] w-full"
           onError={() => setActive(PLACEHOLDER)}
         />

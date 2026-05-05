@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { absUrl } from "@/utils/absUrl";
 import type { Service } from "@/types/service";
@@ -184,12 +185,16 @@ export default function ServicoContent({ servico }: { servico: Service }) {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
           {/* Coluna esquerda: imagens + comentários */}
           <div className="flex w-full flex-col items-center gap-4">
-            <div className="w-full overflow-hidden rounded-2xl bg-gray-50 shadow-md">
-              <img
+            <div className="relative w-full overflow-hidden rounded-2xl bg-gray-50 shadow-md aspect-[4/3] max-h-[320px] sm:max-h-[380px] lg:max-h-[420px]">
+              <Image
                 key={atual}
                 src={atual}
                 alt={titulo}
-                className="h-auto max-h-[320px] w-full object-cover sm:max-h-[380px] lg:max-h-[420px]"
+                fill
+                priority
+                quality={90}
+                sizes="(max-width: 1024px) 100vw, 60vw"
+                className="object-cover"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = PLACEHOLDER;
                 }}

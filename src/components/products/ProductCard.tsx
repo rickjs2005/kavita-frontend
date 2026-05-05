@@ -180,7 +180,8 @@ export default function ProductCard({
             alt={product.name}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-            sizes="(max-width: 640px) 240px, (max-width: 1024px) 50vw, 33vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            quality={85}
           />
         </div>
 

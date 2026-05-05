@@ -10,6 +10,20 @@ vi.mock("@/utils/absUrl", () => ({
 }));
 
 /**
+ * Mock do next/image — renderiza <img> com src direto.
+ * O componente real do Next embrulha o src em /_next/image?url=...&w=...&q=...
+ * em runtime, o que quebraria asserts de src no jsdom. Aqui devolvemos o
+ * src bruto, mantendo o contrato visual identico ao <img>.
+ */
+vi.mock("next/image", () => ({
+  __esModule: true,
+  default: ({ src, alt, fill: _fill, priority: _priority, quality: _quality, sizes: _sizes, ...rest }: any) => {
+    const resolvedSrc = typeof src === "string" ? src : src?.src ?? "";
+    return <img src={resolvedSrc} alt={alt} {...rest} />;
+  },
+}));
+
+/**
  * Mock do next/link (renderiza <a>)
  */
 vi.mock("next/link", () => ({

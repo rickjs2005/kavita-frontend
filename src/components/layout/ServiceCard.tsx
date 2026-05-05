@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Service } from "@/types/service";
 import { absUrl } from "@/utils/absUrl";
 
@@ -94,14 +95,13 @@ export default function ServiceCard({
     >
       {/* ===== TOPO COM IMAGEM + SELOS ===== */}
       <div className="relative w-full bg-gray-100 pb-[55%]">
-        <img
+        <Image
           src={activeImg}
           alt={servico.nome || "Imagem do serviço"}
-          className="absolute inset-0 h-full w-full object-cover transition-all duration-300"
-          onError={(e) =>
-            ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER)
-          }
-          loading="lazy"
+          fill
+          className="object-cover transition-all duration-300"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          quality={85}
         />
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent" />

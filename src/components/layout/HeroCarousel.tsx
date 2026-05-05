@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { HeroSlide } from "@/types/heroSlide";
 import { absUrl } from "@/utils/absUrl";
 import { sanitizeUrl } from "@/lib/sanitizeHtml";
@@ -52,11 +53,19 @@ function SlideBackground({ slide }: { slide: HeroSlide }) {
       />
     );
   }
+  // Hero usa next/image com fill + sizes="100vw" + priority + quality alta.
+  // Em producao isso gera srcSet retina-ready (ate 3840px) e serve AVIF/WebP
+  // automaticamente — antes era <img> cru, qualquer foto < tamanho da tela
+  // ficava esticada/borrada em retina.
   return (
-    <img
-      className="absolute inset-0 h-full w-full object-cover"
+    <Image
       src={sanitizeUrl(imageSrc) || DEFAULT_IMG}
-      alt="" loading="eager" decoding="async"
+      alt=""
+      fill
+      priority
+      quality={90}
+      sizes="100vw"
+      className="object-cover"
     />
   );
 }

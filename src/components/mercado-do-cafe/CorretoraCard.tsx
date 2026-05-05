@@ -244,8 +244,10 @@ export function CorretoraCard({ corretora }: Props) {
               <Image
                 src={absUrl(corretora.logo_path)}
                 alt={`Logo ${corretora.name}`}
-                width={64}
-                height={64}
+                width={128}
+                height={128}
+                quality={90}
+                sizes="64px"
                 className="relative h-full w-full object-cover"
               />
             ) : (

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import type { DroneGalleryItem } from "@/types/drones";
 import { absUrl } from "@/utils/absUrl";
@@ -36,18 +37,20 @@ function MediaBlock({
             Imagem indisponível
           </div>
         ) : (
-          <img
-            className="block w-full aspect-video object-cover bg-black/30 rounded-2xl min-h-[180px]"
-            src={src}
-            alt={item.caption || title}
-            width={1280}
-            height={720}
-            loading="eager"
-            onError={() => {
-              console.warn(`[GallerySection] MediaBlock image failed to load: ${src}`);
-              setImgError(true);
-            }}
-          />
+          <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black/30 min-h-[180px]">
+            <Image
+              src={src}
+              alt={item.caption || title}
+              fill
+              quality={85}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover"
+              onError={() => {
+                console.warn(`[GallerySection] MediaBlock image failed to load: ${src}`);
+                setImgError(true);
+              }}
+            />
+          </div>
         )}
 
         {item.caption ? (
@@ -89,18 +92,20 @@ function GalleryItem({
             Imagem indisponível
           </div>
         ) : (
-          <img
-            className="block w-full aspect-video object-cover bg-black/30 min-h-[180px]"
-            src={src}
-            alt={item.caption || "Galeria"}
-            width={1280}
-            height={720}
-            loading="lazy"
-            onError={() => {
-              console.warn(`[GallerySection] Gallery image failed to load: ${src}`);
-              setImgError(true);
-            }}
-          />
+          <div className="relative block w-full aspect-video bg-black/30 min-h-[180px]">
+            <Image
+              src={src}
+              alt={item.caption || "Galeria"}
+              fill
+              quality={85}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover"
+              onError={() => {
+                console.warn(`[GallerySection] Gallery image failed to load: ${src}`);
+                setImgError(true);
+              }}
+            />
+          </div>
         )}
 
         {/* ✅ badges (opcional, mas ajuda a visualizar) */}

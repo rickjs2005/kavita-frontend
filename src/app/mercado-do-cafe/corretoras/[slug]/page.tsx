@@ -255,8 +255,10 @@ export default async function CorretoraDetailPage({ params }: Props) {
                     <Image
                       src={absUrl(corretora.logo_path)}
                       alt={`Logo ${corretora.name}`}
-                      width={96}
-                      height={96}
+                      width={192}
+                      height={192}
+                      quality={90}
+                      sizes="64px"
                       className="relative h-full w-full object-cover"
                     />
                   ) : (
@@ -382,8 +384,10 @@ export default async function CorretoraDetailPage({ params }: Props) {
                     <Image
                       src={absUrl(corretora.logo_path)}
                       alt={`Logo ${corretora.name}`}
-                      width={128}
-                      height={128}
+                      width={384}
+                      height={384}
+                      quality={90}
+                      sizes="128px"
                       className="relative h-full w-full object-cover"
                     />
                   ) : (

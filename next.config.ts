@@ -123,6 +123,20 @@ const nextConfig: NextConfig = {
       // Padrão dinâmico derivado de NEXT_PUBLIC_API_URL (cobre staging e produção)
       ...(envPattern ? [envPattern] : []),
     ],
+    // AVIF prioritário, WebP como fallback. AVIF reduz peso ~30% vs JPEG
+    // sem perda visual perceptível; navegadores sem suporte caem em WebP.
+    formats: ["image/avif", "image/webp"],
+    // Cache do otimizador interno por 1 ano. Browser/CDN podem revalidar
+    // via ETag; o conteudo do otimizador e' chaveado por src + w + q,
+    // entao raramente fica obsoleto.
+    minimumCacheTTL: 60 * 60 * 24 * 365,
+    // Tamanhos retina-ready para showcase grandes (hero, ficha, drone).
+    // Defaults do Next param em 3840 — adiciono nada novo pra cima
+    // mas garanto que 1920 e 2560 estao na lista (usuarios em
+    // 4K + retina puxam 3840).
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 2560, 3840],
+    // Tamanhos pequenos (avatares, thumbs) — defaults sao bons.
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     unoptimized: process.env.NODE_ENV === "development",
   },
 

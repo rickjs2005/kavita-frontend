@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { DronePageSettings, DroneRepresentative } from "@/types/drones";
 import { absUrl } from "@/utils/absUrl";
 import { Gauge, Leaf, Plane, ShieldCheck } from "lucide-react";
@@ -151,13 +152,17 @@ export default function HeroSection({
                 poster={heroImg || undefined}
               />
             ) : heroImg ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                className="w-full rounded-2xl aspect-video object-cover bg-black/30"
-                src={heroImg}
-                alt="Drone agrícola DJI Agras em operação"
-                loading="eager"
-              />
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black/30">
+                <Image
+                  src={heroImg}
+                  alt="Drone agrícola DJI Agras em operação"
+                  fill
+                  priority
+                  quality={90}
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  className="object-cover"
+                />
+              </div>
             ) : (
               // Fallback neutro — sem texto de admin vazando para o produtor.
               // Gradiente agro/tech com ícone sutil mantém o hero coerente

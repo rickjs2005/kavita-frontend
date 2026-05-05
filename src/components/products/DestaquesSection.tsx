@@ -583,7 +583,8 @@ export default function PromocoesHero() {
                     alt={produto.name}
                     fill
                     className="object-cover"
-                    sizes="(max-width:640px) 110px, (max-width:1024px) 45vw, 38vw"
+                    sizes="(max-width:640px) 50vw, (max-width:1024px) 45vw, 38vw"
+                    quality={85}
                     priority
                   />
                   <div

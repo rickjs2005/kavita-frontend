@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { formatCurrency } from "@/utils/formatters";
 
 type UiProduct = {
@@ -59,11 +60,13 @@ export function ProductGrid({ loading, products, empty }: Props) {
             className="group overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:shadow-md"
           >
             <div className="relative h-40 w-full bg-zinc-50">
-              <img
+              <Image
                 src={p.image}
                 alt={p.name}
-                className="h-full w-full object-contain p-3 transition group-hover:scale-[1.02]"
-                loading="lazy"
+                fill
+                className="object-contain p-3 transition group-hover:scale-[1.02]"
+                sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw"
+                quality={85}
               />
               {p.isPromo || hasDiscount ? (
                 <span className="absolute left-2 top-2 rounded-full bg-emerald-600 px-2 py-1 text-xs font-semibold text-white">
