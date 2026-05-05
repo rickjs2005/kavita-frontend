@@ -31,10 +31,74 @@ function fmtDate(iso: string | null | undefined) {
 export function ContratoCard({ contrato, onChanged }: Props) {
   const [sending, setSending] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [waSending, setWaSending] = useState(false);
   const canSend = contrato.status === "draft";
   const canDownloadDraft = contrato.status !== "cancelled";
   const canCancel =
     contrato.status === "draft" || contrato.status === "sent";
+
+  // Ação WhatsApp contextual ao status do card (Etapa 5 da reativação):
+  //   - status 'sent' (amber):    "Enviar para assinatura via WhatsApp"
+  //                                template: corretora_contrato_assinatura_pendente
+  //   - status 'signed' (green):  "Reenviar comprovante via WhatsApp"
+  //                                template: corretora_contrato_assinado
+  // Outros status (draft, cancelled): sem ação WhatsApp.
+  const waTemplateKey =
+    contrato.status === "sent"
+      ? "corretora_contrato_assinatura_pendente"
+      : contrato.status === "signed"
+        ? "corretora_contrato_assinado"
+        : null;
+  const waButtonLabel =
+    contrato.status === "sent"
+      ? "Enviar para assinatura via WhatsApp"
+      : contrato.status === "signed"
+        ? "Reenviar comprovante via WhatsApp"
+        : null;
+  const waButtonClass =
+    contrato.status === "sent"
+      ? "bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 ring-1 ring-amber-400/30"
+      : "bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 ring-1 ring-emerald-400/30";
+
+  async function handleWhatsapp() {
+    if (!waTemplateKey || waSending) return;
+    const phone = window.prompt(
+      "Telefone do produtor (com DDD):",
+      "",
+    );
+    if (!phone || phone.replace(/\D/g, "").length < 10) return;
+    setWaSending(true);
+    try {
+      // Variáveis mínimas — o template aceita placeholders ausentes
+      // como string vazia. Quando o backend tiver o lookup completo
+      // de produtor por contrato, dá pra preencher com mais campos.
+      await apiClient.post("/api/corretora/whatsapp/send", {
+        key: waTemplateKey,
+        to: phone,
+        contract_id: contrato.id,
+        variables: {
+          numero_contrato: String(contrato.id),
+          // Nome da corretora vem da sessão do destinatário no
+          // painel ou pode ser preenchido pelo template Meta.
+          nome_corretora: "",
+          nome_produtor: "",
+          volume_cafe: "",
+        },
+      });
+      toast.success(
+        contrato.status === "sent"
+          ? "Mensagem enviada ao produtor."
+          : "Comprovante reenviado ao produtor.",
+      );
+      onChanged();
+    } catch (err) {
+      toast.error(
+        formatApiError(err, "Erro ao enviar via WhatsApp.").message,
+      );
+    } finally {
+      setWaSending(false);
+    }
+  }
 
   async function handleSend() {
     if (!canSend || sending) return;
@@ -172,6 +236,20 @@ export function ContratoCard({ contrato, onChanged }: Props) {
             className="inline-flex items-center gap-1.5 rounded-lg bg-transparent px-3 py-1.5 text-xs font-semibold text-stone-400 hover:text-red-400 hover:bg-stone-800 transition-colors disabled:cursor-not-allowed"
           >
             {cancelling ? "Cancelando…" : "Cancelar"}
+          </button>
+        )}
+        {waTemplateKey && waButtonLabel && (
+          <button
+            type="button"
+            onClick={handleWhatsapp}
+            disabled={waSending}
+            className={[
+              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold",
+              "transition-colors disabled:opacity-60 disabled:cursor-not-allowed",
+              waButtonClass,
+            ].join(" ")}
+          >
+            {waSending ? "Enviando…" : waButtonLabel}
           </button>
         )}
       </div>
