@@ -11,6 +11,13 @@ export const metadata = {
       "Drones agrícolas DJI Agras com atendimento direto de representante autorizado. Pulverização precisa, economia de insumos e mais agilidade na safra.",
     type: "website",
   },
+  // v1: landing fica fora do índice de busca até ter selos
+  // institucionais (ANAC/MAPA/RT) e os 3 modelos cadastrados no banco.
+  // A rota /drones continua acessível por URL direta.
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function Page() {

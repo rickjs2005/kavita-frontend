@@ -1,0 +1,39 @@
+# robots.txt — Kavita v1
+#
+# Recorte público v1:
+#   permitidos: home, marketplace, mercado-do-cafe, contato,
+#               privacidade, trabalhe-conosco, pricing
+#   escondidos: news, clima, drones (até ter selos + 3 modelos),
+#               painéis privados, motorista (PWA via magic-link),
+#               api e admin
+#
+# Quando um módulo for liberado, remover o Disallow correspondente
+# e adicioná-lo ao sitemap.
+
+User-agent: *
+Allow: /
+
+# Áreas privadas / internas
+Disallow: /admin
+Disallow: /api
+Disallow: /painel
+Disallow: /motorista
+Disallow: /produtor
+
+# Auth / fluxo de conta (não vale a pena indexar)
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /favoritos
+Disallow: /meus-dados
+Disallow: /pedidos
+Disallow: /checkout
+Disallow: /verificar
+Disallow: /email
+
+# Módulos escondidos da v1 pública (rotas continuam funcionando)
+Disallow: /news
+Disallow: /drones
+
+Sitemap: https://kavita.com.br/sitemap.xml

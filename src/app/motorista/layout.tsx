@@ -18,6 +18,11 @@ export const metadata: Metadata = {
     title: "Kavita Entregas",
     statusBarStyle: "black-translucent",
   },
+  // Painel só é acessado via magic-link; não deve aparecer em busca.
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export const viewport = {

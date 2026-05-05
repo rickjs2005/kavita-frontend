@@ -106,6 +106,7 @@ export default function Footer({ shop }: FooterProps) {
 
     return [
       { label: "Home", href: "/", highlight: false },
+      { label: "Mercado do Café", href: "/mercado-do-cafe", highlight: false },
       { label: "Serviços", href: "/servicos", highlight: false },
       { label: "Contato", href: "/contato", highlight: false },
       { label: "Trabalhe conosco", href: "/trabalhe-conosco", highlight: true },
