@@ -29,7 +29,6 @@ import RegionalDashboard from "@/components/admin/mercado-do-cafe/regional/Regio
 import ReviewsModeration from "@/components/admin/mercado-do-cafe/reviews/ReviewsModeration";
 import PlansAdmin from "@/components/admin/mercado-do-cafe/planos/PlansAdmin";
 import SupportThreads from "@/components/admin/mercado-do-cafe/suporte/SupportThreads";
-import MobileMercadoHeader from "@/components/admin/mercado-do-cafe/MobileMercadoHeader";
 import { useCorretorasAdmin } from "@/hooks/useCorretorasAdmin";
 import { useCorretoraSubmissions } from "@/hooks/useCorretoraSubmissions";
 import { useCorretoraReviewsAdmin } from "@/hooks/useCorretoraReviewsAdmin";
@@ -108,46 +107,61 @@ export default function AdminMercadoDoCafePage() {
 
   return (
     <div className="relative min-h-screen w-full">
-      {/* Header — sticky.
-          Mobile (<md): MobileMercadoHeader dedicado (eyebrow enxuto,
-          titulo 2xl, kebab menu lateral ao CTA). Desktop (≥md):
-          AdminPageHeader original com acoes flat. */}
+      {/* Header — sticky compacto.
+          Em mobile, ações secundárias colapsadas em <details>; em
+          desktop, flat ao lado do CTA primário. */}
       <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">
         <div className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-4">
-          {/* Mobile-only header */}
-          <MobileMercadoHeader
-            secondaryActions={SECONDARY_ACTIONS}
-            primaryHref="/admin/mercado-do-cafe/corretoras/nova"
-            primaryLabel="Nova Corretora"
-          />
+          <AdminPageHeader
+            badges={
+              <span className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300">
+                Kavita Admin
+              </span>
+            }
+            title="Mercado do Café"
+            subtitle="Gerencie corretoras de café e analise solicitações de cadastro."
+            actions={
+              <>
+                {/* Mobile (<sm): menu "Mais" colapsável */}
+                <details className="group relative w-full sm:hidden">
+                  <summary className="flex w-full cursor-pointer list-none items-center justify-between rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 [&::-webkit-details-marker]:hidden">
+                    <span className="inline-flex items-center gap-2">
+                      <span aria-hidden className="text-sm">
+                        ⋯
+                      </span>
+                      <span>Mais ações</span>
+                    </span>
+                    <span
+                      aria-hidden
+                      className="text-[10px] text-slate-500 transition-transform group-open:rotate-180"
+                    >
+                      ▾
+                    </span>
+                  </summary>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {SECONDARY_ACTIONS.map((a) => (
+                      <SecondaryActionLink key={a.href} item={a} />
+                    ))}
+                  </div>
+                </details>
 
-          {/* Desktop-only header */}
-          <div className="hidden md:block">
-            <AdminPageHeader
-              badges={
-                <span className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300">
-                  Kavita Admin
-                </span>
-              }
-              title="Mercado do Café"
-              subtitle="Gerencie corretoras de café e analise solicitações de cadastro."
-              actions={
-                <div className="flex flex-wrap items-center gap-2">
+                {/* Desktop (≥sm): flat */}
+                <div className="hidden sm:contents">
                   {SECONDARY_ACTIONS.map((a) => (
                     <SecondaryActionLink key={a.href} item={a} />
                   ))}
                 </div>
-              }
-              primaryAction={
-                <Link
-                  href="/admin/mercado-do-cafe/corretoras/nova"
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:w-auto sm:px-4"
-                >
-                  + Nova Corretora
-                </Link>
-              }
-            />
-          </div>
+              </>
+            }
+            primaryAction={
+              <Link
+                href="/admin/mercado-do-cafe/corretoras/nova"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:w-auto sm:px-4"
+              >
+                + Nova Corretora
+              </Link>
+            }
+          />
         </div>
       </header>
 
