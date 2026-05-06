@@ -224,36 +224,6 @@ export default function PlanosClient() {
     }
   };
 
-  // Decisao Comercial 2026-05-06 — Enterprise nunca ativa plano por
-  // clique. Aciona apenas o canal comercial (audit no backend +
-  // resposta com whatsapp/email da curadoria). UI mostra confirmacao.
-  const [enterpriseSending, setEnterpriseSending] = useState(false);
-  const handleEnterpriseContact = async () => {
-    setEnterpriseSending(true);
-    try {
-      const res = await apiClient.post<{
-        contact?: { whatsapp?: string | null; email?: string | null };
-      }>("/api/corretora/plan/enterprise-contact", {});
-      const wp = res?.contact?.whatsapp;
-      const em = res?.contact?.email;
-      if (wp || em) {
-        toast.success(
-          `Pedido recebido. Curadoria entra em contato${wp ? ` · WhatsApp ${wp}` : ""}${em ? ` · ${em}` : ""}.`,
-          { duration: 9000 },
-        );
-      } else {
-        toast.success(
-          "Pedido recebido. A curadoria Kavita vai entrar em contato em ate 1 dia util.",
-          { duration: 7000 },
-        );
-      }
-    } catch (err) {
-      toast.error(formatApiError(err, "Erro ao enviar pedido.").message);
-    } finally {
-      setEnterpriseSending(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="space-y-4">
@@ -448,10 +418,10 @@ export default function PlanosClient() {
       )}
 
       {/* Planos disponíveis — Decisao Comercial 2026-05-06 layout:
-          FREE / PRO / MAX vem do backend (is_public=1). Enterprise e
-          cartao fixo no final que aciona "Falar com time" (nao ativa
-          plano por clique). */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          FREE / PRO / MAX vem do backend (is_public=1). Enterprise
+          existe no banco para atribuicao manual via admin (contratos
+          comerciais), mas nao aparece no self-service da corretora. */}
+      <div className="grid gap-4 md:grid-cols-3">
         {plans.map((plan) => {
           const isCurrent = plan.slug === currentSlug;
           // PRO e o plano "popular" comercialmente (margem boa, preco
@@ -588,66 +558,6 @@ export default function PlanosClient() {
           );
         })}
 
-        {/* Enterprise — card fixo. Nao vem do backend (is_public=0) e
-            nao tem CTA de assinatura. So abre tratativa comercial. */}
-        <div className="relative flex flex-col overflow-hidden rounded-2xl bg-stone-900 p-5 ring-1 ring-purple-400/20 md:p-6">
-          <span className="absolute right-3 top-3 rounded-full bg-purple-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-purple-200 ring-1 ring-purple-400/30">
-            Sob medida
-          </span>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-purple-300/80">
-            Enterprise
-          </p>
-          <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold tabular-nums text-stone-50">
-              Sob contrato
-            </span>
-          </div>
-          <p className="mt-2 text-[12px] leading-relaxed text-stone-400">
-            Volume dedicado, integracoes sob medida, SLA garantido e
-            curadoria comercial direto com o time Kavita.
-          </p>
-
-          <ul className="mt-4 flex-1 space-y-2 text-[12px] text-stone-300">
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-300 ring-1 ring-purple-400/30">
-                ✓
-              </span>
-              <span>Equipe ampla e leads sem cap mensal</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-300 ring-1 ring-purple-400/30">
-                ✓
-              </span>
-              <span>Destaque regional automatico em multiplas cidades</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-300 ring-1 ring-purple-400/30">
-                ✓
-              </span>
-              <span>Integracao com seu ERP/cooperativa</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-300 ring-1 ring-purple-400/30">
-                ✓
-              </span>
-              <span>Suporte dedicado e SLA contratual</span>
-            </li>
-          </ul>
-
-          <div className="mt-5">
-            <button
-              type="button"
-              disabled={enterpriseSending}
-              onClick={handleEnterpriseContact}
-              className="block w-full rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 px-4 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-purple-500/30 transition-all hover:from-purple-300 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {enterpriseSending ? "Enviando…" : "Falar com time"}
-            </button>
-            <p className="mt-2 text-center text-[10px] text-stone-500">
-              Sem ativacao automatica. Curadoria responde em ate 1 dia util.
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Timeline — transparência sobre trial/upgrade/downgrade.
