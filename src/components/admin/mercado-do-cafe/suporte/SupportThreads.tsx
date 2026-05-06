@@ -189,10 +189,15 @@ export default function SupportThreads({ onUnauthorized }: Props) {
         )}
       </aside>
 
-      {/* ── Painel da conversa ativa ── */}
+      {/* ── Painel da conversa ativa ──
+          IMPORTANTE: o display tem que ser `flex flex-col` quando
+          visivel (em qualquer breakpoint), porque o ReplyFooter
+          sticky e os messages com flex-1 dependem disso. Antes eu
+          tinha `flex flex-col` na base e sobrescrevia com `block`
+          em mobile — bug. Agora controlo display so via toggle. */}
       <section
-        className={`flex min-h-[60vh] flex-col rounded-xl border border-slate-800 bg-slate-900/40 ${
-          showThreadOnMobile ? "block" : "hidden lg:flex"
+        className={`min-h-[60vh] flex-col rounded-xl border border-slate-800 bg-slate-900/40 ${
+          showThreadOnMobile ? "flex" : "hidden lg:flex"
         }`}
       >
         {!active ? (
