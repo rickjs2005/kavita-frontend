@@ -47,56 +47,67 @@ export default function MercadoCafeTabs({
   supportUnreadCount = 0,
 }: Props) {
   return (
-    <nav
-      aria-label="Seções do Mercado do Café"
-      // Mobile: faixa rolante horizontal. Em ≥sm: wrap normal.
-      // overscroll-x-contain evita overscroll cruzar pra navegação
-      // do browser (pull-to-refresh) durante swipe horizontal.
-      className="-mx-1 flex gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-    >
-      {tabs.map((t) => {
-        const isActive = t.key === active;
-        const badgeCount =
-          t.key === "solicitacoes"
-            ? pendingCount
-            : t.key === "reviews"
-              ? reviewsPendingCount
-              : t.key === "suporte"
-                ? supportUnreadCount
-                : 0;
-        const showBadge = badgeCount > 0;
+    <div className="relative">
+      <nav
+        aria-label="Seções do Mercado do Café"
+        // Mobile: faixa rolante horizontal com tap targets ≥44px;
+        // sem barra de scroll visual.
+        // Desktop (≥sm): wrap natural em pills.
+        // overscroll-x-contain evita pull-to-refresh durante swipe.
+        className="-mx-1 flex gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {tabs.map((t) => {
+          const isActive = t.key === active;
+          const badgeCount =
+            t.key === "solicitacoes"
+              ? pendingCount
+              : t.key === "reviews"
+                ? reviewsPendingCount
+                : t.key === "suporte"
+                  ? supportUnreadCount
+                  : 0;
+          const showBadge = badgeCount > 0;
 
-        const base =
-          "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition sm:gap-2 sm:px-4";
-        const activeCls =
-          "border-emerald-500/50 bg-emerald-500/10 text-emerald-200 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]";
-        const inactiveCls =
-          "border-slate-800 bg-slate-950/30 text-slate-200 hover:border-emerald-500/30 hover:bg-slate-950/40";
+          // Mobile: h-11 (44px touch target), px-4, fonte sm.
+          // Desktop: pill original menor (sm:h-auto sm:py-2 sm:text-xs).
+          const base =
+            "inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors sm:h-auto sm:gap-2 sm:px-4 sm:py-2 sm:text-xs";
+          const activeCls =
+            "border-emerald-500/60 bg-emerald-500/15 text-emerald-200 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]";
+          const inactiveCls =
+            "border-slate-800 bg-slate-950/30 text-slate-200 hover:border-emerald-500/30 hover:bg-slate-950/40";
 
-        return (
-          <button
-            key={t.key}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => onChange(t.key)}
-            className={`${base} ${isActive ? activeCls : inactiveCls}`}
-          >
-            <span aria-hidden className="text-sm">
-              {t.icon}
-            </span>
-            <span>{t.label}</span>
-            {showBadge && (
-              <span
-                aria-label={`${badgeCount} pendentes`}
-                className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white"
-              >
-                {badgeCount}
+          return (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onChange(t.key)}
+              className={`${base} ${isActive ? activeCls : inactiveCls}`}
+            >
+              <span aria-hidden className="text-base sm:text-sm">
+                {t.icon}
               </span>
-            )}
-          </button>
-        );
-      })}
-    </nav>
+              <span>{t.label}</span>
+              {showBadge && (
+                <span
+                  aria-label={`${badgeCount} pendentes`}
+                  className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white"
+                >
+                  {badgeCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+      {/* Fade-out direito sinalizando scroll horizontal — so mobile.
+          pointer-events-none nao bloqueia gesto. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-slate-900/80 to-transparent sm:hidden"
+      />
+    </div>
   );
 }
