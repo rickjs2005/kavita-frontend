@@ -1,4 +1,18 @@
 // src/app/admin/mercado-do-cafe/page.tsx
+//
+// Refator de responsividade (mercado-do-cafe admin):
+//   - Header sticky enxuto. Em mobile, as 4 ações secundárias
+//     (Métricas, Reconciliação, Backfill, Histórico) ficam atrás de
+//     um menu "Mais" colapsável (<details>) — antes eram 4 botões
+//     só com emoji em sequência, sem label, ambíguos pra quem não
+//     decora os ícones.
+//   - Em ≥sm, layout volta para flat com labels visíveis.
+//   - CTA primário "+ Nova Corretora" continua sempre visível.
+//   - Toggle "Mostrar arquivadas" alinhado à direita em desktop e
+//     com auto-wrap em mobile.
+//   - Tabs externas (MercadoCafeTabs) já cuidam do próprio scroll
+//     horizontal em <sm.
+
 "use client";
 
 import { useCallback, useState } from "react";
@@ -18,6 +32,63 @@ import { useCorretorasAdmin } from "@/hooks/useCorretorasAdmin";
 import { useCorretoraSubmissions } from "@/hooks/useCorretoraSubmissions";
 import { useCorretoraReviewsAdmin } from "@/hooks/useCorretoraReviewsAdmin";
 
+// Item de ação secundária — Link com ícone + label. Em mobile entra
+// num menu "Mais" colapsável; em desktop fica flat ao lado do CTA.
+type SecondaryActionItem = {
+  href: string;
+  label: string;
+  icon: string;
+  ariaLabel: string;
+  title: string;
+};
+
+const SECONDARY_ACTIONS: SecondaryActionItem[] = [
+  {
+    href: "/admin/mercado-do-cafe/metricas",
+    label: "Métricas",
+    icon: "📈",
+    ariaLabel: "Abrir dashboard de métricas do Mercado do Café",
+    title: "Leads, SLA, reviews e planos — visão 7/30/90 dias",
+  },
+  {
+    href: "/admin/mercado-do-cafe/reconciliacao",
+    label: "Reconciliação",
+    icon: "💳",
+    ariaLabel: "Abrir reconciliação de pagamentos Asaas",
+    title: "Status das assinaturas e eventos de webhook do Asaas",
+  },
+  {
+    href: "/admin/mercado-do-cafe/backfill-regional",
+    label: "Backfill",
+    icon: "📋",
+    ariaLabel: "Corretoras com perfil regional incompleto",
+    title: "Corretoras que ainda não preencheram os 6 campos regionais",
+  },
+  {
+    href: "/admin/auditoria",
+    label: "Histórico",
+    icon: "🕒",
+    ariaLabel: "Abrir histórico do Mercado do Café",
+    title: "Ver tudo que a equipe já fez neste módulo",
+  },
+];
+
+function SecondaryActionLink({ item }: { item: SecondaryActionItem }) {
+  return (
+    <Link
+      href={item.href}
+      aria-label={item.ariaLabel}
+      title={item.title}
+      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200"
+    >
+      <span aria-hidden className="text-sm">
+        {item.icon}
+      </span>
+      <span>{item.label}</span>
+    </Link>
+  );
+}
+
 export default function AdminMercadoDoCafePage() {
   const router = useRouter();
   const { logout } = useAdminAuth();
@@ -35,7 +106,9 @@ export default function AdminMercadoDoCafePage() {
 
   return (
     <div className="relative min-h-screen w-full">
-      {/* Header */}
+      {/* Header — sticky compacto.
+          Em mobile, ações secundárias colapsadas em <details>; em
+          desktop, flat ao lado do CTA primário. */}
       <header className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">
         <div className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-4">
           <AdminPageHeader
@@ -48,50 +121,35 @@ export default function AdminMercadoDoCafePage() {
             subtitle="Gerencie corretoras de café e analise solicitações de cadastro."
             actions={
               <>
-                <Link
-                  href="/admin/mercado-do-cafe/metricas"
-                  aria-label="Abrir dashboard de métricas do Mercado do Café"
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
-                  title="Leads, SLA, reviews e planos — visão 7/30/90 dias"
-                >
-                  <span aria-hidden className="text-sm sm:mr-1.5">
-                    📈
-                  </span>
-                  <span className="hidden sm:inline">Métricas</span>
-                </Link>
-                <Link
-                  href="/admin/mercado-do-cafe/reconciliacao"
-                  aria-label="Abrir reconciliação de pagamentos Asaas"
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
-                  title="Status das assinaturas e eventos de webhook do Asaas"
-                >
-                  <span aria-hidden className="text-sm sm:mr-1.5">
-                    💳
-                  </span>
-                  <span className="hidden sm:inline">Reconciliação</span>
-                </Link>
-                <Link
-                  href="/admin/mercado-do-cafe/backfill-regional"
-                  aria-label="Corretoras com perfil regional incompleto"
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
-                  title="Corretoras que ainda não preencheram os 6 campos regionais"
-                >
-                  <span aria-hidden className="text-sm sm:mr-1.5">
-                    📋
-                  </span>
-                  <span className="hidden sm:inline">Backfill</span>
-                </Link>
-                <Link
-                  href="/admin/auditoria"
-                  aria-label="Abrir histórico do Mercado do Café"
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900/60 px-2.5 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 sm:px-3"
-                  title="Ver tudo que a equipe já fez neste módulo"
-                >
-                  <span aria-hidden className="text-sm sm:mr-1.5">
-                    🕒
-                  </span>
-                  <span className="hidden sm:inline">Histórico</span>
-                </Link>
+                {/* Mobile (<sm): menu "Mais" colapsável */}
+                <details className="group relative w-full sm:hidden">
+                  <summary className="flex w-full cursor-pointer list-none items-center justify-between rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200 [&::-webkit-details-marker]:hidden">
+                    <span className="inline-flex items-center gap-2">
+                      <span aria-hidden className="text-sm">
+                        ⋯
+                      </span>
+                      <span>Mais ações</span>
+                    </span>
+                    <span
+                      aria-hidden
+                      className="text-[10px] text-slate-500 transition-transform group-open:rotate-180"
+                    >
+                      ▾
+                    </span>
+                  </summary>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {SECONDARY_ACTIONS.map((a) => (
+                      <SecondaryActionLink key={a.href} item={a} />
+                    ))}
+                  </div>
+                </details>
+
+                {/* Desktop (≥sm): flat */}
+                <div className="hidden sm:contents">
+                  {SECONDARY_ACTIONS.map((a) => (
+                    <SecondaryActionLink key={a.href} item={a} />
+                  ))}
+                </div>
               </>
             }
             primaryAction={
@@ -107,7 +165,7 @@ export default function AdminMercadoDoCafePage() {
       </header>
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-3 pb-10 pt-4 sm:px-4">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-slate-950/60">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-3 shadow-lg shadow-slate-950/60 sm:p-4">
           <MercadoCafeTabs
             active={activeTab}
             onChange={setActiveTab}
@@ -125,7 +183,7 @@ export default function AdminMercadoDoCafePage() {
                 {/* Toggle "Mostrar arquivadas" — soft delete UI (Sprint 4).
                     Default: oculta arquivadas. Ao ativar, backend passa
                     a incluir deleted_at IS NOT NULL na listagem. */}
-                <div className="flex items-center justify-end">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   <label className="inline-flex cursor-pointer items-center gap-2 text-[11px] font-medium text-slate-300">
                     <input
                       type="checkbox"

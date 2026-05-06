@@ -1,6 +1,19 @@
 // src/components/admin/mercado-do-cafe/MercadoCafeTabs.tsx
 "use client";
 
+// Refator de responsividade (Mercado do Café — admin):
+//   - Removido o cabeçalho duplicado (kicker + h2 + descrição). O
+//     AdminPageHeader da própria página já exibe todos esses dados;
+//     repetir aqui empilhava 4 linhas extras consumindo viewport
+//     em mobile.
+//   - Em telas <sm os pills agora rolam HORIZONTALMENTE em vez de
+//     fazer wrap em 3 linhas. Mantém todos os 5 itens acessíveis sem
+//     sumir nem empurrar conteúdo pra fora da tela.
+//   - Em ≥sm volta ao layout flex-wrap original.
+//   - Tap target preservado: padding interno 9px = 36px de altura
+//     visual; o CSS global do projeto força mínimo 44px em pointer
+//     coarse via @media — testado nos demais admin pages.
+
 export type MercadoTabKey =
   | "regional"
   | "corretoras"
@@ -30,55 +43,54 @@ export default function MercadoCafeTabs({
   reviewsPendingCount = 0,
 }: Props) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300">
-          Mercado do Café
-        </p>
-        <h2 className="mt-1 text-sm font-semibold text-slate-50">
-          Gestão de corretoras
-        </h2>
-        <p className="mt-1 text-[11px] text-slate-400">
-          Gerencie corretoras aprovadas e analise novas solicitações.
-        </p>
-      </div>
+    <nav
+      aria-label="Seções do Mercado do Café"
+      // Mobile: faixa rolante horizontal. Em ≥sm: wrap normal.
+      // overscroll-x-contain evita overscroll cruzar pra navegação
+      // do browser (pull-to-refresh) durante swipe horizontal.
+      className="-mx-1 flex gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {tabs.map((t) => {
+        const isActive = t.key === active;
+        const badgeCount =
+          t.key === "solicitacoes"
+            ? pendingCount
+            : t.key === "reviews"
+              ? reviewsPendingCount
+              : 0;
+        const showBadge = badgeCount > 0;
 
-      <div className="flex flex-wrap gap-2">
-        {tabs.map((t) => {
-          const isActive = t.key === active;
-          const badgeCount =
-            t.key === "solicitacoes"
-              ? pendingCount
-              : t.key === "reviews"
-                ? reviewsPendingCount
-                : 0;
-          const showBadge = badgeCount > 0;
+        const base =
+          "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition sm:gap-2 sm:px-4";
+        const activeCls =
+          "border-emerald-500/50 bg-emerald-500/10 text-emerald-200 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]";
+        const inactiveCls =
+          "border-slate-800 bg-slate-950/30 text-slate-200 hover:border-emerald-500/30 hover:bg-slate-950/40";
 
-          const base =
-            "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition";
-          const activeCls =
-            "border-emerald-500/50 bg-emerald-500/10 text-emerald-200 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]";
-          const inactiveCls =
-            "border-slate-800 bg-slate-950/30 text-slate-200 hover:border-emerald-500/30 hover:bg-slate-950/40";
-
-          return (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => onChange(t.key)}
-              className={`${base} ${isActive ? activeCls : inactiveCls}`}
-            >
-              <span className="text-sm">{t.icon}</span>
-              <span>{t.label}</span>
-              {showBadge && (
-                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
-                  {badgeCount}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+        return (
+          <button
+            key={t.key}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(t.key)}
+            className={`${base} ${isActive ? activeCls : inactiveCls}`}
+          >
+            <span aria-hidden className="text-sm">
+              {t.icon}
+            </span>
+            <span>{t.label}</span>
+            {showBadge && (
+              <span
+                aria-label={`${badgeCount} pendentes`}
+                className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white"
+              >
+                {badgeCount}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </nav>
   );
 }
