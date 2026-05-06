@@ -13,6 +13,7 @@ import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { useNow } from "@/hooks/useNow";
 import SubscriptionEventsTimeline from "@/components/mercado-do-cafe/SubscriptionEventsTimeline";
+import { SupportMessages } from "@/components/painel-corretora/SupportMessages";
 
 type Plan = {
   id: number;
@@ -567,55 +568,11 @@ export default function PlanosClient() {
 
       </div>
 
-      {/* Fale com a Kavita — canal de suporte permanente. Aparece
-          sempre que pelo menos um canal (whatsapp ou email) estiver
-          configurado nas envs do backend (KAVITA_COMMERCIAL_*). NAO
-          ativa plano nem aciona /enterprise-contact: e link direto
-          pro canal escolhido pela corretora. */}
-      {(current?.support?.whatsapp || current?.support?.email) && (
-        <div className="rounded-2xl border border-white/[0.06] bg-stone-900/60 p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300/80">
-                Fale com a Kavita
-              </p>
-              <p className="mt-1 text-[14px] font-semibold text-stone-50">
-                Precisa de ajuda, quer um plano sob medida ou tirar dúvida do contrato?
-              </p>
-              <p className="mt-1 text-[12px] text-stone-400">
-                A curadoria responde em até 1 dia útil.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {current?.support?.whatsapp && (
-                <a
-                  href={`https://wa.me/${current.support.whatsapp.replace(/\D/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-500 px-4 text-[12px] font-bold text-white shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-400"
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden>
-                    <path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4a7.94 7.94 0 0 0-6.88 11.91L4 20l4.2-1.1a7.94 7.94 0 0 0 3.85.98h.01A7.94 7.94 0 0 0 20 11.95a7.85 7.85 0 0 0-2.4-5.63zM12.06 18.5a6.6 6.6 0 0 1-3.36-.92l-.24-.14-2.49.65.66-2.43-.16-.25a6.6 6.6 0 0 1 10.21-8.13 6.55 6.55 0 0 1 1.93 4.67 6.61 6.61 0 0 1-6.55 6.55zm3.6-4.94c-.2-.1-1.17-.58-1.35-.65-.18-.07-.31-.1-.45.1-.13.2-.51.65-.62.78-.11.13-.23.15-.43.05a5.45 5.45 0 0 1-1.6-1 6 6 0 0 1-1.1-1.38c-.12-.2 0-.31.09-.41.09-.1.2-.23.3-.35.1-.12.13-.2.2-.33.06-.13.03-.25-.02-.35-.05-.1-.45-1.08-.62-1.48-.16-.39-.33-.34-.45-.34h-.38a.74.74 0 0 0-.53.25 2.23 2.23 0 0 0-.7 1.66c0 .98.71 1.92.81 2.06.1.13 1.4 2.13 3.4 2.99.47.2.85.32 1.14.41a2.76 2.76 0 0 0 1.27.08c.39-.06 1.17-.48 1.34-.94.16-.46.16-.86.11-.94-.05-.08-.18-.13-.38-.23z" />
-                  </svg>
-                  WhatsApp Kavita
-                </a>
-              )}
-              {current?.support?.email && (
-                <a
-                  href={`mailto:${current.support.email}`}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-[12px] font-semibold text-stone-200 transition-colors hover:bg-white/[0.08] hover:text-amber-200"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden>
-                    <rect x="3" y="5" width="18" height="14" rx="2" />
-                    <path d="m3 7 9 6 9-6" />
-                  </svg>
-                  Enviar e-mail
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Mensageria interna corretora <-> curadoria Kavita.
+          Substitui mailto/whatsapp por um canal real: tudo enviado
+          aqui aparece no painel admin, e a resposta do admin volta
+          para esta tela. */}
+      <SupportMessages />
 
       {/* Timeline — transparência sobre trial/upgrade/downgrade.
           Reutiliza o componente compartilhado (mesmo que o admin vê),

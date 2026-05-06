@@ -19,13 +19,15 @@ export type MercadoTabKey =
   | "corretoras"
   | "solicitacoes"
   | "reviews"
-  | "planos";
+  | "planos"
+  | "suporte";
 
 type Props = {
   active: MercadoTabKey;
   onChange: (k: MercadoTabKey) => void;
   pendingCount?: number;
   reviewsPendingCount?: number;
+  supportUnreadCount?: number;
 };
 
 const tabs: { key: MercadoTabKey; label: string; icon: string }[] = [
@@ -34,6 +36,7 @@ const tabs: { key: MercadoTabKey; label: string; icon: string }[] = [
   { key: "solicitacoes", label: "Solicitações", icon: "📋" },
   { key: "reviews", label: "Avaliações", icon: "⭐" },
   { key: "planos", label: "Planos", icon: "💳" },
+  { key: "suporte", label: "Suporte", icon: "💬" },
 ];
 
 export default function MercadoCafeTabs({
@@ -41,6 +44,7 @@ export default function MercadoCafeTabs({
   onChange,
   pendingCount = 0,
   reviewsPendingCount = 0,
+  supportUnreadCount = 0,
 }: Props) {
   return (
     <nav
@@ -57,7 +61,9 @@ export default function MercadoCafeTabs({
             ? pendingCount
             : t.key === "reviews"
               ? reviewsPendingCount
-              : 0;
+              : t.key === "suporte"
+                ? supportUnreadCount
+                : 0;
         const showBadge = badgeCount > 0;
 
         const base =
