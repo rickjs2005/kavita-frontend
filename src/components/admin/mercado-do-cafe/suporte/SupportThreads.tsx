@@ -2,9 +2,14 @@
 
 // src/components/admin/mercado-do-cafe/suporte/SupportThreads.tsx
 //
-// Admin tab "Suporte" — lista threads (uma por corretora) ordenadas
-// por ultima mensagem. Click no thread abre painel lateral com
-// historico + form de resposta.
+// Admin tab "Suporte" — orquestra a lista de conversas
+// (ConversationCard) e o painel de mensagens + footer (ReplyFooter).
+//
+// Mobile (<lg): apresenta UM dos dois (lista OU thread) com botao de
+// voltar. Reduz fricao de viewport e segue padrao chat web em
+// telas pequenas.
+//
+// Desktop (≥lg): layout split tradicional (lista 360px + painel).
 //
 // Endpoints:
 //   GET  /api/admin/mercado-do-cafe/support/threads
@@ -15,19 +20,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import apiClient from "@/lib/apiClient";
 import { ApiError } from "@/lib/errors";
 import toast from "react-hot-toast";
-
-type Thread = {
-  corretora_id: number;
-  corretora_name: string;
-  corretora_slug: string;
-  corretora_city: string | null;
-  corretora_state: string | null;
-  unread_from_corretora: number;
-  total_messages: number;
-  last_message_at: string;
-  last_message_body: string;
-  last_message_sender_type: "corretora" | "admin";
-};
+import { ChevronLeft } from "lucide-react";
+import ConversationCard, {
+  type ConversationItem,
+} from "./ConversationCard";
+import ReplyFooter from "./ReplyFooter";
 
 type Message = {
   id: number;
@@ -59,19 +56,18 @@ function formatTime(iso: string): string {
 }
 
 export default function SupportThreads({ onUnauthorized }: Props) {
-  const [threads, setThreads] = useState<Thread[]>([]);
+  const [threads, setThreads] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [active, setActive] = useState<Thread | null>(null);
+  const [active, setActive] = useState<ConversationItem | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
-  const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
 
   const loadThreads = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get<{ threads: Thread[] }>(
+      const res = await apiClient.get<{ threads: ConversationItem[] }>(
         "/api/admin/mercado-do-cafe/support/threads",
       );
       setThreads(Array.isArray(res?.threads) ? res.threads : []);
@@ -88,7 +84,7 @@ export default function SupportThreads({ onUnauthorized }: Props) {
   }, [onUnauthorized]);
 
   const openThread = useCallback(
-    async (thread: Thread) => {
+    async (thread: ConversationItem) => {
       setActive(thread);
       setMessages([]);
       setMessagesLoading(true);
@@ -97,8 +93,6 @@ export default function SupportThreads({ onUnauthorized }: Props) {
           `/api/admin/mercado-do-cafe/support/threads/${thread.corretora_id}`,
         );
         setMessages(Array.isArray(res?.messages) ? res.messages : []);
-        // Backend marca mensagens da corretora como lidas ao abrir;
-        // refresca lista pra atualizar contadores.
         loadThreads();
       } catch (err) {
         toast.error(
@@ -120,41 +114,46 @@ export default function SupportThreads({ onUnauthorized }: Props) {
     messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
   }, [messages]);
 
-  const sendReply = async () => {
-    if (!active) return;
-    const body = reply.trim();
-    if (body.length < 2) {
-      toast.error("Resposta precisa ter ao menos 2 caracteres.");
-      return;
-    }
-    setSending(true);
-    try {
-      await apiClient.post(
-        `/api/admin/mercado-do-cafe/support/threads/${active.corretora_id}/messages`,
-        { body },
-      );
-      setReply("");
-      // Recarrega thread atual + lista para refletir novo estado.
-      const res = await apiClient.get<{ messages: Message[] }>(
-        `/api/admin/mercado-do-cafe/support/threads/${active.corretora_id}`,
-      );
-      setMessages(Array.isArray(res?.messages) ? res.messages : []);
-      await loadThreads();
-      toast.success("Resposta enviada.");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Erro ao enviar resposta.",
-      );
-    } finally {
-      setSending(false);
-    }
-  };
+  const sendReply = useCallback(
+    async (body: string) => {
+      if (!active) return;
+      setSending(true);
+      try {
+        await apiClient.post(
+          `/api/admin/mercado-do-cafe/support/threads/${active.corretora_id}/messages`,
+          { body },
+        );
+        const res = await apiClient.get<{ messages: Message[] }>(
+          `/api/admin/mercado-do-cafe/support/threads/${active.corretora_id}`,
+        );
+        setMessages(Array.isArray(res?.messages) ? res.messages : []);
+        await loadThreads();
+        toast.success("Resposta enviada.");
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Erro ao enviar resposta.",
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [active, loadThreads],
+  );
+
+  // Mobile: lista OU thread (controle por presenca de active).
+  // Desktop: ambos visiveis.
+  const showListOnMobile = !active;
+  const showThreadOnMobile = !!active;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-      {/* ── Lista de threads (corretoras) ── */}
-      <aside className="rounded-xl border border-slate-800 bg-slate-900/40">
-        <div className="border-b border-slate-800 px-4 py-3">
+      {/* ── Lista de threads ── */}
+      <aside
+        className={`rounded-xl border border-slate-800 bg-slate-900/40 ${
+          showListOnMobile ? "block" : "hidden lg:block"
+        }`}
+      >
+        <div className="border-b border-slate-800 p-3">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
             Conversas
           </p>
@@ -177,52 +176,25 @@ export default function SupportThreads({ onUnauthorized }: Props) {
 
         {!loading && threads.length > 0 && (
           <ul className="divide-y divide-slate-800/60">
-            {threads.map((t) => {
-              const isActive = active?.corretora_id === t.corretora_id;
-              const hasUnread = t.unread_from_corretora > 0;
-              return (
-                <li key={t.corretora_id}>
-                  <button
-                    type="button"
-                    onClick={() => openThread(t)}
-                    className={`flex w-full flex-col gap-1 px-4 py-3 text-left transition-colors ${
-                      isActive
-                        ? "bg-emerald-500/10"
-                        : "hover:bg-slate-900/60"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-semibold text-slate-100">
-                        {t.corretora_name}
-                      </span>
-                      {hasUnread && (
-                        <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
-                          {t.unread_from_corretora}
-                        </span>
-                      )}
-                    </div>
-                    <p className="truncate text-[11px] text-slate-400">
-                      {t.last_message_sender_type === "admin" ? "Você: " : ""}
-                      {t.last_message_body}
-                    </p>
-                    <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500">
-                      <span>
-                        {[t.corretora_city, t.corretora_state]
-                          .filter(Boolean)
-                          .join(", ") || "—"}
-                      </span>
-                      <span>{formatTime(t.last_message_at)}</span>
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
+            {threads.map((t) => (
+              <li key={t.corretora_id}>
+                <ConversationCard
+                  thread={t}
+                  active={active?.corretora_id === t.corretora_id}
+                  onOpen={openThread}
+                />
+              </li>
+            ))}
           </ul>
         )}
       </aside>
 
       {/* ── Painel da conversa ativa ── */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900/40">
+      <section
+        className={`flex min-h-[60vh] flex-col rounded-xl border border-slate-800 bg-slate-900/40 ${
+          showThreadOnMobile ? "block" : "hidden lg:flex"
+        }`}
+      >
         {!active ? (
           <div className="flex h-full min-h-[280px] items-center justify-center p-6 text-center">
             <p className="text-xs text-slate-500">
@@ -231,23 +203,36 @@ export default function SupportThreads({ onUnauthorized }: Props) {
             </p>
           </div>
         ) : (
-          <div className="flex h-full flex-col">
-            <header className="border-b border-slate-800 px-4 py-3">
-              <p className="text-sm font-semibold text-slate-100">
-                {active.corretora_name}
-              </p>
-              <p className="mt-0.5 text-[11px] text-slate-500">
-                {[active.corretora_city, active.corretora_state]
-                  .filter(Boolean)
-                  .join(", ") || "—"}
-                {" · "}
-                {active.total_messages} mensage{active.total_messages === 1 ? "m" : "ns"}
-              </p>
+          <>
+            <header className="flex items-center gap-2 border-b border-slate-800 p-3">
+              {/* Botao voltar — so aparece em mobile (<lg). Permite
+                  retornar pra lista quando viewport e estreito. */}
+              <button
+                type="button"
+                onClick={() => setActive(null)}
+                aria-label="Voltar para lista de conversas"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors duration-200 hover:bg-slate-800 hover:text-slate-100 lg:hidden"
+              >
+                <ChevronLeft className="h-5 w-5" aria-hidden />
+              </button>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-100">
+                  {active.corretora_name}
+                </p>
+                <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                  {[active.corretora_city, active.corretora_state]
+                    .filter(Boolean)
+                    .join(", ") || "—"}
+                  {" · "}
+                  {active.total_messages} mensage
+                  {active.total_messages === 1 ? "m" : "ns"}
+                </p>
+              </div>
             </header>
 
             <div
               ref={messagesRef}
-              className="max-h-[480px] flex-1 space-y-3 overflow-y-auto p-4"
+              className="max-h-[60vh] flex-1 space-y-3 overflow-y-auto p-3"
             >
               {messagesLoading && (
                 <p className="py-8 text-center text-xs text-slate-500">
@@ -267,7 +252,9 @@ export default function SupportThreads({ onUnauthorized }: Props) {
                   return (
                     <div
                       key={m.id}
-                      className={`flex flex-col gap-1 ${fromAdmin ? "items-end" : "items-start"}`}
+                      className={`flex flex-col gap-1 ${
+                        fromAdmin ? "items-end" : "items-start"
+                      }`}
                     >
                       <div
                         className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm ${
@@ -276,7 +263,9 @@ export default function SupportThreads({ onUnauthorized }: Props) {
                             : "bg-slate-800/80 text-slate-100 ring-1 ring-slate-700/60"
                         }`}
                       >
-                        <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                        <p className="whitespace-pre-wrap break-words">
+                          {m.body}
+                        </p>
                       </div>
                       <p className="px-1 text-[10px] font-medium text-slate-500">
                         <span className="font-semibold text-slate-400">
@@ -292,38 +281,15 @@ export default function SupportThreads({ onUnauthorized }: Props) {
                 })}
             </div>
 
-            <footer className="border-t border-slate-800 p-3">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                <textarea
-                  rows={2}
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value.slice(0, 4000))}
-                  disabled={sending}
-                  placeholder={`Responder para ${active.corretora_name}…`}
-                  className="flex-1 resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40 [color-scheme:dark]"
-                  onKeyDown={(e) => {
-                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                      e.preventDefault();
-                      sendReply();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={sendReply}
-                  disabled={sending || reply.trim().length < 2}
-                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {sending ? "Enviando…" : "Enviar resposta"}
-                </button>
-              </div>
-              <p className="mt-1 text-right text-[10px] text-slate-600 tabular-nums">
-                {reply.length}/4000 · Ctrl+Enter envia
-              </p>
-            </footer>
-          </div>
+            <ReplyFooter
+              recipientName={active.corretora_name}
+              onSend={sendReply}
+              sending={sending}
+            />
+          </>
         )}
       </section>
+
     </div>
   );
 }

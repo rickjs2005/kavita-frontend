@@ -47,56 +47,82 @@ export default function MercadoCafeTabs({
   supportUnreadCount = 0,
 }: Props) {
   return (
-    <nav
-      aria-label="Seções do Mercado do Café"
-      // Mobile: faixa rolante horizontal. Em ≥sm: wrap normal.
-      // overscroll-x-contain evita overscroll cruzar pra navegação
-      // do browser (pull-to-refresh) durante swipe horizontal.
-      className="-mx-1 flex gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-    >
-      {tabs.map((t) => {
-        const isActive = t.key === active;
-        const badgeCount =
-          t.key === "solicitacoes"
-            ? pendingCount
-            : t.key === "reviews"
-              ? reviewsPendingCount
-              : t.key === "suporte"
-                ? supportUnreadCount
-                : 0;
-        const showBadge = badgeCount > 0;
+    <div className="relative">
+      <nav
+        aria-label="Seções do Mercado do Café"
+        // Mobile (<md): faixa rolante horizontal com underline ativa.
+        // Desktop (≥md): wrap em pills mantem visual original.
+        // overscroll-x-contain evita pull-to-refresh durante swipe.
+        className="-mx-1 flex gap-1 overflow-x-auto overscroll-x-contain px-1 pb-1 md:mx-0 md:flex-wrap md:gap-2 md:overflow-visible md:px-0 md:pb-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {tabs.map((t) => {
+          const isActive = t.key === active;
+          const badgeCount =
+            t.key === "solicitacoes"
+              ? pendingCount
+              : t.key === "reviews"
+                ? reviewsPendingCount
+                : t.key === "suporte"
+                  ? supportUnreadCount
+                  : 0;
+          const showBadge = badgeCount > 0;
 
-        const base =
-          "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition sm:gap-2 sm:px-4";
-        const activeCls =
-          "border-emerald-500/50 bg-emerald-500/10 text-emerald-200 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]";
-        const inactiveCls =
-          "border-slate-800 bg-slate-950/30 text-slate-200 hover:border-emerald-500/30 hover:bg-slate-950/40";
+          // Mobile (<md): aba minimalista com underline ativa em emerald,
+          // sem fundo nem borda — reduz competicao visual e consome
+          // menos viewport. Desktop (≥md): pill original com fundo.
+          const baseMobile =
+            "relative inline-flex shrink-0 items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-colors duration-200 md:rounded-full md:border md:px-3 md:py-2 md:gap-1.5";
+          const baseDesktop = "md:px-4 md:gap-2";
 
-        return (
-          <button
-            key={t.key}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => onChange(t.key)}
-            className={`${base} ${isActive ? activeCls : inactiveCls}`}
-          >
-            <span aria-hidden className="text-sm">
-              {t.icon}
-            </span>
-            <span>{t.label}</span>
-            {showBadge && (
-              <span
-                aria-label={`${badgeCount} pendentes`}
-                className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white"
-              >
-                {badgeCount}
+          const activeMobile = "text-emerald-200";
+          const inactiveMobile = "text-slate-400 hover:text-slate-200";
+          const activeDesktop =
+            "md:border-emerald-500/50 md:bg-emerald-500/10 md:text-emerald-200 md:shadow-[0_0_0_1px_rgba(16,185,129,0.25)]";
+          const inactiveDesktop =
+            "md:border-slate-800 md:bg-slate-950/30 md:text-slate-200 md:hover:border-emerald-500/30 md:hover:bg-slate-950/40";
+
+          return (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onChange(t.key)}
+              className={`${baseMobile} ${baseDesktop} ${
+                isActive
+                  ? `${activeMobile} ${activeDesktop}`
+                  : `${inactiveMobile} ${inactiveDesktop}`
+              }`}
+            >
+              <span aria-hidden className="text-sm">
+                {t.icon}
               </span>
-            )}
-          </button>
-        );
-      })}
-    </nav>
+              <span>{t.label}</span>
+              {showBadge && (
+                <span
+                  aria-label={`${badgeCount} pendentes`}
+                  className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white"
+                >
+                  {badgeCount}
+                </span>
+              )}
+              {/* Underline ativa — somente mobile. md+ usa o pill original. */}
+              {isActive && (
+                <span
+                  aria-hidden
+                  className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-emerald-400 md:hidden"
+                />
+              )}
+            </button>
+          );
+        })}
+      </nav>
+      {/* Gradient fade na borda direita — sinaliza scroll horizontal
+          em mobile. pointer-events-none nao bloqueia o scroll. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-slate-900/95 to-transparent md:hidden"
+      />
+    </div>
   );
 }
