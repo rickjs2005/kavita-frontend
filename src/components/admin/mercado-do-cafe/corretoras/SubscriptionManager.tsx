@@ -22,6 +22,20 @@ type Subscription = {
   trial_ends_at: string | null;
   current_period_end: string | null;
   notes: string | null;
+  // Decisao Comercial 2026-05-06 — fonte da assinatura para a UI
+  // diferenciar checkout/manual/comercial. provider e populado pelo
+  // gateway; meta.source e populado pelo admin/self-service no
+  // momento da atribuicao.
+  provider?: string | null;
+  meta?: { source?: string | null } | null;
+  capabilities_snapshot?: Record<string, unknown> | null;
+};
+
+type CurrentResponse = {
+  subscription: Subscription | null;
+  plan: { slug: string; name: string; price_cents: number } | null;
+  capabilities: Record<string, unknown> | null;
+  status: string;
 };
 
 type Plan = {
@@ -95,17 +109,23 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
   const [periodEnd, setPeriodEnd] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [capabilities, setCapabilities] = useState<Record<string, unknown> | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [subRes, plansRes] = await Promise.all([
-        apiClient.get<{ current: Subscription | null }>(
+        apiClient.get<{
+          current: Subscription | null;
+          context: CurrentResponse | null;
+        }>(
           `/api/admin/monetization/corretoras/${corretoraId}/subscription`,
-        ).catch(() => ({ current: null })),
+        ).catch(() => ({ current: null, context: null })),
         apiClient.get<Plan[]>("/api/admin/monetization/plans").catch(() => []),
       ]);
       const currentSub = subRes?.current ?? null;
       setSub(currentSub);
+      setCapabilities(subRes?.context?.capabilities ?? null);
       setPlans(Array.isArray(plansRes) ? plansRes : []);
       if (currentSub) {
         setPlanId(currentSub.plan_id);
@@ -138,6 +158,18 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
       toast.error("Selecione um plano.");
       return;
     }
+    // Decisao Comercial 2026-05-06 — admin atribuindo plano pago
+    // manualmente e excecao (cliente negociado fora do app). Pedimos
+    // confirmacao para evitar atribuicao acidental sem cobranca real.
+    const selectedPlan = plans.find((p) => p.id === planId);
+    if (selectedPlan && selectedPlan.price_cents > 0) {
+      const ok = window.confirm(
+        `Atribuir ${selectedPlan.name} (${formatPrice(selectedPlan.price_cents)}/mes) MANUALMENTE?\n\n` +
+          `Atribuicao manual nao gera cobranca no Asaas. Use apenas para clientes negociados fora do app (Enterprise, casos comerciais).\n\n` +
+          `Para cobranca automatica, oriente a corretora a contratar pelo painel /planos.`,
+      );
+      if (!ok) return;
+    }
     setSaving(true);
     try {
       const trialEnd = new Date();
@@ -150,9 +182,10 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
           payment_method: "manual",
           monthly_price_cents: 0,
           trial_ends_at: trialEnd.toISOString(),
+          source: "manual_admin",
         },
       );
-      toast.success("Plano atribuído.");
+      toast.success("Plano atribuido.");
       setEditing(false);
       await load();
     } catch (err) {
@@ -306,34 +339,55 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
 
       {!editing ? (
         // ── Resumo ──
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryItem label="Plano" value={sub.plan_name} highlight />
-          <SummaryItem
-            label="Status"
-            value={STATUS_OPTIONS.find((o) => o.value === sub.status)?.label ?? sub.status}
-            highlight={sub.status === "trialing" || sub.status === "active"}
-          />
-          <SummaryItem
-            label="Pagamento"
-            value={PAYMENT_OPTIONS.find((o) => o.value === sub.payment_method)?.label ?? sub.payment_method ?? "—"}
-          />
-          <SummaryItem
-            label="Valor mensal"
-            value={formatPrice(sub.monthly_price_cents)}
-          />
-          <SummaryItem
-            label="Trial até"
-            value={formatDate(sub.trial_ends_at)}
-          />
-          <SummaryItem
-            label="Vencimento"
-            value={formatDate(sub.current_period_end)}
-          />
-          {sub.notes && (
-            <div className="sm:col-span-2 lg:col-span-4">
-              <SummaryItem label="Observação" value={sub.notes} />
-            </div>
-          )}
+        <div className="mt-3 space-y-3">
+          {/* Decisao Comercial 2026-05-06 — sinaliza origem da
+              assinatura (checkout vs manual vs comercial) e se o
+              plano gera destaque publico automatico. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <SourceBadge sub={sub} />
+            {capabilities &&
+              (capabilities.regional_highlight === true ||
+                capabilities.regional_highlight === "true") &&
+              (sub.status === "active" || sub.status === "trialing") && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-200 ring-1 ring-amber-400/30"
+                  title="O plano contratado libera destaque regional. A corretora aparece destacada na vitrine publica enquanto a assinatura estiver ativa/trialing — sem precisar marcar is_featured manualmente."
+                >
+                  <span aria-hidden>★</span>
+                  Destaque automatico ativo
+                </span>
+              )}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryItem label="Plano" value={sub.plan_name} highlight />
+            <SummaryItem
+              label="Status"
+              value={STATUS_OPTIONS.find((o) => o.value === sub.status)?.label ?? sub.status}
+              highlight={sub.status === "trialing" || sub.status === "active"}
+            />
+            <SummaryItem
+              label="Pagamento"
+              value={PAYMENT_OPTIONS.find((o) => o.value === sub.payment_method)?.label ?? sub.payment_method ?? "—"}
+            />
+            <SummaryItem
+              label="Valor mensal"
+              value={formatPrice(sub.monthly_price_cents)}
+            />
+            <SummaryItem
+              label="Trial ate"
+              value={formatDate(sub.trial_ends_at)}
+            />
+            <SummaryItem
+              label="Vencimento"
+              value={formatDate(sub.current_period_end)}
+            />
+            {sub.notes && (
+              <div className="sm:col-span-2 lg:col-span-4">
+                <SummaryItem label="Observacao" value={sub.notes} />
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         // ── Formulário de edição ──
@@ -438,5 +492,47 @@ function SummaryItem({
         {value}
       </p>
     </div>
+  );
+}
+
+// Decisao Comercial 2026-05-06 — badge de origem da assinatura.
+// Deriva da combinacao (provider, payment_method, meta.source):
+//   provider=asaas + payment_method!=manual  -> "Checkout (Asaas)"
+//   meta.source=commercial_contract          -> "Contrato comercial"
+//   meta.source=manual_admin (ou default)    -> "Manual (admin)"
+//
+// Permite ao admin distinguir rapidamente quem ja pagou pelo gateway
+// vs quem foi atribuido manualmente (sem cobranca real envolvida).
+function SourceBadge({ sub }: { sub: Subscription }) {
+  const source = sub.meta?.source ?? null;
+  const isCheckout =
+    source === "checkout" ||
+    (sub.provider && sub.payment_method && sub.payment_method !== "manual");
+  const isCommercial = source === "commercial_contract";
+
+  if (isCheckout) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300 ring-1 ring-emerald-400/30">
+        <span aria-hidden>↻</span>
+        Checkout {sub.provider ? `(${sub.provider})` : ""}
+      </span>
+    );
+  }
+  if (isCommercial) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-purple-200 ring-1 ring-purple-400/30">
+        <span aria-hidden>📜</span>
+        Contrato comercial
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-slate-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-300 ring-1 ring-slate-400/30"
+      title="Assinatura atribuida manualmente pelo admin — sem cobranca automatica. Reservado para casos negociados fora do app."
+    >
+      <span aria-hidden>✋</span>
+      Manual (admin)
+    </span>
   );
 }

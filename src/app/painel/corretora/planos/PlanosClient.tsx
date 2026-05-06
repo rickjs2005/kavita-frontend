@@ -178,10 +178,15 @@ export default function PlanosClient() {
   const handleUpgrade = async (plan: Plan) => {
     setUpgrading(plan.id);
     try {
-      // Fase 6 — plano pago: tenta checkout Asaas primeiro. Se gateway
-      // indisponível (dev/sandbox sem credenciais), cai pro fluxo
-      // manual. Plano gratuito (price_cents=0) pula direto pro manual
-      // — não faz sentido gerar cobrança zerada.
+      // Decisao Comercial 2026-05-06 — separacao clara:
+      //   FREE      -> POST /upgrade  (assignPlan no backend)
+      //   PRO/MAX   -> POST /checkout (gera link Asaas; webhook ativa)
+      //   Enterprise nem chega aqui (botao chama enterpriseContact)
+      //
+      // Plano pago NAO faz fallback pra "manual" no front. Se o gateway
+      // estiver fora, o front mostra erro e a corretora pode pedir
+      // contato comercial (Enterprise) ou tentar de novo. Manual so
+      // existe via admin (regra de negocio fechada).
       if (plan.price_cents > 0) {
         const checkout = await apiClient.post<{
           gateway_available: boolean;
@@ -190,34 +195,62 @@ export default function PlanosClient() {
         }>("/api/corretora/plan/checkout", { plan_id: plan.id });
 
         if (checkout.gateway_available && checkout.checkout_url) {
-          toast.success("Abrindo cobrança…");
-          // Abre em nova aba para o produtor não perder a sessão no painel
+          toast.success("Abrindo cobranca…");
           window.open(checkout.checkout_url, "_blank", "noopener,noreferrer");
-          // Após o pagamento, o webhook do Asaas atualiza status. A UI
-          // consulta /plan no next load — aqui só damos orientação.
           toast.success(
             "Depois de pagar, seu plano atualiza automaticamente em alguns minutos.",
             { duration: 8000 },
           );
           return;
         }
-        // Gateway indisponível — informa, cai pro manual
-        toast(
-          "Pagamento automático indisponível. Um administrador vai confirmar seu upgrade.",
-          { icon: "ℹ️", duration: 5000 },
+        // Gateway off: NAO ativa nada manualmente. Avisa e para.
+        toast.error(
+          "Pagamento automatico esta indisponivel agora. Tente em alguns minutos ou fale com o time pelo plano Enterprise.",
+          { duration: 7000 },
         );
+        return;
       }
 
-      // Fluxo manual (FREE ou gateway off): troca o plano direto
+      // FREE: assignPlan direto (backend bloqueia se for plano pago)
       await apiClient.post("/api/corretora/plan/upgrade", {
         plan_id: plan.id,
       });
-      toast.success("Plano atualizado com sucesso!");
+      toast.success("Plano gratuito ativado.");
       await load();
     } catch (err) {
       toast.error(formatApiError(err, "Erro ao trocar plano.").message);
     } finally {
       setUpgrading(null);
+    }
+  };
+
+  // Decisao Comercial 2026-05-06 — Enterprise nunca ativa plano por
+  // clique. Aciona apenas o canal comercial (audit no backend +
+  // resposta com whatsapp/email da curadoria). UI mostra confirmacao.
+  const [enterpriseSending, setEnterpriseSending] = useState(false);
+  const handleEnterpriseContact = async () => {
+    setEnterpriseSending(true);
+    try {
+      const res = await apiClient.post<{
+        contact?: { whatsapp?: string | null; email?: string | null };
+      }>("/api/corretora/plan/enterprise-contact", {});
+      const wp = res?.contact?.whatsapp;
+      const em = res?.contact?.email;
+      if (wp || em) {
+        toast.success(
+          `Pedido recebido. Curadoria entra em contato${wp ? ` · WhatsApp ${wp}` : ""}${em ? ` · ${em}` : ""}.`,
+          { duration: 9000 },
+        );
+      } else {
+        toast.success(
+          "Pedido recebido. A curadoria Kavita vai entrar em contato em ate 1 dia util.",
+          { duration: 7000 },
+        );
+      }
+    } catch (err) {
+      toast.error(formatApiError(err, "Erro ao enviar pedido.").message);
+    } finally {
+      setEnterpriseSending(false);
     }
   };
 
@@ -414,10 +447,15 @@ export default function PlanosClient() {
         </div>
       )}
 
-      {/* Planos disponíveis */}
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Planos disponíveis — Decisao Comercial 2026-05-06 layout:
+          FREE / PRO / MAX vem do backend (is_public=1). Enterprise e
+          cartao fixo no final que aciona "Falar com time" (nao ativa
+          plano por clique). */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => {
           const isCurrent = plan.slug === currentSlug;
+          // PRO e o plano "popular" comercialmente (margem boa, preco
+          // de entrada). MAX e o de maior margem mas exige mais ticket.
           const isFeatured = plan.slug === "pro";
 
           return (
@@ -438,7 +476,7 @@ export default function PlanosClient() {
               )}
               {isFeatured && !isCurrent && (
                 <span className="absolute right-3 top-3 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-300 ring-1 ring-emerald-500/30">
-                  Recomendado
+                  Mais popular
                 </span>
               )}
 
@@ -516,7 +554,10 @@ export default function PlanosClient() {
                 })()}
               </ul>
 
-              {/* CTA */}
+              {/* CTA — Decisao Comercial 2026-05-06:
+                  FREE      "Comecar gratis" / "Plano atual"
+                  PRO/MAX   "Assinar por R$ X/mes" (gera checkout)
+                  Enterprise card e renderizado fora do .map() abaixo. */}
               <div className="mt-5">
                 {isCurrent ? (
                   <span className="block w-full rounded-xl bg-white/[0.04] px-4 py-2.5 text-center text-[11px] font-semibold text-stone-400 ring-1 ring-white/[0.06]">
@@ -535,19 +576,78 @@ export default function PlanosClient() {
                   >
                     {upgrading === plan.id
                       ? plan.price_cents > 0
-                        ? "Gerando cobrança…"
+                        ? "Gerando cobranca…"
                         : "Atualizando…"
                       : plan.price_cents === 0
-                        ? "Usar gratuito"
-                        : plan.price_cents > (current?.plan?.price_cents ?? 0)
-                          ? "Assinar agora"
-                          : "Mudar plano"}
+                        ? "Comecar gratis"
+                        : `Assinar por ${formatPrice(plan.price_cents)}/mes`}
                   </button>
                 )}
               </div>
             </div>
           );
         })}
+
+        {/* Enterprise — card fixo. Nao vem do backend (is_public=0) e
+            nao tem CTA de assinatura. So abre tratativa comercial. */}
+        <div className="relative flex flex-col overflow-hidden rounded-2xl bg-stone-900 p-5 ring-1 ring-purple-400/20 md:p-6">
+          <span className="absolute right-3 top-3 rounded-full bg-purple-500/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-purple-200 ring-1 ring-purple-400/30">
+            Sob medida
+          </span>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-purple-300/80">
+            Enterprise
+          </p>
+          <div className="mt-3 flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold tabular-nums text-stone-50">
+              Sob contrato
+            </span>
+          </div>
+          <p className="mt-2 text-[12px] leading-relaxed text-stone-400">
+            Volume dedicado, integracoes sob medida, SLA garantido e
+            curadoria comercial direto com o time Kavita.
+          </p>
+
+          <ul className="mt-4 flex-1 space-y-2 text-[12px] text-stone-300">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-300 ring-1 ring-purple-400/30">
+                ✓
+              </span>
+              <span>Equipe ampla e leads sem cap mensal</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-300 ring-1 ring-purple-400/30">
+                ✓
+              </span>
+              <span>Destaque regional automatico em multiplas cidades</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-300 ring-1 ring-purple-400/30">
+                ✓
+              </span>
+              <span>Integracao com seu ERP/cooperativa</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-300 ring-1 ring-purple-400/30">
+                ✓
+              </span>
+              <span>Suporte dedicado e SLA contratual</span>
+            </li>
+          </ul>
+
+          <div className="mt-5">
+            <button
+              type="button"
+              disabled={enterpriseSending}
+              onClick={handleEnterpriseContact}
+              className="block w-full rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 px-4 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-purple-500/30 transition-all hover:from-purple-300 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {enterpriseSending ? "Enviando…" : "Falar com time"}
+            </button>
+            <p className="mt-2 text-center text-[10px] text-stone-500">
+              Sem ativacao automatica. Curadoria responde em ate 1 dia util.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Timeline — transparência sobre trial/upgrade/downgrade.

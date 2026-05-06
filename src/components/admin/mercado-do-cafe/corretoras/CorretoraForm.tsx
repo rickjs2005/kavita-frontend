@@ -284,16 +284,25 @@ export default function CorretoraForm({ existing }: Props) {
               <option value="inactive">Inativa</option>
             </select>
           </div>
-          <div className="flex items-center gap-2 pt-5">
-            <input
-              type="checkbox"
-              {...register("is_featured")}
-              id="is_featured"
-              className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500"
-            />
-            <label htmlFor="is_featured" className="text-sm text-slate-300">
-              Destacar
-            </label>
+          {/* Decisao Comercial 2026-05-06 — destaque publico vem da
+              assinatura ativa (capability regional_highlight). Esta
+              flag manual NAO afeta mais a vitrine: e mantida apenas
+              para compatibilidade historica. */}
+          <div className="pt-5">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                {...register("is_featured")}
+                id="is_featured"
+                className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500"
+              />
+              <label htmlFor="is_featured" className="text-sm text-slate-300">
+                Destacar (legado)
+              </label>
+            </div>
+            <p className="mt-1 text-[10px] text-slate-500">
+              Vitrine publica usa a assinatura ativa (Pro/Max/Enterprise com regional_highlight).
+            </p>
           </div>
           <div>
             <label className={labelClass}>Ordem</label>
