@@ -110,10 +110,10 @@ export default function RegionalDashboard({ onUnauthorized }: Props) {
 function CorregosAtivosSection({ rows }: { rows: CorregoAtivoRow[] }) {
   const max = Math.max(...rows.map((r) => r.total), 1);
   return (
-    <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/[0.04] to-stone-950/40 p-4">
-      <div className="mb-3 flex items-center gap-2">
+    <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/[0.04] to-stone-950/40 p-3 sm:p-4">
+      <div className="mb-3 flex items-start gap-2">
         <span aria-hidden className="text-base">☕</span>
-        <div>
+        <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300">
             Inteligência de campo · últimos 7 dias
           </p>
@@ -135,7 +135,9 @@ function CorregosAtivosSection({ rows }: { rows: CorregoAtivoRow[] }) {
               key={r.corrego}
               className="rounded-lg border border-amber-500/20 bg-slate-950/50 p-3"
             >
-              <div className="flex items-center justify-between gap-3">
+              {/* Linha 1: rank + nome do córrego + total. Em <sm o
+                  total fica na mesma linha; chips empilham abaixo. */}
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="font-mono text-[10px] font-bold tabular-nums text-amber-300">
                     {String(i + 1).padStart(2, "0")}
@@ -144,21 +146,25 @@ function CorregosAtivosSection({ rows }: { rows: CorregoAtivoRow[] }) {
                     {r.corrego}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-3 text-[11px] tabular-nums">
-                  {r.alta_prioridade > 0 && (
-                    <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-semibold text-amber-200">
-                      {r.alta_prioridade} alta prior.
-                    </span>
-                  )}
-                  <span className="text-slate-400">
-                    {r.corretoras_atingidas}{" "}
-                    {r.corretoras_atingidas === 1 ? "corretora" : "corretoras"}
-                  </span>
-                  <span className="text-base font-semibold text-amber-200">
-                    {r.total}
-                  </span>
-                </div>
+                <span className="shrink-0 text-base font-semibold text-amber-200 tabular-nums">
+                  {r.total}
+                </span>
               </div>
+
+              {/* Linha 2: chips de contexto. Wrap em qualquer viewport
+                  evita aperto em 430px com nomes longos. */}
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] tabular-nums">
+                {r.alta_prioridade > 0 && (
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-semibold text-amber-200">
+                    {r.alta_prioridade} alta prior.
+                  </span>
+                )}
+                <span className="text-slate-400">
+                  {r.corretoras_atingidas}{" "}
+                  {r.corretoras_atingidas === 1 ? "corretora" : "corretoras"}
+                </span>
+              </div>
+
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300"
@@ -271,8 +277,9 @@ function KpisRow({
 // ─── Leads pendurados ────────────────────────────────────────────────────────
 
 function PenduradosSection({ rows }: { rows: LeadPenduradoRow[] }) {
+  const visible = rows.slice(0, 10);
   return (
-    <div className="rounded-2xl border border-rose-500/30 bg-rose-500/[0.04] p-4">
+    <div className="rounded-2xl border border-rose-500/30 bg-rose-500/[0.04] p-3 sm:p-4">
       <div className="mb-3 flex items-center gap-2">
         <span
           aria-hidden
@@ -290,7 +297,8 @@ function PenduradosSection({ rows }: { rows: LeadPenduradoRow[] }) {
         Kavita. Considere acionar quem aparece aqui com frequência.
       </p>
 
-      <div className="mt-4 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50">
+      {/* ── Desktop ≥md: tabela ── */}
+      <div className="mt-4 hidden overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50 md:block">
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-900/80 text-[10px] uppercase tracking-[0.14em] text-slate-400">
             <tr>
@@ -301,7 +309,7 @@ function PenduradosSection({ rows }: { rows: LeadPenduradoRow[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
-            {rows.slice(0, 10).map((r) => (
+            {visible.map((r) => (
               <tr key={r.id} className="text-slate-200">
                 <td className="px-3 py-2.5">
                   <p className="font-medium">{r.nome}</p>
@@ -334,6 +342,46 @@ function PenduradosSection({ rows }: { rows: LeadPenduradoRow[] }) {
           </tbody>
         </table>
       </div>
+
+      {/* ── Mobile <md: cards ── */}
+      <ul className="mt-4 space-y-2 md:hidden">
+        {visible.map((r) => (
+          <li
+            key={r.id}
+            className="rounded-xl border border-slate-800 bg-slate-950/50 p-3"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-100">
+                  {r.nome}
+                </p>
+                <p className="mt-0.5 text-[11px] text-slate-400">
+                  {r.cidade ?? "—"}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-rose-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-rose-300 tabular-nums">
+                {r.horas_sem_resposta}h
+              </span>
+            </div>
+            {r.volume_range && (
+              <p className="mt-1 text-[10px] text-amber-300/80">
+                {r.volume_range.replace("_", "–")} sacas
+              </p>
+            )}
+            <div className="mt-2 border-t border-slate-800/70 pt-2 text-[11px]">
+              <span className="text-slate-500">Corretora:</span>{" "}
+              <Link
+                href={`/mercado-do-cafe/corretoras/${r.corretora.slug}`}
+                target="_blank"
+                className="font-medium text-amber-300 hover:text-amber-200"
+              >
+                {r.corretora.name}
+              </Link>
+              <span className="ml-1 text-slate-500">· {r.corretora.city}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -344,7 +392,7 @@ function LeadsPorCidadeSection({ rows }: { rows: LeadsPorCidadeRow[] }) {
   const max = rows.length > 0 ? Math.max(...rows.map((r) => r.total), 1) : 1;
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-3 sm:p-4">
       <div className="mb-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300">
           Regional
@@ -370,31 +418,35 @@ function LeadsPorCidadeSection({ rows }: { rows: LeadsPorCidadeRow[] }) {
                 key={r.cidade}
                 className="group rounded-lg border border-slate-800/70 bg-slate-950/40 p-2.5 hover:border-amber-500/30"
               >
-                <div className="flex items-center justify-between gap-3">
+                {/* Linha 1: cidade + total. Sempre 2 itens só → cabe em 320px. */}
+                <div className="flex items-center justify-between gap-2">
                   <p className="min-w-0 truncate text-sm font-medium text-slate-100">
                     {r.cidade}
                   </p>
-                  <div className="flex shrink-0 items-center gap-3 text-[11px] tabular-nums">
-                    {r.alta_prioridade > 0 && (
-                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-200">
-                        {r.alta_prioridade} alta prior.
-                      </span>
-                    )}
-                    {r.fechados > 0 && (
-                      <span className="text-emerald-300">
-                        {r.fechados} fechado{r.fechados > 1 ? "s" : ""}
-                      </span>
-                    )}
-                    <span
-                      className={`font-mono text-[10px] ${slaColor(r.sla_medio_segundos)}`}
-                    >
-                      SLA {formatSeconds(r.sla_medio_segundos)}
-                    </span>
-                    <span className="font-semibold text-slate-50">
-                      {r.total}
-                    </span>
-                  </div>
+                  <span className="shrink-0 text-sm font-semibold text-slate-50 tabular-nums">
+                    {r.total}
+                  </span>
                 </div>
+
+                {/* Linha 2: chips de contexto. Wrap em mobile. */}
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] tabular-nums">
+                  {r.alta_prioridade > 0 && (
+                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-200">
+                      {r.alta_prioridade} alta prior.
+                    </span>
+                  )}
+                  {r.fechados > 0 && (
+                    <span className="text-emerald-300">
+                      {r.fechados} fechado{r.fechados > 1 ? "s" : ""}
+                    </span>
+                  )}
+                  <span
+                    className={`font-mono text-[10px] ${slaColor(r.sla_medio_segundos)}`}
+                  >
+                    SLA {formatSeconds(r.sla_medio_segundos)}
+                  </span>
+                </div>
+
                 <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-slate-800">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-amber-500/60 to-amber-400/80"
@@ -413,8 +465,9 @@ function LeadsPorCidadeSection({ rows }: { rows: LeadsPorCidadeRow[] }) {
 // ─── Performance corretoras ──────────────────────────────────────────────────
 
 function CorretorasPerformanceSection({ rows }: { rows: CorretoraPerfRow[] }) {
+  const visible = rows.slice(0, 30);
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-3 sm:p-4">
       <div className="mb-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300">
           Ranking
@@ -432,31 +485,89 @@ function CorretorasPerformanceSection({ rows }: { rows: CorretoraPerfRow[] }) {
           Sem dados de performance no período.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-[10px] uppercase tracking-[0.14em] text-slate-400">
-              <tr>
-                <th className="px-3 py-2.5 font-semibold">Corretora</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Leads</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Alta prior.</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Fechados</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Conv.</th>
-                <th className="px-3 py-2.5 text-right font-semibold">SLA</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {rows.slice(0, 30).map((r) => (
-                <tr
-                  key={r.id}
-                  className={`text-slate-200 transition-colors hover:bg-slate-900/50 ${r.status === "inactive" ? "opacity-50" : ""}`}
-                >
-                  <td className="px-3 py-2.5">
-                    <Link
-                      href={`/admin/mercado-do-cafe/corretora/${r.id}`}
-                      className="group block"
+        <>
+          {/* ── Desktop ≥md: tabela ── */}
+          <div className="hidden overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50 md:block">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-900/80 text-[10px] uppercase tracking-[0.14em] text-slate-400">
+                <tr>
+                  <th className="px-3 py-2.5 font-semibold">Corretora</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Leads</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Alta prior.</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Fechados</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Conv.</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">SLA</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {visible.map((r) => (
+                  <tr
+                    key={r.id}
+                    className={`text-slate-200 transition-colors hover:bg-slate-900/50 ${r.status === "inactive" ? "opacity-50" : ""}`}
+                  >
+                    <td className="px-3 py-2.5">
+                      <Link
+                        href={`/admin/mercado-do-cafe/corretora/${r.id}`}
+                        className="group block"
+                      >
+                        <div className="flex items-center gap-2">
+                          <p className="min-w-0 truncate font-medium transition-colors group-hover:text-amber-200">
+                            {r.name}
+                          </p>
+                          {r.is_featured && (
+                            <span
+                              aria-label="Destaque"
+                              className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
+                            />
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-[10px] text-slate-500">
+                          {r.city} · {r.state}
+                        </p>
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono tabular-nums">
+                      {r.leads_total}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-amber-200">
+                      {r.leads_alta_prioridade || "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-emerald-300">
+                      {r.leads_fechados || "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono tabular-nums">
+                      {r.taxa_conversao_pct != null
+                        ? `${r.taxa_conversao_pct}%`
+                        : "—"}
+                    </td>
+                    <td
+                      className={`px-3 py-2.5 text-right font-mono text-[10px] tabular-nums ${slaColor(r.sla_medio_segundos)}`}
                     >
+                      {formatSeconds(r.sla_medio_segundos)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ── Mobile <md: cards com KPI grid 2 colunas ── */}
+          <ul className="space-y-2 md:hidden">
+            {visible.map((r) => (
+              <li
+                key={r.id}
+                className={`rounded-xl border border-slate-800 bg-slate-950/50 p-3 ${
+                  r.status === "inactive" ? "opacity-50" : ""
+                }`}
+              >
+                <Link
+                  href={`/admin/mercado-do-cafe/corretora/${r.id}`}
+                  className="block"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="min-w-0 truncate font-medium transition-colors group-hover:text-amber-200">
+                        <p className="truncate text-sm font-semibold text-slate-100">
                           {r.name}
                         </p>
                         {r.is_featured && (
@@ -466,35 +577,58 @@ function CorretorasPerformanceSection({ rows }: { rows: CorretoraPerfRow[] }) {
                           />
                         )}
                       </div>
-                      <p className="mt-0.5 text-[10px] text-slate-500">
+                      <p className="mt-0.5 text-[11px] text-slate-500">
                         {r.city} · {r.state}
                       </p>
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums">
-                    {r.leads_total}
-                  </td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-amber-200">
-                    {r.leads_alta_prioridade || "—"}
-                  </td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-emerald-300">
-                    {r.leads_fechados || "—"}
-                  </td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums">
-                    {r.taxa_conversao_pct != null
-                      ? `${r.taxa_conversao_pct}%`
-                      : "—"}
-                  </td>
-                  <td
-                    className={`px-3 py-2.5 text-right font-mono text-[10px] tabular-nums ${slaColor(r.sla_medio_segundos)}`}
-                  >
-                    {formatSeconds(r.sla_medio_segundos)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-slate-800 px-2 py-0.5 font-mono text-[11px] font-semibold text-slate-200 tabular-nums">
+                      {r.leads_total} leads
+                    </span>
+                  </div>
+
+                  <dl className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wider text-slate-500">
+                        Alta prior.
+                      </dt>
+                      <dd className="mt-0.5 font-mono font-semibold text-amber-200 tabular-nums">
+                        {r.leads_alta_prioridade || "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wider text-slate-500">
+                        Fechados
+                      </dt>
+                      <dd className="mt-0.5 font-mono font-semibold text-emerald-300 tabular-nums">
+                        {r.leads_fechados || "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wider text-slate-500">
+                        Conversão
+                      </dt>
+                      <dd className="mt-0.5 font-mono font-semibold text-slate-200 tabular-nums">
+                        {r.taxa_conversao_pct != null
+                          ? `${r.taxa_conversao_pct}%`
+                          : "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wider text-slate-500">
+                        SLA
+                      </dt>
+                      <dd
+                        className={`mt-0.5 font-mono font-semibold tabular-nums ${slaColor(r.sla_medio_segundos)}`}
+                      >
+                        {formatSeconds(r.sla_medio_segundos)}
+                      </dd>
+                    </div>
+                  </dl>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );

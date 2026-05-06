@@ -203,80 +203,147 @@ export default function SubmissionsTable({
       )}
 
       {!loading && rows.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-900/60 text-left text-xs uppercase tracking-wider text-slate-400">
-                {bulkEnabled && (
-                  <th className="w-10 px-4 py-3">
-                    <input
-                      type="checkbox"
-                      aria-label="Selecionar todas as pendentes"
-                      checked={allSelected}
-                      onChange={toggleAll}
-                      className="h-4 w-4 cursor-pointer accent-emerald-500"
-                    />
-                  </th>
-                )}
-                <th className="px-4 py-3">Empresa</th>
-                <th className="px-4 py-3">Cidade</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Enviado em</th>
-                <th className="px-4 py-3 text-right">Ação</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {rows.map((s) => (
-                <tr
+        <div className="rounded-xl border border-slate-800">
+          {/* ── Desktop ≥md: tabela ── */}
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-900/60 text-left text-xs uppercase tracking-wider text-slate-400">
+                  {bulkEnabled && (
+                    <th className="w-10 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        aria-label="Selecionar todas as pendentes"
+                        checked={allSelected}
+                        onChange={toggleAll}
+                        className="h-4 w-4 cursor-pointer accent-emerald-500"
+                      />
+                    </th>
+                  )}
+                  <th className="px-4 py-3">Empresa</th>
+                  <th className="px-4 py-3">Cidade</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Enviado em</th>
+                  <th className="px-4 py-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {rows.map((s) => (
+                  <tr
+                    key={s.id}
+                    className={`transition-colors hover:bg-slate-900/40 ${
+                      selectedIds.has(s.id) ? "bg-emerald-500/5" : ""
+                    }`}
+                  >
+                    {bulkEnabled && (
+                      <td className="w-10 px-4 py-3">
+                        {s.status === "pending" ? (
+                          <input
+                            type="checkbox"
+                            aria-label={`Selecionar ${s.name}`}
+                            checked={selectedIds.has(s.id)}
+                            onChange={() => toggleOne(s.id)}
+                            className="h-4 w-4 cursor-pointer accent-emerald-500"
+                          />
+                        ) : (
+                          <span aria-hidden className="block h-4 w-4" />
+                        )}
+                      </td>
+                    )}
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-slate-100">{s.name}</p>
+                      <p className="text-xs text-slate-500">{s.contact_name}</p>
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">
+                      {s.city}, {s.state}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadge(s.status)}`}
+                      >
+                        {statusLabel(s.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">
+                      {formatDate(s.created_at)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/admin/mercado-do-cafe/solicitacoes/${s.id}`}
+                        className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-emerald-500/40 hover:text-emerald-200 transition-colors"
+                      >
+                        {s.status === "pending" ? "Revisar" : "Ver detalhes"}
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ── Mobile <md: cards ── */}
+          <ul className="divide-y divide-slate-800/60 md:hidden">
+            {rows.map((s) => {
+              const isPending = s.status === "pending";
+              const isSelected = selectedIds.has(s.id);
+              return (
+                <li
                   key={s.id}
-                  className={`transition-colors hover:bg-slate-900/40 ${
-                    selectedIds.has(s.id) ? "bg-emerald-500/5" : ""
+                  className={`p-3 transition-colors ${
+                    isSelected ? "bg-emerald-500/5" : ""
                   }`}
                 >
-                  {bulkEnabled && (
-                    <td className="w-10 px-4 py-3">
-                      {s.status === "pending" ? (
-                        <input
-                          type="checkbox"
-                          aria-label={`Selecionar ${s.name}`}
-                          checked={selectedIds.has(s.id)}
-                          onChange={() => toggleOne(s.id)}
-                          className="h-4 w-4 cursor-pointer accent-emerald-500"
-                        />
-                      ) : (
-                        <span aria-hidden className="block h-4 w-4" />
-                      )}
-                    </td>
-                  )}
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-slate-100">{s.name}</p>
-                    <p className="text-xs text-slate-500">{s.contact_name}</p>
-                  </td>
-                  <td className="px-4 py-3 text-slate-300">
-                    {s.city}, {s.state}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadge(s.status)}`}
-                    >
-                      {statusLabel(s.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-400">
-                    {formatDate(s.created_at)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/mercado-do-cafe/solicitacoes/${s.id}`}
-                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-emerald-500/40 hover:text-emerald-200 transition-colors"
-                    >
-                      {s.status === "pending" ? "Revisar" : "Ver detalhes"}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  <div className="flex items-start gap-3">
+                    {bulkEnabled && isPending && (
+                      <input
+                        type="checkbox"
+                        aria-label={`Selecionar ${s.name}`}
+                        checked={isSelected}
+                        onChange={() => toggleOne(s.id)}
+                        className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-emerald-500"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-100">
+                            {s.name}
+                          </p>
+                          {s.contact_name && (
+                            <p className="truncate text-[11px] text-slate-500">
+                              {s.contact_name}
+                            </p>
+                          )}
+                        </div>
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadge(s.status)}`}
+                        >
+                          {statusLabel(s.status)}
+                        </span>
+                      </div>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-400">
+                        <span>
+                          {s.city}, {s.state}
+                        </span>
+                        <span aria-hidden>·</span>
+                        <span className="text-slate-500">
+                          {formatDate(s.created_at)}
+                        </span>
+                      </div>
+
+                      <Link
+                        href={`/admin/mercado-do-cafe/solicitacoes/${s.id}`}
+                        className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-200 transition-colors hover:border-emerald-500/40 hover:text-emerald-200"
+                      >
+                        {isPending ? "Revisar" : "Ver detalhes"}
+                      </Link>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
     </div>

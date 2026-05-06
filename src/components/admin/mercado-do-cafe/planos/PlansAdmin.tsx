@@ -253,8 +253,8 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h3 className="text-sm font-semibold text-slate-50">Planos SaaS</h3>
           <p className="mt-0.5 text-[11px] text-slate-400">
             Defina capacidades (limites/feature flags) de cada plano das corretoras.
@@ -263,7 +263,7 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
         <button
           type="button"
           onClick={startNew}
-          className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20"
+          className="inline-flex w-full items-center justify-center rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20 sm:w-auto"
         >
           + Novo plano
         </button>
@@ -301,9 +301,9 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
               key={p.id}
               className="rounded-xl border border-slate-800 bg-slate-900/50 p-3 hover:border-emerald-500/30"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-slate-50">
                       {p.name}
                     </span>
@@ -330,11 +330,11 @@ export default function PlansAdmin({ onUnauthorized }: Props) {
                     {p.capabilities?.advanced_reports && " · reports"}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-2">
                   <button
                     type="button"
                     onClick={() => startEdit(p)}
-                    className="rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-[11px] font-medium text-slate-100 hover:bg-slate-700"
+                    className="inline-flex w-full items-center justify-center rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-[11px] font-medium text-slate-100 hover:bg-slate-700 sm:w-auto"
                   >
                     Editar
                   </button>
