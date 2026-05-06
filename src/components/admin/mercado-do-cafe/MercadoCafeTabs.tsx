@@ -68,14 +68,15 @@ export default function MercadoCafeTabs({
                   : 0;
           const showBadge = badgeCount > 0;
 
-          // Mobile: h-11 (44px touch target), px-4, fonte sm.
-          // Desktop: pill original menor (sm:h-auto sm:py-2 sm:text-xs).
+          // Chip premium: pill rounded-full com background sutil,
+          // active state com glow emerald sutil + scale transition.
+          // Inspirado em Stripe/Linear filter chips.
           const base =
-            "inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors sm:h-auto sm:gap-2 sm:px-4 sm:py-2 sm:text-xs";
+            "inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-all duration-200 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 sm:h-auto sm:gap-2 sm:px-4 sm:py-2 sm:text-xs sm:font-semibold";
           const activeCls =
-            "border-emerald-500/60 bg-emerald-500/15 text-emerald-200 shadow-[0_0_0_1px_rgba(16,185,129,0.3)]";
+            "border-emerald-500/60 bg-gradient-to-b from-emerald-500/20 to-emerald-500/10 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.35),0_4px_20px_-6px_rgba(16,185,129,0.4)]";
           const inactiveCls =
-            "border-slate-800 bg-slate-950/30 text-slate-200 hover:border-emerald-500/30 hover:bg-slate-950/40";
+            "border-slate-800/60 bg-slate-900/40 text-slate-300 hover:border-slate-700 hover:bg-slate-900/70 hover:text-slate-100";
 
           return (
             <button
