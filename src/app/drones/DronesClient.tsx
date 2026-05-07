@@ -11,6 +11,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import HeroSection from "@/components/drones/HeroSection";
+import PublicTopBar from "@/components/drones/PublicTopBar";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import CommentsSection from "@/components/drones/CommentsSection";
 import InterestFormSection from "@/components/drones/InterestFormSection";
@@ -95,21 +96,6 @@ function pickInitialModel(models: DroneModel[], urlModel?: string) {
 
   if (urlModel && base.some((m) => m.key === urlModel)) return urlModel;
   return base[0]?.key || "";
-}
-
-function ModelTab({ active, label }: { active: boolean; label: string }) {
-  return (
-    <div
-      className={[
-        "px-4 py-2 rounded-full text-xs font-extrabold border transition",
-        active
-          ? "bg-emerald-500 text-white border-emerald-400/40 shadow-[0_12px_35px_-18px_rgba(16,185,129,0.9)]"
-          : "bg-white/5 text-slate-200 border-white/10 hover:bg-white/10",
-      ].join(" ")}
-    >
-      {label}
-    </div>
-  );
 }
 
 /** ✅ Detecta tipo pela URL */
@@ -464,7 +450,20 @@ export default function DronesPublicPage() {
   }, [mergedPage]);
 
   const sections: Record<string, JSX.Element> = {
-    hero: <HeroSection page={mergedPage} representatives={representatives} />,
+    hero: (
+      <HeroSection
+        page={mergedPage}
+        representatives={representatives}
+        models={models}
+        selectedModel={selectedModel}
+        onSelectModel={(key) => {
+          if (key !== selectedModel) {
+            setSelectedModel(key);
+            router.replace(`/drones?model=${key}`);
+          }
+        }}
+      />
+    ),
 
     why: <WhyDrones />,
 
@@ -532,47 +531,16 @@ export default function DronesPublicPage() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-900 text-slate-100">
-      <div className="sticky top-0 z-40 bg-black/60 backdrop-blur border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-5 py-3 flex gap-3 items-center">
-          <span className="text-xs font-semibold text-slate-300 shrink-0">
-            Modelo:
-          </span>
+    <div className="min-h-screen bg-[#050816] text-slate-100">
+      <PublicTopBar
+        models={models}
+        selectedModel={selectedModel}
+        onSelect={changeModel}
+      />
 
-          <select
-            className="sm:hidden w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm"
-            value={selectedModel}
-            onChange={(e) => changeModel(e.target.value)}
-          >
-            {models.map((m) => (
-              <option key={m.key} value={m.key}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-
-          <div className="hidden sm:flex gap-2 overflow-x-auto no-scrollbar">
-            {models.map((m) => (
-              <button key={m.key} onClick={() => changeModel(m.key)}>
-                <ModelTab active={m.key === selectedModel} label={m.label} />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {sectionsOrder.map((key: Key | null | undefined, idx: number) => {
+      {sectionsOrder.map((key: Key | null | undefined) => {
         const sectionKey = String(key);
-        return (
-          <div key={sectionKey}>
-            {sections[sectionKey]}
-            {idx < sectionsOrder.length - 1 && (
-              <div className="max-w-6xl mx-auto px-5">
-                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-              </div>
-            )}
-          </div>
-        );
+        return <div key={sectionKey}>{sections[sectionKey]}</div>;
       })}
     </div>
   );
