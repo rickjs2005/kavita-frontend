@@ -19,6 +19,7 @@ import WhoIsFor from "@/components/drones/WhoIsFor";
 import HowItWorks from "@/components/drones/HowItWorks";
 import DronesFAQ from "@/components/drones/DronesFAQ";
 import CasesSection from "@/components/drones/CasesSection";
+import TrustSection from "@/components/drones/TrustSection";
 import ModelsShowcase, {
   type ModelShowcaseEntry,
 } from "@/components/drones/ModelsShowcase";
@@ -175,82 +176,6 @@ function resolveCardMedia(model: DroneModel) {
   return { url, type: type as MediaTypeLower | "" };
 }
 
-
-// ─── Seção de confiança ─────────────────────────────────────────────
-// Bloco simples de "por que falar com a Kavita antes de comprar".
-// Sem prova regulatória real aqui (isso exige selos ANAC/MAPA/RT no
-// rodapé quando a operação formalizar). Esta seção foca no valor do
-// atendimento humano/regional — honesto sobre o que já existe hoje.
-function TrustSection() {
-  const pillars = [
-    {
-      title: "Atendimento regional",
-      desc: "Representantes autorizados Kavita em cidades produtoras — contato humano, não call center.",
-    },
-    {
-      title: "Suporte na escolha do modelo",
-      desc: "Orientação sobre qual DJI Agras cabe no tamanho da sua área, relevo e cultura.",
-    },
-    {
-      title: "Contato direto por WhatsApp",
-      desc: "Fale diretamente com o representante da sua região, sem intermediários.",
-    },
-    {
-      title: "Orientação antes da compra",
-      desc: "Tire dúvidas sobre operação, manutenção e treinamento antes de decidir.",
-    },
-  ];
-
-  return (
-    <section className="py-12 sm:py-16">
-      <div className="max-w-6xl mx-auto px-5">
-        <div className="text-center max-w-2xl mx-auto">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
-            Por que escolher a Kavita
-          </p>
-          <h2 className="mt-2 text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white">
-            Atendimento humano para uma decisão técnica
-          </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
-            Drone agrícola é investimento sério. A Kavita oferece conversa
-            direta com representante autorizado para você escolher com
-            segurança o modelo certo para sua operação.
-          </p>
-        </div>
-
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {pillars.map((p) => (
-            <div
-              key={p.title}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
-            >
-              <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                  aria-hidden
-                >
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-              </div>
-              <h3 className="mt-3 text-sm font-extrabold text-white">
-                {p.title}
-              </h3>
-              <p className="mt-1 text-xs sm:text-[13px] leading-relaxed text-slate-300">
-                {p.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // Converte o array de modelos + mapa de model_data em entries prontas
 // para o <ModelsShowcase>. Cada entry já vem com badge/tagline/description

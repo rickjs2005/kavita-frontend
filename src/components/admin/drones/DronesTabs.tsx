@@ -8,10 +8,12 @@ import CommentsModerationTable from "./CommentsModerationTable";
 import LeadsTable from "./LeadsTable";
 import FaqTable from "./FaqTable";
 import CasesTable from "./CasesTable";
+import SectionsEditor from "./SectionsEditor";
 
 type TabId =
   | "landing"
   | "modelos"
+  | "secoes"
   | "leads"
   | "cases"
   | "faq"
@@ -28,6 +30,7 @@ export default function DronesTabs() {
   const tabs = useMemo(
     () => [
       { id: "landing" as const, label: "Config Landing" },
+      { id: "secoes" as const, label: "Seções" },
       { id: "modelos" as const, label: "Modelos" },
       { id: "leads" as const, label: "Leads" },
       { id: "cases" as const, label: "Cases" },
@@ -66,6 +69,7 @@ export default function DronesTabs() {
       {/* Conteúdo */}
       <div className="grid gap-6">
         {tab === "landing" ? <PageSettingsForm /> : null}
+        {tab === "secoes" ? <SectionsEditor /> : null}
         {tab === "modelos" ? <GalleryForm /> : null}
         {tab === "leads" ? <LeadsTable /> : null}
         {tab === "cases" ? <CasesTable /> : null}
