@@ -78,10 +78,13 @@ export default function DronesTabs({ pendingComments, newLeads }: Props) {
 
   return (
     <div className="grid gap-6">
-      {/* Tabs horizontais com underline animado */}
+      {/* Tabs horizontais com underline animado.
+          kvt-scroll-fade-r mostra gradient à direita (mobile) indicando
+          que há mais abas além do viewport — 9 abas não cabem em 375px. */}
       <div className="border-b border-white/8">
-        <div className="-mb-px flex gap-1 overflow-x-auto scrollbar-hide">
-          {TAB_LIST.map((t) => {
+        <div className="kvt-scroll-fade-r">
+          <div className="-mb-px flex gap-1 overflow-x-auto scrollbar-hide">
+            {TAB_LIST.map((t) => {
             const active = t.id === tab;
             const Icon = t.icon;
             const badge = (badgeFor as Record<string, number | undefined>)[t.id];
@@ -132,6 +135,7 @@ export default function DronesTabs({ pendingComments, newLeads }: Props) {
               </button>
             );
           })}
+          </div>
         </div>
       </div>
 

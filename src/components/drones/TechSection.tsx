@@ -111,18 +111,21 @@ export default function TechSection({ items, accent, modelLabel }: Props) {
           ) : null}
         </div>
 
-        {/* Mobile: scroll horizontal com snap (cada card 70% de width).
-            Desktop: grid 5 cols equilibrado. */}
+        {/* Mobile: scroll horizontal com snap (cada card 70% de width)
+            + gradient fade à direita (kvt-scroll-fade-r) sinaliza "tem
+            mais cards". Desktop: grid 5 cols equilibrado, fade some. */}
         <div className="-mx-5 mt-10 px-5 sm:mx-0 sm:px-0">
-          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto scrollbar-hide pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-5">
-            {resolvedItems.map((it, idx) => (
-              <div
-                key={`${it.title}-${idx}`}
-                className="shrink-0 basis-[72%] snap-start sm:basis-auto"
-              >
-                <TechCard item={it} accent={accent} />
-              </div>
-            ))}
+          <div className="kvt-scroll-fade-r sm:relative">
+            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto scrollbar-hide pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-5">
+              {resolvedItems.map((it, idx) => (
+                <div
+                  key={`${it.title}-${idx}`}
+                  className="shrink-0 basis-[72%] snap-start sm:basis-auto"
+                >
+                  <TechCard item={it} accent={accent} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

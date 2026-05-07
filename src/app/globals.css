@@ -117,6 +117,44 @@
 }
 
 /* ═══════════════════════════════════════════════════
+   Fade hint para scroll horizontal — Kavita Drones
+   ═══════════════════════════════════════════════════
+   Aplica em wrapper de container com scroll-x.
+   O wrapper precisa ter position: relative para o pseudo
+   funcionar; o fade só aparece no mobile (até 768px) onde
+   o scroll horizontal é o caso de uso real. Em desktop, o
+   layout vira grid e não há fade.
+
+   Uso:
+     <div class="kvt-scroll-fade-r">
+       <div class="overflow-x-auto ...">...</div>
+     </div>
+*/
+.kvt-scroll-fade-r {
+  position: relative;
+}
+@media (max-width: 767px) {
+  .kvt-scroll-fade-r::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 48px;
+    background: linear-gradient(
+      to left,
+      rgba(5, 8, 22, 0.92) 0%,
+      rgba(5, 8, 22, 0.55) 45%,
+      rgba(5, 8, 22, 0) 100%
+    );
+    border-top-right-radius: inherit;
+    border-bottom-right-radius: inherit;
+    z-index: 1;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
    Animações Kavita Drones (kvt-*)
    Usadas pela página premium /drones/[id]. Prefixo evita
    colisão com utilities globais. Respeita prefers-reduced-motion.

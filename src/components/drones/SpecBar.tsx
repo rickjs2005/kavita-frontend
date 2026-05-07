@@ -80,16 +80,20 @@ export default function SpecBar({ items, accent }: Props) {
             ].join(" ")}
           />
 
-          {/* Mobile: scroll horizontal com snap (mantém densidade). */}
-          <div className="relative flex snap-x snap-mandatory gap-0 overflow-x-auto scrollbar-hide md:hidden">
-            {slots.map((it, i) => (
-              <SpecCell
-                key={`${it.label}-${i}`}
-                item={it}
-                accent={accent}
-                className="snap-start shrink-0 basis-[60%] border-r border-white/8 last:border-r-0"
-              />
-            ))}
+          {/* Mobile: scroll horizontal com snap (mantém densidade).
+              kvt-scroll-fade-r adiciona gradient fade à direita
+              (visível só em <768px) sinalizando "tem mais". */}
+          <div className="kvt-scroll-fade-r md:hidden">
+            <div className="relative flex snap-x snap-mandatory gap-0 overflow-x-auto scrollbar-hide">
+              {slots.map((it, i) => (
+                <SpecCell
+                  key={`${it.label}-${i}`}
+                  item={it}
+                  accent={accent}
+                  className="snap-start shrink-0 basis-[60%] border-r border-white/8 last:border-r-0"
+                />
+              ))}
+            </div>
           </div>
 
           {/* Desktop: grid divisores verticais. */}
