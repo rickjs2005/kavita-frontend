@@ -116,51 +116,6 @@ function normalizeMediaTypeToLower(v: any, url?: string): MediaTypeLower | "" {
   return byUrl || "";
 }
 
-/**
- * ✅ Resolve a mídia do card do modelo
- * Prioridade:
- * 1) card_media_url
- * 2) card_media_path
- * 3) campos alternativos do _raw (compat)
- */
-function resolveCardMedia(model: DroneModel) {
-  const raw = model._raw || {};
-
-  const candidates = [
-    model.card_media_url,
-    model.card_media_path,
-
-    raw.card_media_url,
-    raw.card_media_path,
-    raw.media_url,
-    raw.file_url,
-    raw.src,
-    raw.media_path,
-    raw.mediaPath,
-    raw.path,
-    raw.video_url,
-    raw.image_url,
-    raw.image,
-    raw.video,
-    raw.cover_url,
-    raw.thumb_url,
-    raw.thumbnail_url,
-  ].filter(Boolean) as string[];
-
-  const url = absUrl(candidates[0] || "");
-
-  const type = normalizeMediaTypeToLower(
-    model.card_media_type ??
-    raw.card_media_type ??
-    raw.media_type ??
-    raw.type ??
-    raw.kind ??
-    raw.file_type,
-    url,
-  );
-
-  return { url, type: type as MediaTypeLower | "" };
-}
 
 
 // Converte o array de modelos + mapa de model_data em entries prontas

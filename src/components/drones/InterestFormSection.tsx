@@ -119,40 +119,42 @@ export default function InterestFormSection({
   };
 
   const inputClass =
-    "w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/60";
+    "h-11 w-full rounded-xl bg-black/30 border border-white/10 px-3 text-sm text-slate-100 placeholder:text-slate-500 transition focus:outline-none focus:border-emerald-400/40 focus:ring-2 focus:ring-emerald-400/30";
+
+  const canSubmit = nome.trim().length > 1 && telefone.replace(/\D/g, "").length >= 10;
 
   return (
-    <section className="py-12 sm:py-16">
-      <div className="max-w-5xl mx-auto px-5">
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-sm">
+    <section className="relative py-16 sm:py-24">
+      <div className="relative max-w-7xl mx-auto px-5">
+        <div className="relative overflow-hidden rounded-[2rem] border border-emerald-400/15 bg-[rgba(8,12,22,0.7)] backdrop-blur-md">
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl"
+            className="pointer-events-none absolute -top-32 -right-24 h-80 w-80 rounded-full bg-emerald-500/15 blur-3xl"
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl"
+            className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-cyan-500/12 blur-3xl"
           />
 
-          <div className="relative grid gap-8 p-6 sm:p-10 md:grid-cols-[1.1fr_1fr] md:items-start">
+          <div className="relative grid gap-10 p-7 sm:p-12 lg:grid-cols-[1fr_1.1fr] lg:items-start lg:gap-14">
             <div>
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300/90">
                 Quero conhecer
               </p>
-              <h2 className="mt-2 text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white">
+              <h2 className="mt-3 text-2xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-3xl md:text-4xl lg:text-[2.4rem]">
                 Receba orientação de um representante Kavita
               </h2>
-              <p className="mt-3 text-sm sm:text-base leading-relaxed text-slate-300">
+              <p className="mt-4 text-sm leading-relaxed text-slate-300 sm:text-base">
                 Preencha com seus dados básicos e o modelo de interesse. Ao
                 enviar, você abre uma conversa no WhatsApp já com as
                 informações preenchidas — o representante entra em contato
                 para orientar sobre o drone certo para sua propriedade.
               </p>
 
-              <ul className="mt-5 space-y-2 text-sm text-slate-300">
+              <ul className="mt-6 grid gap-2.5 text-sm text-slate-300">
                 <li className="flex items-start gap-2">
                   <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
-                  Atendimento humano regional
+                  Atendimento humano regional, sem call center
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
@@ -249,14 +251,16 @@ export default function InterestFormSection({
 
               <button
                 type="submit"
-                className="mt-2 inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-extrabold text-white shadow-[0_18px_60px_-25px_rgba(16,185,129,0.9)] hover:brightness-110 transition focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                disabled={!canSubmit}
+                className="mt-3 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 px-5 text-sm font-extrabold text-white shadow-[0_18px_60px_-22px_rgba(16,185,129,0.9)] transition hover:brightness-[1.08] active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-emerald-400/60 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
               >
                 {hasRep ? "Abrir conversa no WhatsApp" : "Ver representantes"}
               </button>
 
-              <p className="mt-1 text-[11px] text-slate-400">
-                Ao enviar, abrimos o WhatsApp do representante com suas
-                informações preenchidas. Você continua a conversa por lá.
+              <p className="mt-1 text-[11px] text-slate-500">
+                {canSubmit
+                  ? "Ao enviar, abrimos o WhatsApp do representante com suas informações preenchidas."
+                  : "Preencha nome e telefone para continuar."}
               </p>
             </form>
           </div>
