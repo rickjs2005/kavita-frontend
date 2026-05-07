@@ -13,6 +13,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import HeroSection from "@/components/drones/HeroSection";
 import SpecBar, { type SpecBarItem } from "@/components/drones/SpecBar";
 import TechSection, { type TechItem } from "@/components/drones/TechSection";
+import PublicCTABar from "@/components/drones/PublicCTABar";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import CommentsSection from "@/components/drones/CommentsSection";
 import InterestFormSection from "@/components/drones/InterestFormSection";
@@ -354,6 +355,7 @@ export default function DronesPublicPage() {
       "trust",
       "cases",
       "interest",
+      "ctabar",
       "representatives",
       "faq",
       "comments",
@@ -392,6 +394,7 @@ export default function DronesPublicPage() {
     ensureAfter(filtered, "how", "trust");
     ensureAfter(filtered, "trust", "cases");
     ensureBefore(filtered, "representatives", "interest");
+    ensureBefore(filtered, "representatives", "ctabar");
     ensureAfter(filtered, "representatives", "faq");
 
     return filtered;
@@ -517,6 +520,14 @@ export default function DronesPublicPage() {
         models={models.filter((m) => String(m.is_active ?? 1) === "1")}
         representative={representatives?.[0]}
         messageTemplate={mergedPage?.cta_message_template}
+      />
+    ),
+
+    ctabar: (
+      <PublicCTABar
+        representative={representatives?.[0] ?? null}
+        messageTemplate={mergedPage?.cta_message_template}
+        modelLabel={selectedModelLabel}
       />
     ),
 
