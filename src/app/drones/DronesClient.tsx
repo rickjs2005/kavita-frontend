@@ -11,7 +11,6 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import HeroSection from "@/components/drones/HeroSection";
-import PublicTopBar from "@/components/drones/PublicTopBar";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import CommentsSection from "@/components/drones/CommentsSection";
 import InterestFormSection from "@/components/drones/InterestFormSection";
@@ -487,12 +486,6 @@ export default function DronesPublicPage() {
 
   return (
     <div className="min-h-screen bg-[#050816] text-slate-100">
-      <PublicTopBar
-        models={models}
-        selectedModel={selectedModel}
-        onSelect={changeModel}
-      />
-
       {sectionsOrder.map((key: Key | null | undefined) => {
         const sectionKey = String(key);
         return <div key={sectionKey}>{sections[sectionKey]}</div>;
