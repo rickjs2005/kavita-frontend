@@ -269,6 +269,10 @@ function Lightbox({
               playsInline
             />
           ) : (
+            // <img> puro intencionalmente: lightbox precisa de
+            // object-contain com aspect ratio natural da imagem (varia
+            // de retrato a paisagem). next/image exigiria width/height
+            // fixos ou fill em container — quebra o "fit dinâmico".
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={item.src}

@@ -7,6 +7,7 @@
 // Aceita `accent` opcional para tingir CTAs e avatar com a cor do
 // modelo no detalhe; na landing cai em emerald neutro.
 
+import NextImage from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
   Quote,
@@ -298,6 +299,9 @@ export default function CommentsSection({
                           </span>
                         </div>
                       ) : (
+                        // <img> intencional: preview vem de
+                        // URL.createObjectURL(file) (blob:). next/image
+                        // não otimiza blob — usa o original direto.
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={p.url}
@@ -426,14 +430,19 @@ export default function CommentsSection({
                           preload="metadata"
                         />
                       ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <div
                           key={m.__key}
-                          className="block w-full aspect-video rounded-xl border border-white/10 bg-black/40 object-cover"
-                          src={src}
-                          alt={`Mídia do relato de ${c.display_name}`}
-                          loading="lazy"
-                        />
+                          className="relative block aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-black/40"
+                        >
+                          <NextImage
+                            src={src}
+                            alt={`Mídia do relato de ${c.display_name}`}
+                            fill
+                            quality={75}
+                            sizes="(max-width: 640px) 50vw, 33vw"
+                            className="object-cover"
+                          />
+                        </div>
                       );
                     })}
                   </div>

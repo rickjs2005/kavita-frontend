@@ -5,6 +5,7 @@
 // Quando há 0 cases, renderiza estado vazio elegante (não desaparece).
 // Fonte: GET /api/public/drones/cases?model=...
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { ArrowRight, Award, MapPin, Quote } from "lucide-react";
 import apiClient from "@/lib/apiClient";
@@ -96,12 +97,13 @@ function FeaturedCaseCard({ caseItem }: { caseItem: DroneCase }) {
 
       {caseItem.cover_image_url ? (
         <div className="relative aspect-[16/10] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={absUrl(caseItem.cover_image_url)}
             alt={caseItem.title}
-            className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
-            loading="lazy"
+            fill
+            quality={82}
+            sizes="(max-width: 1024px) 100vw, 60vw"
+            className="object-cover transition duration-700 group-hover:scale-[1.04]"
           />
           <div
             aria-hidden
@@ -172,13 +174,14 @@ function SmallCaseCard({ caseItem }: { caseItem: DroneCase }) {
   return (
     <article className="group flex gap-3 overflow-hidden rounded-2xl border border-white/8 bg-[rgba(8,12,22,0.55)] p-3 transition hover:-translate-y-0.5 hover:border-white/20">
       {caseItem.cover_image_url ? (
-        <div className="aspect-square w-24 shrink-0 overflow-hidden rounded-xl bg-black/40">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <div className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl bg-black/40">
+          <Image
             src={absUrl(caseItem.cover_image_url)}
             alt={caseItem.title}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]"
-            loading="lazy"
+            fill
+            quality={75}
+            sizes="96px"
+            className="object-cover transition duration-500 group-hover:scale-[1.05]"
           />
         </div>
       ) : (

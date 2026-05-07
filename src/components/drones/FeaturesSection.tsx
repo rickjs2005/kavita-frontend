@@ -8,6 +8,7 @@
 // opcionais image_url/image em cada item — quando presente, o card
 // renderiza com imagem topo + overlay; caso contrário, ícone grande.
 
+import Image from "next/image";
 import { Sparkles } from "lucide-react";
 import type { DronePageSettings } from "@/types/drones";
 import type { Accent } from "./detail/accent";
@@ -150,12 +151,13 @@ function FeatureCard({
 
       {hasImage ? (
         <div className="relative aspect-[16/10] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={imgSrc}
             alt={item.title || "Feature"}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-            loading="lazy"
+            fill
+            quality={80}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition duration-500 group-hover:scale-[1.04]"
           />
           <div
             aria-hidden
