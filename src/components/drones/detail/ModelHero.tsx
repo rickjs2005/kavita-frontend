@@ -82,8 +82,9 @@ export default function ModelHero({
               {eyebrow}
             </div>
 
-            {/* Título — escala cinematográfica */}
-            <h1 className="mt-6 text-5xl font-extrabold leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
+            {/* Título — escala cinematográfica. Mobile cap em 4xl (36px)
+                pra não estourar 320px; sobe pra 6xl em md e 7xl em lg. */}
+            <h1 className="mt-6 text-4xl font-extrabold leading-[1.0] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl lg:leading-[0.95]">
               {modelLabel}
             </h1>
 

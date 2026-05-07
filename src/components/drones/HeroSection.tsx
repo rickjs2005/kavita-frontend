@@ -181,8 +181,10 @@ export default function HeroSection({
               DJI Agras · {selected.key.toUpperCase()}
             </div>
 
-            {/* Headline cinematográfico — vem do copy.tagline do modelo */}
-            <h1 className="mt-6 text-4xl font-extrabold leading-[0.98] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[3.75rem]">
+            {/* Headline cinematográfico — vem do copy.tagline do modelo.
+                Mobile cap em 30px (text-3xl) pra não estourar 320px com
+                títulos longos. Sobe progressivamente até 60px no desktop. */}
+            <h1 className="mt-6 text-3xl font-extrabold leading-[1.02] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[3.75rem] lg:leading-[0.98]">
               {copy.tagline}
             </h1>
 
@@ -234,10 +236,12 @@ export default function HeroSection({
               </a>
             </div>
 
-            {/* Selo das 3 cidades */}
-            <div className="mt-6 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400">
+            {/* Selo das 3 cidades — text-xs (12px) é o mínimo legível
+                pra texto informativo. tracking ligeiramente menor pra
+                comportar a string completa em 320px sem wrap. */}
+            <div className="mt-6 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-400">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" aria-hidden />
-              <span className="font-mono uppercase tracking-[0.12em]">
+              <span className="font-mono uppercase tracking-[0.08em]">
                 Manhuaçu · Espera Feliz · Cachoeira do Itapemirim
               </span>
             </div>
