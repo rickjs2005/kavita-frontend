@@ -1,41 +1,48 @@
 "use client";
 
-// FAQ — perguntas frequentes de quem está pensando em comprar ou
-// operar drone agrícola. Responder objeções comuns.
+// FAQ pública do módulo Kavita Drones.
+// Fonte primária: GET /api/public/drones/faq (admin edita pelo painel).
+// Fallback: lista estática abaixo — mantém a landing funcional se a
+// API falhar ou se o admin ainda não cadastrou itens.
 //
-// Respostas genéricas e honestas — nada que dependa de licença real
-// Kavita (ANAC/MAPA/RT) que ainda não foi publicada. Se o operador
-// formalizar, trocar respostas específicas.
+// Copy do fallback revisada: removida menção específica a "CA/CMV"
+// (terminologia ANAC podia estar imprecisa em pré-lançamento).
+// Texto agora aponta para regulamentação geral sem se comprometer
+// com siglas específicas — admin pode publicar resposta detalhada
+// pelo painel quando o RT agrônomo revisar.
 
 import { ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import apiClient from "@/lib/apiClient";
+import type { DroneFaqItem } from "@/types/drones";
 
 type QA = { q: string; a: string };
 
-const FAQ: QA[] = [
+// Fallback estático — usado quando a API falha ou retorna vazio.
+const FALLBACK_FAQ: QA[] = [
   {
     q: "Preciso de licença ou habilitação para operar drone agrícola?",
-    a: "Sim. A ANAC exige cadastro do drone e certificação do piloto (CA/CMV). O MAPA regula a aplicação de defensivos aéreos. A Kavita orienta o caminho formal e conecta com RT agrônomo quando necessário.",
+    a: "Sim. A operação de drones agrícolas é regulamentada pela ANAC e pelo MAPA. Existem exigências de cadastro do equipamento, certificação do piloto e acompanhamento por responsável técnico (RT) agrônomo. A Kavita orienta o caminho formal de acordo com a regulamentação vigente e conecta com profissionais habilitados quando necessário.",
   },
   {
     q: "A Kavita atende qual região do país?",
-    a: "Nascemos na Zona da Mata de Minas Gerais, mas a linha DJI Agras é vendida em todo o Brasil por representantes autorizados. No formulário, informe sua cidade — conectamos com o representante mais próximo.",
+    a: "Nascemos na Zona da Mata de Minas Gerais com lojas físicas em Manhuaçu, Espera Feliz e Cachoeira do Itapemirim. A linha DJI Agras é vendida em todo o Brasil por representantes autorizados — informe sua cidade no formulário e conectamos com o representante mais próximo.",
   },
   {
     q: "Posso trabalhar prestando serviço de pulverização com drone?",
-    a: "Sim, e é um dos modelos de negócio mais comuns hoje. Requer: CA/CMV do piloto, cadastro da empresa, RT agrônomo e contrato com o contratante. O T70P e o T100 são os mais usados para esse perfil.",
+    a: "Sim, e é um dos modelos de negócio mais comuns hoje. A operação comercial requer regularização do equipamento e do piloto junto à ANAC, acompanhamento de RT agrônomo e contrato com o contratante. O T70P e o T100 são os mais usados para esse perfil.",
   },
   {
     q: "Tem treinamento incluído na compra?",
-    a: "O representante combina capacitação prática na entrega do equipamento. Operação básica, plano de voo, manutenção diária e troca de baterias. Certificação de piloto é feita em escola credenciada à parte.",
+    a: "O representante combina capacitação prática na entrega do equipamento — operação básica, plano de voo, manutenção diária e troca de baterias. Certificações formais de piloto são feitas em escolas credenciadas à parte.",
   },
   {
     q: "Como faço um orçamento?",
-    a: "Use o formulário abaixo ou o botão de WhatsApp no topo. Passe tamanho da área, cultura e cidade. O representante regional devolve proposta com modelo sugerido, prazo de entrega e condição de pagamento.",
+    a: "Use o formulário abaixo ou o botão de WhatsApp no topo. Passe o tamanho da área, cultura e cidade. O representante regional devolve proposta com modelo sugerido, prazo de entrega e condição de pagamento.",
   },
   {
     q: "Qual modelo é ideal para a minha propriedade?",
-    a: "T25P para até ~300 ha, terreno variado e transporte ágil. T70P para 300–800 ha, produtividade alta. T100 para acima de 800 ha, operação intensiva e prestador de serviço de grande porte. Mas a decisão final depende de talhão, cultura e janela de aplicação — conversa com representante vale mais que tabela.",
+    a: "T25P para até ~300 ha, terreno variado e transporte ágil. T70P para 300–800 ha, produtividade alta. T100 para acima de 800 ha, operação intensiva e prestador de serviço de grande porte. A decisão final depende de talhão, cultura e janela de aplicação — conversa com representante vale mais que tabela.",
   },
   {
     q: "O drone opera à noite e em relevo irregular?",
@@ -69,7 +76,7 @@ function FAQItem({ item }: { item: QA }) {
         />
       </button>
       {open && (
-        <div className="px-5 pb-5 text-[14px] leading-relaxed text-slate-300">
+        <div className="whitespace-pre-wrap px-5 pb-5 text-[14px] leading-relaxed text-slate-300">
           {item.a}
         </div>
       )}
@@ -78,6 +85,31 @@ function FAQItem({ item }: { item: QA }) {
 }
 
 export default function DronesFAQ() {
+  const [items, setItems] = useState<QA[]>(FALLBACK_FAQ);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiClient.get<{ items?: DroneFaqItem[] }>(
+          "/api/public/drones/faq",
+        );
+        const list = Array.isArray(res?.items) ? res.items : [];
+        if (cancelled) return;
+        if (list.length) {
+          setItems(list.map((it) => ({ q: it.question, a: it.answer })));
+        }
+        // Se a API retorna vazio, mantém o fallback — landing nunca fica
+        // sem conteúdo de FAQ.
+      } catch {
+        // Silencioso — fallback estático já está renderizado.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section className="py-12 sm:py-16">
       <div className="mx-auto max-w-4xl px-5">
@@ -95,7 +127,7 @@ export default function DronesFAQ() {
         </div>
 
         <div className="mt-10 grid gap-2">
-          {FAQ.map((qa, i) => (
+          {items.map((qa, i) => (
             <FAQItem key={i} item={qa} />
           ))}
         </div>

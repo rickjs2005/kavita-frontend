@@ -104,3 +104,11 @@ export type DroneLead = {
   created_at: string;
   updated_at: string;
 };
+
+export type DroneFaqItem = {
+  id: number;
+  question: string;
+  answer: string;
+  sort_order?: number;
+  is_active?: 0 | 1;
+};
