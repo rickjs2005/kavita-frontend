@@ -5,9 +5,10 @@
 // Bandeira permission_to_use é obrigatória ao publicar (LGPD).
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { absUrl } from "@/utils/absUrl";
-import type { DroneCase } from "@/types/drones";
+import type { DroneCase, DroneCaseMetric } from "@/types/drones";
 
 type Draft = {
   title: string;
@@ -19,6 +20,9 @@ type Draft = {
   model_key: string;
   summary: string;
   testimonial: string;
+  before_label: string;
+  after_label: string;
+  metrics: DroneCaseMetric[];
   permission_to_use: 0 | 1;
   is_active: 0 | 1;
   sort_order: number;
@@ -34,10 +38,19 @@ const EMPTY_DRAFT: Draft = {
   model_key: "",
   summary: "",
   testimonial: "",
+  before_label: "",
+  after_label: "",
+  metrics: [],
   permission_to_use: 0,
   is_active: 1,
   sort_order: 0,
 };
+
+const METRIC_PLACEHOLDERS = [
+  { label: "Eficiência", value: "+30%", hint: "vs. pulverização terrestre" },
+  { label: "Economia de calda", value: "25%", hint: "redução média" },
+  { label: "Hectares aplicados", value: "180 ha", hint: "uma janela de safra" },
+];
 
 export default function CasesTable() {
   const [items, setItems] = useState<DroneCase[]>([]);
@@ -107,6 +120,9 @@ export default function CasesTable() {
       model_key: row.model_key || "",
       summary: row.summary || "",
       testimonial: row.testimonial || "",
+      before_label: row.before_label || "",
+      after_label: row.after_label || "",
+      metrics: Array.isArray(row.metrics) ? row.metrics : [],
       permission_to_use: (row.permission_to_use ?? 0) as 0 | 1,
       is_active: (row.is_active ?? 1) as 0 | 1,
       sort_order: row.sort_order ?? 0,
@@ -114,6 +130,26 @@ export default function CasesTable() {
     if (coverRef.current) coverRef.current.value = "";
     if (beforeRef.current) beforeRef.current.value = "";
     if (afterRef.current) afterRef.current.value = "";
+  }
+
+  function addMetric() {
+    setDraft((d) => ({
+      ...d,
+      metrics: [...d.metrics, { label: "", value: "", hint: "" }],
+    }));
+  }
+  function updateMetric(idx: number, patch: Partial<DroneCaseMetric>) {
+    setDraft((d) => {
+      const next = d.metrics.slice();
+      next[idx] = { ...next[idx], ...patch };
+      return { ...d, metrics: next };
+    });
+  }
+  function removeMetric(idx: number) {
+    setDraft((d) => ({
+      ...d,
+      metrics: d.metrics.filter((_, i) => i !== idx),
+    }));
   }
 
   function cancel() {
@@ -124,9 +160,26 @@ export default function CasesTable() {
   function buildFormData(): FormData {
     const fd = new FormData();
     Object.entries(draft).forEach(([k, v]) => {
+      // metrics tratado abaixo como JSON.stringify (objeto/array não
+      // pode ir como String() raw — viraria "[object Object]").
+      if (k === "metrics") return;
       if (v == null || v === "") return;
       fd.append(k, String(v));
     });
+
+    // Filtra métricas vazias antes de serializar — admin pode ter
+    // adicionado uma linha em branco e esquecido de preencher.
+    const cleanMetrics = draft.metrics.filter(
+      (m) => (m.label && m.label.trim()) || (m.value && m.value.trim()),
+    );
+    if (cleanMetrics.length) {
+      fd.append("metrics", JSON.stringify(cleanMetrics));
+    } else {
+      // Envia explicitamente vazio para "limpar" métricas existentes
+      // numa edição (caso admin remova todas).
+      fd.append("metrics", "[]");
+    }
+
     if (coverRef.current?.files?.[0]) {
       fd.append("cover_image", coverRef.current.files[0]);
     }
@@ -364,6 +417,117 @@ export default function CasesTable() {
                   className="text-xs text-slate-300"
                 />
               </label>
+            </div>
+
+            {/* Storytelling labels para o slider antes/depois */}
+            <div className="sm:col-span-2 grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1 text-xs text-slate-300">
+                Legenda da imagem ANTES
+                <input
+                  value={draft.before_label}
+                  onChange={(e) =>
+                    setDraft({ ...draft, before_label: e.target.value })
+                  }
+                  placeholder="Ex.: Pulverização irregular em terreno inclinado"
+                  maxLength={160}
+                  className="rounded-xl border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-slate-300">
+                Legenda da imagem DEPOIS
+                <input
+                  value={draft.after_label}
+                  onChange={(e) =>
+                    setDraft({ ...draft, after_label: e.target.value })
+                  }
+                  placeholder="Ex.: Cobertura uniforme com DJI Agras T25P"
+                  maxLength={160}
+                  className="rounded-xl border border-white/10 bg-black/30 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
+                />
+              </label>
+            </div>
+
+            {/* Editor de métricas */}
+            <div className="sm:col-span-2 rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-200">
+                    Métricas do case (até 6)
+                  </h4>
+                  <p className="mt-0.5 text-[11px] text-slate-400">
+                    Aparecem no card público — ex: ganho %, área, economia.
+                  </p>
+                </div>
+                {draft.metrics.length < 6 ? (
+                  <button
+                    type="button"
+                    onClick={addMetric}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 text-[11px] font-extrabold text-emerald-200 hover:bg-emerald-500/20"
+                  >
+                    <Plus className="h-3 w-3" aria-hidden />
+                    Métrica
+                  </button>
+                ) : null}
+              </div>
+
+              {draft.metrics.length === 0 ? (
+                <div className="mt-3 grid gap-1.5 rounded-lg border border-dashed border-white/10 bg-white/[0.02] p-3 text-[11px] text-slate-500">
+                  Nenhuma métrica. Sugestões:
+                  <ul className="ml-4 list-disc text-slate-400">
+                    {METRIC_PLACEHOLDERS.map((m) => (
+                      <li key={m.label}>
+                        <strong className="text-slate-200">{m.value}</strong> ·{" "}
+                        {m.label} ({m.hint})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="mt-3 grid gap-2">
+                  {draft.metrics.map((m, idx) => (
+                    <div
+                      key={idx}
+                      className="grid items-start gap-2 sm:grid-cols-[140px_140px_1fr_auto]"
+                    >
+                      <input
+                        value={m.label || ""}
+                        onChange={(e) =>
+                          updateMetric(idx, { label: e.target.value })
+                        }
+                        placeholder="Label (Eficiência)"
+                        maxLength={60}
+                        className="h-9 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-slate-100"
+                      />
+                      <input
+                        value={m.value || ""}
+                        onChange={(e) =>
+                          updateMetric(idx, { value: e.target.value })
+                        }
+                        placeholder="Valor (+30%)"
+                        maxLength={40}
+                        className="h-9 rounded-lg border border-white/10 bg-black/30 px-3 text-xs font-bold text-white"
+                      />
+                      <input
+                        value={m.hint || ""}
+                        onChange={(e) =>
+                          updateMetric(idx, { hint: e.target.value })
+                        }
+                        placeholder="Detalhe (vs. terrestre)"
+                        maxLength={80}
+                        className="h-9 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-slate-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeMetric(idx)}
+                        aria-label="Remover métrica"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-400/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="sm:col-span-2 grid gap-3 sm:grid-cols-[140px_140px_1fr]">

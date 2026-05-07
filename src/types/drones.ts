@@ -113,6 +113,12 @@ export type DroneFaqItem = {
   is_active?: 0 | 1;
 };
 
+export type DroneCaseMetric = {
+  label: string | null;
+  value: string | null;
+  hint: string | null;
+};
+
 export type DroneCase = {
   id: number;
   title: string;
@@ -127,6 +133,9 @@ export type DroneCase = {
   cover_image_url: string | null;
   before_image_url: string | null;
   after_image_url: string | null;
+  before_label: string | null;
+  after_label: string | null;
+  metrics: DroneCaseMetric[] | null;
   permission_to_use?: 0 | 1;
   sort_order?: number;
   is_active?: 0 | 1;
