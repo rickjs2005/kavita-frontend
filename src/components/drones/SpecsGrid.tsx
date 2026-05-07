@@ -58,29 +58,103 @@ type ResolvedGroup = {
   items: ResolvedItem[];
 };
 
-function normalizeItem(s: string): ResolvedItem {
-  // splitSpec já cuida do formato "Rótulo: valor" (separador ":").
-  // Quando não tem ":", retorna { label: "Spec", value: <string> } —
-  // aqui transformamos pra { label: "", value: <string> } pra ficar
-  // mais limpo na renderização (single-row).
-  if (!s) return { label: "", value: "" };
-  const out = splitSpec(s);
-  if (out.label === "Spec" && out.value === s.trim()) {
-    return { label: "", value: out.value };
+// Padrões de "valor técnico" — números seguidos de unidade. Usado pelo
+// parser para detectar onde o valor começa numa string sem separador
+// ":". Cobre o que aparece em fichas de drone agrícola.
+const VALUE_PATTERN =
+  /(?:[≥≤<>]\s*)?(?:[±]?\d{1,3}(?:[.,]\d+)?(?:\s*[-–—~aà]\s*\d+(?:[.,]\d+)?)?(?:\s*(?:kg|g|m|mm|cm|km|s|min|h|ha\/h|ha|°|°C|°c|m\/s|L\/min|l\/min|L|mAh|wh|Wh|V|Ah|µm|um|polegadas|pol|°|x|×)\b\.?)?(?:\s*\([^)]+\))?)/i;
+
+// Tokens que sinalizam início de UM valor numa string com vários
+// pares concatenados. Ex: "Peso 26 kg (sem bateria) 33 kg (com bateria)"
+// — depois do primeiro número+unidade, o próximo número inicia outro
+// par. Capturamos pares (label antes / valor numérico).
+const PAIR_SPLITTER =
+  /([^0-9±≥≤<>]+?)\s+([±≥≤<>]?\s*\d+(?:[.,]\d+)?(?:\s*[-–—~aà]\s*\d+(?:[.,]\d+)?)?(?:\s*(?:kg|g|m|mm|cm|km|s|min|h|ha\/h|ha|°C|°c|°|m\/s|L\/min|l\/min|L|mAh|Wh|wh|V|Ah|µm|um|polegadas|pol|x|×)\b\.?)?)(?:\s*\(([^)]+)\))?/gi;
+
+function smartSplit(s: string): ResolvedItem[] {
+  // 1. Caminho ideal: já tem ":" — splitSpec resolve.
+  const colonIdx = s.indexOf(":");
+  if (colonIdx > 0 && colonIdx < s.length - 1) {
+    const out = splitSpec(s);
+    if (out.label && out.value) return [out];
   }
-  return out;
+
+  // 2. Sem ":": tenta detectar pares "label valor (parêntese)" repetidos
+  //    na mesma string. Se achar 2+ pares, retorna cada um como row.
+  //    Ex: "Peso 26 kg (sem bateria) 33 kg (com bateria)" → 2 rows.
+  const matches = Array.from(s.matchAll(PAIR_SPLITTER));
+  if (matches.length >= 2) {
+    let baseLabel = "";
+    const out: ResolvedItem[] = [];
+    for (let i = 0; i < matches.length; i++) {
+      const m = matches[i];
+      const labelPart = (m[1] || "").trim();
+      const valuePart = (m[2] || "").trim();
+      const paren = (m[3] || "").trim();
+
+      // Primeiro hit usa o label ali. Subsequentes herdam o baseLabel
+      // (palavra raiz) — porque "Peso 26 kg ... 33 kg" tem "Peso" só
+      // no primeiro. O parêntese vira qualificador do label.
+      let label: string;
+      if (i === 0) {
+        baseLabel = labelPart.replace(/^[—\-,;.\s]+/, "").replace(/[—\-,;.\s]+$/, "");
+        label = paren ? `${baseLabel} (${paren})` : baseLabel;
+      } else {
+        // Se o pedaço entre o valor anterior e este é uma frase nova
+        // (mais de 2 palavras "fortes"), use como label novo. Senão
+        // herda baseLabel + parêntese.
+        const cleaned = labelPart.replace(/^[—\-,;.\s]+/, "").replace(/[—\-,;.\s]+$/, "").trim();
+        if (cleaned && cleaned.split(/\s+/).length >= 3) {
+          label = paren ? `${cleaned} (${paren})` : cleaned;
+        } else {
+          label = paren ? `${baseLabel} (${paren})` : baseLabel || cleaned;
+        }
+      }
+
+      label = label.replace(/\s{2,}/g, " ").trim();
+      if (label || valuePart) out.push({ label, value: valuePart });
+    }
+    if (out.length >= 2) return out;
+  }
+
+  // 3. Última tentativa: só 1 número+unidade no final. Quebra em
+  //    "tudo antes" (label) + "valor" (último match).
+  const last = s.match(VALUE_PATTERN);
+  if (last && last[0]) {
+    const valuePos = s.lastIndexOf(last[0]);
+    if (valuePos > 0) {
+      const label = s.slice(0, valuePos).trim().replace(/[—\-,;.\s]+$/, "");
+      const value = s.slice(valuePos).trim();
+      if (label && value && label.length < 80) return [{ label, value }];
+    }
+  }
+
+  // 4. Não foi possível estruturar — devolve como linha de destaque
+  //    (label vazia, value = string inteira). UI renderiza single-row.
+  return [{ label: "", value: s.trim() }];
 }
 
 export default function SpecsGrid({ groups, accent }: Props) {
   const resolvedGroups: ResolvedGroup[] = useMemo(() => {
     return groups
-      .map((g) => ({
-        title: (g.title || "").trim(),
-        Icon: pickGroupIcon(g.title || ""),
-        items: (g.items || [])
-          .map((it) => normalizeItem(String(it || "").trim()))
-          .filter((it) => it.label || it.value),
-      }))
+      .map((g) => {
+        const expandedItems: ResolvedItem[] = [];
+        for (const raw of g.items || []) {
+          const s = String(raw || "").trim();
+          if (!s) continue;
+          // smartSplit pode devolver múltiplas rows quando a string
+          // contém vários pares concatenados — é desejado.
+          const rows = smartSplit(s);
+          for (const r of rows) {
+            if (r.label || r.value) expandedItems.push(r);
+          }
+        }
+        return {
+          title: (g.title || "").trim(),
+          Icon: pickGroupIcon(g.title || ""),
+          items: expandedItems,
+        };
+      })
       .filter((g) => g.title || g.items.length);
   }, [groups]);
 

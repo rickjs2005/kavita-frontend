@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useParams } from "next/navigation";
 
-import SpecsSection from "@/components/drones/SpecsSection";
+import SpecsGrid from "@/components/drones/SpecsGrid";
 import FeaturesSection from "@/components/drones/FeaturesSection";
 import BenefitsSection from "@/components/drones/BenefitsSection";
 import GallerySection from "@/components/drones/GallerySection";
@@ -537,7 +537,15 @@ export default function DroneModelPage() {
 
       <Reveal>
         <div id="drones-model-specs" className="scroll-mt-24">
-          <SpecsSection page={pageSettings} accent={accent} />
+          <SpecsGrid
+            groups={
+              (pageSettings.specs_items_json as
+                | Array<{ title?: string; items?: string[] }>
+                | null
+                | undefined) ?? []
+            }
+            accent={accent}
+          />
         </div>
       </Reveal>
 
