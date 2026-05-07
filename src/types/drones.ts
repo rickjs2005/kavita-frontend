@@ -112,3 +112,24 @@ export type DroneFaqItem = {
   sort_order?: number;
   is_active?: 0 | 1;
 };
+
+export type DroneCase = {
+  id: number;
+  title: string;
+  farm_name: string;
+  producer_name: string | null;
+  city: string | null;
+  uf: string | null;
+  hectares: number | null;
+  model_key: string | null;
+  summary: string | null;
+  testimonial: string | null;
+  cover_image_url: string | null;
+  before_image_url: string | null;
+  after_image_url: string | null;
+  permission_to_use?: 0 | 1;
+  sort_order?: number;
+  is_active?: 0 | 1;
+  created_at?: string;
+  updated_at?: string;
+};

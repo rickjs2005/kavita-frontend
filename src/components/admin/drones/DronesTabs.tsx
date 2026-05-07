@@ -7,11 +7,13 @@ import RepresentativeForm from "./RepresentativeForm";
 import CommentsModerationTable from "./CommentsModerationTable";
 import LeadsTable from "./LeadsTable";
 import FaqTable from "./FaqTable";
+import CasesTable from "./CasesTable";
 
 type TabId =
   | "landing"
   | "modelos"
   | "leads"
+  | "cases"
   | "faq"
   | "representantes"
   | "comentarios";
@@ -28,6 +30,7 @@ export default function DronesTabs() {
       { id: "landing" as const, label: "Config Landing" },
       { id: "modelos" as const, label: "Modelos" },
       { id: "leads" as const, label: "Leads" },
+      { id: "cases" as const, label: "Cases" },
       { id: "faq" as const, label: "FAQ" },
       { id: "representantes" as const, label: "Representantes" },
       { id: "comentarios" as const, label: "Comentários" },
@@ -65,6 +68,7 @@ export default function DronesTabs() {
         {tab === "landing" ? <PageSettingsForm /> : null}
         {tab === "modelos" ? <GalleryForm /> : null}
         {tab === "leads" ? <LeadsTable /> : null}
+        {tab === "cases" ? <CasesTable /> : null}
         {tab === "faq" ? <FaqTable /> : null}
         {tab === "representantes" ? <RepresentativeForm /> : null}
         {tab === "comentarios" ? <CommentsModerationTable /> : null}

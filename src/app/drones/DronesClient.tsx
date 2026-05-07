@@ -18,6 +18,7 @@ import WhyDrones from "@/components/drones/WhyDrones";
 import WhoIsFor from "@/components/drones/WhoIsFor";
 import HowItWorks from "@/components/drones/HowItWorks";
 import DronesFAQ from "@/components/drones/DronesFAQ";
+import CasesSection from "@/components/drones/CasesSection";
 import ModelsShowcase, {
   type ModelShowcaseEntry,
 } from "@/components/drones/ModelsShowcase";
@@ -498,6 +499,7 @@ export default function DronesPublicPage() {
       "who",
       "how",
       "trust",
+      "cases",
       "interest",
       "representatives",
       "faq",
@@ -529,6 +531,7 @@ export default function DronesPublicPage() {
     ensureAfter(filtered, "models", "who");
     ensureAfter(filtered, "who", "how");
     ensureAfter(filtered, "how", "trust");
+    ensureAfter(filtered, "trust", "cases");
     ensureBefore(filtered, "representatives", "interest");
     ensureAfter(filtered, "representatives", "faq");
 
@@ -566,6 +569,8 @@ export default function DronesPublicPage() {
     ),
 
     trust: <TrustSection />,
+
+    cases: <CasesSection modelKey={selectedModel} />,
 
     interest: (
       <InterestFormSection
