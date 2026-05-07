@@ -27,11 +27,14 @@ export default function MobileStickyCTA({ accent, onTalkToRep }: Props) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Posiciona ACIMA do MobileBottomNav global (h-16 = 64px) usando
+  // bottom-16. O nav já cuida do env(safe-area-inset-bottom) — não
+  // precisamos somar de novo aqui pra não duplicar offset.
   return (
     <div
       className={[
-        "fixed inset-x-0 bottom-0 z-40 px-4 pb-4 pt-3 sm:hidden",
-        "bg-gradient-to-t from-black/95 via-black/80 to-transparent",
+        "fixed inset-x-0 bottom-16 z-40 px-4 pb-3 pt-3 sm:hidden",
+        "bg-gradient-to-t from-black/95 via-black/85 to-black/40",
         "transition-all duration-300",
         visible
           ? "translate-y-0 opacity-100"
