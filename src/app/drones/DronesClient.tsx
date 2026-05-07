@@ -354,12 +354,13 @@ export default function DronesPublicPage() {
     // contrário, usamos a ordem fixa abaixo. Seções legadas de
     // detalhe (specs/features/benefits/gallery) só existem em
     // /drones/[id], então filtramos da ordem se vierem do admin.
+    // Pipeline da landing genérica /drones — mais enxuto que o
+    // detalhe /drones/[id]. O hero v3 não tem tabs, então ficha
+    // técnica detalhada (specs HUD, specsgrid, tech) virou exclusivo
+    // do detalhe. Aqui ficam só seções de marca/conversão.
     const raw = mergedPage?.sections_order_json || [
       "hero",
-      "specs",
-      "specsgrid",
       "why",
-      "tech",
       "models",
       "who",
       "how",
@@ -372,13 +373,20 @@ export default function DronesPublicPage() {
       "comments",
     ];
 
-    // "specs" agora é a HUD bar do modelo selecionado, então mantém.
-    // Os filtros de seções legadas (features/benefits/gallery) eram
-    // de uma fase anterior — continuam removidos pois agora pertencem
-    // a /drones/[id], não à landing genérica.
+    // Filtros: específicas de detalhe (specs/features/benefits/gallery
+    // /tech/specsgrid) só aparecem em /drones/[id]. Se admin habilitou
+    // sections_order_json legado com elas, removemos aqui — a landing
+    // genérica fica limpa.
     const filtered = raw.filter(
       (k: any) =>
-        !["features", "benefits", "gallery"].includes(String(k)),
+        ![
+          "specs",
+          "specsgrid",
+          "features",
+          "benefits",
+          "gallery",
+          "tech",
+        ].includes(String(k)),
     );
 
     // Injeta as seções novas na ordem certa, caso venham do admin
@@ -396,11 +404,8 @@ export default function DronesPublicPage() {
       else list.push(key);
     }
 
-    ensureAfter(filtered, "hero", "specs");
-    ensureAfter(filtered, "specs", "specsgrid");
-    ensureAfter(filtered, "specsgrid", "why");
-    ensureAfter(filtered, "why", "tech");
-    ensureAfter(filtered, "tech", "models");
+    ensureAfter(filtered, "hero", "why");
+    ensureAfter(filtered, "why", "models");
     ensureAfter(filtered, "models", "who");
     ensureAfter(filtered, "who", "how");
     ensureAfter(filtered, "how", "trust");

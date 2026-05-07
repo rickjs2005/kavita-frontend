@@ -1,40 +1,46 @@
 "use client";
 
-// Seção "Benefícios para o operador" — antes "Por que pulverizar com
-// drone". Layout horizontal premium conforme referência DJI showroom:
-// 4 cards lado-a-lado, ícone à esquerda, título + descrição à direita.
-// Fonte primária: GET /api/public/drones/sections/why (key mantida
-// para preservar edições do admin existentes; copy agora foca no
-// operador).
+// Seção "Por que usar drones na sua operação?" — 5 cards horizontais.
+// Inspiração: imagem de referência DJI showroom — eyebrow uppercase
+// emerald, headline curto, 5 cards em linha (desktop) com ícone em
+// pill e copy compacta.
+//
+// Fonte: GET /api/public/drones/sections/why (admin pode editar copy
+// e itens). Fallback estático com 5 itens da referência.
 
 import { useDronesSection, type DroneSectionItem } from "@/hooks/useDronesSection";
 import { getSectionIcon } from "@/lib/drones/sectionIcons";
 
 const FALLBACK_ITEMS: DroneSectionItem[] = [
   {
-    icon: "Leaf",
-    title: "Economia",
-    text: "Reduza o uso de insumos com aplicação precisa por mapa de prescrição.",
-  },
-  {
-    icon: "Sprout",
-    title: "Sustentabilidade",
-    text: "Menor impacto ambiental e mais eficiência por hectare aplicado.",
+    icon: "Droplet",
+    title: "Precisão total",
+    text: "Aplicação uniforme com gotas controladas e menos desperdício.",
   },
   {
     icon: "Gauge",
-    title: "Produtividade",
-    text: "Até 12 ha/h com máxima eficiência no campo, em qualquer condição.",
+    title: "Mais produtividade",
+    text: "Cubra mais hectares em menos tempo com segurança.",
   },
   {
     icon: "ShieldCheck",
-    title: "Segurança",
-    text: "Operação segura com tecnologia confiável — operador fora da deriva.",
+    title: "Segurança operacional",
+    text: "Sensores inteligentes e sistemas avançados de desvio de obstáculos.",
+  },
+  {
+    icon: "Leaf",
+    title: "Sustentabilidade",
+    text: "Uso racional de insumos e menor impacto ambiental.",
+  },
+  {
+    icon: "Sparkles",
+    title: "Melhor retorno",
+    text: "Redução de custos operacionais e maior rentabilidade.",
   },
 ];
 
 const FALLBACK = {
-  title: "Mais produtividade, menos esforço",
+  title: "Mais eficiência, menos desperdício, melhores resultados.",
   subtitle: null as string | null,
   items: FALLBACK_ITEMS,
 };
@@ -42,51 +48,66 @@ const FALLBACK = {
 export default function WhyDrones() {
   const { title, items } = useDronesSection("why", FALLBACK);
 
-  // Layout 4 cols quando temos 4 itens; 3 cols quando tem 3 ou 6;
-  // 2 cols quando 2; 1 quando 1. Adapta sem ficar torto.
+  // Layout adaptativo: 5 cards em desktop, 2-3 em tablet, 1 em mobile.
   const colCount = items.length;
   const lgCols =
-    colCount >= 4
-      ? "lg:grid-cols-4"
-      : colCount === 3
-        ? "lg:grid-cols-3"
-        : colCount === 2
-          ? "lg:grid-cols-2"
-          : "lg:grid-cols-1";
+    colCount >= 5
+      ? "lg:grid-cols-5"
+      : colCount === 4
+        ? "lg:grid-cols-4"
+        : colCount === 3
+          ? "lg:grid-cols-3"
+          : colCount === 2
+            ? "lg:grid-cols-2"
+            : "lg:grid-cols-1";
 
   return (
-    <section className="relative py-16 sm:py-24">
+    <section className="relative py-16 sm:py-20">
+      {/* Halo accent sutil de fundo */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-0 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-emerald-500/8 blur-3xl"
+      />
+
       <div className="relative mx-auto max-w-7xl px-5">
-        <div className="max-w-3xl">
+        {/* Cabeçalho centralizado */}
+        <div className="mx-auto max-w-3xl text-center">
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300/90">
-            Benefícios para o operador
+            Por que usar drones na sua operação?
           </p>
-          <h2 className="mt-3 text-2xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-3xl md:text-4xl">
+          <h2 className="mt-3 text-2xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-3xl md:text-[2.25rem]">
             {title || FALLBACK.title}
           </h2>
         </div>
 
-        <div className={["mt-10 grid gap-3 sm:grid-cols-2", lgCols].join(" ")}>
+        {/* Grid de cards horizontais */}
+        <div className={["mt-12 grid gap-3 sm:grid-cols-2 md:grid-cols-3", lgCols].join(" ")}>
           {items.map((r, idx) => {
             const Icon = getSectionIcon(r.icon);
             return (
               <article
                 key={`${r.title}-${idx}`}
-                className="group flex items-start gap-4 rounded-2xl border border-white/10 bg-[rgba(8,12,22,0.55)] p-5 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-[rgba(10,16,28,0.7)]"
+                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[rgba(8,12,22,0.55)] p-5 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-[rgba(10,16,28,0.7)]"
               >
-                <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-emerald-400/25 bg-emerald-500/10 text-emerald-300 transition group-hover:scale-105 group-hover:border-emerald-400/50">
+                {/* Halo accent on hover */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -top-12 -right-8 h-36 w-36 rounded-full bg-emerald-500/12 blur-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                />
+
+                {/* Ícone em pill */}
+                <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-400/25 bg-emerald-500/10 text-emerald-300 transition group-hover:scale-105 group-hover:border-emerald-400/45">
                   <Icon className="h-5 w-5" aria-hidden />
                 </span>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-[15px] font-extrabold tracking-tight text-white">
-                    {r.title}
-                  </h3>
-                  {r.text ? (
-                    <p className="mt-1 text-[13px] leading-relaxed text-slate-300/90">
-                      {r.text}
-                    </p>
-                  ) : null}
-                </div>
+
+                <h3 className="relative mt-4 text-[15px] font-extrabold tracking-tight text-white">
+                  {r.title}
+                </h3>
+                {r.text ? (
+                  <p className="relative mt-1.5 text-[13px] leading-relaxed text-slate-300/90">
+                    {r.text}
+                  </p>
+                ) : null}
               </article>
             );
           })}
