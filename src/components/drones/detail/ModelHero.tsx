@@ -8,6 +8,7 @@
 // Mantém a mesma API de Props da versão anterior — page.tsx não
 // precisa mudar nada.
 
+import Image from "next/image";
 import { ArrowRight, MessageCircle, ShieldCheck } from "lucide-react";
 import type { Accent } from "./accent";
 
@@ -194,12 +195,14 @@ export default function ModelHero({
                     preload="metadata"
                   />
                 ) : heroUrl && heroType === "image" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    className="h-full w-full object-cover"
+                  <Image
                     src={heroUrl}
                     alt={modelLabel}
-                    loading="eager"
+                    fill
+                    priority
+                    quality={88}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover"
                   />
                 ) : (
                   // Fallback decorativo — drone-grid + halos
