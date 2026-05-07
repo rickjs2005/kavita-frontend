@@ -1,6 +1,13 @@
 "use client";
 
+// Editor de especificações por modelo. Cards de grupo (Aeronave,
+// Bateria, RTK...) com inputs compactos densidade SaaS premium.
+// Cada grupo é um card autônomo com header próprio, contador de
+// itens, botão "+ adicionar" no rodapé. Inputs single-line h-9 —
+// nada de textarea inflado.
+
 import React, { useEffect, useMemo, useState } from "react";
+import { ChevronDown, GripVertical, Layers, Plus, Save, Trash2, X } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 
@@ -12,42 +19,21 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-function normalizeGroups(v: any): SpecsGroup[] {
+function normalizeGroups(v: unknown): SpecsGroup[] {
   if (!Array.isArray(v)) return [];
   return v
-    .map((g) => ({
-      title: typeof g?.title === "string" ? g.title : "",
-      items: Array.isArray(g?.items)
-        ? g.items.filter((x: any) => typeof x === "string")
-        : [],
-    }))
+    .map((g): SpecsGroup => {
+      const obj = g as { title?: unknown; items?: unknown };
+      return {
+        title: typeof obj?.title === "string" ? obj.title : "",
+        items: Array.isArray(obj?.items)
+          ? (obj.items as unknown[]).filter(
+              (x): x is string => typeof x === "string",
+            )
+          : [],
+      };
+    })
     .filter((g) => (g.title && g.title.trim()) || (g.items && g.items.length));
-}
-
-function ModelPill({ modelKey }: { modelKey: string }) {
-  return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
-      <span className="h-1.5 w-1.5 rounded-full bg-white/50" />
-      Modelo: <b className="text-white">{modelKey.toUpperCase()}</b>
-    </span>
-  );
-}
-
-function ToastView({ toast }: { toast: Toast }) {
-  if (!toast) return null;
-
-  const cls =
-    toast.type === "success"
-      ? "border-emerald-200/20 bg-emerald-500/10 text-emerald-100"
-      : toast.type === "error"
-        ? "border-amber-200/20 bg-amber-500/10 text-amber-100"
-        : "border-white/10 bg-white/5 text-white/80";
-
-  return (
-    <div className={cx("rounded-2xl border px-4 py-3 text-sm", cls)}>
-      {toast.text}
-    </div>
-  );
 }
 
 type Props = {
@@ -60,6 +46,15 @@ type Props = {
   }) => void;
 };
 
+const SUGGESTED_GROUPS = [
+  "Aeronave",
+  "Pulverização",
+  "Bateria",
+  "RTK",
+  "Radar",
+  "Segurança",
+];
+
 export default function DroneModelSpecsEditor({
   modelKey,
   initialTitle,
@@ -68,6 +63,7 @@ export default function DroneModelSpecsEditor({
 }: Props) {
   const [toast, setToast] = useState<Toast>(null);
   const [saving, setSaving] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
 
   const [title, setTitle] = useState<string>(
     initialTitle?.trim() || "Especificações",
@@ -79,25 +75,36 @@ export default function DroneModelSpecsEditor({
   useEffect(() => {
     setTitle(initialTitle?.trim() || "Especificações");
     setGroups(normalizeGroups(initialGroups));
+    setCollapsed({});
     setToast(null);
   }, [initialTitle, initialGroups, modelKey]);
 
-  const canSave = useMemo(() => Boolean(modelKey), [modelKey]);
+  const totalItems = useMemo(
+    () => groups.reduce((acc, g) => acc + (g.items?.length || 0), 0),
+    [groups],
+  );
 
-  function addGroup() {
-    setGroups((prev) => [...prev, { title: "Aeronave", items: [""] }]);
+  function addGroup(suggested?: string) {
+    setGroups((prev) => [
+      ...prev,
+      { title: suggested ?? "Novo grupo", items: [""] },
+    ]);
   }
-
   function removeGroup(idx: number) {
     setGroups((prev) => prev.filter((_, i) => i !== idx));
   }
-
-  function updateGroupTitle(idx: number, v: string) {
-    setGroups((prev) =>
-      prev.map((g, i) => (i === idx ? { ...g, title: v } : g)),
-    );
+  function moveGroup(idx: number, dir: -1 | 1) {
+    setGroups((prev) => {
+      const next = [...prev];
+      const j = idx + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return next;
+    });
   }
-
+  function updateGroupTitle(idx: number, v: string) {
+    setGroups((prev) => prev.map((g, i) => (i === idx ? { ...g, title: v } : g)));
+  }
   function addItem(groupIdx: number) {
     setGroups((prev) =>
       prev.map((g, i) =>
@@ -105,7 +112,6 @@ export default function DroneModelSpecsEditor({
       ),
     );
   }
-
   function removeItem(groupIdx: number, itemIdx: number) {
     setGroups((prev) =>
       prev.map((g, i) =>
@@ -115,7 +121,6 @@ export default function DroneModelSpecsEditor({
       ),
     );
   }
-
   function updateItem(groupIdx: number, itemIdx: number, v: string) {
     setGroups((prev) =>
       prev.map((g, i) => {
@@ -126,10 +131,21 @@ export default function DroneModelSpecsEditor({
       }),
     );
   }
+  function moveItem(groupIdx: number, itemIdx: number, dir: -1 | 1) {
+    setGroups((prev) =>
+      prev.map((g, i) => {
+        if (i !== groupIdx) return g;
+        const items = [...(g.items || [])];
+        const j = itemIdx + dir;
+        if (j < 0 || j >= items.length) return g;
+        [items[itemIdx], items[j]] = [items[j], items[itemIdx]];
+        return { ...g, items };
+      }),
+    );
+  }
 
   function sanitizePayload() {
     const cleanTitle = title.trim() ? title.trim() : null;
-
     const cleanGroups: SpecsGroup[] = groups
       .map((g) => ({
         title: (g.title || "").trim(),
@@ -138,24 +154,19 @@ export default function DroneModelSpecsEditor({
           : [],
       }))
       .filter((g) => g.title || (g.items && g.items.length));
-
     return { specs_title: cleanTitle, specs_items_json: cleanGroups };
   }
 
   async function save() {
-    if (!canSave) return;
-
+    if (!modelKey) return;
     setSaving(true);
     setToast(null);
-
     try {
       const payload = sanitizePayload();
-
       await apiClient.put(`/api/admin/drones/models/${modelKey}`, payload);
-
-      setToast({ type: "success", text: "Especificações salvas com sucesso." });
+      setToast({ type: "success", text: "Salvo." });
       onSaved?.(payload);
-    } catch (err: unknown) {
+    } catch (err) {
       const ui = formatApiError(err, "Falha ao salvar.");
       setToast({ type: "error", text: ui.message });
     } finally {
@@ -164,137 +175,212 @@ export default function DroneModelSpecsEditor({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2">
-          <ModelPill modelKey={modelKey} />
-          <span className="hidden text-xs text-white/40 md:inline">
-            Organize em grupos (ex: Aeronave, Bateria, RTK…)
+    <div className="grid gap-4">
+      {/* Toolbar compacta */}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="h-9 flex-1 min-w-[200px] rounded-lg border border-white/10 bg-black/20 px-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/40 focus:ring-2 focus:ring-emerald-400/30"
+          placeholder="Título da seção (Ex: Especificações)"
+        />
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+          <Layers className="h-3.5 w-3.5" aria-hidden />
+          <span>
+            {groups.length} {groups.length === 1 ? "grupo" : "grupos"} ·{" "}
+            {totalItems} {totalItems === 1 ? "item" : "itens"}
           </span>
         </div>
-
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5">
           <button
             type="button"
-            onClick={addGroup}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 active:scale-[0.99] transition"
+            onClick={() => addGroup()}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-slate-200 hover:bg-white/10"
           >
-            + Grupo
+            <Plus className="h-3.5 w-3.5" aria-hidden />
+            Grupo
           </button>
-
           <button
             type="button"
             onClick={save}
-            disabled={saving || !canSave}
+            disabled={saving}
             className={cx(
-              "rounded-xl px-4 py-2 text-sm font-medium text-white transition active:scale-[0.99]",
-              saving || !canSave
-                ? "bg-white/10 text-white/50"
-                : "bg-emerald-500 hover:bg-emerald-400",
+              "inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-extrabold transition active:scale-[0.99]",
+              saving
+                ? "bg-emerald-500/30 text-emerald-200/60"
+                : "bg-emerald-500 text-black hover:brightness-110",
             )}
           >
+            <Save className="h-3.5 w-3.5" aria-hidden />
             {saving ? "Salvando..." : "Salvar"}
           </button>
         </div>
       </div>
 
-      <ToastView toast={toast} />
+      {/* Toast inline */}
+      {toast ? (
+        <div
+          className={cx(
+            "rounded-lg border px-3 py-2 text-xs",
+            toast.type === "success"
+              ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-200"
+              : toast.type === "error"
+                ? "border-rose-400/30 bg-rose-500/10 text-rose-200"
+                : "border-white/10 bg-white/5 text-slate-200",
+          )}
+        >
+          {toast.text}
+        </div>
+      ) : null}
 
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-white/60">
-          Título da seção
-        </label>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-white/20"
-          placeholder="Ex: Especificações"
-        />
-      </div>
-
-      <div className="space-y-4">
-        {groups.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-sm text-white/60">
-            Nenhum grupo ainda. Clique em <b className="text-white">+ Grupo</b>.
+      {/* Estado vazio */}
+      {groups.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-6 text-center">
+          <p className="text-sm font-bold text-slate-100">
+            Nenhum grupo de specs ainda.
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Crie um grupo para começar — sugestão:
+          </p>
+          <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+            {SUGGESTED_GROUPS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => addGroup(s)}
+                className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-200 hover:bg-emerald-500/20"
+              >
+                + {s}
+              </button>
+            ))}
           </div>
-        ) : (
-          groups.map((g, gi) => (
-            <div
-              key={gi}
-              className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-[0_10px_30px_-25px_rgba(0,0,0,0.9)]"
-            >
-              <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <span className="w-fit rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/70">
-                  Grupo {gi + 1}
-                </span>
-
-                <div className="flex items-center gap-2">
+        </div>
+      ) : (
+        <div className="grid gap-3">
+          {groups.map((g, gi) => {
+            const isCollapsed = Boolean(collapsed[gi]);
+            const itemCount = g.items?.length ?? 0;
+            return (
+              <div
+                key={gi}
+                className="rounded-xl border border-white/10 bg-black/20 transition hover:border-white/15"
+              >
+                {/* Header do card */}
+                <div className="flex items-center gap-2 border-b border-white/8 px-3 py-2">
                   <button
                     type="button"
-                    onClick={() => addItem(gi)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition"
+                    onClick={() =>
+                      setCollapsed((c) => ({ ...c, [gi]: !c[gi] }))
+                    }
+                    className="inline-flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-white/5 hover:text-slate-100"
+                    aria-label={isCollapsed ? "Expandir" : "Recolher"}
                   >
-                    + Item
+                    <ChevronDown
+                      className={cx(
+                        "h-4 w-4 transition",
+                        isCollapsed ? "-rotate-90" : "",
+                      )}
+                      aria-hidden
+                    />
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={() => removeGroup(gi)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition"
-                  >
-                    Remover
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-white/60">
-                    Título do grupo
-                  </label>
                   <input
                     value={g.title || ""}
                     onChange={(e) => updateGroupTitle(gi, e.target.value)}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-white/20"
-                    placeholder="Ex: Aeronave"
+                    className="h-7 flex-1 rounded border border-transparent bg-transparent px-2 text-sm font-bold uppercase tracking-[0.04em] text-white outline-none placeholder:text-slate-500 hover:border-white/10 focus:border-emerald-400/40 focus:bg-black/30"
+                    placeholder="Nome do grupo (Ex: Aeronave)"
                   />
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold tabular-nums text-slate-300">
+                    {itemCount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => moveGroup(gi, -1)}
+                    disabled={gi === 0}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-white/5 hover:text-slate-100 disabled:opacity-30"
+                    title="Mover grupo para cima"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveGroup(gi, 1)}
+                    disabled={gi === groups.length - 1}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-white/5 hover:text-slate-100 disabled:opacity-30"
+                    title="Mover grupo para baixo"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeGroup(gi)}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded text-rose-300/80 hover:bg-rose-500/10 hover:text-rose-200"
+                    aria-label="Remover grupo"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                  </button>
                 </div>
 
-                <div className="space-y-2">
-                  {(g.items || []).length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-4 text-sm text-white/55">
-                      Sem itens neste grupo. Clique em{" "}
-                      <b className="text-white">+ Item</b>.
-                    </div>
-                  ) : (
-                    (g.items || []).map((it, ii) => (
-                      <div key={ii} className="flex items-start gap-2">
-                        <div className="flex-1">
-                          <input
-                            value={it || ""}
-                            onChange={(e) => updateItem(gi, ii, e.target.value)}
-                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-white/20"
-                            placeholder="Ex: Peso: 26 kg (pulverização sem bateria)"
-                          />
-                        </div>
-
+                {/* Items do grupo */}
+                {!isCollapsed && (
+                  <div className="grid gap-1 p-2">
+                    {(g.items || []).map((it, ii) => (
+                      <div
+                        key={ii}
+                        className="group flex items-center gap-1 rounded transition hover:bg-white/[0.02]"
+                      >
+                        <GripVertical
+                          className="h-4 w-4 shrink-0 cursor-grab text-slate-600 group-hover:text-slate-400"
+                          aria-hidden
+                        />
+                        <input
+                          value={it || ""}
+                          onChange={(e) => updateItem(gi, ii, e.target.value)}
+                          className="h-9 flex-1 rounded-md border border-transparent bg-transparent px-2 text-[13px] text-slate-100 outline-none placeholder:text-slate-600 hover:border-white/10 focus:border-emerald-400/40 focus:bg-black/40"
+                          placeholder="Ex: Peso: 26 kg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => moveItem(gi, ii, -1)}
+                          disabled={ii === 0}
+                          className="inline-flex h-7 w-6 items-center justify-center rounded text-[11px] text-slate-500 opacity-0 group-hover:opacity-100 hover:bg-white/5 hover:text-slate-200 disabled:opacity-0"
+                          title="Mover para cima"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveItem(gi, ii, 1)}
+                          disabled={ii === itemCount - 1}
+                          className="inline-flex h-7 w-6 items-center justify-center rounded text-[11px] text-slate-500 opacity-0 group-hover:opacity-100 hover:bg-white/5 hover:text-slate-200 disabled:opacity-0"
+                          title="Mover para baixo"
+                        >
+                          ↓
+                        </button>
                         <button
                           type="button"
                           onClick={() => removeItem(gi, ii)}
-                          className="mt-[2px] rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
-                          title="Remover item"
+                          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-slate-500 opacity-0 group-hover:opacity-100 hover:bg-rose-500/10 hover:text-rose-300"
+                          aria-label="Remover item"
                         >
-                          ✕
+                          <X className="h-3.5 w-3.5" aria-hidden />
                         </button>
                       </div>
-                    ))
-                  )}
-                </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => addItem(gi)}
+                      className="mt-1 inline-flex h-8 items-center gap-1.5 self-start rounded-md border border-dashed border-white/10 bg-transparent px-2 text-[11px] font-semibold text-slate-400 hover:border-emerald-400/30 hover:bg-emerald-500/5 hover:text-emerald-200"
+                    >
+                      <Plus className="h-3 w-3" aria-hidden />
+                      Adicionar item
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
