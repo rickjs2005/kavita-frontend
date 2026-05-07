@@ -11,6 +11,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import HeroSection from "@/components/drones/HeroSection";
+import SpecBar, { type SpecBarItem } from "@/components/drones/SpecBar";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import CommentsSection from "@/components/drones/CommentsSection";
 import InterestFormSection from "@/components/drones/InterestFormSection";
@@ -30,6 +31,7 @@ import {
   extractKeySpecs,
   splitSpec,
 } from "@/lib/drones/modelCopy";
+import { getAccent } from "@/components/drones/detail/accent";
 
 type MediaTypeLower = "image" | "video";
 type MediaTypeUpper = "IMAGE" | "VIDEO";
@@ -98,23 +100,6 @@ function pickInitialModel(models: DroneModel[], urlModel?: string) {
 }
 
 /** ✅ Detecta tipo pela URL */
-function detectMediaTypeByUrl(url: string): MediaTypeLower | "" {
-  const u = String(url || "");
-  if (u.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) return "video";
-  if (u.match(/\.(jpg|jpeg|png|webp|gif|avif)(\?.*)?$/i)) return "image";
-  return "";
-}
-
-function normalizeMediaTypeToLower(v: any, url?: string): MediaTypeLower | "" {
-  const s = String(v || "")
-    .toLowerCase()
-    .trim();
-  if (s.includes("video")) return "video";
-  if (s.includes("image")) return "image";
-  const byUrl = detectMediaTypeByUrl(String(url || ""));
-  return byUrl || "";
-}
-
 
 
 // Converte o array de modelos + mapa de model_data em entries prontas
@@ -359,6 +344,7 @@ export default function DronesPublicPage() {
     // /drones/[id], então filtramos da ordem se vierem do admin.
     const raw = mergedPage?.sections_order_json || [
       "hero",
+      "specs",
       "why",
       "models",
       "who",
@@ -371,9 +357,13 @@ export default function DronesPublicPage() {
       "comments",
     ];
 
+    // "specs" agora é a HUD bar do modelo selecionado, então mantém.
+    // Os filtros de seções legadas (features/benefits/gallery) eram
+    // de uma fase anterior — continuam removidos pois agora pertencem
+    // a /drones/[id], não à landing genérica.
     const filtered = raw.filter(
       (k: any) =>
-        !["specs", "features", "benefits", "gallery"].includes(String(k)),
+        !["features", "benefits", "gallery"].includes(String(k)),
     );
 
     // Injeta as seções novas na ordem certa, caso venham do admin
@@ -391,7 +381,8 @@ export default function DronesPublicPage() {
       else list.push(key);
     }
 
-    ensureAfter(filtered, "hero", "why");
+    ensureAfter(filtered, "hero", "specs");
+    ensureAfter(filtered, "specs", "why");
     ensureAfter(filtered, "why", "models");
     ensureAfter(filtered, "models", "who");
     ensureAfter(filtered, "who", "how");
@@ -402,6 +393,31 @@ export default function DronesPublicPage() {
 
     return filtered;
   }, [mergedPage]);
+
+  // ─── Spec bar HUD: 5 specs do modelo selecionado ────────────────────
+  // Tenta extrair 5 specs reais do admin (specs_items_json no formato
+  // "Rótulo: valor"). Se vier menos de 3, cai no copy.benefits do
+  // MODEL_COPY (que tem 3 itens) — completa até 5 com benefits do
+  // hero também.
+  const specBarItems = useMemo<SpecBarItem[]>(() => {
+    const md = modelDataByKey[selectedModel] ?? null;
+    const realSpecs = extractKeySpecs(md?.specs_items_json, 5);
+    if (realSpecs.length >= 3) {
+      return realSpecs.map((s) => {
+        const { label, value } = splitSpec(s);
+        return { label, value };
+      });
+    }
+    // Fallback: copy.benefits (3 itens) — admin pode adicionar mais via
+    // specs_items_json para enriquecer.
+    const copy = getModelCopy(selectedModel);
+    return copy.benefits.map((b) => ({ label: b.label, value: b.value }));
+  }, [modelDataByKey, selectedModel]);
+
+  const selectedAccent = useMemo(
+    () => getAccent(selectedModel),
+    [selectedModel],
+  );
 
   const sections: Record<string, JSX.Element> = {
     hero: (
@@ -418,6 +434,8 @@ export default function DronesPublicPage() {
         }}
       />
     ),
+
+    specs: <SpecBar items={specBarItems} accent={selectedAccent} />,
 
     why: <WhyDrones />,
 
