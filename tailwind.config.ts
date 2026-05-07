@@ -8,6 +8,26 @@ export default {
   ],
   theme: {
     extend: {
+      // ─── Tipografia: tokens "kvt" para o módulo Drones ─────────────
+      // Padroniza os ~22 tamanhos arbitrários espalhados (text-[10px],
+      // text-[11px], text-[12.5px]...) numa escala única consumida via
+      // text-eyebrow / text-meta / text-body-sm / text-display etc.
+      // Tailwind padrão (text-xs/sm/base/lg/xl/2xl/3xl/4xl/5xl/6xl/7xl)
+      // continua disponível — os tokens só somam.
+      fontSize: {
+        eyebrow: ["11px", { lineHeight: "1.2", letterSpacing: "0.22em" }],
+        meta: ["12px", { lineHeight: "1.4" }],
+        "body-sm": ["13px", { lineHeight: "1.55" }],
+        // Hero display: cap mobile em 30px, sobe progressivamente até
+        // 60px no desktop. Use via classes responsivas se quiser pular
+        // breakpoints (text-display sm:text-4xl md:text-5xl ...).
+        display: ["1.875rem", { lineHeight: "1.05", letterSpacing: "-0.01em" }],
+      },
+      letterSpacing: {
+        "kvt-eyebrow": "0.22em",
+        "kvt-wide": "0.18em",
+        "kvt-mono": "0.12em",
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
