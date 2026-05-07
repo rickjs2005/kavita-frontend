@@ -1,8 +1,16 @@
 "use client";
 
 // Seção pública de cases comerciais.
-// Layout editorial: case destacado + grid de cases secundários ao lado.
-// Quando há 0 cases, renderiza estado vazio elegante (não desaparece).
+// Layout editorial: case destaque + grid de cases secundários.
+//
+// Case destaque agora renderiza:
+//   1. Hero com cover (cinematográfico)
+//   2. BeforeAfterComparison (slider antes/depois) — quando houver
+//      both before_image_url e after_image_url
+//   3. CaseMetricsBar (até 6 métricas) — quando admin cadastrou
+//   4. Resumo + depoimento textual
+//
+// Estado vazio elegante quando não há cases cadastrados.
 // Fonte: GET /api/public/drones/cases?model=...
 
 import Image from "next/image";
@@ -11,6 +19,8 @@ import { ArrowRight, Award, MapPin, Quote } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { absUrl } from "@/utils/absUrl";
 import type { DroneCase } from "@/types/drones";
+import BeforeAfterComparison from "./cases/BeforeAfterComparison";
+import CaseMetricsBar from "./cases/CaseMetricsBar";
 
 export default function CasesSection({ modelKey }: { modelKey?: string }) {
   const [cases, setCases] = useState<DroneCase[]>([]);
@@ -38,7 +48,6 @@ export default function CasesSection({ modelKey }: { modelKey?: string }) {
     };
   }, [modelKey]);
 
-  // Loading silencioso (sem flicker)
   if (loading) return null;
 
   const featured = cases[0];
@@ -60,16 +69,16 @@ export default function CasesSection({ modelKey }: { modelKey?: string }) {
             Cases Kavita Drones
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-slate-300 sm:text-base">
-            Histórias de uso real — fazendas, hectares aplicados e
-            depoimento direto de quem opera.
+            Histórias de uso real — fazendas, hectares aplicados,
+            depoimento direto e comparação visual do antes e depois.
           </p>
         </div>
 
         {!cases.length ? <EmptyState /> : null}
 
         {featured ? (
-          <div className="mt-12 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-            {/* Case destaque */}
+          <div className="mt-12 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+            {/* Case destaque (com BeforeAfter quando disponível) */}
             <FeaturedCaseCard caseItem={featured} />
 
             {/* Cases secundários (até 3) */}
@@ -88,13 +97,19 @@ export default function CasesSection({ modelKey }: { modelKey?: string }) {
 }
 
 function FeaturedCaseCard({ caseItem }: { caseItem: DroneCase }) {
+  const hasBeforeAfter = Boolean(
+    caseItem.before_image_url && caseItem.after_image_url,
+  );
+  const hasMetrics = Boolean(caseItem.metrics?.length);
+
   return (
-    <article className="group relative overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[rgba(8,12,22,0.7)] backdrop-blur-md transition hover:-translate-y-0.5 hover:shadow-[0_40px_120px_-40px_rgba(0,0,0,0.95)]">
+    <article className="group relative overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[rgba(8,12,22,0.7)] backdrop-blur-md transition hover:shadow-[0_40px_120px_-40px_rgba(0,0,0,0.95)]">
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 -right-24 h-72 w-72 rounded-full bg-emerald-500/12 blur-3xl"
       />
 
+      {/* Bloco 1: hero com cover */}
       {caseItem.cover_image_url ? (
         <div className="relative aspect-[16/10] overflow-hidden">
           <Image
@@ -131,7 +146,8 @@ function FeaturedCaseCard({ caseItem }: { caseItem: DroneCase }) {
         <div className="aspect-[16/10] w-full bg-gradient-to-br from-emerald-900/40 via-slate-900 to-black" />
       )}
 
-      <div className="grid gap-4 p-6">
+      <div className="relative grid gap-6 p-5 sm:p-6">
+        {/* Tags rápidas */}
         <div className="flex flex-wrap gap-2 text-[11px] text-slate-300">
           {caseItem.hectares != null && (
             <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-bold tabular-nums">
@@ -145,6 +161,33 @@ function FeaturedCaseCard({ caseItem }: { caseItem: DroneCase }) {
           )}
         </div>
 
+        {/* Bloco 2: ANTES x DEPOIS — só renderiza se admin subiu as 2 imagens */}
+        {hasBeforeAfter ? (
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300/90">
+                Antes × Depois
+              </p>
+              <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                Comparação visual
+              </span>
+            </div>
+            <BeforeAfterComparison
+              beforeUrl={caseItem.before_image_url || ""}
+              afterUrl={caseItem.after_image_url || ""}
+              beforeLabel={caseItem.before_label}
+              afterLabel={caseItem.after_label}
+              alt={caseItem.title}
+            />
+          </div>
+        ) : null}
+
+        {/* Bloco 3: métricas em HUD horizontal */}
+        {hasMetrics && caseItem.metrics ? (
+          <CaseMetricsBar metrics={caseItem.metrics} />
+        ) : null}
+
+        {/* Bloco 4: resumo + depoimento */}
         {caseItem.summary ? (
           <p className="text-[13.5px] leading-relaxed text-slate-300">
             {caseItem.summary}
@@ -208,6 +251,13 @@ function SmallCaseCard({ caseItem }: { caseItem: DroneCase }) {
               {caseItem.model_key}
             </span>
           )}
+          {/* Pílula sinaliza que o card secundário tem material
+              de antes/depois disponível (mesmo sem ser destaque). */}
+          {caseItem.before_image_url && caseItem.after_image_url ? (
+            <span className="rounded-full border border-cyan-400/25 bg-cyan-500/10 px-2 py-0.5 font-extrabold uppercase text-cyan-200">
+              Antes × Depois
+            </span>
+          ) : null}
         </div>
       </div>
     </article>
@@ -226,7 +276,7 @@ function EmptyState() {
       <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
         Estamos finalizando o material das primeiras operações Kavita
         Drones em campo. Em breve você verá fazendas reais, hectares
-        aplicados e depoimentos diretos.
+        aplicados, comparação antes/depois e depoimentos diretos.
       </p>
       <a
         href="#drones-representatives"
