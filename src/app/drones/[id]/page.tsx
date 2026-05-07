@@ -18,9 +18,11 @@ import WhoIsFor from "@/components/drones/WhoIsFor";
 import HowItWorks from "@/components/drones/HowItWorks";
 import ModelHero from "@/components/drones/detail/ModelHero";
 import ModelTopBar from "@/components/drones/detail/ModelTopBar";
+import MobileStickyCTA from "@/components/drones/detail/MobileStickyCTA";
 import KeyMetrics, { type Metric } from "@/components/drones/detail/KeyMetrics";
 import ModelOverview from "@/components/drones/detail/ModelOverview";
 import RelatedModels from "@/components/drones/detail/RelatedModels";
+import Reveal from "@/components/drones/detail/Reveal";
 import { getAccent } from "@/components/drones/detail/accent";
 import {
   getModelCopy,
@@ -493,7 +495,7 @@ export default function DroneModelPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-900 text-slate-100">
+    <div className="min-h-screen bg-dark-900 text-slate-100 pb-24 sm:pb-0">
       <style>{`
         html { scroll-behavior: smooth; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -525,46 +527,67 @@ export default function DroneModelPage() {
       <KeyMetrics metrics={metrics} accent={accent} />
 
       {/* Overview narrativa: para quem é + 3 pilares */}
-      <ModelOverview
-        modelKey={modelKey}
-        longDescription={copy.longDescription}
-        accent={accent}
-      />
+      <Reveal>
+        <ModelOverview
+          modelKey={modelKey}
+          longDescription={copy.longDescription}
+          accent={accent}
+        />
+      </Reveal>
 
-      <div id="drones-model-specs" className="scroll-mt-24">
-        <SpecsSection page={pageSettings} accent={accent} />
-      </div>
+      <Reveal>
+        <div id="drones-model-specs" className="scroll-mt-24">
+          <SpecsSection page={pageSettings} accent={accent} />
+        </div>
+      </Reveal>
 
-      <FeaturesSection page={pageSettings} accent={accent} />
+      <Reveal>
+        <FeaturesSection page={pageSettings} accent={accent} />
+      </Reveal>
 
-      <BenefitsSection page={pageSettings} accent={accent} />
+      <Reveal>
+        <BenefitsSection page={pageSettings} accent={accent} />
+      </Reveal>
 
       {/* Segmentação de público — qual operação cabe neste modelo */}
-      <WhoIsFor />
+      <Reveal>
+        <WhoIsFor />
+      </Reveal>
 
       {/* Processo do primeiro contato à aplicação no campo */}
-      <HowItWorks />
+      <Reveal>
+        <HowItWorks />
+      </Reveal>
 
-      <div id="drones-model-gallery">
-        <GallerySection items={galleryItems} />
-      </div>
+      <Reveal>
+        <div id="drones-model-gallery">
+          <GallerySection items={galleryItems} />
+        </div>
+      </Reveal>
 
       {/* Rodapé "veja também" — outros modelos da linha */}
-      <RelatedModels
-        currentKey={modelKey}
-        models={models.map((m) => ({
-          key: m.key,
-          label: m.label,
-          mediaUrl: m.card_media_url ? absUrl(m.card_media_url) : undefined,
-          mediaType: m.card_media_type,
-        }))}
-      />
+      <Reveal>
+        <RelatedModels
+          currentKey={modelKey}
+          models={models.map((m) => ({
+            key: m.key,
+            label: m.label,
+            mediaUrl: m.card_media_url ? absUrl(m.card_media_url) : undefined,
+            mediaType: m.card_media_type,
+          }))}
+        />
+      </Reveal>
 
-      <RepresentativesSection
-        page={pageSettings}
-        representatives={representatives}
-        accent={accent}
-      />
+      <Reveal>
+        <RepresentativesSection
+          page={pageSettings}
+          representatives={representatives}
+          accent={accent}
+        />
+      </Reveal>
+
+      {/* CTA flutuante mobile — fica visível após sair do hero */}
+      <MobileStickyCTA accent={accent} onTalkToRep={scrollToReps} />
     </div>
   );
 }
