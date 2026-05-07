@@ -130,29 +130,39 @@ export default function RepresentativesSection({
   return (
     <section
       id="representantes"
-      className="mx-auto max-w-6xl px-5 py-14 sm:py-18 scroll-mt-24"
+      className="relative mx-auto max-w-7xl px-5 py-16 sm:py-20 scroll-mt-24"
     >
+      {/* Halo accent decorativo */}
+      <div
+        aria-hidden
+        className={[
+          "pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-64 w-[40rem] rounded-full blur-3xl opacity-30",
+          accent?.halo ?? "bg-emerald-500/12",
+        ].join(" ")}
+      />
+
       {/* Header */}
-      <div className="max-w-2xl">
+      <div className="relative max-w-2xl">
         <p
           className={[
             "font-mono text-[11px] font-semibold uppercase tracking-[0.24em]",
             eyebrowColor,
           ].join(" ")}
         >
-          Rede Kavita de representantes
+          Rede Kavita · Representantes autorizados DJI
         </p>
         <h2 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white">
           Fale direto com uma loja autorizada
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-300">
-          Cada representante atende presencialmente uma região. Busque pela
-          sua cidade e converse no WhatsApp sem intermediário.
+          Lojas físicas em Manhuaçu, Espera Feliz e Cachoeira do
+          Itapemirim. Atendimento presencial e contato humano por
+          WhatsApp — sem intermediário.
         </p>
       </div>
 
-      {/* Busca */}
-      <div className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto]">
+      {/* Busca premium */}
+      <div className="relative mt-8 grid gap-3 sm:grid-cols-[1fr_auto]">
         <div className="relative">
           <Search
             className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
@@ -166,7 +176,7 @@ export default function RepresentativesSection({
             }}
             placeholder="Buscar por nome, cidade ou UF…"
             className={[
-              "w-full rounded-2xl border border-white/10 bg-black/30 pl-11 pr-4 py-3 text-sm text-slate-100 outline-none transition focus:ring-2",
+              "w-full rounded-2xl border border-white/12 bg-[rgba(8,12,22,0.6)] pl-11 pr-4 py-3.5 text-sm text-slate-100 backdrop-blur-md outline-none transition focus:border-white/25 focus:ring-2",
               focusRing,
             ].join(" ")}
           />
@@ -175,7 +185,7 @@ export default function RepresentativesSection({
           onClick={() => fetchPage(1)}
           disabled={loading}
           className={[
-            "inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-extrabold text-white transition disabled:opacity-60",
+            "inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-extrabold text-white transition disabled:opacity-60",
             "bg-gradient-to-r",
             primaryGradient,
             primaryShadow,
@@ -193,7 +203,7 @@ export default function RepresentativesSection({
       ) : null}
 
       {/* Grid de cards */}
-      <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="relative mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((rep) => {
           const waLink = buildWaLink(rep, page.cta_message_template);
           const igLink = rep.instagram_url
@@ -205,13 +215,36 @@ export default function RepresentativesSection({
           return (
             <article
               key={rep.id}
-              className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-dark-850/70 p-5 transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.05] hover:shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]"
+              className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-[rgba(8,12,22,0.65)] p-6 backdrop-blur-md transition hover:-translate-y-1 hover:border-white/25 hover:bg-[rgba(10,16,28,0.78)] hover:shadow-[0_40px_100px_-40px_rgba(0,0,0,0.95)]"
             >
+              {/* Halo accent — aparece no hover */}
+              <div
+                aria-hidden
+                className={[
+                  "pointer-events-none absolute -top-12 -right-8 h-44 w-44 rounded-full blur-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-60",
+                  accent?.halo ?? "bg-emerald-500/15",
+                ].join(" ")}
+              />
+
+              {/* Selo "Autorizada DJI" em destaque */}
+              <span
+                className={[
+                  "absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.16em] backdrop-blur",
+                  accent?.badgeBorder ?? "border-emerald-400/30",
+                  accent?.badgeBg ?? "bg-emerald-500/15",
+                  accent?.badgeText ?? "text-emerald-200",
+                ].join(" ")}
+                title="Loja autorizada DJI Agras pela Kavita"
+              >
+                <Store className="h-3 w-3" aria-hidden />
+                Autorizada DJI
+              </span>
+
               {/* Avatar + nome + cidade */}
-              <div className="flex items-start gap-3">
+              <div className="relative flex items-start gap-4 pr-24">
                 <div
                   className={[
-                    "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border font-extrabold tracking-tight",
+                    "inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border text-base font-extrabold tracking-tight",
                     avatarRing,
                     avatarBg,
                     avatarText,
@@ -225,22 +258,13 @@ export default function RepresentativesSection({
                     {rep.name}
                   </h3>
                   {(rep.address_city || rep.address_uf) && (
-                    <div className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-slate-200">
+                    <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-slate-200">
                       <MapPin className="h-3 w-3 text-slate-400" aria-hidden />
                       {rep.address_city || "—"}
                       {rep.address_uf ? ` / ${rep.address_uf}` : ""}
                     </div>
                   )}
                 </div>
-
-                {/* Selo canto direito */}
-                <span
-                  className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-300"
-                  title="Loja autorizada Kavita"
-                >
-                  <Store className="h-3 w-3" aria-hidden />
-                  Autorizada
-                </span>
               </div>
 
               {/* Endereço (se tiver) */}
