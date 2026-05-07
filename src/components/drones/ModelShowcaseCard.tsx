@@ -9,6 +9,7 @@
 //   - 3 specs em chip horizontal compacto, não em grid pesado
 //   - 2 CTAs claros (WhatsApp primário + ver detalhes)
 
+import Image from "next/image";
 import { ArrowRight, MessageCircle } from "lucide-react";
 import { absUrl } from "@/utils/absUrl";
 import { getAccent } from "./detail/accent";
@@ -128,12 +129,14 @@ export default function ModelShowcaseCard({
               autoPlay={isFirst}
             />
           ) : url && type === "image" ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+            <Image
               src={url}
               alt={`${model.label} — drone agrícola DJI Agras`}
-              loading={isFirst ? "eager" : "lazy"}
+              fill
+              priority={isFirst}
+              quality={85}
+              sizes="(max-width: 640px) 84vw, (max-width: 1024px) 460px, 33vw"
+              className="object-cover transition duration-700 group-hover:scale-[1.04]"
             />
           ) : (
             // Fallback institucional

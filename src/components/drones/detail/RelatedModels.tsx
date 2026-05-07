@@ -5,6 +5,7 @@
 // T25P (cyan/sky), T70P (emerald/teal), T100 (amber/orange).
 // Mídia gigante com gradientes, halo accent e CTA destacado.
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { getModelCopy } from "@/lib/drones/modelCopy";
@@ -90,12 +91,13 @@ export default function RelatedModels({ currentKey, models }: Props) {
                     preload="metadata"
                   />
                 ) : m.mediaUrl && m.mediaType === "image" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                  <Image
                     src={m.mediaUrl}
                     alt={m.label}
-                    loading="lazy"
+                    fill
+                    quality={80}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover transition duration-700 group-hover:scale-[1.04]"
                   />
                 ) : (
                   <div
