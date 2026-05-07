@@ -11,6 +11,7 @@ import { API_BASE } from "@/utils/absUrl";
 import { ApiError } from "@/lib/errors";
 import { formatApiError } from "@/lib/formatApiError";
 import { PanelCard } from "@/components/painel-corretora/PanelCard";
+import CnpjVerifierField from "@/components/mercado-do-cafe/CnpjVerifierField";
 import type { CorretoraAdmin, PerfilCompra } from "@/types/corretora";
 import {
   CIDADES_ZONA_DA_MATA,
@@ -313,6 +314,46 @@ export default function ProfileClient() {
           </a>
         </div>
       </PanelCard>
+
+      {/* 2026-05-10 — Identificação fiscal (CNPJ + verificação automática).
+          Verificacao bem-sucedida libera emissao de contratos e
+          aumenta confianca exibida no card publico. */}
+      {corretora && (
+        <PanelCard density="spacious">
+          <div className="mb-3 flex flex-col gap-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-300/80">
+              Identificação fiscal
+            </p>
+            <p className="text-[12px] text-stone-300">
+              CNPJ verificado mostra ao produtor que sua corretora é uma
+              empresa formal. Aumenta a confiança e libera contratos
+              digitais.
+            </p>
+          </div>
+          <CnpjVerifierField
+            initialCnpj={corretora.cnpj ?? null}
+            initialStatus={corretora.cnpj_verification_status ?? "not_informed"}
+            initialRazaoSocial={corretora.razao_social ?? null}
+            endpoint="/api/corretora/kyc/cnpj/verify"
+            variant="painel"
+            onResult={(result) => {
+              // Atualiza o corretora local pra refletir a mudanca sem
+              // precisar recarregar a pagina.
+              setCorretora((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      cnpj: result.cnpj,
+                      razao_social: result.razao_social,
+                      cnpj_verification_status: result.status,
+                      cnpj_verified_at: result.verified_at,
+                    }
+                  : prev,
+              );
+            }}
+          />
+        </PanelCard>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Seção: Informações principais */}

@@ -60,6 +60,21 @@ export type PublicCorretora = {
     | "rejected"
     | null;
   kyc_verified_at?: string | null;
+  // 2026-05-10 — CNPJ self-service: corretora informa o proprio CNPJ,
+  // backend valida algoritmo + consulta provider e auto-decide.
+  // Status auxiliar (cnpj_verification_status) e' independente do
+  // FSM kyc_status — usado pra UI mostrar progresso fino.
+  cnpj?: string | null;
+  razao_social?: string | null;
+  nome_fantasia?: string | null;
+  cnpj_verified_at?: string | null;
+  cnpj_verification_status?:
+    | "not_informed"
+    | "pending"
+    | "verified"
+    | "invalid"
+    | "error"
+    | null;
 };
 
 export type CorretoraAdmin = PublicCorretora & {

@@ -9,6 +9,7 @@ import { formatApiError } from "@/lib/formatApiError";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import type { CorretoraAdmin } from "@/types/corretora";
 import { SubscriptionManager } from "@/components/admin/mercado-do-cafe/corretoras/SubscriptionManager";
+import CnpjVerifierField from "@/components/mercado-do-cafe/CnpjVerifierField";
 
 type Dossie = {
   leads: {
@@ -202,6 +203,27 @@ export default function CorretoraDrillDownPage() {
       <main className="mx-auto w-full max-w-6xl space-y-6 px-3 pb-10 pt-4 sm:px-4">
         {/* Stats principais */}
         {dossie && <LeadsStatsBlock dossie={dossie} />}
+
+        {/* CNPJ + KYC empresarial */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
+                Identificação fiscal
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                CNPJ verificado é pré-requisito para emitir contratos e operar planos pagos.
+              </p>
+            </div>
+          </div>
+          <CnpjVerifierField
+            initialCnpj={corretora.cnpj ?? null}
+            initialStatus={corretora.cnpj_verification_status ?? "not_informed"}
+            initialRazaoSocial={corretora.razao_social ?? null}
+            endpoint={`/api/admin/mercado-do-cafe/corretoras/${corretora.id}/kyc/verify`}
+            variant="admin"
+          />
+        </section>
 
         {/* Plano e assinatura */}
         <SubscriptionManager
