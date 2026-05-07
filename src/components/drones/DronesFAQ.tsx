@@ -1,24 +1,20 @@
 "use client";
 
-// FAQ pública do módulo Kavita Drones.
-// Fonte primária: GET /api/public/drones/faq (admin edita pelo painel).
-// Fallback: lista estática abaixo — mantém a landing funcional se a
-// API falhar ou se o admin ainda não cadastrou itens.
+// FAQ pública premium do módulo Kavita Drones.
+// Fonte primária: GET /api/public/drones/faq.
+// Fallback estático preservado abaixo se a API falhar / itens vazios.
 //
-// Copy do fallback revisada: removida menção específica a "CA/CMV"
-// (terminologia ANAC podia estar imprecisa em pré-lançamento).
-// Texto agora aponta para regulamentação geral sem se comprometer
-// com siglas específicas — admin pode publicar resposta detalhada
-// pelo painel quando o RT agrônomo revisar.
+// Visual: layout 2-col em desktop (cabeçalho à esquerda + accordion à
+// direita) e empilhado em mobile. Accordion com transição suave e
+// ícone +/- em vez de chevron rotacional.
 
-import { ChevronDown } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import apiClient from "@/lib/apiClient";
 import type { DroneFaqItem } from "@/types/drones";
 
 type QA = { q: string; a: string };
 
-// Fallback estático — usado quando a API falha ou retorna vazio.
 const FALLBACK_FAQ: QA[] = [
   {
     q: "Preciso de licença ou habilitação para operar drone agrícola?",
@@ -54,29 +50,45 @@ const FALLBACK_FAQ: QA[] = [
   },
 ];
 
-function FAQItem({ item }: { item: QA }) {
-  const [open, setOpen] = useState(false);
-
+function FAQItem({
+  item,
+  isOpen,
+  onToggle,
+}: {
+  item: QA;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] transition hover:border-emerald-400/20">
+    <div
+      className={[
+        "border-b border-white/8 transition",
+        isOpen ? "bg-white/[0.02]" : "",
+      ].join(" ")}
+    >
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
-        aria-expanded={open}
+        onClick={onToggle}
+        className="flex w-full items-start justify-between gap-4 py-5 text-left transition hover:text-emerald-200"
+        aria-expanded={isOpen}
       >
         <span className="text-[15px] font-extrabold text-white sm:text-base">
           {item.q}
         </span>
-        <ChevronDown
-          className={`h-5 w-5 shrink-0 text-emerald-300 transition-transform ${
-            open ? "rotate-180" : ""
-          }`}
+        <span
+          className={[
+            "mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition",
+            isOpen
+              ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-200 rotate-45"
+              : "border-white/10 bg-white/[0.04] text-slate-300",
+          ].join(" ")}
           aria-hidden
-        />
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </span>
       </button>
-      {open && (
-        <div className="whitespace-pre-wrap px-5 pb-5 text-[14px] leading-relaxed text-slate-300">
+      {isOpen && (
+        <div className="pb-5 pr-10 text-[14px] leading-relaxed text-slate-300/95 whitespace-pre-wrap">
           {item.a}
         </div>
       )}
@@ -86,6 +98,7 @@ function FAQItem({ item }: { item: QA }) {
 
 export default function DronesFAQ() {
   const [items, setItems] = useState<QA[]>(FALLBACK_FAQ);
+  const [openIdx, setOpenIdx] = useState<number | null>(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,10 +112,8 @@ export default function DronesFAQ() {
         if (list.length) {
           setItems(list.map((it) => ({ q: it.question, a: it.answer })));
         }
-        // Se a API retorna vazio, mantém o fallback — landing nunca fica
-        // sem conteúdo de FAQ.
       } catch {
-        // Silencioso — fallback estático já está renderizado.
+        // Silencioso — fallback já está renderizado.
       }
     })();
     return () => {
@@ -111,25 +122,41 @@ export default function DronesFAQ() {
   }, []);
 
   return (
-    <section className="py-12 sm:py-16">
-      <div className="mx-auto max-w-4xl px-5">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
-            Perguntas frequentes
-          </p>
-          <h2 className="mt-2 text-xl font-extrabold tracking-tight text-white sm:text-2xl md:text-3xl">
-            Antes de decidir, tire as dúvidas
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-slate-300 sm:text-base">
-            As objeções mais comuns de quem está pensando em entrar para
-            pulverização aérea.
-          </p>
-        </div>
+    <section className="relative py-16 sm:py-24">
+      <div className="relative mx-auto max-w-7xl px-5">
+        <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-16">
+          {/* Cabeçalho */}
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300/90">
+              Perguntas frequentes
+            </p>
+            <h2 className="mt-3 text-2xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-3xl md:text-4xl lg:text-[2.6rem]">
+              Antes de decidir, tire as dúvidas
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-slate-300 sm:text-base">
+              Reunimos as objeções mais comuns de quem está pensando em
+              entrar para pulverização aérea. Sem resposta sua dúvida?
+              Fale com um representante diretamente.
+            </p>
+            <a
+              href="#drones-representatives"
+              className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-xs font-extrabold text-emerald-200 transition hover:bg-emerald-500/20"
+            >
+              Falar com representante →
+            </a>
+          </div>
 
-        <div className="mt-10 grid gap-2">
-          {items.map((qa, i) => (
-            <FAQItem key={i} item={qa} />
-          ))}
+          {/* Accordion */}
+          <div className="border-t border-white/8">
+            {items.map((qa, i) => (
+              <FAQItem
+                key={i}
+                item={qa}
+                isOpen={openIdx === i}
+                onToggle={() => setOpenIdx(openIdx === i ? null : i)}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>

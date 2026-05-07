@@ -1,13 +1,12 @@
 "use client";
 
 // Seção pública de cases comerciais.
-// Lista cases reais (fazenda + cidade + hectares + modelo + foto +
-// depoimento) cadastrados pelo admin. Renderização propositalmente
-// simples — primeiro entrega estrutura funcional, redesign visual
-// premium fica para a próxima rodada.
+// Layout editorial: case destacado + grid de cases secundários ao lado.
+// Quando há 0 cases, renderiza estado vazio elegante (não desaparece).
+// Fonte: GET /api/public/drones/cases?model=...
 
 import { useEffect, useState } from "react";
-import { Quote } from "lucide-react";
+import { ArrowRight, Award, MapPin, Quote } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { absUrl } from "@/utils/absUrl";
 import type { DroneCase } from "@/types/drones";
@@ -38,18 +37,25 @@ export default function CasesSection({ modelKey }: { modelKey?: string }) {
     };
   }, [modelKey]);
 
-  // Sem cases ou ainda carregando, não renderiza nada — landing não
-  // mostra estado vazio embaraçoso.
-  if (loading || !cases.length) return null;
+  // Loading silencioso (sem flicker)
+  if (loading) return null;
+
+  const featured = cases[0];
+  const rest = cases.slice(1, 4);
 
   return (
-    <section className="py-12 sm:py-16">
-      <div className="mx-auto max-w-6xl px-5">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
+    <section className="relative py-16 sm:py-24">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-0 top-0 h-72 w-[40rem] rounded-full bg-emerald-500/8 blur-3xl"
+      />
+
+      <div className="relative mx-auto max-w-7xl px-5">
+        <div className="max-w-3xl">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300/90">
             Em campo, com produtores reais
           </p>
-          <h2 className="mt-2 text-xl font-extrabold tracking-tight text-white sm:text-2xl md:text-3xl">
+          <h2 className="mt-3 text-2xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-3xl md:text-4xl lg:text-[2.6rem]">
             Cases Kavita Drones
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-slate-300 sm:text-base">
@@ -58,66 +64,174 @@ export default function CasesSection({ modelKey }: { modelKey?: string }) {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {cases.map((c) => (
-            <article
-              key={c.id}
-              className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] transition hover:border-emerald-400/25"
-            >
-              {c.cover_image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={absUrl(c.cover_image_url)}
-                  alt={c.title}
-                  className="block aspect-[16/10] w-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="aspect-[16/10] w-full bg-gradient-to-br from-emerald-900/40 via-slate-900 to-black" />
-              )}
+        {!cases.length ? <EmptyState /> : null}
 
-              <div className="p-5">
-                <h3 className="text-sm font-extrabold text-white">
-                  {c.title}
-                </h3>
-                <p className="mt-1 text-xs text-slate-400">
-                  {c.farm_name}
-                  {c.city ? ` · ${c.city}` : ""}
-                  {c.uf ? `/${c.uf}` : ""}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-300">
-                  {c.hectares != null && (
-                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">
-                      {c.hectares} ha
-                    </span>
-                  )}
-                  {c.model_key && (
-                    <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-1 font-bold uppercase text-emerald-200">
-                      {c.model_key}
-                    </span>
-                  )}
-                </div>
+        {featured ? (
+          <div className="mt-12 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+            {/* Case destaque */}
+            <FeaturedCaseCard caseItem={featured} />
 
-                {c.summary ? (
-                  <p className="mt-3 text-[13px] leading-relaxed text-slate-300">
-                    {c.summary}
-                  </p>
-                ) : null}
-
-                {c.testimonial ? (
-                  <blockquote className="mt-4 flex gap-2 rounded-2xl border border-white/10 bg-black/30 p-3 text-[12.5px] leading-relaxed text-slate-300">
-                    <Quote
-                      className="h-3.5 w-3.5 shrink-0 text-emerald-300"
-                      aria-hidden
-                    />
-                    <span className="line-clamp-4">{c.testimonial}</span>
-                  </blockquote>
-                ) : null}
+            {/* Cases secundários (até 3) */}
+            {rest.length > 0 ? (
+              <div className="grid gap-3 lg:content-start">
+                {rest.map((c) => (
+                  <SmallCaseCard key={c.id} caseItem={c} />
+                ))}
               </div>
-            </article>
-          ))}
-        </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </section>
+  );
+}
+
+function FeaturedCaseCard({ caseItem }: { caseItem: DroneCase }) {
+  return (
+    <article className="group relative overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[rgba(8,12,22,0.7)] backdrop-blur-md transition hover:-translate-y-0.5 hover:shadow-[0_40px_120px_-40px_rgba(0,0,0,0.95)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 -right-24 h-72 w-72 rounded-full bg-emerald-500/12 blur-3xl"
+      />
+
+      {caseItem.cover_image_url ? (
+        <div className="relative aspect-[16/10] overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={absUrl(caseItem.cover_image_url)}
+            alt={caseItem.title}
+            className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+            loading="lazy"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"
+          />
+
+          <div className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-emerald-200 backdrop-blur">
+            <Award className="h-3 w-3" aria-hidden />
+            Case Kavita
+          </div>
+
+          <div className="absolute inset-x-5 bottom-5">
+            <h3 className="text-2xl font-extrabold tracking-tight text-white sm:text-[1.7rem]">
+              {caseItem.title}
+            </h3>
+            <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-200/90">
+              <MapPin className="h-3 w-3" aria-hidden />
+              {caseItem.farm_name}
+              {caseItem.city ? ` · ${caseItem.city}` : ""}
+              {caseItem.uf ? `/${caseItem.uf}` : ""}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="aspect-[16/10] w-full bg-gradient-to-br from-emerald-900/40 via-slate-900 to-black" />
+      )}
+
+      <div className="grid gap-4 p-6">
+        <div className="flex flex-wrap gap-2 text-[11px] text-slate-300">
+          {caseItem.hectares != null && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-bold tabular-nums">
+              {caseItem.hectares} ha
+            </span>
+          )}
+          {caseItem.model_key && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 font-extrabold uppercase text-emerald-200">
+              {caseItem.model_key}
+            </span>
+          )}
+        </div>
+
+        {caseItem.summary ? (
+          <p className="text-[13.5px] leading-relaxed text-slate-300">
+            {caseItem.summary}
+          </p>
+        ) : null}
+
+        {caseItem.testimonial ? (
+          <blockquote className="relative rounded-2xl border border-white/8 bg-black/30 p-4 pl-9 text-[13px] leading-relaxed text-slate-200">
+            <Quote
+              className="absolute left-3 top-3 h-4 w-4 text-emerald-300/60"
+              aria-hidden
+            />
+            <span className="line-clamp-4">{caseItem.testimonial}</span>
+            {caseItem.producer_name ? (
+              <footer className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                — {caseItem.producer_name}
+              </footer>
+            ) : null}
+          </blockquote>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function SmallCaseCard({ caseItem }: { caseItem: DroneCase }) {
+  return (
+    <article className="group flex gap-3 overflow-hidden rounded-2xl border border-white/8 bg-[rgba(8,12,22,0.55)] p-3 transition hover:-translate-y-0.5 hover:border-white/20">
+      {caseItem.cover_image_url ? (
+        <div className="aspect-square w-24 shrink-0 overflow-hidden rounded-xl bg-black/40">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={absUrl(caseItem.cover_image_url)}
+            alt={caseItem.title}
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]"
+            loading="lazy"
+          />
+        </div>
+      ) : (
+        <div className="aspect-square w-24 shrink-0 rounded-xl bg-gradient-to-br from-emerald-900/30 to-slate-900" />
+      )}
+
+      <div className="min-w-0 flex-1">
+        <h3 className="truncate text-[13px] font-extrabold text-white">
+          {caseItem.title}
+        </h3>
+        <p className="mt-0.5 truncate text-[11px] text-slate-400">
+          {caseItem.farm_name}
+          {caseItem.city ? ` · ${caseItem.city}` : ""}
+          {caseItem.uf ? `/${caseItem.uf}` : ""}
+        </p>
+        <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px]">
+          {caseItem.hectares != null && (
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 font-bold tabular-nums text-slate-300">
+              {caseItem.hectares} ha
+            </span>
+          )}
+          {caseItem.model_key && (
+            <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-0.5 font-extrabold uppercase text-emerald-200">
+              {caseItem.model_key}
+            </span>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="mt-10 overflow-hidden rounded-[2rem] border border-white/10 bg-[rgba(8,12,22,0.5)] p-8 text-center backdrop-blur-md sm:p-12">
+      <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/25 bg-emerald-500/10 text-emerald-300">
+        <Award className="h-5 w-5" aria-hidden />
+      </div>
+      <h3 className="mt-4 text-lg font-extrabold text-white sm:text-xl">
+        Os primeiros cases estão chegando
+      </h3>
+      <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
+        Estamos finalizando o material das primeiras operações Kavita
+        Drones em campo. Em breve você verá fazendas reais, hectares
+        aplicados e depoimentos diretos.
+      </p>
+      <a
+        href="#drones-representatives"
+        className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-xs font-extrabold text-emerald-200 transition hover:bg-emerald-500/20"
+      >
+        Falar com representante
+        <ArrowRight className="h-3 w-3" aria-hidden />
+      </a>
+    </div>
   );
 }
