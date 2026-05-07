@@ -64,9 +64,18 @@ type RootResponse = {
 };
 
 // Tipo local — o helper shared recebe só o specs_items_json direto.
+// features_items_json pode trazer image_url opcional por item (suportado
+// no FeaturesEditor admin) — TechSection usa isso quando disponível.
+type ModelDataFeatureItem = {
+  title?: string;
+  text?: string;
+  image_url?: string;
+  image?: string;
+};
 type ModelData = {
   specs_title?: string | null;
   specs_items_json?: Array<{ title?: string; items?: string[] }> | null;
+  features_items_json?: ModelDataFeatureItem[] | null;
 } | null;
 
 function extractArray(v: any): any[] {
@@ -431,27 +440,26 @@ export default function DronesPublicPage() {
   // features cadastradas, TechSection cai em fallback estático.
   const techItems = useMemo<TechItem[]>(() => {
     const md = modelDataByKey[selectedModel] ?? null;
-    const raw = Array.isArray(md?.features_items_json)
-      ? md.features_items_json
+    const raw: ModelDataFeatureItem[] = Array.isArray(md?.features_items_json)
+      ? (md.features_items_json as ModelDataFeatureItem[])
       : [];
-    return raw
-      .map((it) => {
-        if (!it) return null;
-        const obj = it as { title?: unknown; text?: unknown; image_url?: unknown; image?: unknown };
-        const title = typeof obj.title === "string" ? obj.title.trim() : "";
-        const text = typeof obj.text === "string" ? obj.text.trim() : "";
-        const image_url =
-          (typeof obj.image_url === "string" && obj.image_url.trim()) ||
-          (typeof obj.image === "string" && obj.image.trim()) ||
-          "";
-        if (!title && !text && !image_url) return null;
-        return {
-          title: title || undefined,
-          text: text || undefined,
-          image_url: image_url || undefined,
-        } as TechItem;
-      })
-      .filter((x): x is TechItem => x !== null);
+    const out: TechItem[] = [];
+    for (const it of raw) {
+      if (!it) continue;
+      const title = typeof it.title === "string" ? it.title.trim() : "";
+      const text = typeof it.text === "string" ? it.text.trim() : "";
+      const image_url =
+        (typeof it.image_url === "string" && it.image_url.trim()) ||
+        (typeof it.image === "string" && it.image.trim()) ||
+        "";
+      if (!title && !text && !image_url) continue;
+      out.push({
+        title: title || undefined,
+        text: text || undefined,
+        image_url: image_url || undefined,
+      });
+    }
+    return out;
   }, [modelDataByKey, selectedModel]);
 
   const selectedModelLabel = useMemo(() => {

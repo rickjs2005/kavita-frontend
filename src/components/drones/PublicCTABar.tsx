@@ -84,8 +84,8 @@ export default function PublicCTABar({
               </div>
             </div>
 
-            {/* Coluna botões */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            {/* Coluna botões — full-width empilhado em mobile, linha em desktop */}
+            <div className="grid gap-2 sm:auto-cols-max sm:grid-flow-col sm:items-center">
               <a
                 href={waHref}
                 target={hasRep ? "_blank" : undefined}

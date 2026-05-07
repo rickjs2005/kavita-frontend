@@ -157,9 +157,15 @@ export default function HeroSection({
         />
 
         {/* ── Grid 50/50: copy à esquerda, drone à direita ─────────── */}
-        <div className="mt-10 grid items-center gap-10 lg:mt-14 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
+        {/* Mobile (< lg): drone vem PRIMEIRO via flex order para virar
+            protagonista visual; texto depois. Desktop respeita ordem
+            natural com texto à esquerda. */}
+        <div className="mt-10 flex flex-col items-center gap-10 lg:mt-14 lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-12">
           {/* COLUNA TEXTO — re-renderiza com fade quando troca de modelo */}
-          <div key={`copy-${selected.key}`} className="kvt-fade-up min-w-0">
+          <div
+            key={`copy-${selected.key}`}
+            className="kvt-fade-up min-w-0 order-2 lg:order-1"
+          >
             {/* Eyebrow accent dinâmico (DJI AGRAS T25P / T70P / T100) */}
             <div
               className={[
@@ -240,7 +246,7 @@ export default function HeroSection({
           {/* COLUNA DRONE — full-bleed na coluna, sem cápsula/borda */}
           <div
             key={`media-${selected.key}`}
-            className="kvt-fade-in relative"
+            className="kvt-fade-in relative w-full order-1 lg:order-2"
           >
             <ModelStage media={media} accent={accent} label={selected.label} />
           </div>
@@ -356,7 +362,7 @@ function ModelStage({
   label: string;
 }) {
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[2rem] sm:aspect-[5/4] lg:aspect-[1/1]">
+    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[1.75rem] sm:aspect-[5/4] sm:rounded-[2rem] lg:aspect-[1/1]">
       {/* Halo radial massivo atrás do drone — vibe de "estúdio cinematográfico" */}
       <div
         aria-hidden
