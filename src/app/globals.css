@@ -117,6 +117,47 @@
 }
 
 /* ═══════════════════════════════════════════════════
+   Padding vertical de seção — Kavita Drones
+   ═══════════════════════════════════════════════════
+   Antes existiam 4 padrões espalhados (py-12/16, py-14/18,
+   py-16/20, py-16/24). Estes 3 níveis cobrem todos os casos:
+
+   - .kvt-section-compact   pequeno bloco intermediário
+   - .kvt-section           padrão (a maioria)
+   - .kvt-section-hero      seção destaque com mais respiro
+
+   Mobile: valor menor; desktop (sm+): aumenta. Não substitui
+   automaticamente — componentes novos podem adotar; existentes
+   continuam funcionando com py-* hardcoded.
+*/
+.kvt-section-compact {
+  padding-top: 3rem;    /* py-12 */
+  padding-bottom: 3rem;
+}
+.kvt-section {
+  padding-top: 4rem;    /* py-16 */
+  padding-bottom: 4rem;
+}
+.kvt-section-hero {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+@media (min-width: 640px) {
+  .kvt-section-compact {
+    padding-top: 4rem;  /* sm:py-16 */
+    padding-bottom: 4rem;
+  }
+  .kvt-section {
+    padding-top: 5rem;  /* sm:py-20 */
+    padding-bottom: 5rem;
+  }
+  .kvt-section-hero {
+    padding-top: 6rem;  /* sm:py-24 */
+    padding-bottom: 6rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
    Fade hint para scroll horizontal — Kavita Drones
    ═══════════════════════════════════════════════════
    Aplica em wrapper de container com scroll-x.
