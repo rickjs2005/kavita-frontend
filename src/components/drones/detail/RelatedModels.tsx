@@ -88,7 +88,10 @@ export default function RelatedModels({ currentKey, models }: Props) {
                     muted
                     playsInline
                     loop
-                    preload="metadata"
+                    // preload="none": cards "veja também" só aparecem
+                    // após scroll até o final do detalhe — não vale
+                    // baixar metadata de 2 vídeos antes do user chegar.
+                    preload="none"
                   />
                 ) : m.mediaUrl && m.mediaType === "image" ? (
                   <Image

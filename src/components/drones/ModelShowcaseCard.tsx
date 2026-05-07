@@ -125,7 +125,9 @@ export default function ModelShowcaseCard({
               muted
               playsInline
               loop
-              preload="metadata"
+              // preload only for the autoplay one — economiza dados
+              // dos outros 2 cards que ficam estáticos por padrão.
+              preload={isFirst ? "metadata" : "none"}
               autoPlay={isFirst}
             />
           ) : url && type === "image" ? (
