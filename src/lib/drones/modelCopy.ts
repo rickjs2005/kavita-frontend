@@ -85,10 +85,10 @@ export const SPEC_LABEL_MAX = 22;
 export const SPEC_VALUE_MAX = 22;
 
 /**
- * Achata todos os grupos e retorna specs no formato "Rótulo: valor"
- * que caibam bem em mini-cards de 3 colunas. Specs descritivos de
- * manual técnico (sem ":" ou com label/valor longos) são rejeitados
- * silenciosamente — quem chama decide se cai em fallback.
+ * Achata todos os grupos e retorna specs no formato "Rótulo: valor".
+ * Aceita até `max` slots (default 3, mas a faixa de métricas da página
+ * de detalhe pede 5). Specs descritivos de manual técnico (sem ":" ou
+ * com label/valor longos) são rejeitados silenciosamente.
  */
 export function extractKeySpecs(
   specsItemsJson: SpecsGroup[] | null | undefined,

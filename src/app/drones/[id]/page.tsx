@@ -7,8 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { useParams } from "next/navigation";
 
 import SpecsSection from "@/components/drones/SpecsSection";
 import FeaturesSection from "@/components/drones/FeaturesSection";
@@ -16,6 +15,7 @@ import BenefitsSection from "@/components/drones/BenefitsSection";
 import GallerySection from "@/components/drones/GallerySection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import ModelHero from "@/components/drones/detail/ModelHero";
+import ModelTopBar from "@/components/drones/detail/ModelTopBar";
 import KeyMetrics, { type Metric } from "@/components/drones/detail/KeyMetrics";
 import ModelOverview from "@/components/drones/detail/ModelOverview";
 import RelatedModels from "@/components/drones/detail/RelatedModels";
@@ -252,7 +252,6 @@ function toDroneRepresentatives(items: Dict[]): DroneRepresentative[] {
 }
 
 export default function DroneModelPage() {
-  const router = useRouter();
   const params = useParams<{ id: string }>();
   const modelKey = String(params?.id || "").toLowerCase();
 
@@ -462,7 +461,7 @@ export default function DroneModelPage() {
         | Array<{ title?: string; items?: string[] }>
         | null
         | undefined,
-      4,
+      5,
     );
     if (realSpecs.length >= 3) {
       return realSpecs.map((s) => splitSpec(s));
@@ -499,38 +498,12 @@ export default function DroneModelPage() {
         .no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 
-      {/* Top bar minimalista — voltar + nome + CTA accent */}
-      <div className="sticky top-0 z-40 bg-black/60 backdrop-blur border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-5 py-3 flex items-center justify-between gap-3">
-          <button
-            onClick={() => router.push("/drones")}
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-extrabold text-slate-200 hover:bg-white/10"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Voltar
-          </button>
-
-          <div className="hidden sm:block min-w-0 text-center">
-            <div className={["text-[10px] font-bold uppercase tracking-[0.22em]", accent.text].join(" ")}>
-              DJI Agras
-            </div>
-            <div className="text-sm font-extrabold truncate">{modelLabel}</div>
-          </div>
-
-          <button
-            onClick={scrollToReps}
-            className={[
-              "inline-flex items-center justify-center rounded-2xl border px-4 py-2 text-sm font-extrabold backdrop-blur",
-              accent.badgeBorder,
-              accent.badgeBg,
-              accent.badgeText,
-              "hover:brightness-[1.1]",
-            ].join(" ")}
-          >
-            Fale com representante
-          </button>
-        </div>
-      </div>
+      {/* Top bar local — voltar + identidade + CTA accent */}
+      <ModelTopBar
+        modelLabel={modelLabel}
+        accent={accent}
+        onTalkToRep={scrollToReps}
+      />
 
       {/* Hero premium com accent por modelo */}
       <ModelHero
