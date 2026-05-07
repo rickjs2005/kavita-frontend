@@ -15,6 +15,7 @@ type Kpis = {
   comments: number;
   pendingComments: number;
   newLeads: number;
+  activeCases: number;
 };
 
 export default function AdminDronesPage() {
@@ -25,6 +26,7 @@ export default function AdminDronesPage() {
     comments: 0,
     pendingComments: 0,
     newLeads: 0,
+    activeCases: 0,
   });
   const [kpisLoading, setKpisLoading] = useState(false);
   const [kpisMsg, setKpisMsg] = useState<string | null>(null);
@@ -40,6 +42,7 @@ export default function AdminDronesPage() {
         commentsData,
         pendingCommentsData,
         leadsData,
+        casesData,
       ] = await Promise.all([
         apiClient.get<any>("/api/admin/drones/models?includeInactive=1"),
         apiClient.get<any>("/api/admin/drones/galeria"),
@@ -47,6 +50,7 @@ export default function AdminDronesPage() {
         apiClient.get<any>("/api/admin/drones/comentarios?page=1&limit=1"),
         apiClient.get<any>("/api/admin/drones/comentarios?page=1&limit=1&status=PENDENTE"),
         apiClient.get<any>("/api/admin/drones/leads?page=1&limit=1&status=NOVO"),
+        apiClient.get<any>("/api/admin/drones/cases"),
       ]);
 
       const modelsItems = Array.isArray(modelsData?.items)
@@ -68,6 +72,11 @@ export default function AdminDronesPage() {
       const pendingCommentsTotal = Number(pendingCommentsData?.total || 0);
       const newLeadsTotal = Number(leadsData?.total || 0);
 
+      const casesItemsAll = Array.isArray(casesData?.items) ? casesData.items : [];
+      const activeCasesCount = casesItemsAll.filter(
+        (c: { is_active?: number }) => Number(c.is_active ?? 1) === 1,
+      ).length;
+
       setKpis({
         models: modelsItems.length,
         gallery: galleryItems.length,
@@ -77,6 +86,7 @@ export default function AdminDronesPage() {
           ? pendingCommentsTotal
           : 0,
         newLeads: Number.isFinite(newLeadsTotal) ? newLeadsTotal : 0,
+        activeCases: activeCasesCount,
       });
     } catch (e: any) {
       setKpisMsg(e?.message || "Erro ao carregar KPIs.");
@@ -104,9 +114,15 @@ export default function AdminDronesPage() {
         variant: "danger" as const,
       },
       {
+        label: "Cases ativos",
+        value: kpis.activeCases,
+        helper: "Publicados na landing",
+        variant: "success" as const,
+      },
+      {
         label: "Modelos ativos",
         value: kpis.models,
-        helper: "Cadastrados no painel",
+        helper: "DJI Agras cadastrados",
         variant: "success" as const,
       },
       {
@@ -173,7 +189,10 @@ export default function AdminDronesPage() {
 
         {/* Conteúdo */}
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] sm:p-5">
-          <DronesTabs />
+          <DronesTabs
+            pendingComments={kpis.pendingComments}
+            newLeads={kpis.newLeads}
+          />
         </div>
       </div>
     </div>
