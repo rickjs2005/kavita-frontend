@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import HeroSection from "@/components/drones/HeroSection";
 import SpecBar, { type SpecBarItem } from "@/components/drones/SpecBar";
+import TechSection, { type TechItem } from "@/components/drones/TechSection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
 import CommentsSection from "@/components/drones/CommentsSection";
 import InterestFormSection from "@/components/drones/InterestFormSection";
@@ -346,6 +347,7 @@ export default function DronesPublicPage() {
       "hero",
       "specs",
       "why",
+      "tech",
       "models",
       "who",
       "how",
@@ -383,7 +385,8 @@ export default function DronesPublicPage() {
 
     ensureAfter(filtered, "hero", "specs");
     ensureAfter(filtered, "specs", "why");
-    ensureAfter(filtered, "why", "models");
+    ensureAfter(filtered, "why", "tech");
+    ensureAfter(filtered, "tech", "models");
     ensureAfter(filtered, "models", "who");
     ensureAfter(filtered, "who", "how");
     ensureAfter(filtered, "how", "trust");
@@ -419,6 +422,39 @@ export default function DronesPublicPage() {
     [selectedModel],
   );
 
+  // ─── Tecnologia embarcada: features do modelo selecionado ───────────
+  // Cada feature (admin/drones → modelo → Funcionalidades) pode ter
+  // image_url opcional (suportado no schema do FeaturesEditor). Sem
+  // features cadastradas, TechSection cai em fallback estático.
+  const techItems = useMemo<TechItem[]>(() => {
+    const md = modelDataByKey[selectedModel] ?? null;
+    const raw = Array.isArray(md?.features_items_json)
+      ? md.features_items_json
+      : [];
+    return raw
+      .map((it) => {
+        if (!it) return null;
+        const obj = it as { title?: unknown; text?: unknown; image_url?: unknown; image?: unknown };
+        const title = typeof obj.title === "string" ? obj.title.trim() : "";
+        const text = typeof obj.text === "string" ? obj.text.trim() : "";
+        const image_url =
+          (typeof obj.image_url === "string" && obj.image_url.trim()) ||
+          (typeof obj.image === "string" && obj.image.trim()) ||
+          "";
+        if (!title && !text && !image_url) return null;
+        return {
+          title: title || undefined,
+          text: text || undefined,
+          image_url: image_url || undefined,
+        } as TechItem;
+      })
+      .filter((x): x is TechItem => x !== null);
+  }, [modelDataByKey, selectedModel]);
+
+  const selectedModelLabel = useMemo(() => {
+    return models.find((m) => m.key === selectedModel)?.label;
+  }, [models, selectedModel]);
+
   const sections: Record<string, JSX.Element> = {
     hero: (
       <HeroSection
@@ -438,6 +474,14 @@ export default function DronesPublicPage() {
     specs: <SpecBar items={specBarItems} accent={selectedAccent} />,
 
     why: <WhyDrones />,
+
+    tech: (
+      <TechSection
+        items={techItems}
+        accent={selectedAccent}
+        modelLabel={selectedModelLabel}
+      />
+    ),
 
     who: <WhoIsFor />,
 
