@@ -65,11 +65,13 @@ export type DroneCommentMedia = {
   created_at: string;
 };
 
+export type DroneCommentStatus = "PENDENTE" | "APROVADO" | "REPROVADO";
+
 export type DroneComment = {
   id: number;
   display_name: string;
   comment_text: string;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  status: DroneCommentStatus;
   created_at: string;
   media: DroneCommentMedia[];
 };
