@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import HeroSection from "@/components/drones/HeroSection";
 import SpecBar, { type SpecBarItem } from "@/components/drones/SpecBar";
+import SpecsGrid from "@/components/drones/SpecsGrid";
 import TechSection, { type TechItem } from "@/components/drones/TechSection";
 import PublicCTABar from "@/components/drones/PublicCTABar";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
@@ -356,6 +357,7 @@ export default function DronesPublicPage() {
     const raw = mergedPage?.sections_order_json || [
       "hero",
       "specs",
+      "specsgrid",
       "why",
       "tech",
       "models",
@@ -395,7 +397,8 @@ export default function DronesPublicPage() {
     }
 
     ensureAfter(filtered, "hero", "specs");
-    ensureAfter(filtered, "specs", "why");
+    ensureAfter(filtered, "specs", "specsgrid");
+    ensureAfter(filtered, "specsgrid", "why");
     ensureAfter(filtered, "why", "tech");
     ensureAfter(filtered, "tech", "models");
     ensureAfter(filtered, "models", "who");
@@ -483,6 +486,13 @@ export default function DronesPublicPage() {
     ),
 
     specs: <SpecBar items={specBarItems} accent={selectedAccent} />,
+
+    specsgrid: (
+      <SpecsGrid
+        groups={modelDataByKey[selectedModel]?.specs_items_json ?? []}
+        accent={selectedAccent}
+      />
+    ),
 
     why: <WhyDrones />,
 
