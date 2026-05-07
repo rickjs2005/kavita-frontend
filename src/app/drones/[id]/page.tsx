@@ -14,6 +14,8 @@ import FeaturesSection from "@/components/drones/FeaturesSection";
 import BenefitsSection from "@/components/drones/BenefitsSection";
 import GallerySection from "@/components/drones/GallerySection";
 import RepresentativesSection from "@/components/drones/RepresentativesSection";
+import WhoIsFor from "@/components/drones/WhoIsFor";
+import HowItWorks from "@/components/drones/HowItWorks";
 import ModelHero from "@/components/drones/detail/ModelHero";
 import ModelTopBar from "@/components/drones/detail/ModelTopBar";
 import KeyMetrics, { type Metric } from "@/components/drones/detail/KeyMetrics";
@@ -536,6 +538,12 @@ export default function DroneModelPage() {
       <FeaturesSection page={pageSettings} accent={accent} />
 
       <BenefitsSection page={pageSettings} accent={accent} />
+
+      {/* Segmentação de público — qual operação cabe neste modelo */}
+      <WhoIsFor />
+
+      {/* Processo do primeiro contato à aplicação no campo */}
+      <HowItWorks />
 
       <div id="drones-model-gallery">
         <GallerySection items={galleryItems} />

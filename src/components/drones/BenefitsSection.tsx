@@ -1,11 +1,11 @@
 "use client";
 
-// Seção de benefícios comerciais, exibida na página /drones/[id].
-// Itens vem do admin em benefits_items_json: { title, text }.
-// Cada item vira um card numerado com título + texto.
+// Seção "Por que escolher este modelo" da página /drones/[id].
+// Cards numerados (01, 02, 03…) com glow accent na numeração e
+// hover de elevação. Itens vêm do admin em benefits_items_json.
 //
-// Difere da FeaturesSection por usar numeração ordinal (01, 02, 03…)
-// em vez de ícone — reforça "motivos pra comprar" em vez de features.
+// Diferença para FeaturesSection: este reforça motivos comerciais
+// (não tecnologia) — daí o padrão visual numerado em vez de ícone.
 
 import type { DronePageSettings } from "@/types/drones";
 import type { Accent } from "./detail/accent";
@@ -15,27 +15,15 @@ type BenefitItem = { title?: string; text?: string };
 function normalizeOne(x: any): BenefitItem | null {
   if (!x) return null;
 
-  if (typeof x?.text === "string") {
-    const text = x.text.trim();
-    const title = typeof x?.title === "string" ? x.title.trim() : "";
-    if (!text && !title) return null;
-    return { title: title || undefined, text: text || undefined };
-  }
-
-  if (typeof x?.title === "string" || typeof x?.text === "string") {
-    const title = typeof x.title === "string" ? x.title.trim() : "";
-    const text = typeof x.text === "string" ? x.text.trim() : "";
-    if (!title && !text) return null;
-    return { title: title || undefined, text: text || undefined };
-  }
-
   if (typeof x === "string") {
     const t = x.trim();
-    if (!t) return null;
-    return { text: t };
+    return t ? { text: t } : null;
   }
 
-  return null;
+  const title = typeof x?.title === "string" ? x.title.trim() : "";
+  const text = typeof x?.text === "string" ? x.text.trim() : "";
+  if (!title && !text) return null;
+  return { title: title || undefined, text: text || undefined };
 }
 
 function asItems(v: any): BenefitItem[] {
@@ -57,15 +45,22 @@ export default function BenefitsSection({ page, accent }: Props) {
   const title = page.benefits_title || "Por que escolher este modelo";
   const items = asItems(page.benefits_items_json);
 
+  const eyebrow = accent?.text ?? "text-emerald-300";
   const numberColor = accent?.text ?? "text-emerald-300";
+  const halo = accent?.halo ?? "bg-emerald-500/12";
 
   return (
-    <section className="mx-auto max-w-6xl px-5 py-14 sm:py-16">
-      <div className="mb-8 max-w-2xl">
-        <p className={["font-mono text-[11px] font-semibold uppercase tracking-[0.24em]", accent?.text ?? "text-slate-400"].join(" ")}>
-          Benefícios para o operador
+    <section className="relative mx-auto max-w-7xl px-5 py-16 sm:py-20">
+      <div className="mb-10 max-w-2xl">
+        <p
+          className={[
+            "font-mono text-[11px] font-semibold uppercase tracking-[0.24em]",
+            eyebrow,
+          ].join(" ")}
+        >
+          Mais produtividade, menos esforço
         </p>
-        <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+        <h2 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white">
           {title}
         </h2>
       </div>
@@ -73,31 +68,46 @@ export default function BenefitsSection({ page, accent }: Props) {
       {items.length ? (
         <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((it, idx) => (
-            <div
+            <article
               key={idx}
-              className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.06]"
+              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-[rgba(8,12,22,0.55)] p-6 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-white/25 hover:shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]"
             >
+              {/* Halo accent — aparece no hover */}
               <div
+                aria-hidden
                 className={[
-                  "font-mono text-3xl font-extrabold tabular-nums leading-none",
-                  numberColor,
+                  "pointer-events-none absolute -top-12 -right-8 h-36 w-36 rounded-full blur-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-70",
+                  halo,
                 ].join(" ")}
-              >
-                {String(idx + 1).padStart(2, "0")}
+              />
+
+              <div className="relative flex items-baseline justify-between gap-3">
+                <span
+                  className={[
+                    "font-mono text-4xl sm:text-5xl font-extrabold tabular-nums leading-none",
+                    numberColor,
+                  ].join(" ")}
+                >
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+                  Benefício
+                </span>
               </div>
-              <p className="mt-4 text-sm font-extrabold text-white">
+
+              <h3 className="relative mt-5 text-base font-extrabold tracking-tight text-white">
                 {it.title || "Benefício"}
-              </p>
+              </h3>
               {it.text ? (
-                <p className="mt-2 text-[13px] text-slate-300 leading-relaxed">
+                <p className="relative mt-2 text-[13.5px] leading-relaxed text-slate-300">
                   {it.text}
                 </p>
               ) : null}
-            </div>
+            </article>
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-slate-300">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-sm text-slate-300">
           Configure os benefícios no Admin para exibir aqui.
         </div>
       )}
