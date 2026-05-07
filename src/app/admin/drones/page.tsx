@@ -13,6 +13,8 @@ type Kpis = {
   gallery: number;
   representatives: number;
   comments: number;
+  pendingComments: number;
+  newLeads: number;
 };
 
 export default function AdminDronesPage() {
@@ -21,6 +23,8 @@ export default function AdminDronesPage() {
     gallery: 0,
     representatives: 0,
     comments: 0,
+    pendingComments: 0,
+    newLeads: 0,
   });
   const [kpisLoading, setKpisLoading] = useState(false);
   const [kpisMsg, setKpisMsg] = useState<string | null>(null);
@@ -29,13 +33,21 @@ export default function AdminDronesPage() {
     setKpisLoading(true);
     setKpisMsg(null);
     try {
-      const [modelsData, galleryData, repsData, commentsData] =
-        await Promise.all([
-          apiClient.get<any>("/api/admin/drones/models?includeInactive=1"),
-          apiClient.get<any>("/api/admin/drones/galeria"),
-          apiClient.get<any>("/api/admin/drones/representantes?page=1&limit=1"),
-          apiClient.get<any>("/api/admin/drones/comentarios?page=1&limit=1"),
-        ]);
+      const [
+        modelsData,
+        galleryData,
+        repsData,
+        commentsData,
+        pendingCommentsData,
+        leadsData,
+      ] = await Promise.all([
+        apiClient.get<any>("/api/admin/drones/models?includeInactive=1"),
+        apiClient.get<any>("/api/admin/drones/galeria"),
+        apiClient.get<any>("/api/admin/drones/representantes?page=1&limit=1"),
+        apiClient.get<any>("/api/admin/drones/comentarios?page=1&limit=1"),
+        apiClient.get<any>("/api/admin/drones/comentarios?page=1&limit=1&status=PENDENTE"),
+        apiClient.get<any>("/api/admin/drones/leads?page=1&limit=1&status=NOVO"),
+      ]);
 
       const modelsItems = Array.isArray(modelsData?.items)
         ? modelsData.items
@@ -53,12 +65,18 @@ export default function AdminDronesPage() {
 
       const repsTotal = Number(repsData?.total || 0);
       const commentsTotal = Number(commentsData?.total || 0);
+      const pendingCommentsTotal = Number(pendingCommentsData?.total || 0);
+      const newLeadsTotal = Number(leadsData?.total || 0);
 
       setKpis({
         models: modelsItems.length,
         gallery: galleryItems.length,
         representatives: Number.isFinite(repsTotal) ? repsTotal : 0,
         comments: Number.isFinite(commentsTotal) ? commentsTotal : 0,
+        pendingComments: Number.isFinite(pendingCommentsTotal)
+          ? pendingCommentsTotal
+          : 0,
+        newLeads: Number.isFinite(newLeadsTotal) ? newLeadsTotal : 0,
       });
     } catch (e: any) {
       setKpisMsg(e?.message || "Erro ao carregar KPIs.");
@@ -74,28 +92,28 @@ export default function AdminDronesPage() {
   const kpiCards = useMemo(
     () => [
       {
-        label: "Modelos",
+        label: "Leads novos",
+        value: kpis.newLeads,
+        helper: "Aguardando contato",
+        variant: "warning" as const,
+      },
+      {
+        label: "Comentários pendentes",
+        value: kpis.pendingComments,
+        helper: "Aguardando moderação",
+        variant: "danger" as const,
+      },
+      {
+        label: "Modelos ativos",
         value: kpis.models,
         helper: "Cadastrados no painel",
         variant: "success" as const,
       },
       {
-        label: "Itens na galeria",
-        value: kpis.gallery,
-        helper: "Vídeos e fotos",
-        variant: "default" as const,
-      },
-      {
         label: "Representantes",
         value: kpis.representatives,
-        helper: "Lojas cadastradas",
-        variant: "warning" as const,
-      },
-      {
-        label: "Comentários",
-        value: kpis.comments,
-        helper: "Total no painel",
-        variant: "danger" as const,
+        helper: "Lojas autorizadas",
+        variant: "default" as const,
       },
     ],
     [kpis],

@@ -15,6 +15,7 @@
 import { useMemo, useState } from "react";
 import type { DroneRepresentative } from "@/types/drones";
 import { onlyDigits } from "@/utils/formatters";
+import apiClient from "@/lib/apiClient";
 
 type DroneModel = {
   key: string;
@@ -82,13 +83,38 @@ export default function InterestFormSection({
     });
   }, [hasRep, representative, nome, cidade, telefone, modelo, mensagem, messageTemplate]);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasRep) {
       const el = document.getElementById("drones-representatives");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
+
+    // Best-effort: registra o lead antes do redirect pro WhatsApp.
+    // Se a API falhar, abre o WhatsApp mesmo assim — não bloqueia
+    // a conversão. Erro é silencioso (console.warn) para não vazar
+    // detalhes de backend ao visitante.
+    const cidadeRaw = (cidade || "").trim();
+    const cidadeMatch = cidadeRaw.match(/^(.*?)(?:\s*[\/\-,]\s*([A-Za-z]{2}))?\s*$/);
+    const cidadeOnly = cidadeMatch?.[1]?.trim() || cidadeRaw || null;
+    const ufOnly = cidadeMatch?.[2]?.trim().toUpperCase() || null;
+
+    try {
+      await apiClient.post("/api/public/drones/leads", {
+        nome,
+        telefone,
+        cidade: cidadeOnly,
+        uf: ufOnly,
+        modelo_interesse: modelo || null,
+        mensagem: mensagem || null,
+        origem: "interest_form",
+      });
+    } catch (err) {
+      // Falha ao salvar não impede o WhatsApp.
+      console.warn("[drones/lead] falha ao registrar lead:", err);
+    }
+
     window.open(href, "_blank", "noopener,noreferrer");
   };
 

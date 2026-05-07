@@ -82,3 +82,25 @@ export type PublicDronesPageResponse = {
   representatives: DroneRepresentative[];
   comments: DroneComment[]; // apenas aprovados
 };
+
+export type DroneLeadStatus =
+  | "NOVO"
+  | "EM_CONTATO"
+  | "NEGOCIACAO"
+  | "CONVERTIDO"
+  | "PERDIDO";
+
+export type DroneLead = {
+  id: number;
+  nome: string;
+  telefone: string;
+  cidade: string | null;
+  uf: string | null;
+  modelo_interesse: string | null;
+  mensagem: string | null;
+  origem: string | null;
+  status: DroneLeadStatus;
+  assigned_to: number | null;
+  created_at: string;
+  updated_at: string;
+};

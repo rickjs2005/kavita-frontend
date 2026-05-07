@@ -5,8 +5,9 @@ import PageSettingsForm from "./PageSettingsForm";
 import GalleryForm from "./DroneModelContentPanel";
 import RepresentativeForm from "./RepresentativeForm";
 import CommentsModerationTable from "./CommentsModerationTable";
+import LeadsTable from "./LeadsTable";
 
-type TabId = "landing" | "modelos" | "representantes" | "comentarios";
+type TabId = "landing" | "modelos" | "leads" | "representantes" | "comentarios";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -19,6 +20,7 @@ export default function DronesTabs() {
     () => [
       { id: "landing" as const, label: "Config Landing" },
       { id: "modelos" as const, label: "Modelos" },
+      { id: "leads" as const, label: "Leads" },
       { id: "representantes" as const, label: "Representantes" },
       { id: "comentarios" as const, label: "Comentários" },
     ],
@@ -54,6 +56,7 @@ export default function DronesTabs() {
       <div className="grid gap-6">
         {tab === "landing" ? <PageSettingsForm /> : null}
         {tab === "modelos" ? <GalleryForm /> : null}
+        {tab === "leads" ? <LeadsTable /> : null}
         {tab === "representantes" ? <RepresentativeForm /> : null}
         {tab === "comentarios" ? <CommentsModerationTable /> : null}
       </div>
