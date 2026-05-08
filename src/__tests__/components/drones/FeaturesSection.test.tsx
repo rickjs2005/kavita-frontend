@@ -45,9 +45,15 @@ function makePage(overrides: Partial<DronePageSettings> = {}): DronePageSettings
 
 describe("FeaturesSection", () => {
   describe("título", () => {
-    it("usa 'Funcionalidades' como título padrão quando features_title é null", () => {
+    it("usa 'Tecnologia embarcada' como título padrão quando features_title é null", () => {
+      // Default editorial atualizado em refatoração da landing /drones —
+      // "Tecnologia embarcada" reforça posicionamento técnico DJI Agras.
+      // O eyebrow superior (`<p>`) também usa essa string, então
+      // validamos via heading level=2 para evitar ambiguidade.
       render(<FeaturesSection page={makePage()} />);
-      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Funcionalidades");
+      expect(
+        screen.getByRole("heading", { level: 2 }),
+      ).toHaveTextContent("Tecnologia embarcada");
     });
 
     it("renderiza título customizado", () => {

@@ -93,6 +93,9 @@ describe("BenefitsSection", () => {
     });
 
     it("renderiza card com formato novo { text } — usa 'Benefício' como fallback de título", () => {
+      // O card sempre renderiza um badge fixo "Benefício" no canto + um
+      // <h3> com {title || "Benefício"}. Usamos role="heading" para
+      // diferenciar o fallback semântico do título do badge decorativo.
       render(
         <BenefitsSection
           page={makePage({
@@ -100,7 +103,9 @@ describe("BenefitsSection", () => {
           })}
         />,
       );
-      expect(screen.getByText("Benefício")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { level: 3, name: "Benefício" }),
+      ).toBeInTheDocument();
       expect(screen.getByText("Alta resistência à água.")).toBeInTheDocument();
     });
 
@@ -170,9 +175,17 @@ describe("BenefitsSection", () => {
           })}
         />,
       );
-      // Apenas 1 card: o válido
-      expect(screen.getByText("Real")).toBeInTheDocument();
-      expect(screen.queryAllByText("Benefício")).toHaveLength(0);
+      // Apenas 1 card renderizado: o válido (h3 = "Real").
+      // Validar via role/heading evita conflito com o badge fixo "Benefício"
+      // que cada card sempre renderiza no canto superior.
+      expect(
+        screen.getByRole("heading", { level: 3, name: "Real" }),
+      ).toBeInTheDocument();
+      expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(1);
+      // E nenhum h3 fallback "Benefício" (porque o único card tem título "Real")
+      expect(
+        screen.queryByRole("heading", { level: 3, name: "Benefício" }),
+      ).not.toBeInTheDocument();
     });
 
     it("filtra string vazia da lista", () => {
@@ -181,10 +194,12 @@ describe("BenefitsSection", () => {
           page={makePage({ benefits_items_json: ["", "   ", "Válido"] })}
         />,
       );
-      // Apenas o "Válido" é renderizado
+      // Apenas o "Válido" é renderizado (string vira { text: "Válido" }
+      // sem title, então o h3 cai no fallback "Benefício").
       expect(screen.getByText("Válido")).toBeInTheDocument();
-      // "Benefício" (fallback de título) aparece somente 1 vez
-      expect(screen.getAllByText("Benefício")).toHaveLength(1);
+      const headings = screen.getAllByRole("heading", { level: 3 });
+      expect(headings).toHaveLength(1);
+      expect(headings[0]).toHaveTextContent("Benefício");
     });
 
     it("não exibe mensagem de vazio quando há pelo menos 1 item válido", () => {

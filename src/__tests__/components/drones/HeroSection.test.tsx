@@ -1,19 +1,29 @@
 // src/__tests__/components/drones/HeroSection.test.tsx
 //
-// HeroSection foi reescrita para layout editorial. Mudanças relevantes:
-//   - cta_title removido — nao existe mais bloco "Fale com um representante"
-//   - cta_button_label default agora e "Falar com especialista"
-//   - Sem placeholder textual ("Configure o video..."); fallback virou
-//     visual neutro com "Kavita Drones / DJI Agras para o campo brasileiro"
-//   - Sem grid de ate 4 representantes — substituido por link inline
-//     "ver lista completa" + contagem agregada
-//   - Quando nao ha representantes, CTA aponta para "#drones-representatives"
+// HeroSection v3 (cinematográfica) — layout editorial com 2 colunas:
+// texto à esquerda (headline em 3 linhas com palavra "Transforma"
+// destacada, subtítulo, CTAs, trust pills) + mídia + HUD de specs à
+// direita. Sem grid de representantes inline e sem contagem agregada
+// — substituídos por trust pills fixas (Tecnologia DJI, Suporte
+// especializado, Resultados comprovados).
 //
-// Os smokes abaixo refletem essa UI atual; cobertura mantida.
+// Mudanças que invalidaram testes antigos:
+//   - DEFAULT_HERO_SUBTITLE = "Soluções DJI Agriculture para pulverização
+//     e espalhamento com máxima precisão, eficiência e segurança."
+//   - DEFAULT_CTA_BUTTON = "Fale com um especialista" (não "Falar com")
+//   - Default title em 3 linhas: "Tecnologia que / Transforma / A sua
+//     lavoura" — palavra "Transforma" é o token único pra matching
+//   - FallbackStage exibe "Kavita Drones" (sem aria-label "Drone agrícola
+//     Kavita") quando não há vídeo nem imagem
+//   - Sem grid de representantes; sem contagem "X representantes
+//     autorizados"; sem link "ver lista completa". O CTA primário
+//     continua apontando pra "#drones-representatives" quando reps
+//     vazia (preservado, é UX de ancoragem para a seção dedicada
+//     RepresentativesSection mais abaixo na página)
 
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import HeroSection from "@/components/drones/HeroSection";
 import type { DronePageSettings, DroneRepresentative } from "@/types/drones";
 
@@ -97,29 +107,31 @@ describe("drones/HeroSection", () => {
     });
 
     it("usa subtitle padrão quando hero_subtitle é null", () => {
-      // Antes: nao renderizava nada. Agora: cai no DEFAULT_HERO_SUBTITLE
-      // pra evitar layout vazio em produçao. Procuramos por uma frase
-      // unica do default ("pulverizacao, dispersao") em vez de "DJI Agras"
-      // que tambem aparece em outras partes do hero.
+      // DEFAULT_HERO_SUBTITLE atual cita "pulverização e espalhamento".
+      // Esse trecho é único do default e robusto a edições editoriais
+      // pequenas no resto da string.
       render(
         <HeroSection page={makePage({ hero_subtitle: null })} representatives={[]} />,
       );
       expect(
-        screen.getByText(/pulverização, dispersão/i),
+        screen.getByText(/pulverização e espalhamento/i),
       ).toBeInTheDocument();
     });
 
     it("usa hero_title default quando hero_title vier vazio", () => {
+      // Default em 3 linhas — "Tecnologia que / Transforma / A sua lavoura".
+      // A palavra "Transforma" recebe gradient destacado e é o token
+      // único pra matching (resistente a refator do split em mais/menos
+      // linhas).
       render(
         <HeroSection
           page={makePage({ hero_title: "" })}
           representatives={[]}
         />,
       );
-      // Default: "Tecnologia aerea para pulverizar..."
-      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        /Tecnologia aérea/i,
-      );
+      const h1 = screen.getByRole("heading", { level: 1 });
+      expect(h1).toHaveTextContent(/Transforma/i);
+      expect(h1).toHaveTextContent(/A sua lavoura/i);
     });
   });
 
@@ -149,14 +161,16 @@ describe("drones/HeroSection", () => {
       expect(img.getAttribute("src")).toContain("hero.jpg");
     });
 
-    it("renderiza fallback visual neutro quando não há vídeo nem imagem", () => {
-      // Antes: placeholder textual "Configure o video...". Agora:
-      // bloco visual com aria-label e copy "Kavita Drones / DJI Agras...".
+    it("renderiza fallback visual com identidade 'Kavita Drones' quando não há mídia", () => {
+      // FallbackStage atual exibe SVG decorativo + texto "Kavita Drones"
+      // como caption editorial. Não há mais aria-label dedicado nem
+      // o placeholder textual antigo "Configure o vídeo...".
       render(<HeroSection page={makePage()} representatives={[]} />);
-      expect(
-        screen.getByLabelText(/Drone agrícola Kavita/i),
-      ).toBeInTheDocument();
-      // E garante que o placeholder antigo nao aparece mais (regressao de copy).
+      expect(screen.getByText(/Kavita Drones/i)).toBeInTheDocument();
+      // Não deve renderizar <video> nem <img> (sem mídia configurada)
+      expect(document.querySelector("video")).not.toBeInTheDocument();
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      // Regressão de copy antigo
       expect(
         screen.queryByText(/Configure o vídeo/i),
       ).not.toBeInTheDocument();
@@ -164,11 +178,15 @@ describe("drones/HeroSection", () => {
   });
 
   describe("botão CTA principal", () => {
-    it("usa 'Falar com especialista' como label padrão do CTA", () => {
+    it("usa 'Fale com um especialista' como label padrão do CTA", () => {
+      // DEFAULT_CTA_BUTTON atual é "Fale com um especialista" (com
+      // "um"). String customizada via cta_button_label sobrescreve.
       render(
         <HeroSection page={makePage()} representatives={[makeRep()]} />,
       );
-      expect(screen.getByText("Falar com especialista")).toBeInTheDocument();
+      expect(
+        screen.getByText("Fale com um especialista"),
+      ).toBeInTheDocument();
     });
 
     it("renderiza label customizado do CTA", () => {
@@ -221,38 +239,70 @@ describe("drones/HeroSection", () => {
     });
   });
 
-  describe("contagem de representantes (substitui o grid antigo)", () => {
-    it("exibe contagem singular quando há 1 representante", () => {
+  describe("trust pills e CTA secundário (substituiu grid antigo de representantes)", () => {
+    // A v3 da landing trocou o grid de até 4 representantes inline
+    // por 3 trust pills fixas + CTA secundário "Conheça os modelos"
+    // ancorado a #drones-models. A lista completa de representantes
+    // vive na seção dedicada RepresentativesSection mais abaixo.
+
+    it("renderiza as 3 trust pills fixas", () => {
+      render(<HeroSection page={makePage()} representatives={[]} />);
+      expect(screen.getByText("Tecnologia DJI")).toBeInTheDocument();
+      expect(screen.getByText("Suporte especializado")).toBeInTheDocument();
+      expect(screen.getByText("Resultados comprovados")).toBeInTheDocument();
+    });
+
+    it("CTA secundário 'Conheça os modelos' aponta para #drones-models", () => {
+      render(<HeroSection page={makePage()} representatives={[]} />);
+      const link = screen
+        .getByText(/Conheça os modelos/i)
+        .closest("a");
+      expect(link?.getAttribute("href")).toBe("#drones-models");
+    });
+
+    it("CTA secundário renderiza independente de haver representantes", () => {
+      // Diferença vs CTA primário: o secundário é editorial fixo,
+      // não muda comportamento por conta de reps.
       render(
         <HeroSection
           page={makePage()}
-          representatives={[makeRep({ id: 1, name: "Loja Única" })]}
+          representatives={[makeRep(), makeRep({ id: 2 })]}
         />,
       );
-      expect(
-        screen.getByText(/1 representante autorizado/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Conheça os modelos/i)).toBeInTheDocument();
     });
+  });
 
-    it("exibe contagem plural quando há mais de 1 representante", () => {
-      const reps = [1, 2, 3].map((i) => makeRep({ id: i, name: `Loja ${i}` }));
-      render(<HeroSection page={makePage()} representatives={reps} />);
-      expect(
-        screen.getByText(/3 representantes autorizados/i),
-      ).toBeInTheDocument();
-    });
-
-    it("link 'ver lista completa' aponta para #drones-representatives", () => {
-      render(
-        <HeroSection
-          page={makePage()}
-          representatives={[makeRep()]}
-        />,
-      );
-      // Antes era "Ver todos os representantes" -> "#representantes".
-      // Agora e "ver lista completa" -> "#drones-representatives".
-      const link = screen.getByText(/ver lista completa/i).closest("a");
-      expect(link?.getAttribute("href")).toBe("#drones-representatives");
+  describe("HUD de specs (4 cards sobrepostos)", () => {
+    // Hero v3 introduziu HUD com 4 specs conservadores da categoria
+    // DJI Agras. Garantir presença evita regressão da camada visual
+    // sem testar pixels.
+    it("renderiza os 4 specs da categoria DJI Agras", () => {
+      render(<HeroSection page={makePage()} representatives={[]} />);
+      expect(screen.getByText(/Capacidade de tanque/i)).toBeInTheDocument();
+      expect(screen.getByText(/Largura de pulverização/i)).toBeInTheDocument();
+      expect(screen.getByText(/Produtividade no campo/i)).toBeInTheDocument();
+      expect(screen.getByText(/Detecção de obstáculos/i)).toBeInTheDocument();
     });
   });
 });
+
+// Sanity: garantir que o CTA "Conheça os modelos" não é confundido
+// com o CTA primário (que pode ter label customizado igual). Isso
+// evita teste flake quando admin define cta_button_label como
+// "Conheça os modelos" coincidentemente.
+describe("drones/HeroSection — CTA primário vs secundário (cobertura cruzada)", () => {
+  it("primário e secundário têm hrefs distintos por padrão", () => {
+    render(<HeroSection page={makePage()} representatives={[]} />);
+    const primary = screen
+      .getByText("Fale com um especialista")
+      .closest("a");
+    const secondary = screen.getByText(/Conheça os modelos/i).closest("a");
+    expect(primary?.getAttribute("href")).toBe("#drones-representatives");
+    expect(secondary?.getAttribute("href")).toBe("#drones-models");
+    expect(primary).not.toBe(secondary);
+  });
+});
+
+// Imports auxiliares no escopo do teste (já presentes acima): within
+void within;

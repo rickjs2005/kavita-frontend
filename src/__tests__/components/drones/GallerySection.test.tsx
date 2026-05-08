@@ -73,87 +73,72 @@ describe("GallerySection", () => {
     expect(img).toBeInTheDocument();
   });
 
-  it("gallery image fica dentro de container com aspect-video", () => {
-    // Apos a migracao para next/image fill, width/height/loading nao
-    // sao mais atributos diretos do <img> — o tamanho vem do container
-    // (className aspect-video). Validamos isso em vez dos atributos
-    // antigos.
+  // ─── Notas de evolução do componente ────────────────────────────────────
+  //
+  // GallerySection foi reescrita em layout masonry (CSS columns) com
+  // lightbox. Mudanças de UI relevantes que invalidaram testes antigos:
+  //
+  // 1. Item de imagem deixou de viver dentro de container `.aspect-video`.
+  //    Apenas vídeos usam `aspect-video` — a imagem agora respeita a
+  //    proporção natural via `<Image width=800 height=600 className="h-auto">`
+  //    pra preservar variação retrato/paisagem do masonry.
+  //
+  // 2. Não há mais fallback "Imagem indisponível" no card. O componente
+  //    delega o erro para o navegador/next-image. Decisão de produto.
+  //
+  // 3. Não há mais "MediaBlock" hero dedicado. O heroItemId apenas adiciona
+  //    badge "Destaque" no canto, sem mudar layout. Antes era um bloco
+  //    grande separado da grade.
+  //
+  // 4. Caption null não renderiza "Sem legenda" — caption só aparece em
+  //    hover overlay quando presente. Ausência de caption = nada visível.
+  //
+  // 5. Badges são Title Case ("Destaque", "Card") — antes eram CAPS LOCK.
+  //
+  // Testes abaixo refletem a UI atual.
+
+  it("renderiza imagem com layout break-inside-avoid (masonry)", () => {
+    // O layout masonry usa `columns-*` no contêiner pai e cada card
+    // tem `break-inside-avoid` pra não quebrar entre colunas. Validar
+    // estrutura via classe CSS é o mais próximo de "renderizou no
+    // masonry correto" sem testar layout pixel-perfect (não-determinístico
+    // em jsdom).
     const items = [makeItem({ id: 1 })];
     const { container } = render(<GallerySection items={items} />);
 
     const img = screen.getByAltText("Galeria") as HTMLImageElement;
     expect(img).toBeInTheDocument();
 
-    const wrapper = container.querySelector(".aspect-video");
-    expect(wrapper).toBeInTheDocument();
+    const card = container.querySelector(".break-inside-avoid");
+    expect(card).toBeInTheDocument();
   });
 
-  it("shows error fallback when gallery image fails to load", () => {
-    const items = [makeItem({ id: 1 })];
-    render(<GallerySection items={items} />);
-
-    const img = screen.getByAltText("Galeria") as HTMLImageElement;
-    fireEvent.error(img);
-
-    expect(screen.queryByAltText("Galeria")).not.toBeInTheDocument();
-    expect(screen.getByText("Imagem indisponível")).toBeInTheDocument();
-  });
-
-  it("renders hero badge on item matching heroItemId", () => {
+  it("renders hero badge ('Destaque') on item matching heroItemId", () => {
     const items = [makeItem({ id: 5 }), makeItem({ id: 6 })];
     render(<GallerySection items={items} heroItemId={5} />);
 
-    expect(screen.getByText("DESTAQUE")).toBeInTheDocument();
-  });
-
-  it("renders card badge on item matching cardItemId", () => {
-    const items = [makeItem({ id: 5 }), makeItem({ id: 6 })];
-    render(<GallerySection items={items} cardItemId={6} />);
-
-    expect(screen.getByText("CARD")).toBeInTheDocument();
-  });
-
-  it("renders MediaBlock for heroItem com a imagem do hero", () => {
-    const items = [makeItem({ id: 3, caption: "Hero caption" })];
-    render(<GallerySection items={items} heroItemId={3} />);
-
-    // Apos migrar para next/image, "loading=eager" deixa de ser atributo
-    // direto. O MediaBlock segue renderizando a imagem do hero — checamos
-    // pela presenca da img com a caption esperada.
-    const heroImgs = screen.getAllByAltText("Hero caption") as HTMLImageElement[];
-    expect(heroImgs.length).toBeGreaterThan(0);
-  });
-
-  it("renders MediaBlock title label", () => {
-    const items = [makeItem({ id: 3 })];
-    render(<GallerySection items={items} heroItemId={3} />);
+    // Badge mudou de "DESTAQUE" para "Destaque" (Title Case) na refatoração
+    // editorial da landing.
     expect(screen.getByText("Destaque")).toBeInTheDocument();
   });
 
-  it("MediaBlock shows error fallback when image fails to load", () => {
-    const items = [makeItem({ id: 3 })];
-    render(<GallerySection items={items} heroItemId={3} />);
+  it("renders card badge ('Card') on item matching cardItemId", () => {
+    const items = [makeItem({ id: 5 }), makeItem({ id: 6 })];
+    render(<GallerySection items={items} cardItemId={6} />);
 
-    // O MediaBlock usa alt = caption || title = "Destaque"
-    const heroImgs = screen.getAllByAltText("Destaque") as HTMLImageElement[];
-    expect(heroImgs.length).toBeGreaterThan(0);
-
-    fireEvent.error(heroImgs[0]);
-
-    expect(screen.getByText("Imagem indisponível")).toBeInTheDocument();
+    expect(screen.getByText("Card")).toBeInTheDocument();
   });
 
-  it("MediaBlock renderiza imagem dentro de container aspect-video", () => {
-    // Apos migrar para next/image fill, width/height nao sao mais
-    // atributos diretos. O container .aspect-video define o tamanho.
-    const items = [makeItem({ id: 3 })];
-    const { container } = render(<GallerySection items={items} heroItemId={3} />);
+  it("heroItemId continua exibindo a imagem do item correspondente", () => {
+    // Antes existia um "MediaBlock" separado para o hero. Agora o
+    // heroItemId só adiciona o badge "Destaque" — a imagem segue na
+    // grade como qualquer outro card. Validamos que a imagem do item
+    // marcado segue presente.
+    const items = [makeItem({ id: 3, caption: "Hero caption" })];
+    render(<GallerySection items={items} heroItemId={3} />);
 
-    const heroImgs = screen.getAllByAltText("Destaque") as HTMLImageElement[];
-    expect(heroImgs.length).toBeGreaterThan(0);
-
-    const wrapper = container.querySelector(".aspect-video");
-    expect(wrapper).toBeInTheDocument();
+    expect(screen.getByAltText("Hero caption")).toBeInTheDocument();
+    expect(screen.getByText("Destaque")).toBeInTheDocument();
   });
 
   it("renders video element for VIDEO media type", () => {
@@ -167,15 +152,45 @@ describe("GallerySection", () => {
     );
   });
 
-  it("renders caption text when provided", () => {
+  it("vídeo continua dentro de container .aspect-video (proporção fixa)", () => {
+    // Apenas vídeos usam aspect-video no novo layout. Imagens herdam
+    // proporção natural via masonry. Esse teste preserva a invariante
+    // "vídeo tem aspect 16:9" no card da galeria.
+    const items = [makeItem({ id: 7, media_type: "VIDEO" })];
+    const { container } = render(<GallerySection items={items} />);
+
+    const wrapper = container.querySelector(".aspect-video");
+    expect(wrapper).toBeInTheDocument();
+  });
+
+  it("renders caption text when provided (hover overlay)", () => {
+    // Caption renderiza no overlay com opacity-0 → opacity-100 no group-hover.
+    // O texto está no DOM o tempo todo (só visualmente oculto), então
+    // queryByText encontra normalmente.
     const items = [makeItem({ id: 1, caption: "Uma ótima foto" })];
     render(<GallerySection items={items} />);
     expect(screen.getAllByText("Uma ótima foto").length).toBeGreaterThan(0);
   });
 
-  it("renders 'Sem legenda' when caption is null", () => {
+  it("não renderiza 'Sem legenda' quando caption é null (overlay omitido)", () => {
+    // A UI atual não exibe placeholder de caption — quando null, simplesmente
+    // não renderiza o overlay de legenda. Validar a ausência protege contra
+    // regressão em que o placeholder volte sem decisão de produto.
     const items = [makeItem({ id: 1, caption: null })];
     render(<GallerySection items={items} />);
-    expect(screen.getAllByText("Sem legenda").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Sem legenda")).not.toBeInTheDocument();
+  });
+
+  it("clicar em card abre lightbox (dialog)", () => {
+    // Comportamento novo da v3: card é <button> que abre lightbox.
+    // Validar que a interação semântica funciona substitui os testes
+    // antigos de fallback de imagem (que não existem mais).
+    const items = [makeItem({ id: 1, caption: "Foto 1" })];
+    render(<GallerySection items={items} />);
+
+    const card = screen.getByRole("button", { name: "Foto 1" });
+    fireEvent.click(card);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

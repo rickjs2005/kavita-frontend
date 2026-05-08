@@ -1,5 +1,26 @@
+// src/__tests__/motorista/rota-page.test.tsx
+//
+// Comportamento testado: estado offline + estado vazio da página
+// "minha rota de hoje" do motorista. Cobre 5 casos:
+//   1. Online com dados — renderiza rota normalmente
+//   2. Offline + sem cache — OfflineEmptyState e zero toast
+//   3. Offline + cache válido — usa cache + toast informativo
+//   4. Online + erro de API — toast.error 1x
+//   4b. Offline + sem cache + erro de API — sem toast (estado vazio cobre)
+//
+// Por que findBy* em vez de waitFor+getBy*:
+//   findBy* tem retry interno e roda dentro de act() automaticamente.
+//   Substitui o padrão "await waitFor(() => expect(getByText).inDoc)"
+//   que dispara warnings de act() em React 19 quando o effect que
+//   atualiza o estado (apiClient.get → setRota) resolve fora de
+//   uma boundary explícita.
+//
+// Cleanup do DOM entre testes é responsabilidade do vitest.setup.ts
+// (afterEach(cleanup) global). Aqui só restauramos navigator.onLine.
+
+import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
 // ---- Mocks (vi.mock is hoisted; closures resolve lazily) -------------------
 
@@ -86,9 +107,22 @@ const fakeRota = {
   veiculo: "ABC-1234",
 };
 
-async function renderPage() {
-  const { default: Page } = await import("@/app/motorista/rota/page");
-  return render(<Page />);
+// Import estático em vez de dynamic. Razão: dynamic import (`await
+// import(...)`) só faz sentido se for combinado com vi.resetModules()
+// para forçar re-import "fresh". Sem isso, retorna o módulo cacheado
+// igual ao import estático — mas com side-effect de timing (cada
+// `await import` vira microtask extra). No pool de threads do Vitest
+// pré-fix, o cache de módulos vazava entre arquivos, e o dynamic
+// import + ordering com outras suítes causava timeout intermitente
+// no Caso 1. Static import + pool:'forks' (vitest.config.ts) elimina
+// ambas as variáveis.
+//
+// O `vi.mock` hoisted continua aplicando os mocks ANTES deste import
+// — comportamento idêntico ao dynamic import original, sem race.
+import MotoristaRotaPage from "@/app/motorista/rota/page";
+
+function renderPage() {
+  return render(<MotoristaRotaPage />);
 }
 
 // ---- Tests -----------------------------------------------------------------
@@ -108,14 +142,17 @@ describe("MotoristaRotaPage — offline empty state behaviour", () => {
   it("Caso 1 — online com dados: renderiza rota normalmente", async () => {
     mockGet.mockResolvedValueOnce(fakeRota);
 
-    await renderPage();
+    renderPage();
 
-    await waitFor(() => {
-      expect(screen.getByText(/Rota de 2026-04-27/)).toBeInTheDocument();
-    });
+    // findByText: aguarda a resolução do useEffect→load() que dispara
+    // setRota. Diferente de getByText, roda em act() interno e tem
+    // timeout próprio (default 1000ms) — sem precisar de waitFor.
+    expect(
+      await screen.findByText(/Rota de 2026-04-27/),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Norte · ABC-1234/)).toBeInTheDocument();
 
-    // No empty state, no error toasts
+    // Estado offline NÃO deve renderizar nem nenhum toast disparar
     expect(
       screen.queryByText(/Você está sem internet/i),
     ).not.toBeInTheDocument();
@@ -128,18 +165,22 @@ describe("MotoristaRotaPage — offline empty state behaviour", () => {
     mockGet.mockRejectedValueOnce(new TypeError("Failed to fetch"));
     mockReadCachedRota.mockReturnValue(null);
 
-    await renderPage();
+    renderPage();
 
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Você está sem internet e ainda não temos dados/i),
-      ).toBeInTheDocument();
-    });
+    // findByText resolve quando o estado offline-sem-cache estabiliza
+    // após o reject + setLoading(false). Garante que a assertion roda
+    // depois das atualizações finais — evita pegar DOM intermediário.
+    expect(
+      await screen.findByText(
+        /Você está sem internet e ainda não temos dados/i,
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /tentar novamente/i }),
     ).toBeInTheDocument();
 
-    // ZERO toasts — neither error nor info
+    // ZERO toasts — nem erro nem info (decisão de produto: o
+    // OfflineEmptyState já comunica tudo que precisa)
     expect(mockToastError).not.toHaveBeenCalled();
     expect(mockToastFn).not.toHaveBeenCalled();
   });
@@ -150,11 +191,11 @@ describe("MotoristaRotaPage — offline empty state behaviour", () => {
     mockGet.mockRejectedValueOnce(new TypeError("Failed to fetch"));
     mockReadCachedRota.mockReturnValue(fakeRota);
 
-    await renderPage();
+    renderPage();
 
-    await waitFor(() => {
-      expect(screen.getByText(/Rota de 2026-04-27/)).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText(/Rota de 2026-04-27/),
+    ).toBeInTheDocument();
 
     expect(
       screen.queryByText(/Você está sem internet/i),
@@ -172,12 +213,18 @@ describe("MotoristaRotaPage — offline empty state behaviour", () => {
     mockGet.mockRejectedValueOnce(new Error("boom"));
     mockReadCachedRota.mockReturnValue(null);
 
-    await renderPage();
+    renderPage();
 
-    await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledTimes(1);
-    });
-    // OfflineEmptyState não renderiza quando online
+    // "Sem rota para hoje" é o estado vazio padrão (online, sem rota
+    // atribuída, com erro). Aguardar esse texto sincroniza com o
+    // término do load(); o toast.error é chamado durante o catch
+    // antes do setRota(null), então quando o texto aparece o toast
+    // já foi disparado.
+    expect(
+      await screen.findByText(/Sem rota para hoje/i),
+    ).toBeInTheDocument();
+    expect(mockToastError).toHaveBeenCalledTimes(1);
+    // OfflineEmptyState NÃO renderiza quando online
     expect(
       screen.queryByText(/Você está sem internet/i),
     ).not.toBeInTheDocument();
@@ -189,13 +236,13 @@ describe("MotoristaRotaPage — offline empty state behaviour", () => {
     mockGet.mockRejectedValueOnce(new Error("boom"));
     mockReadCachedRota.mockReturnValue(null);
 
-    await renderPage();
+    renderPage();
 
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Você está sem internet e ainda não temos dados/i),
-      ).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText(
+        /Você está sem internet e ainda não temos dados/i,
+      ),
+    ).toBeInTheDocument();
     expect(mockToastError).not.toHaveBeenCalled();
   });
 });

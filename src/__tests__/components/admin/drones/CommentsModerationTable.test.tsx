@@ -125,13 +125,30 @@ describe("CommentsModerationTable", () => {
 
   describe("estado vazio", () => {
     it("exibe mensagem quando não há comentários", async () => {
+      // O componente inicia com filtro PENDENTE por padrão, então a
+      // mensagem é "Nenhum comentário neste status." Quando o admin
+      // clica no filtro "Todos", vira "Nenhum comentário." Usar regex
+      // resiliente cobre os dois casos sem acoplar ao filtro inicial.
       mockGet.mockResolvedValue(EMPTY_RESPONSE);
 
       render(<CommentsModerationTable />);
 
       await waitFor(() =>
         expect(
-          screen.getByText("Nenhum comentário encontrado."),
+          screen.getByText(/^Nenhum comentário/),
+        ).toBeInTheDocument(),
+      );
+    });
+
+    it("mostra mensagem específica de status quando filtro != 'Todos'", async () => {
+      // Filtro inicial é PENDENTE, então deve dizer "neste status".
+      mockGet.mockResolvedValue(EMPTY_RESPONSE);
+
+      render(<CommentsModerationTable />);
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(/neste status/i),
         ).toBeInTheDocument(),
       );
     });
@@ -232,7 +249,12 @@ describe("CommentsModerationTable", () => {
       );
     });
 
-    it("botão mostra '...' enquanto exclusão está em andamento", async () => {
+    it("os 3 botões de ação entram em loading ('...') simultaneamente durante exclusão", async () => {
+      // Comportamento intencional: actingId trava as 3 ações da linha
+      // (Aprovar, Reprovar, Excluir) ao mesmo tempo enquanto qualquer
+      // uma delas está em andamento. Usar getAllByRole evita o erro
+      // "Found multiple elements" do getByRole singular e cobre a
+      // semântica real: todos os botões devem estar disabled.
       let resolveDelete!: () => void;
       const pendingDel = new Promise<void>((res) => { resolveDelete = res; });
 
@@ -244,11 +266,26 @@ describe("CommentsModerationTable", () => {
         expect(screen.getByText("Drone excelente para uso agrícola!")).toBeInTheDocument(),
       );
 
-      fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
+      // Antes de clicar: 3 botões nomeados (Aprovar, Reprovar, Excluir),
+      // todos enabled.
+      const aprovar = screen.getByRole("button", { name: "Aprovar" });
+      const reprovar = screen.getByRole("button", { name: "Reprovar" });
+      const excluir = screen.getByRole("button", { name: "Excluir" });
+      expect(aprovar).not.toBeDisabled();
+      expect(reprovar).not.toBeDisabled();
+      expect(excluir).not.toBeDisabled();
 
-      await waitFor(() =>
-        expect(screen.getByRole("button", { name: "..." })).toBeDisabled(),
-      );
+      fireEvent.click(excluir);
+
+      // Durante a exclusão: todos os 3 botões da linha viram "..." e
+      // ficam disabled. getAllByRole valida a quantidade exata.
+      await waitFor(() => {
+        const loadingButtons = screen.getAllByRole("button", { name: "..." });
+        expect(loadingButtons).toHaveLength(3);
+        for (const b of loadingButtons) {
+          expect(b).toBeDisabled();
+        }
+      });
 
       // Resolve para não vazar a promise
       resolveDelete();
@@ -332,13 +369,44 @@ describe("CommentsModerationTable", () => {
       );
     });
 
-    it("exibe 'Sem mídia anexada.' quando media está vazio", async () => {
+    it("não renderiza nenhuma mídia quando media está vazio (sem placeholder)", async () => {
+      // Decisão de produto: card sem mídia simplesmente não exibe
+      // bloco de mídia. Removemos o placeholder textual antigo "Sem
+      // mídia anexada." pra deixar o card mais compacto. O teste agora
+      // valida a ausência de img/video e a ausência do placeholder
+      // antigo (regressão de copy).
       mockGet.mockResolvedValue(commentList([makeComment({ media: [] })]));
 
       render(<CommentsModerationTable />);
 
       await waitFor(() =>
-        expect(screen.getByText("Sem mídia anexada.")).toBeInTheDocument(),
+        expect(screen.getByText("Drone excelente para uso agrícola!")).toBeInTheDocument(),
+      );
+
+      expect(
+        screen.queryByAltText("mídia do comentário"),
+      ).not.toBeInTheDocument();
+      expect(document.querySelector("video")).not.toBeInTheDocument();
+      // Regressão: o placeholder textual não deve voltar sem decisão.
+      expect(
+        screen.queryByText(/Sem mídia anexada/i),
+      ).not.toBeInTheDocument();
+    });
+
+    it("exibe contagem 'N mídia(s) anexada(s)' quando media_count > 0 mas media[] vem vazio", async () => {
+      // Caso real: backend pode retornar `media_count` sem hidratar
+      // `media[]` (paginação de mídias). O componente exibe contagem
+      // resumida nesse cenário.
+      mockGet.mockResolvedValue(
+        commentList([makeComment({ media: [], media_count: 3 })]),
+      );
+
+      render(<CommentsModerationTable />);
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(/3 mídia\(s\) anexada\(s\)/),
+        ).toBeInTheDocument(),
       );
     });
   });
