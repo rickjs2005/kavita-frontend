@@ -223,7 +223,10 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
 
       {/* ─── SERVIÇOS — card promocional + listagem ─────────────── */}
       <section className="mx-auto w-full max-w-7xl px-4 pb-8 pt-6 sm:pb-10 sm:pt-10">
-        <HomeServicesPromoCard />
+        <HomeServicesPromoCard
+          imageSrc="/images/home/profissional-agro.jpg"
+          imageAlt="Profissional do agro examinando lavoura de café Kavita"
+        />
         <div className="mt-5 rounded-[24px] border border-slate-200 bg-white p-2 shadow-sm sm:mt-6 sm:rounded-3xl sm:p-4">
           <ServicosSection />
         </div>
