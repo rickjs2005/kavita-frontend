@@ -76,10 +76,8 @@ const schema = z
     // garante que o checkbox marcou "Sim, eu aceito"; qualquer outro
     // valor (false, undefined, "true" string) é rejeitado.
     aceite_termos: z.literal(true, {
-      errorMap: () => ({
-        message:
-          "Você precisa aceitar os Termos e a Política de Privacidade para continuar.",
-      }),
+      message:
+        "Você precisa aceitar os Termos e a Política de Privacidade para continuar.",
     }),
   })
   .refine((v) => v.senha === v.confirmSenha, {
