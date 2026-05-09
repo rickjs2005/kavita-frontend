@@ -22,7 +22,7 @@ import { EmptyState } from "@/components/news/EmptyState";
 import { FeaturedNewsCard } from "@/components/news/FeaturedNewsCard";
 import { CotacaoMini } from "@/components/news/CotacaoMini";
 import { ClimaWidget } from "@/components/news/ClimaWidget";
-import { NewsletterForm } from "@/components/news/NewsletterForm";
+import { WhatsappChannelCard } from "@/components/news/WhatsappChannelCard";
 import Link from "next/link";
 
 export const revalidate = 120;
@@ -274,10 +274,10 @@ export default async function NewsHomePage() {
               </div>
             </div>
 
-            {/* Clima compacto + Newsletter (30%) */}
+            {/* Clima compacto + canal WhatsApp (30%) */}
             <div className="grid grid-cols-1 gap-5 lg:col-span-4">
               <ClimaWidget items={clima ?? []} />
-              <NewsletterForm />
+              <WhatsappChannelCard />
             </div>
           </div>
         </section>
