@@ -31,9 +31,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import type { HeroSlide } from "@/types/heroSlide";
+import type { HeroSlide, HeroFeature, HeroQuickLink } from "@/types/heroSlide";
 import { absUrl } from "@/utils/absUrl";
 import { sanitizeUrl } from "@/lib/sanitizeHtml";
+import { getHeroIcon } from "@/lib/heroIcons";
 
 const DEFAULT_IMG = "/images/drone/fallback-hero-v2.jpg";
 const LEGACY_FALLBACK_IMG = "/images/drone/fallback-hero1.jpg";
@@ -84,6 +85,7 @@ const FALLBACK_SLIDE: HeroSlide = {
   subtitle:
     "Encontre corretoras confiáveis, acompanhe oportunidades e negocie com mais transparência e melhores condições.",
   badge_text: "Mercado do Café",
+  badge_icon: null,
   slide_type: "institutional",
   hero_video_url: null,
   hero_video_path: null,
@@ -93,6 +95,8 @@ const FALLBACK_SLIDE: HeroSlide = {
   button_href: "/mercado-do-cafe",
   button_secondary_label: null,
   button_secondary_href: null,
+  features: null,
+  quick_links: null,
   sort_order: 0,
   is_active: 1,
   starts_at: null,
@@ -148,74 +152,28 @@ function SlideBackground({ slide }: { slide: HeroSlide }) {
   );
 }
 
-// ── Mini-features fixos abaixo do CTA ─────────────────────────
+// ── Mini-features ──────────────────────────────────────────────
+//
+// Slides cadastrados no admin (Sprint 5 / CMS) trazem suas próprias
+// features no campo `slide.features`. Se vazio/null, caímos nesta
+// lista hardcoded — preserva o visual histórico em slides antigos
+// que não passaram pelo CMS.
 
-const FEATURES = [
+const FALLBACK_FEATURES: HeroFeature[] = [
   {
+    icon: "shield",
     title: "Negociação segura",
     subtitle: "Ambiente protegido",
-    Icon: function ShieldF() {
-      return (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M12 3l8 3v6c0 4.5-3.2 8.5-8 10-4.8-1.5-8-5.5-8-10V6l8-3z" />
-          <path d="M9 12l2.2 2.2L15.5 10" />
-        </svg>
-      );
-    },
   },
   {
+    icon: "chart-line",
     title: "Melhores preços",
     subtitle: "Compare e negocie",
-    Icon: function TrendF() {
-      return (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M3 17l6-6 4 4 8-8" />
-          <path d="M14 7h7v7" />
-        </svg>
-      );
-    },
   },
   {
+    icon: "clock",
     title: "+ Transparência",
     subtitle: "Informações claras",
-    Icon: function ClockF() {
-      return (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 7v5l3.5 2" />
-        </svg>
-      );
-    },
   },
 ];
 
@@ -239,23 +197,10 @@ function SlideContent({
 
   return (
     <>
-      {/* Pill — badge_text com ícone discreto */}
+      {/* Pill — badge_text com ícone do banco (badge_icon, opcional) */}
       {slide.badge_text ? (
         <span className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-500/15 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300 ring-1 ring-emerald-400/40 backdrop-blur-sm sm:text-[11px]">
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M20 4c-7 0-13 4-13 11 0 2.5 1.5 5 4 5 7 0 9-9 9-16z" />
-            <path d="M7 20c2-4 5-7 9-9" />
-          </svg>
+          {getHeroIcon(slide.badge_icon)({ size: 12 })}
           {slide.badge_text}
         </span>
       ) : null}
@@ -305,28 +250,128 @@ function SlideContent({
         </svg>
       </Link>
 
-      {/* 3 mini-features — garantias da plataforma (não vêm do slide) */}
-      <ul className="mt-6 grid grid-cols-1 gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4">
-        {FEATURES.map(({ title, subtitle, Icon }) => (
-          <li
-            key={title}
-            className="flex items-start gap-2.5 sm:flex-col sm:items-start sm:gap-2"
-          >
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30 backdrop-blur-sm sm:h-10 sm:w-10">
-              <Icon />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[13px] font-semibold leading-tight text-white sm:text-sm">
-                {title}
-              </p>
-              <p className="text-[11px] leading-tight text-white/55 sm:text-[12px]">
-                {subtitle}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {/* Mini-features — vem do CMS (slide.features) com fallback. */}
+      <FeaturesRow features={slide.features} />
     </>
+  );
+}
+
+// ── Linha de mini-features ────────────────────────────────────
+
+function FeaturesRow({ features }: { features: HeroFeature[] | null }) {
+  const items =
+    Array.isArray(features) && features.length > 0
+      ? features.slice(0, 4)
+      : FALLBACK_FEATURES;
+  // Grid se adapta a 1-4 items mantendo coluna no mobile.
+  const gridCols =
+    items.length >= 4
+      ? "sm:grid-cols-4"
+      : items.length === 3
+        ? "sm:grid-cols-3"
+        : items.length === 2
+          ? "sm:grid-cols-2"
+          : "sm:grid-cols-1";
+
+  return (
+    <ul className={`mt-6 grid grid-cols-1 gap-3 sm:mt-8 ${gridCols} sm:gap-4`}>
+      {items.map((feat, i) => (
+        <li
+          key={`${feat.title}-${i}`}
+          className="flex items-start gap-2.5 sm:flex-col sm:items-start sm:gap-2"
+        >
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30 backdrop-blur-sm sm:h-10 sm:w-10">
+            {getHeroIcon(feat.icon)({ size: 18 })}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold leading-tight text-white sm:text-sm">
+              {feat.title}
+            </p>
+            {feat.subtitle ? (
+              <p className="text-[11px] leading-tight text-white/55 sm:text-[12px]">
+                {feat.subtitle}
+              </p>
+            ) : null}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// ── Linha de quick_links no rodapé do slide ──────────────────
+//
+// Renderiza apenas quando o admin cadastrou pelo menos 1 item.
+// Cards horizontais com kicker + título + descrição + ícone à direita.
+// Quando o item tem href, vira <Link> clicável.
+
+function QuickLinksRow({ items }: { items: HeroQuickLink[] }) {
+  const safe = items.slice(0, 5);
+  const cols =
+    safe.length >= 5
+      ? "lg:grid-cols-5"
+      : safe.length === 4
+        ? "lg:grid-cols-4"
+        : safe.length === 3
+          ? "lg:grid-cols-3"
+          : safe.length === 2
+            ? "lg:grid-cols-2"
+            : "lg:grid-cols-1";
+
+  return (
+    <div className="relative z-10 border-t border-white/10 bg-black/35 backdrop-blur-md">
+      <div
+        className={`mx-auto grid max-w-7xl grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 sm:gap-4 sm:px-8 sm:py-5 ${cols} lg:px-14`}
+      >
+        {safe.map((link, i) => {
+          const inner = (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">
+                  {link.kicker}
+                </p>
+                <p className="mt-1 line-clamp-1 text-[14px] font-bold leading-tight text-white">
+                  {link.title}
+                </p>
+                {link.description ? (
+                  <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-white/55">
+                    {link.description}
+                  </p>
+                ) : null}
+              </div>
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-400/25">
+                {getHeroIcon(link.icon)({ size: 16 })}
+              </span>
+            </>
+          );
+
+          const baseClass =
+            "flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.04] px-3.5 py-3 transition-colors";
+          const hoverClass = link.href
+            ? "hover:border-emerald-400/30 hover:bg-white/[0.08]"
+            : "";
+
+          if (link.href) {
+            const safeHref = sanitizeUrl(link.href) || "#";
+            return (
+              <Link
+                key={`${link.title}-${i}`}
+                href={safeHref}
+                className={`${baseClass} ${hoverClass}`}
+              >
+                {inner}
+              </Link>
+            );
+          }
+
+          return (
+            <div key={`${link.title}-${i}`} className={baseClass}>
+              {inner}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -444,6 +489,11 @@ export default function HeroCarousel({ slides, className = "" }: Props) {
             </svg>
           </button>
         </>
+      ) : null}
+
+      {/* Quick links — só renderiza quando o admin cadastrou itens */}
+      {Array.isArray(slide.quick_links) && slide.quick_links.length > 0 ? (
+        <QuickLinksRow items={slide.quick_links} />
       ) : null}
 
       {/* Dots — embaixo, centralizados */}
