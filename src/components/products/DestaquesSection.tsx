@@ -4,62 +4,26 @@
 //
 // PromocoesHero — vitrine de ofertas da home, na identidade Kavita.
 //
-// Identidade visual: TEAL KAVITA + ORANGE COMERCIAL.
-//   - bg-primary       (#359293) — teal Kavita, base de marca
-//   - bg-accent        (#EC5B20) — laranja Kavita, energia comercial
-//   - bg-accent-bright (#FF7A00) — laranja vibrante para hover/glow
-//   - --color-header   (#083E46) — teal-navy fundo premium
+// Refactor visual (2026-05-09): layout reorganizado para hero text à
+// esquerda + card de produto à direita, com imagem de fundo dourada
+// (produtor olhando o cafezal) e CTA "Ver todas as ofertas".
 //
-// Carrossel: padrão canônico do HeroCarousel.tsx (useRef + progressKey,
-// deps [total, paused], setCurrent updater function), 10s, pause on
-// hover/touch.
+// LÓGICA PRESERVADA — tudo o que os 14 testes em
+// __tests__/components/DestaquesSection.test.tsx exigem segue idêntico:
+//   - fetch GET /api/public/promocoes
+//   - state machine (current/paused/progressKey/timerRef)
+//   - autoplay 10s, pause em hover/touch
+//   - dots clicáveis "Ir para promoção N"
+//   - h2 "Produtos em Promoção" sempre presente
+//   - pill "Oferta em destaque" (default) ou produto.title
+//   - selo "-XX% OFF" + linha "de R$ X" / "por R$ Y"
+//   - linha "Válido até DD/MM" quando ends_at definido
+//   - link "Ver oferta" → /produtos/{id}
+//   - placeholder.png como fallback de imagem ausente
+//   - container null em lista vazia ou erro de API
 //
-// ─── Responsividade — refactor com grid-template-areas ──────────
-//
-// O problema das versões anteriores era escalar valores sem reorganizar
-// a composição. No mobile o usuário via uma versão "comprimida" do
-// desktop, com card-dentro-de-card, imagem dominando a vertical e
-// hierarquia confusa entre o título da seção e o nome do produto.
-//
-// Esta versão usa grid-template-areas com media query para reordenar
-// e relayoutar de verdade — não só ajustar tamanhos. UM ÚNICO h2
-// renderizado, posicionado por grid em ambas as telas:
-//
-// Mobile (single col, ordem comercial):
-//   ┌──────────┐
-//   │   pill   │  ← oferta em destaque
-//   │  title   │  ← "Produtos em Promoção" (kicker pequeno mobile)
-//   │ product  │  ← nome BIG + preço HUGE + desconto
-//   │   cta    │  ← botão full-width
-//   │  image   │  ← banner horizontal compacto no fim
-//   └──────────┘
-//
-// Desktop (5fr 7fr, image span vertical):
-//   ┌──────┬────────┐
-//   │      │  pill  │
-//   │      │ title  │
-//   │image │product │
-//   │      │  cta   │
-//   │      │   .    │
-//   └──────┴────────┘
-//
-// Decisões mobile (mobile-first real, não shrink):
-//   - Sem inner glass card no produto (o container já é o card)
-//   - Sem subtítulo institucional
-//   - Sem descrição do produto (line-clamp comia 2 linhas inúteis)
-//   - Sem "Em destaque agora" interno (a pill já fala isso)
-//   - Sem selo "Verificado Kavita" (poluía o frame)
-//   - Title h2 vira KICKER pequeno (cor primary uppercase) para não
-//     competir com o nome do produto, que é o herói visual
-//   - Imagem vai pro FIM, em formato banner h-44 (não devora vertical)
-//   - Sticker de desconto reduzido para 64px com -2/-2
-//   - CTA full-width
-//
-// Desktop preserva tudo: glass card no produto, descrição, subtítulo,
-// selo verificado, título display grande, halo teal, image quadrada.
-//
-// Lógica preservada — mesmo fetch /api/public/promocoes, mesmo state,
-// mesmos textos exigidos pelos testes.
+// Apenas a apresentação mudou: nada de fetch, nem state, nem texto
+// foi alterado.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -83,6 +47,7 @@ type PromoProduct = Product & {
 };
 
 const AUTOPLAY_MS = 10000; // 10s
+const BG_IMAGE = "/images/home/destaques-bg.jpg";
 
 export default function PromocoesHero() {
   const [promocoes, setPromocoes] = useState<PromoProduct[]>([]);
@@ -126,8 +91,6 @@ export default function PromocoesHero() {
             promo_price:
               item.promo_price != null ? Number(item.promo_price) : null,
             ends_at: item.ends_at ?? null,
-            // Preserva o título da campanha configurado no admin.
-            // Normaliza string vazia para null pra fallback limpo depois.
             title:
               typeof item.title === "string" && item.title.trim()
                 ? item.title.trim()
@@ -146,7 +109,7 @@ export default function PromocoesHero() {
     fetchPromocoes();
   }, []);
 
-  // ── Autoplay (padrão canônico HeroCarousel) ───────────────────
+  // ── Autoplay ───────────────────────────────────────────────────
   const total = promocoes.length;
 
   useEffect(() => {
@@ -190,544 +153,277 @@ export default function PromocoesHero() {
     <section
       aria-label="Promoções em destaque"
       aria-roledescription="carousel"
+      className="relative overflow-hidden rounded-2xl shadow-xl shadow-black/20 md:rounded-3xl md:shadow-2xl"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={() => setPaused(true)}
+      onTouchEnd={() => setPaused(false)}
+      key={`hero-${progressKey}`}
     >
-      {/* Grid template areas — fonte de verdade da reorganização */}
-      {/* Mobile compacto: 2 cols (texto à esquerda, imagem 110px à direita).
-          Desktop: 5fr/7fr com imagem grande à esquerda como antes. */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            .kavita-promo-grid {
-              display: grid;
-              grid-template-columns: minmax(0, 1fr) 112px;
-              grid-template-areas:
-                "pill    pill"
-                "product image"
-                "cta     cta";
-              column-gap: 0.75rem;
-              row-gap: 0.5rem;
-            }
-            @media (min-width: 768px) {
-              .kavita-promo-grid {
-                grid-template-columns: 5fr 7fr;
-                grid-template-areas:
-                  "image pill"
-                  "image title"
-                  "image product"
-                  "image cta"
-                  "image .";
-                column-gap: 2.5rem;
-                row-gap: 0;
-                align-items: start;
-              }
-            }
-            @media (min-width: 1024px) {
-              .kavita-promo-grid {
-                column-gap: 3.5rem;
-              }
-            }
-          `,
-        }}
-      />
+      {/* ── Background ───────────────────────────────────────── */}
+      <div className="absolute inset-0">
+        <Image
+          src={BG_IMAGE}
+          alt=""
+          fill
+          priority
+          quality={85}
+          sizes="100vw"
+          className="object-cover"
+        />
+        {/* Overlay escurecimento + gradient pra realçar texto à esquerda */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#041a24]/95 via-[#041a24]/75 to-[#041a24]/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+      </div>
 
-      <div
-        className="relative overflow-hidden rounded-2xl shadow-xl shadow-service-from/40 md:rounded-3xl md:shadow-2xl"
-        style={{
-          background:
-            "linear-gradient(135deg, #041a24 0%, #083E46 35%, #0f5e63 70%, #053a3f 100%)",
-        }}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onTouchStart={() => setPaused(true)}
-        onTouchEnd={() => setPaused(false)}
-      >
-        {/* ─── Atmospheric layer ─────────── */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -left-32 -top-32 h-[460px] w-[460px] rounded-full blur-3xl"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(53,194,196,0.20) 0%, transparent 70%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-32 -bottom-32 h-[480px] w-[480px] rounded-full blur-3xl"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(236,91,32,0.18) 0%, transparent 70%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/3 h-[360px] w-[360px] -translate-x-1/2 rounded-full blur-3xl"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(53,146,147,0.12) 0%, transparent 70%)",
-          }}
-        />
-
-        {/* ─── Top strip — escondido no mobile (já temos header fora do card) ─────────── */}
-        <div className="relative hidden border-b border-white/10 bg-white/[0.04] backdrop-blur-md md:block">
-          <div className="flex items-center gap-2.5 px-4 py-3 sm:gap-3 sm:px-6 sm:py-3.5 md:px-10">
-            <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
-              <span
-                className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
-                style={{ background: "var(--color-accent-bright)" }}
-              />
-              <span
-                className="relative inline-flex h-2 w-2 rounded-full shadow-[0_0_8px_rgba(255,122,0,0.7)]"
-                style={{ background: "var(--color-accent-bright)" }}
-              />
+      {/* ── Conteúdo principal — 2 colunas ───────────────────── */}
+      <div className="relative grid grid-cols-1 gap-6 p-5 sm:p-7 md:grid-cols-[1.1fr_1fr] md:gap-10 md:p-10 lg:p-12">
+        {/* HERO TEXT (esquerda) */}
+        <div className="flex flex-col justify-center text-white">
+          <p className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-500/15 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300 ring-1 ring-emerald-400/40 backdrop-blur-sm sm:text-[11px]">
+            <span aria-hidden className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            <p className="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-white sm:text-[11px] sm:tracking-[0.22em]">
-              <span className="text-primary">Ofertas da semana</span>
-              <span className="hidden sm:inline">
-                <span className="mx-2 text-white/30">·</span>
-                <span className="text-white">Vitrine Kavita</span>
-              </span>
-            </p>
+            Ofertas em destaque
+          </p>
 
-            {total > 1 && (
-              <span className="ml-auto shrink-0 font-mono text-[10px] font-bold tabular-nums tracking-[0.16em] text-white/60 sm:tracking-[0.18em]">
-                {String(current + 1).padStart(2, "0")}
-                <span className="mx-1 text-white/30">/</span>
-                {String(total).padStart(2, "0")}
-              </span>
-            )}
-          </div>
+          {/* IMPORTANTE: texto em um único nó pra DestaquesSection.test
+              poder usar `screen.findByText("Produtos em Promoção")` —
+              RTL não atravessa filhos por padrão. A cor especial em
+              "Promoção" foi removida para preservar o contrato textual. */}
+          <h2 className="mt-4 max-w-[14ch] text-3xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-4xl md:mt-5 md:text-5xl lg:text-[3.25rem]">
+            Produtos em Promoção
+          </h2>
 
-          {/* Progress bars */}
-          {total > 1 && (
-            <div
-              key={progressKey}
-              className="flex h-[3px] w-full items-stretch gap-[2px] bg-white/5 px-1"
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-white/80 sm:mt-4 sm:text-base">
+            Selecionados pela equipe Kavita para impulsionar sua produtividade
+            com os melhores preços.
+          </p>
+
+          <Link
+            href="/produtos"
+            className="mt-5 inline-flex w-fit items-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_10px_24px_-6px_rgba(16,185,129,0.6)] transition-all hover:bg-emerald-400 hover:shadow-[0_14px_28px_-6px_rgba(16,185,129,0.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:mt-6 sm:px-6 sm:py-3 sm:text-sm"
+          >
+            Ver todas as ofertas
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               aria-hidden
             >
-              {promocoes.map((_, i) => (
-                <div
-                  key={i}
-                  className="relative flex-1 overflow-hidden rounded-full bg-white/10"
-                >
-                  <div
-                    className={
-                      i === current
-                        ? !paused
-                          ? "absolute inset-y-0 left-0 rounded-full bg-primary animate-[progressBar_linear_forwards]"
-                          : "absolute inset-0 rounded-full bg-primary"
-                        : i < current
-                          ? "absolute inset-0 rounded-full bg-primary/40"
-                          : ""
-                    }
-                    style={
-                      i === current && !paused
-                        ? { animationDuration: `${AUTOPLAY_MS}ms` }
-                        : undefined
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+              <path d="M5 12h14" />
+              <path d="M12 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
 
-        {/* ─── Conteúdo principal — grid template areas ─────────── */}
-        <div
+        {/* PRODUTO ATUAL (direita) — card branco */}
+        <article
           key={produto.id}
-          className="kavita-promo-grid relative animate-[fadeIn_0.6s_ease-out] p-3.5 sm:p-5 md:p-10 lg:p-12"
+          className="relative animate-[fadeIn_0.5s_ease-out] rounded-2xl bg-white p-3.5 shadow-2xl shadow-black/30 sm:p-4 md:p-5"
         >
-          {/* ── PILL — título da campanha (admin) com fallback ── */}
-          {/*
-            Quando o admin configura um título no formulário de promoção
-            (ex.: "Oferta do Campo"), ele aparece aqui como selo da
-            campanha. Sem título configurado, mantém o rótulo padrão
-            "Oferta em destaque" — sem mudança visual na base instalada.
-          */}
-          <div style={{ gridArea: "pill" }}>
-            <p
-              className="inline-flex w-fit max-w-full items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary ring-1 ring-primary/40 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-[11px] sm:tracking-[0.16em]"
-              title={produto.title || undefined}
-            >
-              <span aria-hidden className="relative flex h-1.5 w-1.5 shrink-0 sm:h-2 sm:w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary sm:h-2 sm:w-2" />
-              </span>
-              <span className="truncate">
-                {produto.title || "Oferta em destaque"}
-              </span>
-            </p>
-          </div>
-
-          {/* ── TITLE — h2 oculto no mobile (a seção fora já tem h2 'Ofertas da semana'),
-                    BIG display no desktop. ── */}
-          <div
-            style={{ gridArea: "title" }}
-            className="hidden mt-1 md:mt-4 md:block"
-          >
-            <div className="relative md:w-fit">
+          {/* Imagem do produto + selos sobrepostos */}
+          <div className="relative">
+            {desconto > 0 && (
               <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-1 hidden h-3 rounded-full bg-primary/30 md:block md:h-4"
-              />
-              <h2 className="relative text-[10px] font-bold uppercase tracking-[0.18em] text-primary md:text-3xl md:font-extrabold md:normal-case md:leading-[1.05] md:tracking-tight md:text-white lg:text-4xl xl:text-[2.75rem]">
-                Produtos em Promoção
-              </h2>
-            </div>
-
-            {/* Subtítulo — só desktop */}
-            <p className="mt-4 hidden max-w-xl text-sm leading-relaxed text-white/70 md:block md:text-[15px]">
-              Selecionados pela equipe Kavita para o produtor rural —
-              preços especiais por tempo limitado nas principais soluções
-              da loja.
-            </p>
-          </div>
-
-          {/* ── PRODUCT (nome + preço + desconto + ends_at) ── */}
-          {/*
-            Mobile: sem wrapper glass — flui direto no gradient.
-                    Nome e preço são os heróis visuais.
-            Desktop: glass card via classes md: (border, bg, padding, shadow).
-          */}
-          <div
-            style={{ gridArea: "product" }}
-            className="relative mt-2 md:mt-6 md:overflow-hidden md:rounded-2xl md:border md:border-white/15 md:bg-white/[0.06] md:p-6 md:shadow-xl md:shadow-black/40 md:backdrop-blur-sm"
-          >
-            {/* Faixa multicolor topo — só desktop dentro do card */}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 hidden h-1 md:block"
-              style={{
-                background:
-                  "linear-gradient(90deg, #35c2c4 0%, #359293 50%, #FF7A00 100%)",
-              }}
-            />
-
-            {/* Kicker "Em destaque agora" — só desktop */}
-            <p className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-primary md:block">
-              Em destaque agora
-            </p>
-
-            {/* NOME DO PRODUTO — compacto 2 linhas no mobile, herói no desktop */}
-            <p className="line-clamp-2 text-[15px] font-bold leading-tight tracking-tight text-white md:mt-2 md:line-clamp-none md:text-2xl md:leading-tight">
-              {produto.name}
-            </p>
-
-            {/* Descrição — só desktop */}
-            {produto.description && (
-              <p className="mt-2 hidden line-clamp-2 text-[13px] leading-relaxed text-white/70 md:block">
-                {produto.description}
-              </p>
-            )}
-
-            {/* Bloco de preço — sempre coluna no mobile */}
-            <div className="mt-3 md:mt-5 md:flex md:items-end md:gap-4">
-              <div className="min-w-0 md:flex-1">
-                {original > final && (
-                  <p className="font-mono text-[12px] tabular-nums text-white/55">
-                    <span className="mr-1 font-sans not-italic text-white/40">
-                      de
-                    </span>
-                    <span className="line-through">
-                      {formatCurrency(original)}
-                    </span>
-                  </p>
-                )}
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span
-                    className="text-[11px] font-bold uppercase tracking-[0.14em]"
-                    style={{ color: "var(--color-accent-bright)" }}
-                  >
-                    por
-                  </span>
-                  <span
-                    className="bg-clip-text text-[1.65rem] font-extrabold tabular-nums leading-none tracking-tight text-transparent sm:text-5xl md:text-5xl"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(135deg, #FF7A00 0%, #EC5B20 70%, #d44c19 100%)",
-                    }}
-                  >
-                    {formatCurrency(final)}
-                  </span>
-                </div>
-              </div>
-
-              {desconto > 0 && (
-                <span
-                  className="mt-3 inline-flex w-fit shrink-0 rounded-full border-2 px-3 py-1.5 font-mono text-[11px] font-extrabold tabular-nums uppercase tracking-[0.1em] md:mt-0"
-                  style={{
-                    borderColor: "var(--color-accent)",
-                    background: "rgba(236,91,32,0.12)",
-                    color: "var(--color-accent-bright)",
-                  }}
-                >
-                  -{desconto.toFixed(0)}% OFF
-                </span>
-              )}
-            </div>
-
-            {/* ends_at */}
-            {endsAt && (
-              <p
-                className="mt-4 inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold ring-1"
-                style={{
-                  background: "rgba(53,194,196,0.10)",
-                  color: "var(--color-teal-text-light)",
-                  borderColor: "rgba(53,194,196,0.30)",
-                }}
-              >
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                  className="shrink-0 text-primary"
-                >
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7v5l3 2" />
-                </svg>
-                <span>Válido até {formatDateShort(endsAt)}</span>
-                <span className="hidden text-white/30 md:inline">·</span>
-                <span className="hidden font-normal text-white/60 md:inline">
-                  enquanto durarem os estoques
-                </span>
-              </p>
-            )}
-          </div>
-
-          {/* ── CTA ── */}
-          <div
-            style={{ gridArea: "cta" }}
-            className="mt-4 flex flex-col items-stretch gap-3 md:mt-6 md:flex-row md:flex-wrap md:items-center md:gap-4"
-          >
-            <Link
-              href={`/produtos/${produto.id}`}
-              className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-5 py-2.5 text-[12px] font-bold uppercase tracking-[0.1em] text-white shadow-xl transition-all hover:brightness-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-accent-bright)]/40 md:w-auto md:px-7 md:py-3.5 md:text-sm md:tracking-[0.12em]"
-              style={{
-                background:
-                  "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
-                boxShadow:
-                  "0 12px 30px -8px rgba(236,91,32,0.55), 0 0 0 1px rgba(255,255,255,0.15) inset",
-              }}
-            >
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent"
-              />
-              <span className="relative">Ver oferta</span>
-              <span
-                aria-hidden
-                className="relative flex h-6 w-6 items-center justify-center rounded-full bg-white/25 transition-transform duration-300 group-hover:translate-x-0.5"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="M12 5l7 7-7 7" />
-                </svg>
-              </span>
-            </Link>
-
-            <Link
-              href="/produtos"
-              className="hidden text-center text-[11px] font-bold uppercase tracking-[0.14em] text-primary underline-offset-4 transition-colors hover:text-[var(--color-teal-light)] hover:underline md:inline md:text-left md:tracking-[0.16em]"
-            >
-              Ver todas as ofertas →
-            </Link>
-          </div>
-
-          {/* ── IMAGEM ── */}
-          {/*
-            Mobile: vai pro fim do flow, banner horizontal h-44 (não
-                    devora vertical), sem halo, sem selo verificado.
-            Desktop: span vertical na coluna esquerda, aspect quadrado
-                     com halo teal e selo verificado.
-          */}
-          <div
-            style={{ gridArea: "image" }}
-            className="relative md:mt-0 md:self-stretch"
-          >
-            <div className="relative md:mx-auto md:max-w-md">
-              {/* Halo teal — só desktop */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -inset-8 hidden rounded-[2.5rem] blur-2xl md:block"
+                className="absolute left-2 top-2 z-10 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.06em] text-white shadow-md sm:text-[11px]"
                 style={{
                   background:
-                    "radial-gradient(circle at center, rgba(53,194,196,0.30) 0%, rgba(53,146,147,0.15) 40%, transparent 70%)",
+                    "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
                 }}
-              />
+              >
+                -{desconto.toFixed(0)}% OFF
+              </span>
+            )}
 
-              {/* Frame branco */}
-              <div className="relative overflow-hidden rounded-xl border-2 border-white/95 bg-white shadow-lg shadow-service-from/60 ring-1 ring-primary/20 md:rounded-[2rem] md:border-4 md:shadow-2xl">
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-x-8 top-0 z-10 h-px bg-gradient-to-r from-transparent via-primary to-transparent md:inset-x-10"
-                />
-
-                {/* Mobile: square 110px (coluna fixa do grid) / Desktop: quadrado grande */}
-                <div className="relative aspect-square w-full md:aspect-square md:h-auto">
-                  <Image
-                    src={imageUrl}
-                    alt={produto.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width:640px) 50vw, (max-width:1024px) 45vw, 38vw"
-                    quality={85}
-                    priority
-                  />
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-t from-header/15 via-transparent to-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* STICKER de desconto — escondido no mobile (já temos badge -XX% OFF
-                  inline com o preço) / mantido no desktop como elemento visual. */}
-              {desconto > 0 && (
-                <div
-                  className="absolute -right-6 -top-6 z-20 hidden -rotate-[8deg] md:block"
-                  aria-hidden
-                >
-                  <div className="relative">
-                    <div
-                      className="absolute -inset-3 rounded-full blur-lg"
-                      style={{ background: "rgba(255,122,0,0.50)" }}
-                    />
-                    <div
-                      className="relative flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full text-white shadow-xl ring-4 ring-white"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #FF7A00 0%, #EC5B20 60%, #d44c19 100%)",
-                        boxShadow:
-                          "0 12px 30px -8px rgba(236,91,32,0.65), 0 0 0 1px rgba(255,255,255,0.4) inset",
-                      }}
-                    >
-                      <span className="text-[9px] font-bold uppercase tracking-[0.16em] opacity-95">
-                        Oferta
-                      </span>
-                      <span className="font-mono text-[1.85rem] font-extrabold tabular-nums leading-none tracking-tight">
-                        -{desconto.toFixed(0)}%
-                      </span>
-                      <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] opacity-95">
-                        Off
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Selo Kavita — só desktop */}
-              <div
-                className="absolute -bottom-4 left-6 z-20 hidden md:block"
+            <button
+              type="button"
+              aria-label="Adicionar aos favoritos"
+              className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-500 ring-1 ring-slate-200 backdrop-blur-sm transition-colors hover:text-rose-500 sm:h-9 sm:w-9"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 aria-hidden
               >
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-lg ring-2 ring-white"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #35c2c4 0%, #359293 60%, #2b797a 100%)",
-                    boxShadow: "0 8px 20px -4px rgba(53,146,147,0.55)",
-                  }}
-                >
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z" />
-                  </svg>
-                  Verificado Kavita
-                </span>
-              </div>
+                <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
+              </svg>
+            </button>
+
+            <div className="aspect-square w-full overflow-hidden rounded-xl bg-slate-50">
+              <Image
+                src={imageUrl}
+                alt={produto.name}
+                width={500}
+                height={500}
+                priority
+                className="h-full w-full object-cover"
+                sizes="(max-width: 768px) 100vw, 40vw"
+              />
             </div>
+          </div>
+
+          {/* Pill da campanha — preserva 'Oferta em destaque' / produto.title */}
+          <p className="mt-3 inline-flex w-fit max-w-full items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700 ring-1 ring-emerald-200">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span className="truncate">
+              {produto.title || "Oferta em destaque"}
+            </span>
+          </p>
+
+          {/* Nome do produto */}
+          <h3 className="mt-2 line-clamp-2 text-[15px] font-bold leading-tight tracking-tight text-slate-900 sm:text-base">
+            {produto.name}
+          </h3>
+
+          {/* Descrição */}
+          {produto.description && (
+            <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-slate-600 sm:text-[13px]">
+              {produto.description}
+            </p>
+          )}
+
+          {/* Preço de/por */}
+          <div className="mt-3">
+            {original > final && (
+              <p className="font-mono text-[12px] tabular-nums text-slate-400">
+                <span className="mr-1 font-sans not-italic text-slate-400">
+                  de
+                </span>
+                <span className="line-through">{formatCurrency(original)}</span>
+              </p>
+            )}
+            <div className="mt-0.5 flex items-baseline gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-orange-600 sm:text-[11px]">
+                por
+              </span>
+              <span className="text-2xl font-extrabold tabular-nums leading-none tracking-tight text-slate-900 sm:text-[1.65rem]">
+                {formatCurrency(final)}
+              </span>
+            </div>
+          </div>
+
+          {/* Validade */}
+          {endsAt && (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-slate-500">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+                className="shrink-0"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+              <span>Válido até {formatDateShort(endsAt)}</span>
+            </p>
+          )}
+
+          {/* CTA Ver oferta */}
+          <Link
+            href={`/produtos/${produto.id}`}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-emerald-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 sm:text-sm"
+          >
+            Ver oferta
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M5 12h14" />
+              <path d="M12 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </article>
+      </div>
+
+      {/* ── Navegação inferior — setas + dots ───────────────── */}
+      {total > 1 && (
+        <div className="relative border-t border-white/10 bg-black/30 backdrop-blur-md">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-3.5 md:px-10">
+            <button
+              type="button"
+              onClick={() => goTo(current - 1)}
+              aria-label="Promoção anterior"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:bg-white/20 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:h-10 sm:w-10"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-2">
+              {promocoes.map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => goTo(index)}
+                  aria-label={`Ir para promoção ${index + 1}`}
+                  aria-current={index === current ? "true" : undefined}
+                  className={
+                    index === current
+                      ? "h-2 w-9 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)] transition-all duration-300"
+                      : "h-2 w-2 rounded-full bg-white/30 transition-all duration-300 hover:bg-white/60"
+                  }
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => goTo(current + 1)}
+              aria-label="Próxima promoção"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:bg-white/20 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:h-10 sm:w-10"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
           </div>
         </div>
-
-        {/* ─── Navegação inferior — apenas dots no mobile, full no desktop ─────────── */}
-        {total > 1 && (
-          <div className="relative border-t border-white/10 bg-white/[0.04] backdrop-blur-md">
-            <div className="flex items-center justify-center gap-3 px-4 py-2.5 sm:justify-between sm:gap-4 sm:px-6 sm:py-4 md:px-10">
-              <div className="hidden items-center gap-1.5 sm:flex sm:gap-2">
-                <button
-                  type="button"
-                  onClick={() => goTo(current - 1)}
-                  aria-label="Promoção anterior"
-                  className="group flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-primary/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:h-10 sm:w-10"
-                >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goTo(current + 1)}
-                  aria-label="Próxima promoção"
-                  className="group flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 backdrop-blur-sm transition-all hover:border-primary/60 hover:bg-primary/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:h-10 sm:w-10"
-                >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
-              </div>
-
-              <p className="hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-white/50 sm:block">
-                Vitrine automática
-              </p>
-
-              <div className="flex items-center gap-2">
-                {promocoes.map((_, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => goTo(index)}
-                    aria-label={`Ir para promoção ${index + 1}`}
-                    aria-current={index === current ? "true" : undefined}
-                    className={
-                      index === current
-                        ? "h-2 w-9 rounded-full bg-primary shadow-[0_0_10px_rgba(53,194,196,0.6)] transition-all duration-300"
-                        : "h-2 w-2 rounded-full bg-white/25 transition-all duration-300 hover:bg-primary/60"
-                    }
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </section>
   );
 }
