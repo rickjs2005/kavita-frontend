@@ -13,6 +13,13 @@ import ServicosSection from "@/components/layout/ServicosSection";
 import ProdutosPorCategoria from "@/components/products/ProdutosPorCategoria";
 import TrustBar from "@/components/layout/TrustBar";
 import Footer from "@/components/layout/Footer";
+import {
+  ShieldCheckIcon,
+  WhatsAppIcon,
+  TruckIcon,
+  LeafIcon,
+} from "@/components/home/BenefitIcons";
+import HomeServicesPromoCard from "@/components/home/HomeServicesPromoCard";
 
 type Props = {
   categories: PublicCategory[];
@@ -20,11 +27,33 @@ type Props = {
   heroSlides: HeroSlide[];
 };
 
-const BENEFITS: { icon: string; title: string }[] = [
-  { icon: "🔒", title: "Pagamento seguro" },
-  { icon: "💬", title: "Atendimento WhatsApp" },
-  { icon: "🚚", title: "Entrega regional" },
-  { icon: "✓", title: "Produtos selecionados" },
+type BenefitItem = {
+  Icon: (props: { className?: string; size?: number }) => React.JSX.Element;
+  title: string;
+  subtitle: string;
+};
+
+const BENEFITS: BenefitItem[] = [
+  {
+    Icon: ShieldCheckIcon,
+    title: "Pagamento seguro",
+    subtitle: "Transações protegidas",
+  },
+  {
+    Icon: WhatsAppIcon,
+    title: "Atendimento WhatsApp",
+    subtitle: "Rápido e humanizado",
+  },
+  {
+    Icon: TruckIcon,
+    title: "Entrega regional",
+    subtitle: "Mais agilidade pra você",
+  },
+  {
+    Icon: LeafIcon,
+    title: "Produtos selecionados",
+    subtitle: "Qualidade que o agro confia",
+  },
 ];
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -62,19 +91,22 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
       {/* ─── BENEFÍCIOS — card único, 4-cols com divisores ──────────── */}
       <section className="mx-auto w-full max-w-7xl px-4 pt-4 sm:pt-7">
         <ul className="grid grid-cols-4 divide-x divide-slate-100 rounded-[24px] border border-slate-200 bg-white shadow-sm sm:rounded-3xl">
-          {BENEFITS.map((it) => (
+          {BENEFITS.map(({ Icon, title, subtitle }) => (
             <li
-              key={it.title}
-              className="flex flex-col items-center justify-center gap-1.5 px-1 py-3 text-center sm:gap-2 sm:px-1.5 sm:py-4"
+              key={title}
+              className="flex flex-col items-center justify-center gap-2 px-1.5 py-3.5 text-center sm:gap-2.5 sm:px-2 sm:py-5"
             >
               <span
                 aria-hidden
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-[15px] text-emerald-700 sm:h-10 sm:w-10 sm:text-base"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 sm:h-11 sm:w-11"
               >
-                {it.icon}
+                <Icon size={20} />
               </span>
-              <p className="line-clamp-2 text-[10.5px] font-semibold leading-tight text-slate-800 sm:text-[12px]">
-                {it.title}
+              <p className="line-clamp-2 text-[11px] font-semibold leading-tight text-slate-900 sm:text-[13px]">
+                {title}
+              </p>
+              <p className="hidden text-[10.5px] leading-tight text-slate-500 min-[400px]:line-clamp-2 min-[400px]:block sm:text-[11.5px]">
+                {subtitle}
               </p>
             </li>
           ))}
@@ -189,28 +221,10 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
         )}
       </section>
 
-      {/* ─── SERVIÇOS ────────────────────────────────────────────────── */}
+      {/* ─── SERVIÇOS — card promocional + listagem ─────────────── */}
       <section className="mx-auto w-full max-w-7xl px-4 pb-8 pt-6 sm:pb-10 sm:pt-10">
-        <header className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
-              Rede de serviços
-            </p>
-            <h2 className="mt-0.5 text-lg font-bold text-slate-900 sm:text-2xl">
-              Profissionais para te ajudar no campo
-            </h2>
-            <p className="mt-1 hidden text-xs text-slate-500 sm:block sm:text-sm">
-              Veterinários, agrônomos, mecânicos e outros prestadores.
-            </p>
-          </div>
-          <Link
-            href="/servicos"
-            className="inline-flex w-full items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-400 sm:w-auto"
-          >
-            Ver todos os serviços
-          </Link>
-        </header>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-2 shadow-sm sm:rounded-3xl sm:p-4">
+        <HomeServicesPromoCard />
+        <div className="mt-5 rounded-[24px] border border-slate-200 bg-white p-2 shadow-sm sm:mt-6 sm:rounded-3xl sm:p-4">
           <ServicosSection />
         </div>
       </section>

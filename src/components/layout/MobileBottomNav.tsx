@@ -81,7 +81,7 @@ function ToolsIcon({ className = "" }: IconProps) {
   );
 }
 
-function TagIcon({ className = "" }: IconProps) {
+function HeartIcon({ className = "" }: IconProps) {
   return (
     <svg
       width="22"
@@ -95,8 +95,7 @@ function TagIcon({ className = "" }: IconProps) {
       className={className}
       aria-hidden
     >
-      <path d="M20 12L12 20l-9-9V3h8l9 9z" />
-      <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" />
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
     </svg>
   );
 }
@@ -145,8 +144,8 @@ export default function MobileBottomNav() {
     { href: "/servicos", label: "Serviços", Icon: ToolsIcon },
     {
       href: "/favoritos",
-      label: "Ofertas",
-      Icon: TagIcon,
+      label: "Favoritos",
+      Icon: HeartIcon,
     },
     {
       href: accountHref,
