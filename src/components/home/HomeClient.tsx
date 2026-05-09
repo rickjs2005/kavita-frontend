@@ -78,12 +78,12 @@ function categoryIcon(slug: string): string {
 export default function HomeClient({ categories, shop, heroSlides }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-[#f7faf8] text-slate-900">
-      {/* ─── HERO — modo card no mobile, full-bleed no desktop ───────── */}
-      <div className="px-4 pt-4 sm:px-0 sm:pt-0">
-        <div className="overflow-hidden rounded-[28px] shadow-[0_18px_40px_-20px_rgba(7,63,67,0.45)] ring-1 ring-slate-200/60 sm:rounded-none sm:shadow-none sm:ring-0">
+      {/* ─── HERO — card largo com bordas arredondadas em todas as breakpoints ─ */}
+      <div className="mx-auto w-full max-w-7xl px-4 pt-4 sm:pt-6">
+        <div className="overflow-hidden rounded-[28px] shadow-[0_22px_48px_-22px_rgba(7,63,67,0.55)] ring-1 ring-slate-200/40 sm:rounded-[32px]">
           <HeroCarousel
             slides={heroSlides}
-            className="!min-h-[400px] sm:!min-h-[80vh]"
+            className="!min-h-[440px] sm:!min-h-[520px] lg:!min-h-[600px]"
           />
         </div>
       </div>
