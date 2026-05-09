@@ -417,6 +417,57 @@
   }
 }
 
+/* Shimmer — gradient que desliza da esquerda pra direita.
+   Usado em loading skeletons e em hairlines premium do Kavita News
+   para dar sensação de "sistema vivo / atualização contínua". */
+@keyframes kavitaShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.kavita-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.kavita-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(52, 211, 153, 0.08) 45%,
+    rgba(52, 211, 153, 0.18) 50%,
+    rgba(52, 211, 153, 0.08) 55%,
+    transparent 100%
+  );
+  animation: kavitaShimmer 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Pulse "AO VIVO" — círculo verde que pulsa devagar. Mais discreto
+   que o ping padrão do Tailwind: um halo em cada ciclo, sem ser ruim
+   pra atenção. Usado nos pontos de ticker do Kavita News. */
+@keyframes kavitaLivePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45),
+      0 0 6px rgba(52, 211, 153, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(52, 211, 153, 0),
+      0 0 12px rgba(52, 211, 153, 0.75);
+  }
+}
+
+.kavita-live-dot {
+  animation: kavitaLivePulse 2.4s ease-in-out infinite;
+}
+
 /* Scroll-padding para compensar header fixo em anchor links */
 html {
   scroll-padding-top: 80px;

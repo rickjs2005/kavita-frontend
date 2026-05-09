@@ -482,7 +482,8 @@ function ModuleLink({
   active: boolean;
 }) {
   // Visual minimal: sem pill colorido para inativos. Item ativo
-  // ganha apenas cor cheia + sublinhado fino — sem background pesado.
+  // ganha cor cheia + underline emerald grosso (assinatura visual do
+  // ecossistema Kavita) — bate com o mockup do redesign /news.
   const base =
     "relative inline-flex items-center text-[13px] lg:text-sm font-medium px-1.5 lg:px-2 py-2 transition-colors whitespace-nowrap";
   const state = active
@@ -503,7 +504,7 @@ function ModuleLink({
       {active && (
         <span
           aria-hidden
-          className="absolute inset-x-1.5 lg:inset-x-2 bottom-0.5 h-px bg-white/70"
+          className="absolute inset-x-1.5 lg:inset-x-2 -bottom-px h-[3px] rounded-t-sm bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.55)]"
         />
       )}
     </Link>
