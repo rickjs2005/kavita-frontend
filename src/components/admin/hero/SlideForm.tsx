@@ -383,11 +383,14 @@ export default function SlideForm({ slideId }: Props) {
     title: form.title,
     subtitle: form.subtitle,
     badge_text: form.badge_text,
+    badge_icon: form.badge_icon || null,
     slide_type: form.slide_type,
     button_label: form.button_label,
     button_secondary_label: form.button_secondary_label,
     videoSrc: previewVideo,
     imageSrc: previewImage,
+    features: form.features,
+    quick_links: form.quick_links,
   };
 
   return (
@@ -428,8 +431,8 @@ export default function SlideForm({ slideId }: Props) {
             <div className="lg:sticky lg:top-4">
               <HeroSlidePreview slide={previewSlide} />
               <p className="mt-2 px-1 text-[11px] text-white/40">
-                O preview reflete título, subtítulo, badge e mídia. Mini-features
-                e quick links aparecem só no público.
+                Preview compacto. Mini-features aparecem como linha resumida; o
+                rodapé indica quantos quick links serão exibidos no público.
               </p>
             </div>
           </div>
