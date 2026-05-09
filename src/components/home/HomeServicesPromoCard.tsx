@@ -17,9 +17,17 @@
 import Link from "next/link";
 import Image from "next/image";
 
+type AvatarItem = { src: string; alt: string };
+
 type Props = {
   imageSrc?: string;
   imageAlt?: string;
+  /**
+   * Até 3 avatares fotográficos para o stack do canto inferior direito.
+   * Quando ausente (ou vazio), o componente cai nos AvatarStub SVG —
+   * mantém o card funcional mesmo sem assets.
+   */
+  avatars?: AvatarItem[];
   className?: string;
 };
 
@@ -28,8 +36,11 @@ const HEADING_ID = "home-services-promo-title";
 export default function HomeServicesPromoCard({
   imageSrc,
   imageAlt = "Profissional do agro Kavita",
+  avatars,
   className = "",
 }: Props) {
+  const photoAvatars = avatars?.slice(0, 3) ?? [];
+  const hasPhotoAvatars = photoAvatars.length > 0;
   return (
     <article
       aria-labelledby={HEADING_ID}
@@ -106,9 +117,17 @@ export default function HomeServicesPromoCard({
 
           {/* Stack de avatares — canto inferior direito */}
           <div className="absolute bottom-4 right-4 flex -space-x-2.5 sm:bottom-5 sm:right-5">
-            <AvatarStub gradient="from-emerald-400 to-emerald-600" />
-            <AvatarStub gradient="from-amber-300 to-amber-500" />
-            <AvatarStub gradient="from-sky-400 to-sky-600" />
+            {hasPhotoAvatars ? (
+              photoAvatars.map((av, i) => (
+                <AvatarPhoto key={`${av.src}-${i}`} src={av.src} alt={av.alt} />
+              ))
+            ) : (
+              <>
+                <AvatarStub gradient="from-emerald-400 to-emerald-600" />
+                <AvatarStub gradient="from-amber-300 to-amber-500" />
+                <AvatarStub gradient="from-sky-400 to-sky-600" />
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -175,6 +194,14 @@ function AvatarStub({ gradient }: { gradient: string }) {
         <circle cx="12" cy="9" r="3.5" />
         <path d="M5 21c1-4 4-6 7-6s6 2 7 6H5z" />
       </svg>
+    </span>
+  );
+}
+
+function AvatarPhoto({ src, alt }: AvatarItem) {
+  return (
+    <span className="relative inline-flex h-10 w-10 overflow-hidden rounded-full bg-emerald-50 ring-2 ring-white shadow-sm">
+      <Image src={src} alt={alt} fill className="object-cover" sizes="40px" />
     </span>
   );
 }

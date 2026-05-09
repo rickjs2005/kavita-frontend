@@ -226,6 +226,20 @@ export default function HomeClient({ categories, shop, heroSlides }: Props) {
         <HomeServicesPromoCard
           imageSrc="/images/home/profissional-agro.jpg"
           imageAlt="Profissional do agro examinando lavoura de café Kavita"
+          avatars={[
+            {
+              src: "/images/home/avatars/agronoma.jpg",
+              alt: "Agrônoma Kavita",
+            },
+            {
+              src: "/images/home/avatars/mecanico.jpg",
+              alt: "Mecânico de campo Kavita",
+            },
+            {
+              src: "/images/home/avatars/veterinario.jpg",
+              alt: "Veterinário Kavita",
+            },
+          ]}
         />
         <div className="mt-5 rounded-[24px] border border-slate-200 bg-white p-2 shadow-sm sm:mt-6 sm:rounded-3xl sm:p-4">
           <ServicosSection />
