@@ -73,6 +73,7 @@ import {
   saveLeadDraft,
   clearLeadDraft,
 } from "@/lib/leadDraft";
+import { useLegalVersions } from "@/hooks/useLegalVersions";
 
 type Props = {
   corretoraSlug: string;
@@ -206,6 +207,10 @@ export function LeadContactForm({
 }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // LGPD — versões correntes dos Termos + Privacidade. Lidas para incluir
+  // como hidden no payload e gravar evidência forense (`consents` table).
+  const versions = useLegalVersions();
 
   // Turnstile — só entra em ação se houver site key. Sem key, o form
   // funciona como antes (útil em dev local sem credenciais Cloudflare).
@@ -394,6 +399,14 @@ export function LeadContactForm({
       // Honeypot — se preenchido, envia mesmo assim. Backend descarta
       // silenciosamente. Usuário real nunca vê o campo.
       if (data.website_hp?.trim()) payload.website_hp = data.website_hp.trim();
+      // LGPD — versões dos termos exibidos. Backend grava em `consents`
+      // como evidência forense. Default-sided no backend se ausente.
+      if (versions?.terms.version) {
+        payload.terms_version = versions.terms.version;
+      }
+      if (versions?.privacy.version) {
+        payload.privacy_version = versions.privacy.version;
+      }
       if (turnstileEnabled && turnstileToken) {
         payload["cf-turnstile-response"] = turnstileToken;
       }
@@ -1048,7 +1061,14 @@ export function LeadContactForm({
         </label>
       </div>
 
-        {/* Consentimento LGPD — obrigatório. Linguagem simples, sem jargão. */}
+        {/* Consentimento LGPD — obrigatório. Linguagem simples, sem jargão.
+            O texto cobre 2 finalidades em 1 aceite:
+              1. Compartilhamento dos dados com a corretora destinatária
+                 (finalidade comercial específica deste formulário).
+              2. Aceite genérico dos Termos + Política de Privacidade
+                 da plataforma (linkados inline). Backend grava ambos
+                 via consentsService.record (subject_type='corretora_lead'
+                 + source='lead_form'). */}
         <div>
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:bg-white/[0.05]">
             <input
@@ -1064,7 +1084,25 @@ export function LeadContactForm({
               <strong className="font-semibold text-stone-100">
                 {corretoraName}
               </strong>{" "}
-              para tratar do meu café. Posso pedir a exclusão dos dados depois.
+              para tratar do meu café. Declaro que li e aceito os{" "}
+              <a
+                href="/termos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-amber-200 underline underline-offset-2 hover:text-amber-100"
+              >
+                Termos de Uso
+              </a>{" "}
+              e a{" "}
+              <a
+                href="/privacidade"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-amber-200 underline underline-offset-2 hover:text-amber-100"
+              >
+                Política de Privacidade
+              </a>
+              . Posso pedir a exclusão dos dados depois.
             </span>
           </label>
           {errors.consentimento_contato && (

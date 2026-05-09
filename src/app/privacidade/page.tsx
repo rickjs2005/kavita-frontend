@@ -15,11 +15,12 @@ export const metadata: Metadata = {
 const PRIVACY_EMAIL =
   process.env.NEXT_PUBLIC_PRIVACY_EMAIL ?? "privacidade@kavita.com.br";
 
-// Versão da política — bumpar quando o texto relevante mudar para
-// reexigir aceite. Não exportado aqui porque Next.js restringe
-// exports em `page.tsx`; se precisar reutilizar em outro módulo,
-// mover para `src/lib/privacyVersion.ts`.
-const PRIVACY_POLICY_VERSION = "2026-04-20.1";
+// Versão da política — alinhada com kavita-backend/lib/legal/versions.js
+// (PRIVACY_VERSION). Bumpar AQUI e LÁ junto quando o texto relevante
+// mudar para reexigir aceite. A fonte da verdade da versão é o
+// backend (endpoint GET /api/public/legal/versions); este literal
+// serve para SSR estático da página sem HTTP roundtrip.
+const PRIVACY_POLICY_VERSION = "1.0.0";
 
 export default function PrivacidadePage() {
   return (
@@ -36,6 +37,25 @@ export default function PrivacidadePage() {
           de 2026
         </p>
       </header>
+
+      {/* Banner discreto de versão preliminar — alinhado com /termos e
+          com kavita-backend/docs/legal/politica-privacidade-v1.0.0.md.
+          Mantém aparência profissional sem mostrar placeholders tipo
+          [CNPJ] / [Razão Social] que indiquem documento inacabado. */}
+      <aside className="mb-10 rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-[13px] leading-relaxed text-amber-900">
+        <strong className="font-semibold">Aviso — versão preliminar.</strong>{" "}
+        Esta política está em vigor enquanto a Kavita opera em fase de
+        validação controlada. Os dados institucionais completos (razão
+        social, CNPJ, endereço fiscal e identificação formal do(a)
+        Encarregado(a) de Dados) serão divulgados nesta mesma página antes
+        do início da operação comercial definitiva, com aviso prévio aos
+        titulares e nova versão. As cláusulas de proteção, segurança e
+        direitos do titular vigoram desde já. O canal{" "}
+        <a href={`mailto:${PRIVACY_EMAIL}`} className="underline">
+          {PRIVACY_EMAIL}
+        </a>{" "}
+        está ativo.
+      </aside>
 
       <div className="prose prose-stone max-w-none space-y-8 text-stone-700">
         <section>

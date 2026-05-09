@@ -37,6 +37,8 @@ import {
   TURNSTILE_ENABLED,
   type TurnstileHandle,
 } from "@/components/painel-corretora/TurnstileWidget";
+import ConsentCheckbox from "@/components/legal/ConsentCheckbox";
+import { useLegalVersions } from "@/hooks/useLegalVersions";
 
 // ─── Configuração ────────────────────────────────────────────────
 
@@ -128,8 +130,14 @@ export function CorretoraSubmissionForm() {
       facebook: "",
       senha: "",
       senha_confirmacao: "",
+      aceite_termos: false,
     },
   });
+
+  // LGPD — versões correntes dos Termos + Privacidade. Best-effort:
+  // se o fetch não resolveu até o submit, mandamos undefined e o backend
+  // aplica defaults internos.
+  const versions = useLegalVersions();
 
   // Watch live para feedback de UX — não controla o RHF, só visual.
   const watched = watch();
@@ -199,6 +207,16 @@ export function CorretoraSubmissionForm() {
       return;
     }
 
+    // LGPD — sem aceite, não envia. Backend também rejeita (defesa em
+    // profundidade), mas validar aqui evita roundtrip.
+    if (data.aceite_termos !== true) {
+      setError("aceite_termos", {
+        message:
+          "Para concluir o cadastro, é necessário aceitar os Termos e a Política de Privacidade.",
+      });
+      return;
+    }
+
     if (TURNSTILE_ENABLED && !turnstileToken) {
       toast.error(
         turnstileError ?? "Aguarde a verificação anti-bot ser concluída.",
@@ -214,6 +232,16 @@ export function CorretoraSubmissionForm() {
           formData.append(key, value.trim());
         }
       });
+      // LGPD — campos não-string do form (booleans, versões opcionais)
+      // precisam ir explicitamente. multipart/form-data sempre serializa
+      // como string; backend Zod faz coerção via schema.
+      formData.append("aceite_termos", "true");
+      if (versions?.terms.version) {
+        formData.append("terms_version", versions.terms.version);
+      }
+      if (versions?.privacy.version) {
+        formData.append("privacy_version", versions.privacy.version);
+      }
       if (logoFile) formData.append("logo", logoFile);
 
       // Token vai no header (não no body) para que o middleware
@@ -657,6 +685,19 @@ export function CorretoraSubmissionForm() {
           )}
         </div>
       )}
+
+      {/* LGPD — aceite obrigatório dos Termos + Privacidade. Backend valida
+          com z.literal(true) e grava evidência forense em `consents`. */}
+      <ConsentCheckbox
+        variant="dark"
+        id="corretora-signup-consent"
+        register={register("aceite_termos", {
+          validate: (v) =>
+            v === true ||
+            "Você precisa aceitar os Termos e a Política de Privacidade para concluir o cadastro.",
+        })}
+        error={errors.aceite_termos?.message as string | undefined}
+      />
 
       {/* ═══ Submit row ═══════════════════════════════════════════════ */}
       <div className="relative overflow-hidden rounded-2xl bg-white/[0.04] p-6 ring-1 ring-white/[0.08] shadow-2xl shadow-black/40 backdrop-blur-sm md:p-8">

@@ -128,4 +128,8 @@ export type CorretoraSubmissionFormData = {
   facebook: string;
   senha: string;
   senha_confirmacao: string;
+  // LGPD — aceite obrigatório dos Termos + Privacidade. Backend valida
+  // com z.literal(true) no submitCorretoraSchema e grava evidência
+  // forense em `consents` (versão + IP + UA + timestamp).
+  aceite_termos: boolean;
 };

@@ -31,6 +31,15 @@ export type RegisterPayload = {
   email: string;
   senha: string;
   cpf?: string;
+  // LGPD — bloqueador go-live. Aceite obrigatório dos Termos + Privacidade.
+  // Backend valida com z.literal(true) e grava evidência forense em
+  // `consents` (versão + IP + user-agent + timestamp).
+  aceite_termos: true;
+  // Versões dos textos exibidos. Lidos via useLegalVersions() (chama
+  // GET /api/public/legal/versions). Backend tem default próprio se
+  // o frontend não enviar — não bloqueia o cadastro.
+  terms_version?: string;
+  privacy_version?: string;
 };
 
 type AuthContextValue = {

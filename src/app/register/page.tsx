@@ -10,6 +10,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/AuthContext";
 import CloseButton from "@/components/buttons/CloseButton";
 import LoadingButton from "@/components/buttons/LoadingButton";
+import ConsentCheckbox from "@/components/legal/ConsentCheckbox";
+import { useLegalVersions } from "@/hooks/useLegalVersions";
 import {
   formatCpfMask,
   normalizeEmail,
@@ -70,6 +72,15 @@ const schema = z
       ),
     senha: passwordSchema,
     confirmSenha: z.string().min(8, "Confirme sua senha"),
+    // LGPD — aceite obrigatório dos Termos + Privacidade. literal(true)
+    // garante que o checkbox marcou "Sim, eu aceito"; qualquer outro
+    // valor (false, undefined, "true" string) é rejeitado.
+    aceite_termos: z.literal(true, {
+      errorMap: () => ({
+        message:
+          "Você precisa aceitar os Termos e a Política de Privacidade para continuar.",
+      }),
+    }),
   })
   .refine((v) => v.senha === v.confirmSenha, {
     path: ["confirmSenha"],
@@ -81,6 +92,11 @@ type FormData = z.infer<typeof schema>;
 export default function RegisterPage() {
   const router = useRouter();
   const { register: registerUser, login } = useAuth();
+  // Versões correntes dos termos lidas do backend
+  // (GET /api/public/legal/versions). Se o fetch falhar, `versions`
+  // fica null — o backend tem default próprio e o cadastro não é
+  // bloqueado por causa disso.
+  const versions = useLegalVersions();
 
   const [serverMsg, setServerMsg] = useState<string | null>(null);
   const [showPw, setShowPw] = useState(false);
@@ -121,6 +137,18 @@ export default function RegisterPage() {
       email: normalizeEmail(data.email),
       senha: data.senha,
       cpf: onlyDigits(data.cpf), // envia apenas dígitos para evitar divergência no backend
+      // LGPD — chave forçada para `true` literal (o schema do RHF já
+      // garante isso, mas reforçamos pra TypeScript inferir o tipo
+      // correto de RegisterPayload).
+      aceite_termos: true as const,
+      // Versões dos textos exibidos ao usuário neste momento. Se o
+      // hook ainda não resolveu, manda undefined — backend usa default.
+      ...(versions?.terms.version
+        ? { terms_version: versions.terms.version }
+        : {}),
+      ...(versions?.privacy.version
+        ? { privacy_version: versions.privacy.version }
+        : {}),
     };
 
     const { ok, message } = await registerUser(payload);
@@ -331,6 +359,18 @@ export default function RegisterPage() {
                     {errors.confirmSenha.message}
                   </p>
                 )}
+              </div>
+
+              {/* LGPD — aceite obrigatório dos Termos + Privacidade.
+                  Bloqueia o submit (RHF) e o backend reforça via Zod
+                  literal(true). */}
+              <div className="mt-2">
+                <ConsentCheckbox
+                  variant="dark"
+                  id="register-consent"
+                  register={register("aceite_termos")}
+                  error={errors.aceite_termos?.message as string | undefined}
+                />
               </div>
 
               <div className="mt-2">

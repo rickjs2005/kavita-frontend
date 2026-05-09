@@ -13,9 +13,11 @@
 // para uma âncora de representantes.
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { DroneRepresentative } from "@/types/drones";
 import { onlyDigits } from "@/utils/formatters";
 import apiClient from "@/lib/apiClient";
+import { useLegalVersions } from "@/hooks/useLegalVersions";
 
 type DroneModel = {
   key: string;
@@ -67,6 +69,11 @@ export default function InterestFormSection({
   const [telefone, setTelefone] = useState("");
   const [modelo, setModelo] = useState("");
   const [mensagem, setMensagem] = useState("");
+  // LGPD — visitante anônimo aceita Termos + Privacidade antes de
+  // disparar o WhatsApp do representante. Backend reforça com
+  // z.literal(true) em createLeadPublicSchema.
+  const [aceiteTermos, setAceiteTermos] = useState(false);
+  const versions = useLegalVersions();
 
   const hasRep = Boolean(representative?.whatsapp);
 
@@ -109,6 +116,15 @@ export default function InterestFormSection({
         modelo_interesse: modelo || null,
         mensagem: mensagem || null,
         origem: "interest_form",
+        // LGPD — aceite explícito + versões dos termos. Backend grava
+        // em `consents` (subject_type='drone_lead') com IP/UA/timestamp.
+        aceite_termos: true,
+        ...(versions?.terms.version
+          ? { terms_version: versions.terms.version }
+          : {}),
+        ...(versions?.privacy.version
+          ? { privacy_version: versions.privacy.version }
+          : {}),
       });
     } catch (err) {
       // Falha ao salvar não impede o WhatsApp.
@@ -121,7 +137,10 @@ export default function InterestFormSection({
   const inputClass =
     "h-11 w-full rounded-xl bg-black/30 border border-white/10 px-3 text-sm text-slate-100 placeholder:text-slate-500 transition focus:outline-none focus:border-emerald-400/40 focus:ring-2 focus:ring-emerald-400/30";
 
-  const canSubmit = nome.trim().length > 1 && telefone.replace(/\D/g, "").length >= 10;
+  const canSubmit =
+    nome.trim().length > 1 &&
+    telefone.replace(/\D/g, "").length >= 10 &&
+    aceiteTermos === true;
 
   return (
     <section className="relative py-16 sm:py-24">
@@ -249,6 +268,46 @@ export default function InterestFormSection({
                 />
               </div>
 
+              {/* LGPD — aceite obrigatório dos Termos + Privacidade.
+                  Sem componente compartilhado <ConsentCheckbox /> aqui
+                  porque este form NÃO usa react-hook-form (state local
+                  com useState); a sintaxe do componente exige
+                  `register` do RHF. Mantemos o mesmo texto e os mesmos
+                  links para consistência editorial entre fluxos. */}
+              <label
+                htmlFor="drones-interest-consent"
+                className="mt-2 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-colors hover:bg-white/[0.05]"
+              >
+                <input
+                  id="drones-interest-consent"
+                  type="checkbox"
+                  checked={aceiteTermos}
+                  onChange={(e) => setAceiteTermos(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-stone-900 text-emerald-400 focus:ring-emerald-400/60 focus:ring-offset-0"
+                />
+                <span className="text-[12px] leading-relaxed text-slate-300">
+                  Li e aceito os{" "}
+                  <Link
+                    href="/termos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-emerald-300 underline underline-offset-2 hover:text-emerald-200"
+                  >
+                    Termos de Uso
+                  </Link>{" "}
+                  e a{" "}
+                  <Link
+                    href="/privacidade"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-emerald-300 underline underline-offset-2 hover:text-emerald-200"
+                  >
+                    Política de Privacidade
+                  </Link>{" "}
+                  da Kavita.
+                </span>
+              </label>
+
               <button
                 type="submit"
                 disabled={!canSubmit}
@@ -258,9 +317,11 @@ export default function InterestFormSection({
               </button>
 
               <p className="mt-1 text-[11px] text-slate-500">
-                {canSubmit
-                  ? "Ao enviar, abrimos o WhatsApp do representante com suas informações preenchidas."
-                  : "Preencha nome e telefone para continuar."}
+                {!aceiteTermos
+                  ? "Aceite os Termos e a Política de Privacidade para continuar."
+                  : canSubmit
+                    ? "Ao enviar, abrimos o WhatsApp do representante com suas informações preenchidas."
+                    : "Preencha nome e telefone para continuar."}
               </p>
             </form>
           </div>
