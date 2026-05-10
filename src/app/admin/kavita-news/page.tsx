@@ -10,6 +10,7 @@ import NewsTabs, { NewsTabKey } from "@/components/admin/kavita-news/NewsTabs";
 import ClimaSection from "@/components/admin/kavita-news/clima/ClimaSection";
 import CotacoesSection from "@/components/admin/kavita-news/cotacoes/CotacoesSection";
 import PostsTab from "@/components/admin/kavita-news/posts/PostsTab";
+import WhatsappSubscribersSection from "@/components/admin/kavita-news/whatsapp/WhatsappSubscribersSection";
 
 import { API_BASE } from "@/utils/absUrl";
 
@@ -141,6 +142,8 @@ export default function AdminKavitaNewsPage() {
             )}
 
             {activeTab === "posts" && <PostsTab />}
+
+            {activeTab === "whatsapp" && <WhatsappSubscribersSection />}
           </div>
         </div>
       </main>

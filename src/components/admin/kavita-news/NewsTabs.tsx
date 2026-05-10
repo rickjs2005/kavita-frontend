@@ -1,6 +1,6 @@
 "use client";
 
-export type NewsTabKey = "clima" | "cotacoes" | "posts";
+export type NewsTabKey = "clima" | "cotacoes" | "posts" | "whatsapp";
 
 type Props = {
   active: NewsTabKey;
@@ -11,6 +11,7 @@ const tabs: { key: NewsTabKey; label: string; icon: string }[] = [
   { key: "clima", label: "Clima", icon: "🌧️" },
   { key: "cotacoes", label: "Cotações", icon: "📈" },
   { key: "posts", label: "Posts", icon: "📝" },
+  { key: "whatsapp", label: "WhatsApp", icon: "💬" },
 ];
 
 export default function NewsTabs({ active, onChange }: Props) {
