@@ -144,6 +144,31 @@ async function postBySlug(slug: string): Promise<PublicPost | null> {
   );
 }
 
+export type WhatsappSubscribeResult = {
+  id: number;
+  phone: string;
+  status: "pending" | "active" | "unsubscribed";
+  /** true se a inscrição foi criada agora; false se o número já existia. */
+  created: boolean;
+};
+
+/**
+ * Inscreve um número no canal WhatsApp do Kavita News.
+ * Idempotente — número já existente NÃO retorna erro.
+ *
+ * O backend valida o telefone (10 ou 11 dígitos, DDD válido) — passamos
+ * a string original (com ou sem máscara) e ele normaliza.
+ */
+async function whatsappSubscribe(
+  phone: string,
+  source = "home_news",
+): Promise<WhatsappSubscribeResult> {
+  return apiClient.post<WhatsappSubscribeResult>("/api/news/whatsapp-subscribe", {
+    phone,
+    source,
+  });
+}
+
 /**
  * Overview para página /news (agrega clima + cotacoes + posts)
  */
@@ -169,4 +194,5 @@ export const newsPublicApi = {
   postsList,
   postBySlug,
   overview,
+  whatsappSubscribe,
 };

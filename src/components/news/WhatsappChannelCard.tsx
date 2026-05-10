@@ -1,14 +1,12 @@
 // src/components/news/WhatsappChannelCard.tsx
 //
-// Canal vivo do agro via WhatsApp. Substitui o antigo formulario de
-// newsletter por uma captura de WhatsApp com posicionamento de
-// "central operacional" — nao "marketing". O usuario sente que esta
-// entrando em um canal de inteligencia, nao assinando uma lista.
+// Canal vivo do agro via WhatsApp. Captura o numero do produtor/comprador
+// e registra no backend (POST /api/news/whatsapp-subscribe). Idempotente —
+// se o numero ja existir, o backend devolve sucesso com `created=false` e
+// o card mostra "voce ja esta inscrito" sem mudar a UX.
 //
-// Sem backend ligado ainda — por enquanto o submit guarda o numero em
-// localStorage (lista de espera) e mostra confirmacao honesta. Quando o
-// endpoint /api/news/whatsapp-subscribe existir, basta trocar o handler
-// `subscribe()` para um POST via apiClient.
+// Erros 429 (rate-limit) e 400 (telefone invalido) sao tratados com mensagem
+// amigavel. Outros erros caem em fallback generico.
 //
 // Visual: dark glass premium, ring emerald no hover, badge AO VIVO com
 // pulse sutil, glow no botao. Inspirado em Bloomberg / Stripe / WhatsApp
@@ -17,8 +15,9 @@
 "use client";
 
 import { useState } from "react";
+import { newsPublicApi } from "@/lib/newsPublicApi";
+import { isApiError } from "@/lib/errors";
 
-const STORAGE_KEY = "kavita-news-whatsapp-waitlist";
 const SOCIAL_PROOF_COUNT = 2400;
 
 /** Aplica mascara (00) 00000-0000. Aceita 10 ou 11 digitos. */
@@ -38,18 +37,6 @@ function isValidPhone(v: string): boolean {
   return d.length === 10 || d.length === 11;
 }
 
-function persistLocally(phone: string) {
-  if (typeof window === "undefined") return;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    const list: string[] = raw ? JSON.parse(raw) : [];
-    if (!list.includes(phone)) list.push(phone);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  } catch {
-    // Silencia — submit continua valido mesmo se storage estiver bloqueado.
-  }
-}
-
 function WhatsappIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -67,6 +54,8 @@ export function WhatsappChannelCard() {
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  /** True quando o backend responde com `created=false` — numero ja inscrito. */
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,9 +68,25 @@ export function WhatsappChannelCard() {
     }
 
     setStatus("submitting");
-    await new Promise((r) => setTimeout(r, 350));
-    persistLocally(phone.replace(/\D/g, ""));
-    setStatus("success");
+    try {
+      const result = await newsPublicApi.whatsappSubscribe(phone, "home_news");
+      setAlreadySubscribed(!result.created);
+      setStatus("success");
+    } catch (err) {
+      // Mensagens amigaveis para os erros previsiveis do backend.
+      let msg = "Nao foi possivel completar a inscricao. Tente novamente.";
+      if (isApiError(err)) {
+        if (err.status === 429) {
+          msg = "Muitas tentativas. Aguarde um minuto e tente novamente.";
+        } else if (err.status === 400) {
+          msg = err.message || "Telefone invalido.";
+        } else if (err.message) {
+          msg = err.message;
+        }
+      }
+      setErrorMsg(msg);
+      setStatus("error");
+    }
   };
 
   if (status === "success") {
@@ -99,21 +104,28 @@ export function WhatsappChannelCard() {
             <WhatsappIcon className="h-3.5 w-3.5" />
           </span>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
-            Canal ativado
+            {alreadySubscribed ? "Ja inscrito" : "Canal ativado"}
           </p>
         </div>
         <p className="mt-3 text-sm font-semibold text-stone-50">
-          Voce esta na lista do canal Kavita.
+          {alreadySubscribed
+            ? "Esse numero ja recebe os alertas."
+            : "Voce esta na lista do canal Kavita."}
         </p>
         <p className="mt-1.5 text-xs leading-relaxed text-stone-400">
-          Os primeiros alertas chegam no numero
-          <span className="font-medium text-stone-300"> {phone}</span> assim que
-          o canal abrir oficialmente.
+          {alreadySubscribed
+            ? "O numero "
+            : "Os primeiros alertas chegam no numero "}
+          <span className="font-medium text-stone-300">{phone}</span>
+          {alreadySubscribed
+            ? " ja esta cadastrado no canal Kavita."
+            : " assim que o canal abrir oficialmente."}
         </p>
         <button
           type="button"
           onClick={() => {
             setPhone("");
+            setAlreadySubscribed(false);
             setStatus("idle");
           }}
           className="mt-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300 hover:text-emerald-200"
