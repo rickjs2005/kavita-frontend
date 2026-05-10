@@ -5,7 +5,13 @@
 // module does NOT prevent the others from rendering.
 import "server-only";
 
-import type { PublicClima, PublicCotacao, PublicPost } from "@/lib/newsPublicApi";
+import type {
+  PublicClima,
+  PublicCotacao,
+  PublicPost,
+  CotacaoHistoryPoint,
+  CotacoesHistoryBatch,
+} from "@/lib/newsPublicApi";
 
 const API_BASE =
   process.env.API_BASE ||
@@ -52,6 +58,10 @@ export type NewsOverview = {
   clima: PublicClima[];
   cotacoes: PublicCotacao[];
   posts: PublicPost[];
+  /** Mapa { slug: [pontos...] } com histórico recente das cotações listadas
+   *  (até 24 pontos cada, últimos 7 dias). Se o batch falhar, vem vazio
+   *  — os sparklines caem para silhueta procedural sem quebrar a página. */
+  cotacoesHistory: Record<string, CotacaoHistoryPoint[]>;
   /** true if ALL three modules returned empty/error — page has nothing to show */
   isEmpty: boolean;
   /** true if at least one module failed (data may be partial) */
@@ -83,7 +93,30 @@ export async function fetchNewsOverview(postsLimit = 6): Promise<NewsOverview> {
     cotacoesResult.status === "rejected" ||
     postsResult.status === "rejected";
 
+  // Segunda etapa: pega histórico em lote das cotações que vieram. Mantemos
+  // como passo separado para que uma falha aqui NÃO impeça a página de
+  // renderizar — o sparkline cai pra silhueta procedural.
+  const slugs = cotacoes
+    .map((c) => (typeof c.slug === "string" ? c.slug.trim() : ""))
+    .filter((s): s is string => s.length > 0)
+    .slice(0, 12);
+
+  let cotacoesHistory: CotacoesHistoryBatch = {};
+  if (slugs.length > 0) {
+    try {
+      const csv = encodeURIComponent(slugs.join(","));
+      cotacoesHistory = await fetchJson<CotacoesHistoryBatch>(
+        buildUrl(`/api/news/cotacoes/history-batch?slugs=${csv}&limit=24`),
+      );
+      if (!cotacoesHistory || typeof cotacoesHistory !== "object") {
+        cotacoesHistory = {};
+      }
+    } catch {
+      cotacoesHistory = {};
+    }
+  }
+
   const isEmpty = clima.length === 0 && cotacoes.length === 0 && posts.length === 0;
 
-  return { clima, cotacoes, posts, isEmpty, hasErrors };
+  return { clima, cotacoes, posts, cotacoesHistory, isEmpty, hasErrors };
 }

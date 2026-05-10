@@ -99,6 +99,38 @@ async function cotacaoBySlug(slug: string): Promise<PublicCotacao | null> {
   );
 }
 
+export type CotacaoHistoryPoint = {
+  id: number;
+  price: string | number | null;
+  variation_day?: string | number | null;
+  source?: string | null;
+  observed_at?: string | null;
+  created_at?: string | null;
+};
+
+export type CotacoesHistoryBatch = Record<string, CotacaoHistoryPoint[]>;
+
+/**
+ * Histórico em lote — usado pelo painel "Cotações em tempo real" da home.
+ * Retorna mapa { slug: [pontos...] }. Slugs inválidos são silenciosamente
+ * filtrados pelo backend; se passar zero válidos retorna 400.
+ */
+async function cotacoesHistoryBatch(
+  slugs: string[],
+  limit = 24,
+): Promise<CotacoesHistoryBatch> {
+  if (!Array.isArray(slugs) || slugs.length === 0) return {};
+  const csv = slugs
+    .filter((s) => typeof s === "string" && s.trim().length > 0)
+    .map((s) => s.trim())
+    .join(",");
+  if (!csv) return {};
+  const res = await apiClient.get<CotacoesHistoryBatch>(
+    `/api/news/cotacoes/history-batch?slugs=${encodeURIComponent(csv)}&limit=${limit}`,
+  );
+  return res && typeof res === "object" ? res : {};
+}
+
 async function postsList(limit = 10, offset = 0): Promise<PublicPost[]> {
   const res = await apiClient.get<PublicPost[]>(
     `/api/news/posts?limit=${limit}&offset=${offset}`,
@@ -133,6 +165,7 @@ export const newsPublicApi = {
   climaBySlug,
   cotacoesList,
   cotacaoBySlug,
+  cotacoesHistoryBatch,
   postsList,
   postBySlug,
   overview,

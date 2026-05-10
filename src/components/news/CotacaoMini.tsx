@@ -11,7 +11,7 @@
 // sparkline mostra linha plana neutra.
 
 import Link from "next/link";
-import type { PublicCotacao } from "@/lib/newsPublicApi";
+import type { PublicCotacao, CotacaoHistoryPoint } from "@/lib/newsPublicApi";
 import {
   safeNum,
   formatPrice,
@@ -45,10 +45,43 @@ function mulberry32(seed: number) {
 }
 
 /**
- * Gera os pontos do sparkline. Cada slug sempre produz a mesma silhueta,
- * mas a inclinacao final e' temperada pela tendencia atual (varNum).
+ * Gera os pontos do sparkline a partir de historico real. Os pontos vem
+ * do backend em ordem decrescente (mais recente primeiro) — invertemos
+ * para desenhar cronologicamente. Normaliza no eixo Y entre min/max
+ * observados, com pequeno padding pra silhueta nao colar nas bordas.
  */
-function buildSparkPath(seedKey: string, varNum: number | null): string {
+function buildRealSparkPath(history: CotacaoHistoryPoint[]): string | null {
+  const prices = history
+    .map((p) => Number(p.price))
+    .filter((n) => Number.isFinite(n));
+  if (prices.length < 2) return null;
+
+  // Cronologico (asc).
+  const series = prices.slice().reverse();
+  const min = Math.min(...series);
+  const max = Math.max(...series);
+  const range = max - min || 1;
+
+  const points = series.map((p, i) => {
+    const norm = (p - min) / range; // 0..1
+    return {
+      x: (i / (series.length - 1)) * SPARK_W,
+      y: SPARK_H - (0.1 + norm * 0.8) * SPARK_H, // padding 10% top/bottom
+    };
+  });
+
+  return points
+    .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+    .join(" ");
+}
+
+/**
+ * Fallback: silhueta deterministica derivada do slug + inclinacao da tendencia.
+ * Usado quando nao ha historico real (cotacao recem-criada, falha no batch
+ * de historico, etc.). Cada slug sempre produz a mesma silhueta — nao engana
+ * o usuario, apenas evita um buraco visual no card.
+ */
+function buildProceduralSparkPath(seedKey: string, varNum: number | null): string {
   const seed = hashStr(seedKey || "kavita") || 1;
   const rand = mulberry32(seed);
   const trend = varNum === null ? 0 : Math.max(-3, Math.min(3, varNum)) / 3; // -1..1
@@ -56,7 +89,6 @@ function buildSparkPath(seedKey: string, varNum: number | null): string {
   const points: { x: number; y: number }[] = [];
   let value = 0.5;
   for (let i = 0; i < SPARK_POINTS; i++) {
-    // Ruido pequeno + leve drift na direcao da tendencia.
     const noise = (rand() - 0.5) * 0.18;
     const drift = (trend / SPARK_POINTS) * 0.5;
     value = Math.max(0.08, Math.min(0.92, value + noise + drift));
@@ -66,13 +98,20 @@ function buildSparkPath(seedKey: string, varNum: number | null): string {
     });
   }
 
-  // Constroi path SVG suave (line-to ja basta para o tamanho).
   return points
     .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
     .join(" ");
 }
 
-export function CotacaoMini({ item }: { item: PublicCotacao }) {
+export function CotacaoMini({
+  item,
+  history,
+}: {
+  item: PublicCotacao;
+  /** Historico real (passado pelo server fetcher). Quando ausente ou
+   *  com menos de 2 pontos, o sparkline cai pra silhueta procedural. */
+  history?: CotacaoHistoryPoint[];
+}) {
   const varNum = safeNum(item.variation_day);
   const varLabel = formatPct(varNum);
 
@@ -101,7 +140,11 @@ export function CotacaoMini({ item }: { item: PublicCotacao }) {
 
   const source = simplifySource(item.slug, item.source) || "Mercado";
   const seedKey = `${item.slug ?? "x"}:${item.name ?? ""}`;
-  const sparkPath = buildSparkPath(seedKey, varNum);
+
+  // Tenta historico real primeiro; se nao houver pontos suficientes, cai
+  // pra silhueta procedural deterministica (mesmo slug = mesma silhueta).
+  const realPath = history && history.length >= 2 ? buildRealSparkPath(history) : null;
+  const sparkPath = realPath ?? buildProceduralSparkPath(seedKey, varNum);
   const sparkArea = `${sparkPath} L${SPARK_W},${SPARK_H} L0,${SPARK_H} Z`;
 
   return (

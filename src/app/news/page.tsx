@@ -52,7 +52,7 @@ export default async function NewsHomePage() {
     );
   }
 
-  const { posts, clima, cotacoes } = data;
+  const { posts, clima, cotacoes, cotacoesHistory } = data;
   const featured = posts?.[0] ?? null;
   // Pega 4 para a faixa "Destaques do dia"; se nao houver featured, comeca do 0.
   const highlights = featured ? posts.slice(1, 5) : posts.slice(0, 4);
@@ -260,7 +260,13 @@ export default async function NewsHomePage() {
                 {cotacoesMini.length ? (
                   <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
                     {cotacoesMini.map((c) => (
-                      <CotacaoMini key={c.id} item={c} />
+                      <CotacaoMini
+                        key={c.id}
+                        item={c}
+                        history={
+                          c.slug ? cotacoesHistory?.[c.slug] : undefined
+                        }
+                      />
                     ))}
                   </div>
                 ) : (
