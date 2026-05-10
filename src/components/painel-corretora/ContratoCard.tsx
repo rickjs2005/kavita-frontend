@@ -12,11 +12,23 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { isApiError } from "@/lib/errors";
 import { API_BASE } from "@/utils/absUrl";
 import { formatDateTime } from "@/utils/formatters";
 import type { Contrato } from "@/types/contrato";
 import { CONTRATO_TIPO_LABEL } from "@/types/contrato";
 import { ContratoStatusBadge } from "./ContratoStatusBadge";
+
+// Imutabilidade pós-assinatura: o backend bloqueia qualquer tentativa
+// de mutar contrato 'signed' (repositories/contratoRepository.updateStatus
+// + services/contratoService). Quando isso acontece o erro chega aqui
+// como 409 com details.current_status === "signed". Detectamos para
+// exibir mensagem específica em vez do toast genérico.
+function isSignedImmutableError(err: unknown): boolean {
+  if (!isApiError(err) || err.status !== 409) return false;
+  const details = (err.details ?? null) as Record<string, unknown> | null;
+  return details?.current_status === "signed";
+}
 
 type Props = {
   contrato: Contrato;
@@ -32,6 +44,13 @@ export function ContratoCard({ contrato, onChanged }: Props) {
   const [sending, setSending] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [waSending, setWaSending] = useState(false);
+  // Imutabilidade pós-assinatura — espelha o backend:
+  //   - 'draft': enviar | baixar | cancelar
+  //   - 'sent':  baixar | cancelar | WA "enviar para assinatura"
+  //   - 'signed': APENAS baixar | verificar autenticidade |
+  //               WA "reenviar comprovante" (mensagem operacional ao
+  //               produtor; não muta o contrato — seguro pós-assinatura)
+  //   - 'cancelled': nada (download oculto)
   const canSend = contrato.status === "draft";
   const canDownloadDraft = contrato.status !== "cancelled";
   const canCancel =
@@ -111,7 +130,12 @@ export function ContratoCard({ contrato, onChanged }: Props) {
       toast.success("Contrato enviado para assinatura.");
       onChanged();
     } catch (err) {
-      toast.error(formatApiError(err, "Erro ao enviar contrato.").message);
+      if (isSignedImmutableError(err)) {
+        toast.error("Contrato assinado não pode ser alterado.");
+        onChanged(); // refetch para sincronizar UI com o estado real
+      } else {
+        toast.error(formatApiError(err, "Erro ao enviar contrato.").message);
+      }
     } finally {
       setSending(false);
     }
@@ -130,7 +154,12 @@ export function ContratoCard({ contrato, onChanged }: Props) {
       toast.success("Contrato cancelado.");
       onChanged();
     } catch (err) {
-      toast.error(formatApiError(err, "Erro ao cancelar contrato.").message);
+      if (isSignedImmutableError(err)) {
+        toast.error("Contrato assinado não pode ser alterado.");
+        onChanged();
+      } else {
+        toast.error(formatApiError(err, "Erro ao cancelar contrato.").message);
+      }
     } finally {
       setCancelling(false);
     }
