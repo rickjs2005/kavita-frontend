@@ -10,8 +10,64 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
+import { isApiError } from "@/lib/errors";
 import type { ContratoTipo, ContratoCriado } from "@/types/contrato";
 import { CONTRATO_TIPO_LABEL } from "@/types/contrato";
+
+// Bloqueio explícito devolvido pelo backend quando a corretora não
+// pode emitir contrato (KYC pendente/rejeitado, plano inativo ou
+// capability ausente). Cada caso tem ação própria — UI pinta um
+// banner em vez de só toast genérico, com CTA para o caminho de
+// resolução. Manter alinhado com:
+//   - services/corretoraKycService.requireVerifiedOrThrow
+//   - services/planService.requireActivePlanWithCapability
+type BlockReason =
+  | { kind: "kyc"; status: string | null }
+  | {
+      kind: "plan_inactive";
+      subscriptionStatus: string | null;
+      upgradeUrl: string;
+    }
+  | {
+      kind: "plan_capability";
+      capability: string;
+      currentPlan: string;
+      upgradeUrl: string;
+    };
+
+function detectBlockReason(err: unknown): BlockReason | null {
+  if (!isApiError(err) || err.status !== 403) return null;
+  const details = (err.details ?? null) as Record<string, unknown> | null;
+
+  // KYC: AppError 403 com code=FORBIDDEN e details.kyc_status. A
+  // mensagem do backend já cita "KYC" mas usamos o details para
+  // não depender da string.
+  if (details && typeof details.kyc_status === "string") {
+    return { kind: "kyc", status: details.kyc_status };
+  }
+  if (err.code === "PLAN_INACTIVE") {
+    return {
+      kind: "plan_inactive",
+      subscriptionStatus:
+        (details?.subscription_status as string | undefined) ?? null,
+      upgradeUrl:
+        (details?.upgrade_url as string | undefined) ??
+        "/painel/corretora/planos",
+    };
+  }
+  if (err.code === "PLAN_CAPABILITY_REQUIRED") {
+    return {
+      kind: "plan_capability",
+      capability:
+        (details?.capability as string | undefined) ?? "create_contract",
+      currentPlan: (details?.current_plan as string | undefined) ?? "free",
+      upgradeUrl:
+        (details?.upgrade_url as string | undefined) ??
+        "/painel/corretora/planos",
+    };
+  }
+  return null;
+}
 
 type Props = {
   leadId: number;
@@ -59,6 +115,7 @@ export function GerarContratoModal({
   const [dataRefCepea, setDataRefCepea] = useState(todayISO());
 
   const [submitting, setSubmitting] = useState(false);
+  const [blockReason, setBlockReason] = useState<BlockReason | null>(null);
 
   // Reset quando fecha e reabre.
   useEffect(() => {
@@ -77,6 +134,7 @@ export function GerarContratoModal({
       setDiferencialBasis("0");
       setDataRefCepea(todayISO());
       setTipo("disponivel");
+      setBlockReason(null);
     }
   }, [isOpen]);
 
@@ -105,6 +163,7 @@ export function GerarContratoModal({
     }
 
     setSubmitting(true);
+    setBlockReason(null);
     try {
       await apiClient.post<ContratoCriado>("/api/corretora/contratos", {
         lead_id: leadId,
@@ -115,7 +174,14 @@ export function GerarContratoModal({
       onGenerated();
       onClose();
     } catch (err) {
-      toast.error(formatApiError(err, "Erro ao gerar contrato.").message);
+      const reason = detectBlockReason(err);
+      if (reason) {
+        // Mostra banner contextual no modal — o toast genérico
+        // não comunica o suficiente para a corretora resolver.
+        setBlockReason(reason);
+      } else {
+        toast.error(formatApiError(err, "Erro ao gerar contrato.").message);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -158,6 +224,7 @@ export function GerarContratoModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {blockReason && <BlockBanner reason={blockReason} />}
           <div>
             <label className="block text-xs font-semibold text-stone-400 mb-2">
               Tipo de contrato
@@ -318,6 +385,74 @@ export function GerarContratoModal({
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function BlockBanner({ reason }: { reason: BlockReason }) {
+  if (reason.kind === "kyc") {
+    return (
+      <div
+        role="alert"
+        className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm"
+      >
+        <p className="font-semibold text-amber-200">
+          Verificação KYC pendente
+        </p>
+        <p className="mt-1 text-stone-200">
+          Sua corretora ainda não foi verificada
+          {reason.status && reason.status !== "pending_verification"
+            ? ` (status atual: ${reason.status})`
+            : ""}
+          . Aguarde a aprovação do KYC para emitir contratos. Se já enviou
+          os dados há mais de um dia útil, fale com o time da Kavita.
+        </p>
+      </div>
+    );
+  }
+  if (reason.kind === "plan_inactive") {
+    return (
+      <div
+        role="alert"
+        className="rounded-lg border border-rose-400/40 bg-rose-500/10 p-4 text-sm"
+      >
+        <p className="font-semibold text-rose-200">Plano inativo</p>
+        <p className="mt-1 text-stone-200">
+          Sua assinatura está como{" "}
+          <span className="font-mono">
+            {reason.subscriptionStatus ?? "sem plano"}
+          </span>
+          . Regularize a assinatura para gerar contratos.
+        </p>
+        <a
+          href={reason.upgradeUrl}
+          className="mt-3 inline-flex items-center gap-1 rounded-md bg-rose-500/30 px-3 py-1.5 text-xs font-semibold text-rose-100 ring-1 ring-rose-400/40 hover:bg-rose-500/40"
+        >
+          Regularizar assinatura →
+        </a>
+      </div>
+    );
+  }
+  // plan_capability
+  return (
+    <div
+      role="alert"
+      className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm"
+    >
+      <p className="font-semibold text-amber-200">
+        Plano atual não permite contratos
+      </p>
+      <p className="mt-1 text-stone-200">
+        Seu plano <span className="font-mono">{reason.currentPlan}</span> não
+        inclui geração de contratos. Faça upgrade para um plano que liberte
+        a feature <span className="font-mono">{reason.capability}</span>.
+      </p>
+      <a
+        href={reason.upgradeUrl}
+        className="mt-3 inline-flex items-center gap-1 rounded-md bg-amber-500/30 px-3 py-1.5 text-xs font-semibold text-amber-100 ring-1 ring-amber-400/40 hover:bg-amber-500/40"
+      >
+        Ver planos →
+      </a>
     </div>
   );
 }
