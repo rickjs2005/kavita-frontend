@@ -1,15 +1,23 @@
 // src/components/news/WhatsappChannelCard.tsx
 //
-// Canal vivo do agro via WhatsApp. Captura o numero do produtor/comprador
-// e registra no backend (POST /api/news/whatsapp-subscribe). Idempotente —
-// se o numero ja existir, o backend devolve sucesso com `created=false` e
-// o card mostra "voce ja esta inscrito" sem mudar a UX.
+// Lista de interesse no canal WhatsApp do Kavita News. Como o canal de
+// disparo em massa ainda nao esta operacional, a UX e' deliberadamente
+// "lista de interesse / canal em abertura":
+//
+//   1. Produtor envia o numero -> backend cria pending + retorna token
+//      e link wa.me com mensagem pre-formatada.
+//   2. Card mostra um botao "Confirmar pelo WhatsApp" que abre wa.me em
+//      outra aba — produtor envia a mensagem para o numero da Kavita
+//      (consentimento via WhatsApp do proprio numero, exigido pela LGPD
+//      e pela politica anti-spam da Meta).
+//   3. Admin recebe a msg, identifica pelo codigo curto e marca active
+//      no painel admin (PATCH /api/admin/news/whatsapp-subscribers/:id/status).
 //
 // Erros 429 (rate-limit) e 400 (telefone invalido) sao tratados com mensagem
 // amigavel. Outros erros caem em fallback generico.
 //
-// Visual: dark glass premium, ring emerald no hover, badge AO VIVO com
-// pulse sutil, glow no botao. Inspirado em Bloomberg / Stripe / WhatsApp
+// Visual: dark glass premium, ring emerald no hover, badge "Em abertura"
+// com pulse sutil, glow no botao. Inspirado em Bloomberg / Stripe / WhatsApp
 // Business / Linear.
 
 "use client";
@@ -56,6 +64,14 @@ export function WhatsappChannelCard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   /** True quando o backend responde com `created=false` — numero ja inscrito. */
   const [alreadySubscribed, setAlreadySubscribed] = useState(false);
+  /** Link wa.me retornado pelo backend para o produtor confirmar opt-in. */
+  const [optinLink, setOptinLink] = useState<string | null>(null);
+  /** Codigo curto humano que aparece na mensagem do wa.me (admin localiza por ele). */
+  const [shortCode, setShortCode] = useState<string | null>(null);
+  /** Status atual do subscriber (do backend) — pending | active. */
+  const [subscriberStatus, setSubscriberStatus] = useState<
+    "pending" | "active" | "unsubscribed" | null
+  >(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +87,9 @@ export function WhatsappChannelCard() {
     try {
       const result = await newsPublicApi.whatsappSubscribe(phone, "home_news");
       setAlreadySubscribed(!result.created);
+      setOptinLink(result.whatsapp_optin_link);
+      setShortCode(result.short_code);
+      setSubscriberStatus(result.status);
       setStatus("success");
     } catch (err) {
       // Mensagens amigaveis para os erros previsiveis do backend.
@@ -90,6 +109,7 @@ export function WhatsappChannelCard() {
   };
 
   if (status === "success") {
+    const isActive = subscriberStatus === "active";
     return (
       <div className="relative h-full overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/15 via-white/[0.04] to-stone-900/0 p-5 ring-1 ring-emerald-400/30 backdrop-blur-sm">
         <span
@@ -104,31 +124,68 @@ export function WhatsappChannelCard() {
             <WhatsappIcon className="h-3.5 w-3.5" />
           </span>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">
-            {alreadySubscribed ? "Ja inscrito" : "Canal ativado"}
+            {isActive
+              ? "Ja confirmado"
+              : alreadySubscribed
+                ? "Ja na lista"
+                : "Lista de interesse"}
           </p>
         </div>
+
         <p className="mt-3 text-sm font-semibold text-stone-50">
-          {alreadySubscribed
-            ? "Esse numero ja recebe os alertas."
-            : "Voce esta na lista do canal Kavita."}
+          {isActive
+            ? "Voce ja esta no canal."
+            : "Falta um passo para confirmar."}
         </p>
+
         <p className="mt-1.5 text-xs leading-relaxed text-stone-400">
-          {alreadySubscribed
-            ? "O numero "
-            : "Os primeiros alertas chegam no numero "}
-          <span className="font-medium text-stone-300">{phone}</span>
-          {alreadySubscribed
-            ? " ja esta cadastrado no canal Kavita."
-            : " assim que o canal abrir oficialmente."}
+          O numero <span className="font-medium text-stone-300">{phone}</span>
+          {isActive
+            ? " ja recebe os alertas. Os disparos comecam quando o canal abrir oficialmente."
+            : " esta na lista. Para confirmar, envie a mensagem pre-formatada pelo seu WhatsApp — assim a gente sabe que e voce mesmo."}
         </p>
+
+        {/* Botao "Confirmar pelo WhatsApp" — so quando ainda esta pending */}
+        {!isActive && optinLink && (
+          <a
+            href={optinLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="
+              group relative mt-4 inline-flex w-full items-center justify-center gap-2
+              overflow-hidden rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600
+              px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-stone-950
+              shadow-lg shadow-emerald-500/30 transition-all
+              hover:shadow-emerald-500/50 hover:brightness-110
+            "
+          >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"
+            />
+            <WhatsappIcon className="relative h-3.5 w-3.5" />
+            <span className="relative">Confirmar pelo WhatsApp</span>
+          </a>
+        )}
+
+        {/* Codigo curto — referencia visual caso o produtor queira digitar manualmente */}
+        {!isActive && shortCode && (
+          <p className="mt-2 text-center text-[10px] font-medium text-stone-500">
+            Codigo: <span className="font-mono font-bold tracking-wider text-stone-300">{shortCode}</span>
+          </p>
+        )}
+
         <button
           type="button"
           onClick={() => {
             setPhone("");
             setAlreadySubscribed(false);
+            setOptinLink(null);
+            setShortCode(null);
+            setSubscriberStatus(null);
             setStatus("idle");
           }}
-          className="mt-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300 hover:text-emerald-200"
+          className="mt-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300 hover:text-emerald-200"
         >
           Cadastrar outro numero →
         </button>
@@ -147,7 +204,7 @@ export function WhatsappChannelCard() {
         className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-emerald-300/40 to-transparent"
       />
 
-      {/* Header — icone WhatsApp + badge AO VIVO */}
+      {/* Header — icone WhatsApp + badge "Em abertura" (canal ainda nao operacional) */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
           <span
@@ -157,28 +214,28 @@ export function WhatsappChannelCard() {
             <WhatsappIcon className="h-3.5 w-3.5" />
           </span>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/90">
-            Central no WhatsApp
+            Lista de interesse
           </p>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-300 ring-1 ring-emerald-400/30">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-amber-300 ring-1 ring-amber-400/30">
           <span
             aria-hidden
-            className="kavita-live-dot h-1.5 w-1.5 rounded-full bg-emerald-400"
+            className="kavita-live-dot h-1.5 w-1.5 rounded-full bg-amber-400"
           />
-          Ao vivo
+          Em abertura
         </span>
       </div>
 
       {/* Titulo */}
       <p className="mt-3 text-sm font-semibold leading-snug text-stone-50">
-        Receba alertas do agro em tempo real
+        Garanta sua vaga no canal de alertas
       </p>
 
       {/* Descricao */}
       <p className="mt-1 text-xs leading-relaxed text-stone-400">
-        Cotacoes, clima, mercado e oportunidades direto no seu WhatsApp, sem
-        ruido.
+        Cotacoes, clima e oportunidades vao chegar no seu WhatsApp quando o
+        canal abrir oficialmente — sem ruido, com opt-in confirmado.
       </p>
 
       {/* Input mascarado */}
@@ -235,8 +292,8 @@ export function WhatsappChannelCard() {
         <span className="relative inline-flex items-center justify-center gap-2">
           <WhatsappIcon className="h-3.5 w-3.5" />
           {status === "submitting"
-            ? "Conectando..."
-            : "Entrar no canal WhatsApp"}
+            ? "Reservando vaga..."
+            : "Quero entrar na lista"}
         </span>
       </button>
 
@@ -252,7 +309,7 @@ export function WhatsappChannelCard() {
       {/* Prova social — sutil, baixa opacidade */}
       <p className="mt-3 text-center text-[10px] font-medium leading-relaxed text-stone-500">
         +{SOCIAL_PROOF_COUNT.toLocaleString("pt-BR")} produtores e compradores
-        acompanhando
+        na lista
       </p>
     </form>
   );

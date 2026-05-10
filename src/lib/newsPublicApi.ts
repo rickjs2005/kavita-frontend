@@ -158,14 +158,27 @@ export type WhatsappSubscribeResult = {
   status: "pending" | "active" | "unsubscribed";
   /** true se a inscrição foi criada agora; false se o número já existia. */
   created: boolean;
+  /** Token opaco (64 chars hex) — usado em /whatsapp-confirm e /whatsapp-unsubscribe. */
+  confirm_token: string | null;
+  /** Código curto (8 chars uppercase) que aparece na mensagem do wa.me — admin localiza por ele. */
+  short_code: string | null;
+  /** Link wa.me já com mensagem pré-formatada para o produtor enviar ao admin. */
+  whatsapp_optin_link: string | null;
+};
+
+export type WhatsappConfirmResult = {
+  status: "active";
+  alreadyActive: boolean;
+};
+
+export type WhatsappUnsubscribeResult = {
+  status: "unsubscribed";
+  alreadyUnsubscribed: boolean;
 };
 
 /**
  * Inscreve um número no canal WhatsApp do Kavita News.
  * Idempotente — número já existente NÃO retorna erro.
- *
- * O backend valida o telefone (10 ou 11 dígitos, DDD válido) — passamos
- * a string original (com ou sem máscara) e ele normaliza.
  */
 async function whatsappSubscribe(
   phone: string,
@@ -175,6 +188,16 @@ async function whatsappSubscribe(
     phone,
     source,
   });
+}
+
+/** Confirma opt-in via token (idempotente). Pode lançar 409 se subscriber em opt-out. */
+async function whatsappConfirm(token: string): Promise<WhatsappConfirmResult> {
+  return apiClient.post<WhatsappConfirmResult>("/api/news/whatsapp-confirm", { token });
+}
+
+/** Opt-out via token (idempotente). */
+async function whatsappUnsubscribe(token: string): Promise<WhatsappUnsubscribeResult> {
+  return apiClient.post<WhatsappUnsubscribeResult>("/api/news/whatsapp-unsubscribe", { token });
 }
 
 /**
@@ -203,4 +226,6 @@ export const newsPublicApi = {
   postBySlug,
   overview,
   whatsappSubscribe,
+  whatsappConfirm,
+  whatsappUnsubscribe,
 };
