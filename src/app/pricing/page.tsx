@@ -72,14 +72,18 @@ const PLANS: PlanDisplay[] = [
     ],
   },
   {
+    // Plano com preço fixo público — segue o mesmo fluxo de aquisição
+    // do Pro: cadastra a corretora, entra no painel e contrata pelo
+    // /painel/corretora/planos. "Falar com o time" fica reservado para
+    // Enterprise/personalizado, que ainda não está exposto na vitrine.
     slug: "premium",
     name: "Premium",
     price: "R$ 299",
     priceNote: "/mês",
     description:
       "Para corretoras com volume maior, equipe dedicada e necessidade de presença regional forte na sua praça — Zona da Mata, Sul de Minas, Cerrado, Mogiana ou qualquer outra região produtora.",
-    cta: "Falar com o time",
-    ctaHref: "https://wa.me/5533999999999?text=Quero%20saber%20mais%20sobre%20o%20plano%20Premium%20do%20Kavita",
+    cta: "Assinar plano Premium",
+    ctaHref: "/mercado-do-cafe/corretoras/cadastro",
     featured: false,
     features: [
       { text: "Até 10 usuários na equipe", included: true },

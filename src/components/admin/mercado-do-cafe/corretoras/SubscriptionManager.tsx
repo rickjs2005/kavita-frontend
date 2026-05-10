@@ -108,6 +108,11 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
   const [trialEndsAt, setTrialEndsAt] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [notes, setNotes] = useState("");
+  // Motivo da alteração — obrigatório quando o admin troca plano
+  // ou status, para alimentar subscription_events e audit_log. UI
+  // exige preenchimento mesmo que o backend aceite como opcional;
+  // mantém a regra "nunca mexa em plano sem justificativa".
+  const [reason, setReason] = useState("");
 
   const [capabilities, setCapabilities] = useState<Record<string, unknown> | null>(null);
 
@@ -196,6 +201,20 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
   };
 
   const save = async () => {
+    // Exige motivo quando o admin estiver mudando plano ou status —
+    // a regra de "alteração silenciosa proibida" vive aqui na UI.
+    // Backend já registra audit/event mesmo sem reason, mas a UI
+    // força a justificativa pra qualquer mudança que afete cobrança
+    // ou capabilities da corretora.
+    const planChanged = planId !== sub?.plan_id;
+    const statusChanged = status !== sub?.status;
+    const reasonRequired = planChanged || statusChanged;
+    const reasonTrim = reason.trim();
+    if (reasonRequired && reasonTrim.length < 3) {
+      toast.error("Informe um motivo (mín. 3 caracteres) para mudar plano/status.");
+      return;
+    }
+
     setSaving(true);
     try {
       await apiClient.put(
@@ -210,10 +229,13 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
           trial_ends_at: trialEndsAt || null,
           current_period_end: periodEnd || null,
           notes: notes.trim() || null,
+          reason: reasonTrim || null,
+          source: "manual_admin",
         },
       );
       toast.success("Assinatura atualizada.");
       setEditing(false);
+      setReason("");
       await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar.");
@@ -329,7 +351,10 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
             )}
           <button
             type="button"
-            onClick={() => setEditing((v) => !v)}
+            onClick={() => {
+              setEditing((v) => !v);
+              setReason("");
+            }}
             className="text-[10px] font-semibold text-slate-400 hover:text-emerald-300"
           >
             {editing ? "Cancelar" : "Editar"}
@@ -457,6 +482,26 @@ export function SubscriptionManager({ corretoraId, onUnauthorized }: Props) {
               className={`${inputClass} h-auto py-2`}
               placeholder="Ex: Combinou PIX mensal a partir de julho..."
             />
+          </div>
+          <div>
+            <label className={labelClass}>
+              Motivo da alteração
+              {(planId !== sub.plan_id || status !== sub.status) && (
+                <span className="ml-1 text-amber-300">(obrigatório)</span>
+              )}
+            </label>
+            <textarea
+              rows={2}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className={`${inputClass} h-auto py-2`}
+              placeholder="Ex: Upgrade negociado pelo time comercial — cliente fechou Premium anual."
+              maxLength={500}
+            />
+            <p className="mt-1 text-[10px] text-slate-500">
+              Vai parar no histórico (subscription_events) e no log de
+              auditoria. Visível para o time da Kavita.
+            </p>
           </div>
           <div className="flex justify-end">
             <button
