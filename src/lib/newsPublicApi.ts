@@ -16,6 +16,14 @@ export type PublicClima = {
   uf: string;
   mm_24h?: string | number | null;
   mm_7d?: string | number | null;
+  /** Temperatura atual em °C, se disponível (Open-Meteo current). */
+  temperature_c?: string | number | null;
+  /** Umidade relativa em %, 0-100. */
+  humidity_pct?: number | null;
+  /** Velocidade do vento em km/h. */
+  wind_kmh?: string | number | null;
+  /** Condição derivada do weather_code WMO ("Chuva moderada", etc). */
+  condition?: string | null;
   source?: string | null;
   last_update_at?: string | null;
 };
