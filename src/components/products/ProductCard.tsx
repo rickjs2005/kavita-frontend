@@ -8,7 +8,7 @@ import AddToCartButton from "@/components/buttons/AddToCartButton";
 import type { Product } from "@/types/product";
 import { resolveStockValue } from "../../utils/stock";
 import { useAuth } from "@/context/AuthContext";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, PLACEHOLDER_IMAGE } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 import { useProductPromotion } from "@/hooks/useProductPromotion";
 import { computeProductPrice } from "@/utils/pricing";
@@ -21,7 +21,7 @@ type Props = {
   initialIsFavorite?: boolean;
 };
 
-const PLACEHOLDER = "/placeholder.png";
+const PLACEHOLDER = PLACEHOLDER_IMAGE;
 
 
 export default function ProductCard({

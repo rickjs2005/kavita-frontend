@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, PLACEHOLDER_IMAGE } from "@/utils/absUrl";
 import type { Service } from "@/types/service";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -10,7 +10,7 @@ import apiClient from "@/lib/apiClient";
 import { formatApiError } from "@/lib/formatApiError";
 import { formatDateWithYear, onlyDigits } from "@/utils/formatters";
 
-const PLACEHOLDER = "/placeholder.png";
+const PLACEHOLDER = PLACEHOLDER_IMAGE;
 
 function parseMaybeJson(x: unknown): any {
   if (typeof x !== "string") return x;

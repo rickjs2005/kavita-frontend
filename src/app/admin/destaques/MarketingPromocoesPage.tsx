@@ -9,7 +9,7 @@ import SearchInputProdutos from "@/components/products/SearchInput";
 import CloseButton from "@/components/buttons/CloseButton";
 import apiClient from "@/lib/apiClient";
 import { handleAdminError } from "@/lib/adminErrorHandler";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, PLACEHOLDER_IMAGE } from "@/utils/absUrl";
 import { formatCurrency } from "@/utils/formatters";
 
 type Promocao = {
@@ -499,7 +499,7 @@ export default function MarketingPromocoesPage() {
                       className="object-cover"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       onError={(e) =>
-                        ((e.currentTarget as any).src = "/placeholder.png")
+                        ((e.currentTarget as any).src = PLACEHOLDER_IMAGE)
                       }
                     />
 

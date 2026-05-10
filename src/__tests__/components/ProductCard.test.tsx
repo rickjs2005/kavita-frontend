@@ -197,7 +197,7 @@ describe("ProductCard (src/components/ProductCard.tsx)", () => {
 
     // Assert
     const img = screen.getByRole("img", { name: "Produto Teste" });
-    expect(img).toHaveAttribute("src", "/placeholder.png");
+    expect(img).toHaveAttribute("src", "/images/placeholder.png");
   });
 
   it("exibe badge 'Esgotado' e desabilita AddToCart quando estoque <= 0", async () => {

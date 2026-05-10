@@ -16,7 +16,7 @@ vi.mock("next/image", () => {
   };
 });
 
-const PLACEHOLDER = "/placeholder.png";
+const PLACEHOLDER = "/images/placeholder.png";
 
 describe("Gallery (src/components/Gallery.tsx)", () => {
   beforeEach(() => {

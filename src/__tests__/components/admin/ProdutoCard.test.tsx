@@ -118,7 +118,7 @@ describe("ProdutoCard", () => {
     expect(new URL(mini2.src).pathname).toBe("/uploads/2.jpg");
   });
 
-  it("faz fallback para /placeholder.png quando imagem dispara onError (negativo/controle)", async () => {
+  it("faz fallback para /images/placeholder.png quando imagem dispara onError (negativo/controle)", async () => {
     const ProdutoCard = await loadProdutoCard();
     const produto = makeProduct({ image: "/uploads/capa.jpg" });
 
@@ -129,7 +129,7 @@ describe("ProdutoCard", () => {
     }) as HTMLImageElement;
     fireEvent.error(capa);
 
-    expect(capa.src).toContain("/placeholder.png");
+    expect(capa.src).toContain("/images/placeholder.png");
   });
 
   it("chama onEditar ao clicar em 'Editar' (positivo)", async () => {

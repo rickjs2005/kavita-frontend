@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, PLACEHOLDER_IMAGE } from "@/utils/absUrl";
 import { formatCurrency } from "@/utils/formatters";
 
 export type Product = {
@@ -31,7 +31,7 @@ type Props = {
   defaultReorderPoint?: number;
 };
 
-const PLACEHOLDER = "/placeholder.png";
+const PLACEHOLDER = PLACEHOLDER_IMAGE;
 
 export default function ProdutoCard({
   produto,

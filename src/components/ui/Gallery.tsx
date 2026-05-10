@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useMemo, useEffect } from "react";
+import { PLACEHOLDER_IMAGE } from "@/utils/absUrl";
 
 type Props = {
   images: string[]; // sempre um array (se vier só 1, ok)
@@ -10,7 +11,7 @@ type Props = {
   thumbSize?: number; // px (default 80)
 };
 
-const PLACEHOLDER = "/placeholder.png";
+const PLACEHOLDER = PLACEHOLDER_IMAGE;
 
 export default function Gallery({
   images,

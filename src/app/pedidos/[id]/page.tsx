@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, PLACEHOLDER_IMAGE } from "@/utils/absUrl";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import apiClient from "@/lib/apiClient";
@@ -1024,11 +1024,11 @@ export default function PedidoPage() {
             >
               <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 sm:h-20 sm:w-20">
                 <img
-                  src={item.imagem ? absUrl(item.imagem) : "/placeholder.png"}
+                  src={item.imagem ? absUrl(item.imagem) : PLACEHOLDER_IMAGE}
                   alt={item.nome}
                   className="h-full w-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/placeholder.png";
+                    (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE;
                   }}
                 />
               </div>

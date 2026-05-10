@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, PLACEHOLDER_IMAGE } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 import { formatCurrency } from "@/utils/formatters";
 
@@ -160,7 +160,7 @@ export default function SearchInputProdutos({
                     alt={p.name}
                     className="w-10 h-10 object-cover rounded"
                     onError={(e) =>
-                      ((e.currentTarget as HTMLImageElement).src = "/placeholder.png")
+                      ((e.currentTarget as HTMLImageElement).src = PLACEHOLDER_IMAGE)
                     }
                   />
                   <div className="min-w-0">

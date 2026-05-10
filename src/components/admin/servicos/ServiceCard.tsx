@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Service } from "@/types/service";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, PLACEHOLDER_IMAGE } from "@/utils/absUrl";
 
 type Props = {
   servico?: Service | null;
@@ -17,7 +17,7 @@ type Props = {
   className?: string;
 };
 
-const PLACEHOLDER = "/placeholder.png";
+const PLACEHOLDER = PLACEHOLDER_IMAGE;
 
 /** 📱 Formata telefone BR para exibição */
 function formatWhatsApp(raw: string) {

@@ -27,9 +27,9 @@ describe("absUrl (anteriormente resolveImageUrl)", () => {
 
   it("retorna '/placeholder.png' para null/undefined/empty", async () => {
     const absUrl = await loadAbsUrl("http://172.20.10.9:5000");
-    expect(absUrl(null as unknown as string)).toBe("/placeholder.png");
-    expect(absUrl(undefined as unknown as string)).toBe("/placeholder.png");
-    expect(absUrl("")).toBe("/placeholder.png");
+    expect(absUrl(null as unknown as string)).toBe("/images/placeholder.png");
+    expect(absUrl(undefined as unknown as string)).toBe("/images/placeholder.png");
+    expect(absUrl("")).toBe("/images/placeholder.png");
   });
 
   it("não altera data URLs", async () => {

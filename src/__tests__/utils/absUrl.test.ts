@@ -39,22 +39,22 @@ describe("absUrl", () => {
   describe("Comportamento com valores nulos/vazios", () => {
     it("retorna '/placeholder.png' para null", async () => {
       const absUrl = await loadAbsUrl("https://api.kavita.com");
-      expect(absUrl(null as unknown as string)).toBe("/placeholder.png");
+      expect(absUrl(null as unknown as string)).toBe("/images/placeholder.png");
     });
 
     it("retorna '/placeholder.png' para undefined", async () => {
       const absUrl = await loadAbsUrl("https://api.kavita.com");
-      expect(absUrl(undefined as unknown as string)).toBe("/placeholder.png");
+      expect(absUrl(undefined as unknown as string)).toBe("/images/placeholder.png");
     });
 
     it("retorna '/placeholder.png' para string vazia", async () => {
       const absUrl = await loadAbsUrl("https://api.kavita.com");
-      expect(absUrl("")).toBe("/placeholder.png");
+      expect(absUrl("")).toBe("/images/placeholder.png");
     });
 
     it("retorna '/placeholder.png' para string com apenas espaços", async () => {
       const absUrl = await loadAbsUrl("https://api.kavita.com");
-      expect(absUrl("   ")).toBe("/placeholder.png");
+      expect(absUrl("   ")).toBe("/images/placeholder.png");
     });
   });
 

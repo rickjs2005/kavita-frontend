@@ -6,7 +6,8 @@ import ServiceCard from "@/components/layout/ServiceCard";
 
 // absUrl: pass-through para URLs já absolutas/paths; null → placeholder
 vi.mock("@/utils/absUrl", () => ({
-  absUrl: (raw: string | null | undefined) => raw ?? "/placeholder.png",
+  absUrl: (raw: string | null | undefined) => raw ?? "/images/placeholder.png",
+  PLACEHOLDER_IMAGE: "/images/placeholder.png",
 }));
 
 /**
@@ -50,8 +51,8 @@ const baseServico = {
   // Observação: pelo DOM do erro atual, o componente NÃO está renderizando WhatsApp/link.
   // Mantemos campos comuns, mas o teste não assume CTA se o componente não renderiza.
   telefone: "(31) 99999-9999",
-  imagem_capa: "/placeholder.png",
-  fotos: ["/placeholder.png", "/1.jpg", "/2.jpg"],
+  imagem_capa: "/images/placeholder.png",
+  fotos: ["/images/placeholder.png", "/1.jpg", "/2.jpg"],
   rating_avg: 4.5,
   rating_count: 12,
   verificado: 1,
@@ -213,13 +214,13 @@ describe("ServiceCard — campos reais do tipo Service", () => {
     expect(mainImg!.getAttribute("src")).toBe("/uploads/services/main.jpg");
   });
 
-  it("usa /placeholder.png quando imagem e images estão ausentes", () => {
+  it("usa /images/placeholder.png quando imagem e images estão ausentes", () => {
     const minimal = { id: 5, nome: "Serviço Mínimo" };
     render(<ServiceCard servico={minimal as any} readOnly />);
 
     const imgs = screen.getAllByRole("img");
     const main = imgs.find((img) => img.getAttribute("alt") === "Serviço Mínimo");
-    expect(main!.getAttribute("src")).toBe("/placeholder.png");
+    expect(main!.getAttribute("src")).toBe("/images/placeholder.png");
   });
 
   it("renderiza badge de múltiplas fotos quando há mais de 1 imagem", () => {

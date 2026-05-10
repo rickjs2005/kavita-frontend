@@ -9,7 +9,8 @@ import type { DroneGalleryItem } from "@/types/drones";
 // Mock absUrl so URLs are predictable in tests
 vi.mock("@/utils/absUrl", () => ({
   absUrl: (raw: string | null | undefined) =>
-    raw ? `http://localhost:5000/uploads/${raw}` : "/placeholder.png",
+    raw ? `http://localhost:5000/uploads/${raw}` : "/images/placeholder.png",
+  PLACEHOLDER_IMAGE: "/images/placeholder.png",
 }));
 
 // Mock next/image — devolve <img> com src direto. O componente real

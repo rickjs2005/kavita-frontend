@@ -18,7 +18,7 @@ import CloseButton from "../../components/buttons/CloseButton";
 import LoadingButton from "../../components/buttons/LoadingButton";
 
 import type { Category, ProductsResponse } from "@/types/search";
-import { absUrl } from "@/utils/absUrl";
+import { absUrl, PLACEHOLDER_IMAGE } from "@/utils/absUrl";
 import apiClient from "@/lib/apiClient";
 import {
   buildQueryString,
@@ -27,7 +27,7 @@ import {
   toNum,
   toNumberParam,
 } from "@/utils/search";
-const PLACEHOLDER = "/placeholder.png";
+const PLACEHOLDER = PLACEHOLDER_IMAGE;
 
 type Params = {
   q: string;

@@ -125,7 +125,7 @@ describe("ServiceCard", () => {
 
     fireEvent.error(mainImg);
 
-    expect(mainImg.getAttribute("src")).toBe("/placeholder.png");
+    expect(mainImg.getAttribute("src")).toBe("/images/placeholder.png");
   });
 
   it("não deve renderizar botões de ação quando readOnly=true", () => {
