@@ -194,3 +194,48 @@ export const AUDIT_ACTOR_LABEL: Record<AuditActorType, string> = {
   system: "Sistema",
   webhook: "Webhook (provider)",
 };
+
+// ─── Listagem admin (Fase 10.10) ────────────────────────────────────────────
+//
+// Espelha o SELECT de contratoRepository.listForAdmin: traz dados
+// mínimos para a tabela admin sem expor `data_fields` (snapshot
+// jurídico). Detalhes ficam em /admin/mercado-do-cafe/contratos/[id].
+export type ContratoAdminListItem = {
+  id: number;
+  tipo: ContratoTipo;
+  status: ContratoStatus;
+  lead_id: number;
+  corretora_id: number;
+  numero_externo: string | null;
+  corretora_name: string | null;
+  corretora_slug: string | null;
+  lead_nome: string | null;
+  created_at: string;
+  sent_at: string | null;
+  signed_at: string | null;
+  cancelled_at: string | null;
+};
+
+export type AdminContratosListMeta = {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+};
+
+export type AdminContratosListResponse = {
+  items: ContratoAdminListItem[];
+  meta: AdminContratosListMeta;
+};
+
+export type AdminContratosFilters = {
+  status?: ContratoStatus;
+  tipo?: ContratoTipo;
+  corretora_id?: number;
+  lead_id?: number;
+  q?: string;
+  date_from?: string; // YYYY-MM-DD
+  date_to?: string; // YYYY-MM-DD
+  page?: number;
+  limit?: number;
+};
