@@ -65,6 +65,13 @@ const SECONDARY_ACTIONS: SecondaryActionItem[] = [
     title: "Corretoras que ainda não preencheram os 6 campos regionais",
   },
   {
+    href: "/admin/mercado-do-cafe/contratos",
+    label: "Contratos",
+    icon: "📄",
+    ariaLabel: "Auditoria de contratos do Mercado do Café",
+    title: "Trilha append-only por contrato (created, signed, cancelled, blocked)",
+  },
+  {
     href: "/admin/auditoria",
     label: "Histórico",
     icon: "🕒",
