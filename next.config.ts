@@ -177,15 +177,19 @@ const nextConfig: NextConfig = {
       ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
       : "script-src 'self' 'unsafe-inline'";
 
+    // Domínios do Sentry para envio de eventos/replays e assets relacionados.
+    const sentryHosts =
+      "https://*.ingest.us.sentry.io https://*.ingest.sentry.io https://*.sentry.io";
+
     // CSP aplicada ao painel admin — mais restritiva (sem CDNs externas, frame-ancestors none).
     const adminCsp = [
       "default-src 'self'",
       scriptSrc,
       "style-src 'self' 'unsafe-inline'", // ver nota acima sobre unsafe-inline em style-src
-      `img-src 'self' data: blob: ${apiHosts}`,
+      `img-src 'self' data: blob: ${apiHosts} ${sentryHosts}`,
       `media-src 'self' blob: ${apiHosts}`,
       "font-src 'self' data:",
-      `connect-src 'self' ${apiHosts}`,
+      `connect-src 'self' ${apiHosts} ${sentryHosts}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -204,10 +208,10 @@ const nextConfig: NextConfig = {
       "default-src 'self'",
       scriptSrc,
       "style-src 'self' 'unsafe-inline'",
-      `img-src 'self' data: blob: ${apiHosts}`,
+      `img-src 'self' data: blob: ${apiHosts} ${sentryHosts}`,
       `media-src 'self' blob: ${apiHosts}`,
       "font-src 'self' data:",
-      `connect-src 'self' ${apiHosts}`,
+      `connect-src 'self' ${apiHosts} ${sentryHosts}`,
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
