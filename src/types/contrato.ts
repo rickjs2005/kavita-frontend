@@ -124,3 +124,73 @@ export const CONTRATO_STATUS_LABEL: Record<ContratoStatus, string> = {
   cancelled: "Cancelado",
   expired: "Expirado",
 };
+
+// ─── Auditoria do contrato (Fase 10.5) ──────────────────────────────────────
+//
+// Espelha o ENUM event_type da migration
+// 2026051000000001-create-contract-audit-log.js. Mantém em sync ao
+// adicionar tipos novos: a UI lida com `unknown` como fallback (badge
+// neutro) para sobreviver a backend mais novo que o front.
+export type AuditEventType =
+  | "created"
+  | "sent_to_signature"
+  | "signed"
+  | "cancelled"
+  | "expired"
+  | "blocked_by_plan"
+  | "blocked_by_kyc"
+  | "downloaded"
+  | "webhook_applied"
+  | "webhook_blocked"
+  | "immutable_blocked";
+
+export type AuditActorType =
+  | "admin"
+  | "corretora_user"
+  | "producer"
+  | "system"
+  | "webhook";
+
+// Linha bruta retornada por GET /api/admin/contratos/:id/audit-log.
+// Espelha o schema do banco (snake_case) — o front converte na UI.
+export type ContractAuditEvent = {
+  id: number;
+  contrato_id: number;
+  corretora_id: number | null;
+  lead_id: number | null;
+  event_type: AuditEventType | string;
+  actor_type: AuditActorType | string;
+  actor_id: number | null;
+  ip: string | null;
+  user_agent: string | null;
+  previous_status: string | null;
+  new_status: string | null;
+  provider: string | null;
+  provider_document_id: string | null;
+  payload: Record<string, unknown> | null;
+  created_at: string;
+};
+
+// Labels amigáveis em pt-BR — o que aparece no header de cada linha
+// da timeline. Mantém em sync com AuditEventType.
+export const AUDIT_EVENT_LABEL: Record<AuditEventType, string> = {
+  created: "Contrato criado",
+  sent_to_signature: "Enviado para assinatura",
+  signed: "Contrato assinado",
+  cancelled: "Contrato cancelado",
+  expired: "Contrato expirado",
+  blocked_by_plan: "Bloqueado por plano",
+  blocked_by_kyc: "Bloqueado por KYC",
+  downloaded: "PDF baixado",
+  webhook_applied: "Webhook aplicado",
+  webhook_blocked: "Webhook bloqueado",
+  immutable_blocked: "Tentativa em contrato imutável",
+};
+
+export const AUDIT_ACTOR_LABEL: Record<AuditActorType, string> = {
+  admin: "Admin Kavita",
+  corretora_user: "Usuário da corretora",
+  producer: "Produtor",
+  system: "Sistema",
+  webhook: "Webhook (provider)",
+};
