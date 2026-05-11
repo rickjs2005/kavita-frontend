@@ -183,7 +183,7 @@ export default function ModelShowcaseCard({
                   "h-full w-full bg-gradient-to-br",
                   accent.glow,
                 ].join(" ")}
-                aria-label={`${model.label} — imagem em breve`}
+                aria-label={`${model.label} — ilustração indisponível`}
               >
                 <div className="flex h-full w-full items-center justify-center">
                   <svg

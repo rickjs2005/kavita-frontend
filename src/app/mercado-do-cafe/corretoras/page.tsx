@@ -303,12 +303,12 @@ export default async function CorretorasListPage({ searchParams }: Props) {
             <p className="relative text-sm font-semibold text-stone-100">
               {hasFilters
                 ? "Nenhuma corretora encontrada para essa busca"
-                : "A mesa ainda está sendo montada"}
+                : "Rede em curadoria contínua"}
             </p>
             <p className="relative mx-auto mt-1 max-w-sm text-xs leading-relaxed text-stone-400">
               {hasFilters
                 ? "Tente outro filtro ou remova os critérios de busca."
-                : "Em breve novas corretoras verificadas aparecerão por aqui."}
+                : "Estamos selecionando as próximas corretoras verificadas para atender sua região com excelência."}
             </p>
             {hasFilters && (
               <Link

@@ -366,7 +366,7 @@ export default async function PostsListPage() {
               <div className="rounded-2xl bg-white/[0.03] p-10 ring-1 ring-white/[0.06] backdrop-blur-sm">
                 <p className="text-center text-sm text-stone-400">
                   A manchete acima é a única publicação ativa nesta edição.
-                  Novas matérias serão adicionadas em breve.
+                  Próximas matérias serão publicadas conforme a curadoria editorial.
                 </p>
               </div>
             ) : (

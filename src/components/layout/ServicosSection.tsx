@@ -204,13 +204,12 @@ export default function ServicosSection() {
                   </span>
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-emerald-900 sm:text-[15px]">
-                      Profissionais da sua região, em breve
+                      Rede de profissionais em curadoria
                     </p>
                     <p className="mt-1 text-[12px] leading-snug text-emerald-900/75 sm:text-sm sm:leading-relaxed">
-                      Ainda estamos cadastrando profissionais da sua região.
-                      Em breve você poderá encontrar veterinários, agrônomos,
-                      mecânicos e prestadores do agro verificados pela
-                      Kavita.
+                      Selecionamos veterinários, agrônomos, mecânicos e
+                      prestadores rurais verificados pela Kavita. Cadastre
+                      sua demanda ou inscreva-se como profissional parceiro.
                     </p>
                     <div className="mt-2.5 flex flex-wrap gap-2 sm:mt-3">
                       <Link

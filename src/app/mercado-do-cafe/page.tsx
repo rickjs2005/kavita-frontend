@@ -236,10 +236,11 @@ export default async function MercadoDoCafePage() {
                 <PanelBrandMark className="h-7 w-7" />
               </div>
               <p className="relative text-sm font-semibold text-stone-100">
-                A mesa ainda está sendo montada
+                Rede em curadoria contínua
               </p>
               <p className="relative mx-auto mt-1 max-w-sm text-xs leading-relaxed text-stone-400">
-                Em breve novas corretoras verificadas aparecerão por aqui.
+                Estamos selecionando as próximas corretoras verificadas para
+                atender sua região com excelência.
               </p>
               <Link
                 href="/mercado-do-cafe/corretoras"

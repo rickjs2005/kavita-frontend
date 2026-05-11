@@ -134,9 +134,9 @@ function buildCards(c: Props["corretora"]): Card[] {
     // pequena pra publicar média confiável. Transparente em vez de
     // silêncio.
     cards.push({
-      kicker: "Novidade",
-      value: "Em construção",
-      hint: `${slaSample} ${slaSample === 1 ? "resposta registrada" : "respostas registradas"} · histórico ainda curto`,
+      kicker: "Operação recente",
+      value: "Histórico em formação",
+      hint: `${slaSample} ${slaSample === 1 ? "resposta registrada" : "respostas registradas"} · base inicial`,
     });
   } else {
     cards.push({

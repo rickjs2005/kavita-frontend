@@ -91,7 +91,7 @@ export function ClimaWidget({
           Clima agora
         </p>
         <p className="mt-3 text-sm text-stone-400">
-          Rede de monitoramento sera ativada em breve.
+          Rede de estações em expansão por região.
         </p>
       </div>
     );

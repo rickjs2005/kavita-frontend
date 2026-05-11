@@ -54,7 +54,7 @@ const steps = [
 const faqs = [
   {
     q: "Tem custo para me cadastrar?",
-    a: "No momento, o cadastro para parceiros está gratuito. Em breve poderão existir planos com benefícios extras, mas sempre com transparência.",
+    a: "O cadastro de parceiros é gratuito durante o piloto. Eventuais planos com benefícios extras só serão lançados com comunicação prévia e transparência total.",
   },
   {
     q: "Preciso de CNPJ para trabalhar com a Kavita?",

@@ -276,7 +276,7 @@ export default async function ClimaListPage() {
               <div className="rounded-2xl bg-white/[0.03] p-10 ring-1 ring-white/[0.06] backdrop-blur-sm">
                 <EmptyState
                   title="Nenhuma cidade monitorada no momento"
-                  subtitle="Novas regiões serão adicionadas em breve. Volte para acompanhar a expansão da rede."
+                  subtitle="Rede de estações em expansão por região conforme acordos com INMET e parceiros locais."
                 />
               </div>
             )}

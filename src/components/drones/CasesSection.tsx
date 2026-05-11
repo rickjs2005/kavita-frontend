@@ -271,12 +271,12 @@ function EmptyState() {
         <Award className="h-5 w-5" aria-hidden />
       </div>
       <h3 className="mt-4 text-lg font-extrabold text-white sm:text-xl">
-        Os primeiros cases estão chegando
+        Operações Kavita Drones em campo
       </h3>
       <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
-        Estamos finalizando o material das primeiras operações Kavita
-        Drones em campo. Em breve você verá fazendas reais, hectares
-        aplicados, comparação antes/depois e depoimentos diretos.
+        Atendemos fazendas de café, soja e pastagem com pulverização
+        aérea de precisão. Fale com um representante para conhecer cases
+        recentes da sua região, hectares aplicados e resultados medidos.
       </p>
       <a
         href="#drones-representatives"

@@ -1,7 +1,7 @@
 // src/components/news/EmptyState.tsx
 export function EmptyState({
   title = "Nada por aqui ainda",
-  subtitle = "Conteúdos serão atualizados em breve.",
+  subtitle = "Conteúdos são atualizados continuamente.",
 }: {
   title?: string;
   subtitle?: string;

@@ -318,7 +318,7 @@ export default async function CotacoesListPage() {
               <div className="rounded-2xl bg-white/[0.03] p-10 ring-1 ring-white/[0.06] backdrop-blur-sm">
                 <EmptyState
                   title="Nenhuma cotação disponível no momento"
-                  subtitle="Os dados são atualizados conforme as fontes oficiais. Volte em breve."
+                  subtitle="Os dados são atualizados conforme as fontes oficiais (CEPEA, ICE, B3)."
                 />
               </div>
             )}

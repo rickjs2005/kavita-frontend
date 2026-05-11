@@ -157,7 +157,7 @@ export default async function NewsHomePage() {
                 <div className="flex h-[420px] items-center justify-center rounded-3xl bg-white/[0.04] ring-1 ring-white/[0.08] md:h-[520px]">
                   <EmptyState
                     title="Sem manchete no momento"
-                    subtitle="A primeira materia editorial estreia em breve."
+                    subtitle="A próxima edição editorial está em curadoria."
                   />
                 </div>
               )}
@@ -204,7 +204,7 @@ export default async function NewsHomePage() {
             <div className="rounded-2xl bg-white/[0.03] p-8 ring-1 ring-white/[0.06]">
               <EmptyState
                 title="Nenhum destaque publicado ainda"
-                subtitle="Volte em breve para acompanhar as proximas atualizacoes."
+                subtitle="Acompanhe as próximas atualizações editoriais da Kavita."
               />
             </div>
           )}
@@ -273,7 +273,7 @@ export default async function NewsHomePage() {
                   <div className="mt-4">
                     <EmptyState
                       title="Sem cotacoes no momento"
-                      subtitle="Atualizado continuamente — volte em breve."
+                      subtitle="Dados atualizados continuamente conforme fontes oficiais."
                     />
                   </div>
                 )}
